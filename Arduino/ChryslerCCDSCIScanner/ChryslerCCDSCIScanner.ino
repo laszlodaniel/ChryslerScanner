@@ -28,8 +28,8 @@
 #include <avr/pgmspace.h>
 #include <util/atomic.h>
 
-#include <TimerOne.h>
-#include <extEEPROM.h>
+#include <TimerOne.h>  // https://github.com/PaulStoffregen/TimerOne
+#include <extEEPROM.h> // https://github.com/JChristensen/extEEPROM
 #include <Wire.h>
 
 #include "ccdsciuart.h"
