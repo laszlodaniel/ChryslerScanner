@@ -27,11 +27,9 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 #include <util/atomic.h>
-
 #include <TimerOne.h>  // https://github.com/PaulStoffregen/TimerOne
 #include <extEEPROM.h> // https://github.com/JChristensen/extEEPROM
 #include <Wire.h>
-
 #include "ccdsciuart.h"
 
 #ifndef F_CPU
@@ -45,7 +43,7 @@
 #define ACT_LED   37 // status LED, activity
 #define BATT      A0 // battery voltage sensor
 
-// Construct an object for the external 24LC32A EEPROM chip
+// Construct an object called "eep" for the external 24LC32A EEPROM chip
 extEEPROM eep(kbits_32, 1, 32, 0x50); // device size: 32 kilobits = 4 kilobytes, number of devices: 1, page size: 32 bytes (from datasheet), device address: 0x50 by default
 
 void setup()
@@ -64,9 +62,9 @@ void setup()
     pinMode(RX_LED,  OUTPUT);
     pinMode(TX_LED,  OUTPUT);
     pinMode(ACT_LED, OUTPUT);
-    digitalWrite(RX_LED, LOW);
-    digitalWrite(TX_LED, LOW);
-    digitalWrite(ACT_LED, LOW);
+    digitalWrite(RX_LED, HIGH); // LEDs are grounded through the microcontroller, so HIGH/HI-Z = OFF, LOW = ON
+    digitalWrite(TX_LED, HIGH);
+    digitalWrite(ACT_LED, HIGH);
 
     // SCI-bus A/B-configuration selector outputs
     pinMode(PA0, OUTPUT);   // Set PA0 pin to output

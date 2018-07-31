@@ -135,10 +135,10 @@
 
 // Packet related stuff
 #define SYNC_BYTE           0x33
-#define MAX_PAYLOAD_LENGTH  2042
+#define MAX_PAYLOAD_LENGTH  1018
 #define ACK                 0x00        // Acknowledge byte
 #define ERR                 0xFF        // Error byte
-#define EMPTY_PAYLOAD       0xFE 
+#define EMPTY_PAYLOAD       0xFE        // Random byte, could be anything
 
 // DATA CODE byte building blocks
 // Source and Target masks (high nibble (4 bits))
@@ -198,7 +198,6 @@
 #define error_fatal                             0xFF
 
 // Variables
-
 volatile uint16_t USB_RxBuf[USB_RX0_BUFFER_SIZE];
 volatile uint8_t  USB_TxBuf[USB_TX0_BUFFER_SIZE];
 volatile uint16_t USB_RxHead;
@@ -295,7 +294,7 @@ Purpose:  called when the UART0 has received a character
         /* store new index */
         USB_RxHead = tmphead;
         /* store received data in buffer */
-        USB_RxBuf[tmphead] = (data << 8) + lastRxError;
+        USB_RxBuf[tmphead] = (lastRxError << 8) + data;
     }
     USB_LastRxError = lastRxError;   
 }
@@ -346,7 +345,7 @@ Purpose:  called when the UART1 has received a character
     {
         lastRxError |= CCD_SOM; // add CCD_SOM (Start of Message) flag to the high byte
         ccd_idle = false; // re-arm idle detection
-        total_ccd_msg_count++;
+        total_ccd_msg_count++; // increment message counter for statistic purposes
     } 
 
     /* calculate buffer index */ 
@@ -362,7 +361,7 @@ Purpose:  called when the UART1 has received a character
         /* store new index */
         CCD_RxHead = tmphead;
         /* store received data in buffer */
-        CCD_RxBuf[tmphead] = (data << 8) + lastRxError;
+        CCD_RxBuf[tmphead] = (lastRxError << 8) + data;
     }
     CCD_LastRxError = lastRxError;   
 }
@@ -421,7 +420,7 @@ Purpose:  called when the UART2 has received a character
         /* store new index */
         PCM_RxHead = tmphead;
         /* store received data in buffer */
-        PCM_RxBuf[tmphead] = (data << 8) + lastRxError;
+        PCM_RxBuf[tmphead] = (lastRxError << 8) + data;
     }
     PCM_LastRxError = lastRxError;   
 }
@@ -480,7 +479,7 @@ Purpose:  called when the UART3 has received a character
         /* store new index */
         TCM_RxHead = tmphead;
         /* store received data in buffer */
-        TCM_RxBuf[tmphead] = (data << 8) + lastRxError;
+        TCM_RxBuf[tmphead] = (lastRxError << 8) + data;
     }
     TCM_LastRxError = lastRxError;   
 }
@@ -692,7 +691,7 @@ uint16_t usb_rx_available(void)
 Function: usb_tx_available()
 Purpose:  determine the number of bytes waiting in the transmit buffer
 Input:    none
-Returns:  integer number of bytes in the receive buffer
+Returns:  integer number of bytes in the transmit buffer
 **************************************************************************/
 uint16_t usb_tx_available(void)
 {
@@ -1479,7 +1478,6 @@ Purpose:  called when the CCD-chip's IDLE pin is going low,
 void ccd_eom(void)
 {
     ccd_idle = true;  // set flag so the main loop knows, simple as that
-    total_ccd_msg_count++;  // increment message counter for statistic purposes
     
 } /* ccd_eom */
 
@@ -1531,8 +1529,6 @@ Function: configure_sci_bus()
 Purpose:  change between SCI-bus configuration (A/B);
           - A: old configuration until 2002;
           - B: new configuration starting from 2002.
-Params:   - configuration: true if A; false if B
-          - highspeed: true if on, false if off
 Returns:  none
 **************************************************************************/
 void configure_sci_bus(uint8_t bus, uint8_t configuration, uint8_t speed)
@@ -1626,26 +1622,23 @@ void configure_sci_bus(uint8_t bus, uint8_t configuration, uint8_t speed)
 /*************************************************************************
 Function: send_usb_packet()
 Purpose:  assemble and send data packet through serial link (UART0)
-Inputs:   - one sync byte (0x33 by default)
-          - one source byte,
+Inputs:   - one source byte,
           - one target byte,
           - one datacode value byte, these three are used to calculate the DATA CODE byte
           - one SUB-DATA CODE byte,
           - pointer to the PAYLOAD bytes array (name of the array),
             (it must be previously filled with data)
           - PAYLOAD length
-Returns:  0 if transmission was OK
-          1 if ERROR
+Returns:  none
 Note:     SYNC, LENGTH and CHECKSUM bytes are calculated automatically;
-          Payload can be omitted if a (uint8_t*)0x00 value is used in conjunction with 0 length,
-      see examples throughout the code.
+          Payload can be omitted if a (uint8_t*)0x00 value is used in conjunction with 0 length
 **************************************************************************/
 void send_usb_packet(uint8_t source, uint8_t target, uint8_t dc_command, uint8_t subdatacode, uint8_t *payloadbuff, uint16_t payloadbufflen)
 {
-    // Calculate the length of the full packet
+    // Calculate the length of the full packet:
     // PAYLOAD length + 1 SYNC byte + 2 LENGTH bytes + 1 DATA CODE byte + 1 SUB-DATA CODE byte + 1 CHECKSUM byte
     uint16_t packet_length = payloadbufflen + 6;
-    uint8_t packet[packet_length];
+    uint8_t packet[packet_length]; // create a temporary byte-array
     bool payload_bytes = true;
     uint16_t calculated_checksum = 0;
     uint8_t datacode = 0;
@@ -1654,7 +1647,7 @@ void send_usb_packet(uint8_t source, uint8_t target, uint8_t dc_command, uint8_t
     else payload_bytes = true;
 
     // Assemble datacode from the first 3 input parameters
-    // They all fit in one byte because only the lower two bits are considered meaningful
+    // They all fit in one byte because only the lower two bits are considered meaningful for source and target, four bits for dc_command
     datacode |= (source << 6) | (target << 4) | dc_command;
 
     // Start assembling the packet by manually filling the first few slots
@@ -1679,7 +1672,7 @@ void send_usb_packet(uint8_t source, uint8_t target, uint8_t dc_command, uint8_t
         calculated_checksum += packet[j];
     }
 
-    // Place checksum byte
+    // Place checksum byte (lower half of the original 16-bit word)
     packet[packet_length - 1] = calculated_checksum & 0xFF;
 
     // Send the prepared packet through serial link
@@ -1722,13 +1715,13 @@ void handle_ccd_rx_bytes(void)
         if ((((dummy_read >> 8) & 0xFF) == CCD_SOM) && (ccd_bus_bytes_buffer_ptr > 0))
         {
             // Send CCD-bus message (if there's at least one complete) back to the laptop
-            //              where         to         what     ok/error flag         buffer          length
+            //              where         to         what  ok/error flag         buffer          length
             send_usb_packet(from_ccd_bus, to_usb, receive_msg, ok, ccd_bus_bytes_buffer, ccd_bus_bytes_buffer_ptr);
             //process_ccd_msg(); // TODO
             ccd_bus_bytes_buffer_ptr = 0; // reset pointer
 
             // And save this byte as the first one in the buffer
-            ccd_bus_bytes_buffer[ccd_bus_bytes_buffer_ptr] = ccd_getc() & 0xFF; // getc = read it while deleting it from the buffer
+            ccd_bus_bytes_buffer[ccd_bus_bytes_buffer_ptr] = ccd_getc() & 0xFF; // getc = read it while deleting it from the buffer, & 0xFF gets rid of the high byte (flags)
             ccd_bus_bytes_buffer_ptr++; // increace pointer value by one so it points to the next empty slot in the buffer
         }
         else // get this byte and save to the temporary buffer in the next available position
@@ -1740,8 +1733,10 @@ void handle_ccd_rx_bytes(void)
 
     // #3 - Sending bytes to the CCD-bus:
     // If there's a message to be sent to the CCD-bus and the bus happens to be idling then send it here and now
+    // TODO: perhaps the active byte flag can be checked here to be extra sure we can have control over the CCD-bus without cross-talk
     if (ccd_bus_msg_pending && ccd_idle) // note that two different conditions must be true at the same time
     {
+        // The first byte has to be sent as fast as possible to arbitrate the CCD-bus
         for (uint8_t i = 0; i < ccd_bus_msg_to_send_ptr; i++) // repeat for the length of the message
         {
             ccd_putc(ccd_bus_msg_to_send[i]);
