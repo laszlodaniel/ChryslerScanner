@@ -26,6 +26,7 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <avr/pgmspace.h>
+#include <avr/wdt.h>
 #include <util/atomic.h>
 #include <TimerOne.h>  // https://github.com/PaulStoffregen/TimerOne
 #include <extEEPROM.h> // https://github.com/JChristensen/extEEPROM
@@ -41,13 +42,32 @@
 #define RX_LED    35 // status LED, message received
 #define TX_LED    36 // status LED, message sent
 #define ACT_LED   37 // status LED, activity
-#define BATT      A0 // battery voltage sensor
 
 // Construct an object called "eep" for the external 24LC32A EEPROM chip
 extEEPROM eep(kbits_32, 1, 32, 0x50); // device size: 32 kilobits = 4 kilobytes, number of devices: 1, page size: 32 bytes (from datasheet), device address: 0x50 by default
 
 void setup()
 {
+    cli(); // disable interrupts
+    
+    stop_ccd_clock_generator(); // stop listening to the ccd-bus
+    
+    // Reset UART buffers in case of watchdog-reset occurs
+    usb_rx_flush(); 
+    usb_tx_flush();
+    ccd_rx_flush();
+    ccd_tx_flush();
+    pcm_rx_flush();
+    pcm_tx_flush();
+    tcm_rx_flush();
+    tcm_tx_flush();
+    ccd_bytes_buffer_ptr = 0;
+    pcm_bytes_buffer_ptr = 0;
+    tcm_bytes_buffer_ptr = 0;
+    ccd_msg_to_send_ptr = 0;
+    pcm_msg_to_send_ptr = 0;
+    tcm_msg_to_send_ptr = 0;
+    
     // Initialize serial interfaces with default speeds
     usb_init(USBBAUD);// 115200 baud, serial monitor should have the same speed
     ccd_init(LOBAUD); // 7812.5 baud
@@ -55,15 +75,16 @@ void setup()
     tcm_init(LOBAUD); // 7812.5 baud
 
     // Define digital pin states
-    pinMode(INT4, INPUT);      // D2 (INT4), CCD-bus idle detector
-    pinMode(INT5, INPUT);      // D3 (INT5), CCD-bus active byte detector
-    digitalWrite(INT4, HIGH);  // Enable internal pull-up resistor on D2 (INT4), it's pulled up by hardware so let's waste resources
-    digitalWrite(INT5, HIGH);  // Enable internal pull-up resistor on D3 (INT5), it's pulled up by hardware so let's waste resources
-    pinMode(RX_LED,  OUTPUT);
-    pinMode(TX_LED,  OUTPUT);
-    pinMode(ACT_LED, OUTPUT);
-    digitalWrite(RX_LED, HIGH); // LEDs are grounded through the microcontroller, so HIGH/HI-Z = OFF, LOW = ON
-    digitalWrite(TX_LED, HIGH);
+    // No need to re-define input states...
+    //pinMode(INT4, INPUT);         // D2 (INT4), CCD-bus idle detector
+    //pinMode(INT5, INPUT);         // D3 (INT5), CCD-bus active byte detector
+    //digitalWrite(INT4, HIGH);     // Enable internal pull-up resistor on D2 (INT4), it's pulled up by hardware
+    //digitalWrite(INT5, HIGH);     // Enable internal pull-up resistor on D3 (INT5), it's pulled up by hardware
+    pinMode(RX_LED,  OUTPUT);     // This LED flashes whenever data is received by the scanner
+    pinMode(TX_LED,  OUTPUT);     // This LED flashes whenever data is transmitted from the scanner
+    pinMode(ACT_LED, OUTPUT);     // This LED flashes when some "action" takes place in the scanner
+    digitalWrite(RX_LED, HIGH);   // LEDs are grounded through the microcontroller, so HIGH/HI-Z = OFF, LOW = ON
+    digitalWrite(TX_LED, HIGH);   //
     digitalWrite(ACT_LED, HIGH);
 
     // SCI-bus A/B-configuration selector outputs
@@ -86,26 +107,34 @@ void setup()
 
     attachInterrupt(INT4, ccd_eom, FALLING); // execute "ccd_eom" function if the CCD-transceiver pulls D2 pin low indicating an "End of Message" condition
     attachInterrupt(INT5, ccd_active_byte, FALLING); // execute "ccd_active_byte" function if the CCD-transceiver pulls D3 pin low indicating an active byte on the CCD-bus 
-    
-    start_ccd_clock_generator(); // start listening to the CCD-bus
 
-    // Initialize external EEPROM
-    uint8_t eep_status = eep.begin(extEEPROM::twiClock400kHz);   // go fast!
-    if (eep_status)
+    sei(); // enable interrupts
+
+    // Copy handshake bytes from flash to ram
+    for (uint8_t i = 0; i < 21; i++)
     {
-        // ERROR, TODO
-    } 
+        handshake_array[i] = pgm_read_byte(&handshake_progmem[i]);
+    }
+    
+    wdt_enable(WDTO_2S); // reset program if the watchdog timer reaches 2 seconds
+    start_ccd_clock_generator(); // start listening to the CCD-bus
+    
+    // Initialize external EEPROM
+    uint8_t eep_status = eep.begin(extEEPROM::twiClock400kHz); // go fast!
+    if (eep_status) { ext_eeprom_present = false; }
+    else { ext_eeprom_present = true; }
+
+    check_battery_volts(); // calculate battery voltage from OBD16 pin
+    wdt_reset(); // reset watchdog timer to 0 seconds so no intentional restart occurs
+    discover_bus_configuration(); // figure out how to talk to the vehicle
 }
 
 void loop()
 {
-    // Check if a command has been received over the USB connection
-    if (usb_enabled) { handle_usb_rx_bytes(); }
-    
-    // Do CCD-bus stuff if it's enabled
-    if (ccd_enabled) { handle_ccd_rx_bytes(); }
-
-    // Do SCI-bus stuff if it's enabled
-    if (sci_enabled) { handle_sci_rx_bytes(); }
+    wdt_reset(); // reset watchdog timer to 0 seconds so no accidental restart occurs
+    handle_usb_rx_bytes(); // check if a command has been received over the USB connection
+    if (ccd_enabled) { handle_ccd_rx_bytes(); } // do CCD-bus stuff if it's enabled
+    if (sci_enabled) { handle_sci_rx_bytes(); } // do SCI-bus stuff if it's enabled
+    check_battery_volts(); // calculate battery voltage from OBD16 pin
 }
 
