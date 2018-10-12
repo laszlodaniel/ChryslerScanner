@@ -22,7 +22,6 @@
 // Board setting: Arduino/Genuino Mega or Mega 2560
 // Processor setting: ATmega2560 (Mega 2560)
 
-#include <avr/eeprom.h>
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <avr/pgmspace.h>
@@ -45,6 +44,12 @@
 
 // Construct an object called "eep" for the external 24LC32A EEPROM chip
 extEEPROM eep(kbits_32, 1, 32, 0x50); // device size: 32 kilobits = 4 kilobytes, number of devices: 1, page size: 32 bytes (from datasheet), device address: 0x50 by default
+
+uint32_t current_millis_blink = 0;
+uint32_t previous_millis_blink = 0;
+uint16_t interval = 250; // milliseconds
+bool act_led_state = false;
+uint8_t cycles = 0;
 
 void setup()
 {
@@ -123,18 +128,37 @@ void setup()
     if (eep_status) { ext_eeprom_present = false; }
     else { ext_eeprom_present = true; }
 
-    wdt_reset(); // reset watchdog timer to 0 seconds so no intentional restart occurs
+    wdt_reset(); // reset watchdog timer to 0 seconds so no accidental restart occurs
     check_battery_volts(); // calculate battery voltage from OBD16 pin
     ccd_clock_generator(START); // start listening to the CCD-bus
-    discover_bus_configuration(); // figure out how to talk to the vehicle
+    get_bus_config(); // figure out how to talk to the vehicle
 }
 
 void loop()
 {
     wdt_reset(); // reset watchdog timer to 0 seconds so no accidental restart occurs
     check_battery_volts(); // calculate battery voltage from OBD16 pin
-    handle_usb_rx_bytes(); // check if a command has been received over the USB connection
-    if (ccd_enabled) { handle_ccd_rx_bytes(); } // do CCD-bus stuff if it's enabled
-    if (sci_enabled) { handle_sci_rx_bytes(); } // do SCI-bus stuff if it's enabled
+    handle_usb_data(); // check if a command has been received over the USB connection
+    if (ccd_enabled) { handle_ccd_data(); } // do CCD-bus stuff if it's enabled
+    if (sci_enabled) { handle_sci_data(); } // do SCI-bus stuff if it's enabled
+
+    // Blink activity LED to show looping is OK and didn't freeze somewhere.
+    current_millis_blink = millis(); // check current time
+
+    // Check if enough time has elapsed (interval) to invert LED state
+    if (current_millis_blink - previous_millis_blink >= interval)
+    {
+        previous_millis_blink = current_millis_blink; // save current time
+        if (act_led_state) act_led_state = false;
+        else act_led_state = true;
+        digitalWrite(ACT_LED, act_led_state);
+        
+//        cycles++;
+//        if (cycles == 10)
+//        {
+//            cycles = 0;
+//            while(true); // test watchdog reset, blink should freeze for 2 seconds, reset occurs, led resumes blinking
+//        }
+    }
 }
 
