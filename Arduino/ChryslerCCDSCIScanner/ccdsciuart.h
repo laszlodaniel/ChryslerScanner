@@ -2595,10 +2595,11 @@ void handle_ccd_data(void)
         {
             ccd_bytes_buffer[ccd_bytes_buffer_ptr] = ccd_getc() & 0xFF; // getc = read it while deleting it from the buffer
             ccd_bytes_buffer_ptr++; // increase pointer value by one so it points to the next empty slot in the buffer
-            if (ccd_bytes_buffer_ptr > ccd_buffer_size - 1); // don't let buffer pointer overflow, send the whole 32 byte buffer back to the laptop to figure out what's wrong
-            {
-                send_usb_packet(from_ccd, to_usb, receive_msg, error_buffer_overflow, ccd_bytes_buffer, ccd_buffer_size);
-            }
+//            if (ccd_bytes_buffer_ptr > ccd_buffer_size - 1); // don't let buffer pointer overflow, send the whole 32 byte buffer back to the laptop to figure out what's wrong
+//            {
+//                ccd_bytes_buffer_ptr = 0;
+//                send_usb_packet(from_ccd, to_usb, receive_msg, error_buffer_overflow, ccd_bytes_buffer, ccd_buffer_size);
+//            }
             // It's highly unlikely that a vehicle computer sends a message bigger than the buffer size (32 bytes in this case), so don't worry about this branch
         }
     }
