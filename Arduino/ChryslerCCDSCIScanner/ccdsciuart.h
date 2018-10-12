@@ -96,7 +96,8 @@
 // Baudrate prescaler calculation: UBRR = (F_CPU / (16 * BAUDRATE)) - 1
 #define LOBAUD  127  // prescaler for   7812.5 baud speed (CCD-SCI / default low-speed diagnostic mode)
 #define HIBAUD  15   // prescaler for  62500   baud speed (SCI / high-speed parameter mode)
-#define USBBAUD 8    // prescaler for 115200   baud speed (USB)
+//#define USBBAUD 8    // prescaler for 115200   baud speed (USB) / bad choice, 3.5% signal error 
+#define USBBAUD 3    // prescaler for 250000   baud speed (USB) / good choice, 0.0% signal error (precisely zero)
 
 //#define ASCII_OUTPUT  // Choose this if you want a simple text output over USB for serial monitors
 #define PACKET_OUTPUT // Choose this if you want a byte-based packet output over USB for third-party applications
@@ -147,6 +148,8 @@
 #define ASCII_SYNC_BYTE     0x3E // > symbol
 #define MAX_PAYLOAD_LENGTH  USB_RX0_BUFFER_SIZE - 6  // 1024-6 bytes
 #define EMPTY_PAYLOAD       0xFE  // Random byte, could be anything
+
+#define TEMP_BUFFER_SIZE     32
 
 // DATA CODE byte building blocks
 // Source and Target masks (high nibble (4 bits))
@@ -257,13 +260,12 @@ volatile bool ccd_idle = false;
 volatile bool ccd_ctrl = false;
 volatile uint32_t total_ccd_msg_count = 0;
 bool ccd_enabled = true;
-const uint8_t ccd_buffer_size = 32;
-uint8_t ccd_bytes_buffer[ccd_buffer_size]; // max. CCD-bus message length limited to 32 bytes, should be enough
+uint8_t ccd_bytes_buffer[TEMP_BUFFER_SIZE]; // max. CCD-bus message length limited to 32 bytes, should be enough
 uint8_t ccd_bytes_buffer_ptr = 0; // pointer in the previous array
 bool ccd_msg_pending = false; // flag for custom ccd-bus message transmission
-uint8_t ccd_msg_to_send[ccd_buffer_size]; // custom ccd-bus message is copied here
+uint8_t ccd_msg_to_send[TEMP_BUFFER_SIZE]; // custom ccd-bus message is copied here
 uint8_t ccd_msg_to_send_ptr = 0; // custom ccd-bus message length
-uint8_t ccd_module_addr[ccd_buffer_size]; // recognised CCD-bus modules are stored here with ascending order
+uint8_t ccd_module_addr[TEMP_BUFFER_SIZE]; // recognised CCD-bus modules are stored here with ascending order
 uint8_t ccd_module_count = 0; // number of currently recognized CCD-bus modules
 
 // SCI-bus
@@ -272,18 +274,17 @@ volatile bool tcm_idle = false;
 bool sci_enabled = true;
 bool pcm_enabled = true;
 bool tcm_enabled = true;
-const uint8_t sci_buffer_size = 32;
 
-uint8_t pcm_bytes_buffer[sci_buffer_size]; // max. SCI-bus message length to the PCM limited to 32 bytes, should be enough
+uint8_t pcm_bytes_buffer[TEMP_BUFFER_SIZE]; // max. SCI-bus message length to the PCM limited to 32 bytes, should be enough
 uint8_t pcm_bytes_buffer_ptr = 0; // pointer in the previous array
 bool pcm_msg_pending = false; // flag for custom sci-bus message
-uint8_t pcm_msg_to_send[sci_buffer_size]; // custom sci-bus message is copied here
+uint8_t pcm_msg_to_send[TEMP_BUFFER_SIZE]; // custom sci-bus message is copied here
 uint8_t pcm_msg_to_send_ptr = 0;  // custom sci-bus message length
 
-uint8_t tcm_bytes_buffer[sci_buffer_size]; // max. SCI-bus message length to the TCM limited to 32 bytes, should be enough
+uint8_t tcm_bytes_buffer[TEMP_BUFFER_SIZE]; // max. SCI-bus message length to the TCM limited to 32 bytes, should be enough
 uint8_t tcm_bytes_buffer_ptr = 0; // pointer in the previous array
 bool tcm_msg_pending = false; // flag for custom sci-bus message
-uint8_t tcm_msg_to_send[sci_buffer_size]; // custom sci-bus message is copied here
+uint8_t tcm_msg_to_send[TEMP_BUFFER_SIZE]; // custom sci-bus message is copied here
 uint8_t tcm_msg_to_send_ptr = 0; // custom sci-bus message length
 
 const uint8_t sci_hi_speed_memarea_num = 15; // number of available memory areas to read from SCI-bus, each contains 248 bytes of data
@@ -1564,19 +1565,34 @@ void ccd_clock_generator(uint8_t command)
     {
         case START:
         {
-            Timer1.initialize(1); // 1us period for 1 MHz clock (2 MHz interrupt), 2 us = 500 kHz, 3 us = 333 kHz, 40 us = 25 kHz
-            Timer1.pwm(CCD_CLOCK_PIN, 512);  // PB5 or D11 timer output pin (OC1A pin: Timer 1 / A output); 50% duty cycle: 0 - 1023, 512 = 50%
-            Timer1.start();
+            //Timer1.initialize(1); // 1us period for 1 MHz clock (2 MHz interrupt), 2 us = 500 kHz, 3 us = 333 kHz, 40 us = 25 kHz
+            //Timer1.pwm(CCD_CLOCK_PIN, 512);  // PB5 or D11 timer output pin (OC1A pin: Timer 1 / A output); 50% duty cycle: 0 - 1023, 512 = 50%
+            //Timer1.start();
+
+            TCCR1A = 0;                        // clear register
+            TCCR1B = 0;                        // clear register
+            TCNT1  = 0;                        // clear counter
+            DDRB   = (1<<DDB5);                // set OC1A/PB5 as output
+            TCCR1A = (1<<COM1A0);              // toggle OC1A on compare match
+            OCR1A  = 7;                        // top value for counter, toggle after counting to 8 (0->7) = 2 MHz interrupt ( = 16 MHz clock frequency / 8)
+            TCCR1B = (1<<WGM12) | (1<<CS10);   // CTC mode, prescaler clock/1 (no prescaler)
+            
             break;
         }
         case STOP:
         {
-            Timer1.stop();
+            //Timer1.stop();
+
+            TCCR1A = 0;
+            TCCR1B = 0;
+            TCNT1  = 0;
+            OCR1A  = 0;
+            
             break;
         }
         default:
         {
-            Timer1.stop();
+            //Timer1.stop();
             break;
         }
     }
@@ -2562,11 +2578,11 @@ void handle_ccd_data(void)
 
         // #2 - Detecting end of message condition
         // If the peaked value is an ID-byte then send the previous bytes to the laptop (if any)
-        if ((((dummy_read >> 8) & 0xFF) == CCD_SOM) && (ccd_bytes_buffer_ptr > 0))
+        if ((dummy_read & CCD_SOM) && (ccd_bytes_buffer_ptr > 0))
         {
             // Check if the crc byte in the message is correct
             uint16_t calculated_checksum = 0;
-            for (uint16_t i = 0; i < ccd_bytes_buffer_ptr - 1; i++)
+            for (uint16_t i = 0; i < (ccd_bytes_buffer_ptr - 1); i++)
             {
                 calculated_checksum += ccd_bytes_buffer[i];
             }
@@ -2589,17 +2605,17 @@ void handle_ccd_data(void)
             // And finally save this byte as the first one in the buffer
             ccd_bytes_buffer[ccd_bytes_buffer_ptr] = ccd_getc() & 0xFF; // getc = read it while deleting it from the buffer
             ccd_bytes_buffer_ptr++; // increase pointer value by one so it points to the next empty slot in the buffer
-            if (ccd_bytes_buffer_ptr > ccd_buffer_size - 1) ccd_bytes_buffer_ptr = 0; // don't let buffer pointer overflow, instead overwrite previous message
+            if (ccd_bytes_buffer_ptr > (TEMP_BUFFER_SIZE - 1)) ccd_bytes_buffer_ptr = 0; // don't let buffer pointer overflow, instead overwrite previous message
         }
         else // get this byte and save to the temporary buffer in the next available position
         {
             ccd_bytes_buffer[ccd_bytes_buffer_ptr] = ccd_getc() & 0xFF; // getc = read it while deleting it from the buffer
             ccd_bytes_buffer_ptr++; // increase pointer value by one so it points to the next empty slot in the buffer
-//            if (ccd_bytes_buffer_ptr > ccd_buffer_size - 1); // don't let buffer pointer overflow, send the whole 32 byte buffer back to the laptop to figure out what's wrong
-//            {
-//                ccd_bytes_buffer_ptr = 0;
-//                send_usb_packet(from_ccd, to_usb, receive_msg, error_buffer_overflow, ccd_bytes_buffer, ccd_buffer_size);
-//            }
+            if (ccd_bytes_buffer_ptr > (TEMP_BUFFER_SIZE - 1)); // don't let buffer pointer overflow, send the whole 32 byte buffer back to the laptop to figure out what's wrong
+            {
+                ccd_bytes_buffer_ptr = 0;
+                send_usb_packet(from_ccd, to_usb, receive_msg, error_buffer_overflow, ccd_bytes_buffer, TEMP_BUFFER_SIZE);
+            }
             // It's highly unlikely that a vehicle computer sends a message bigger than the buffer size (32 bytes in this case), so don't worry about this branch
         }
     }
@@ -2613,7 +2629,7 @@ void handle_ccd_data(void)
     {
         // Check if the crc byte in the message is correct
         uint16_t calculated_checksum = 0;
-        for (uint16_t i = 0; i < ccd_msg_to_send_ptr - 1; i++)
+        for (uint16_t i = 0; i < (ccd_msg_to_send_ptr - 1); i++)
         {
             calculated_checksum += ccd_msg_to_send[i];
         }

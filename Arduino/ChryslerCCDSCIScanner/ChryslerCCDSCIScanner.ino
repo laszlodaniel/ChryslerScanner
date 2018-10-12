@@ -27,7 +27,7 @@
 #include <avr/pgmspace.h>
 #include <avr/wdt.h>
 #include <util/atomic.h>
-#include <TimerOne.h>  // https://github.com/PaulStoffregen/TimerOne
+//#include <TimerOne.h>  // https://github.com/PaulStoffregen/TimerOne
 #include <extEEPROM.h> // https://github.com/JChristensen/extEEPROM
 #include <Wire.h>
 #include "ccdsciuart.h"
@@ -131,6 +131,8 @@ void setup()
     wdt_reset(); // reset watchdog timer to 0 seconds so no accidental restart occurs
     check_battery_volts(); // calculate battery voltage from OBD16 pin
     ccd_clock_generator(START); // start listening to the CCD-bus
+    delay(1000); // wait for clock to stabilize
+    ccd_rx_flush(); // clear buffer again
     get_bus_config(); // figure out how to talk to the vehicle
 }
 
