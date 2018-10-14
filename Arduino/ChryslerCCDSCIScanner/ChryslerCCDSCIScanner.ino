@@ -36,12 +36,6 @@
 #define F_CPU 16000000UL // 16 MHz system clock
 #endif
 
-#define INT4      2  // CCD-bus idle interrupt
-#define INT5      3  // CCD-bus active byte interrupt
-#define RX_LED    35 // status LED, message received
-#define TX_LED    36 // status LED, message sent
-#define ACT_LED   37 // status LED, activity
-
 // Construct an object called "eep" for the external 24LC32A EEPROM chip
 extEEPROM eep(kbits_32, 1, 32, 0x50); // device size: 32 kilobits = 4 kilobytes, number of devices: 1, page size: 32 bytes (from datasheet), device address: 0x50 by default
 
@@ -121,18 +115,25 @@ void setup()
     attachInterrupt(INT5, ccd_active_byte, FALLING); // execute "ccd_active_byte" function if the CCD-transceiver pulls D3 pin low indicating a byte being transmitted on the CCD-bus
     // We don't know the byte's value right away, we have to wait for all 8 data bits and a few other bits for framing to arrive.
   
-    wdt_enable(WDTO_2S); // reset program if the watchdog timer reaches 2 seconds
-    
     // Initialize external EEPROM
     uint8_t eep_status = eep.begin(extEEPROM::twiClock400kHz); // go fast!
     if (eep_status) { ext_eeprom_present = false; }
     else { ext_eeprom_present = true; }
 
-    wdt_reset(); // reset watchdog timer to 0 seconds so no accidental restart occurs
     check_battery_volts(); // calculate battery voltage from OBD16 pin
     ccd_clock_generator(START); // start listening to the CCD-bus
-    delay(1000); // wait for clock to stabilize
+    delay(2000); // wait for ccd clock to stabilize
     ccd_rx_flush(); // clear buffer again
+
+    // Copy handshake bytes from flash to ram
+    for (uint8_t i = 0; i < 21; i++)
+    {
+        handshake_array[i] = pgm_read_byte(&handshake_progmem[i]);
+    }
+
+    wdt_enable(WDTO_2S); // reset program if the watchdog timer reaches 2 seconds
+    wdt_reset(); // reset watchdog timer
+    
     get_bus_config(); // figure out how to talk to the vehicle
 }
 
@@ -144,23 +145,23 @@ void loop()
     if (ccd_enabled) { handle_ccd_data(); } // do CCD-bus stuff if it's enabled
     if (sci_enabled) { handle_sci_data(); } // do SCI-bus stuff if it's enabled
 
-    // Blink activity LED to show looping is OK and didn't freeze somewhere.
     current_millis_blink = millis(); // check current time
-
-    // Check if enough time has elapsed (interval) to invert LED state
-    if (current_millis_blink - previous_millis_blink >= interval)
+    if (current_millis_blink - previous_millis_blink >= interval) // is it time to invert led state?
     {
         previous_millis_blink = current_millis_blink; // save current time
         if (act_led_state) act_led_state = false;
         else act_led_state = true;
         digitalWrite(ACT_LED, act_led_state);
-        
-//        cycles++;
-//        if (cycles == 10)
-//        {
-//            cycles = 0;
-//            while(true); // test watchdog reset, blink should freeze for 2 seconds, reset occurs, led resumes blinking
-//        }
+    }
+
+    if (current_millis_blink - rx_led_ontime >= led_blink_interval)
+    {
+        digitalWrite(RX_LED, HIGH); // turn off RX LED
+    }
+
+    if (current_millis_blink - tx_led_ontime >= led_blink_interval)
+    {
+        digitalWrite(TX_LED, HIGH); // turn off TX LED
     }
 }
 
