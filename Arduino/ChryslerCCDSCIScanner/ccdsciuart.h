@@ -22,7 +22,7 @@
 #ifndef CCDSCIUART_H
 #define CCDSCIUART_H
 
-#define FW 0x2EFCD26076 // Firmware version, actually the date/time of compilation (0x2EFCD26076 = 201810141302 -> 2018.10.14 13:02
+#define FW 0x2EFCD4F5FE // Firmware version, actually the date/time of compilation (0x2EFCD4F5FE = 201810310654 -> 2018.10.31 06:54
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -94,10 +94,9 @@
 #define SCI_LO_SPEED    0xFE  // Command to switch SCI-bus to low speed mode (7812.5 baud)
 
 // Baudrate prescaler calculation: UBRR = (F_CPU / (16 * BAUDRATE)) - 1
-#define LOBAUD  127  // prescaler for   7812.5 baud speed (CCD-SCI / default low-speed diagnostic mode)
-#define HIBAUD  15   // prescaler for  62500   baud speed (SCI / high-speed parameter mode)
-//#define USBBAUD 8    // prescaler for 115200   baud speed (USB) / bad choice, 3.5% signal error 
-#define USBBAUD 3    // prescaler for 250000   baud speed (USB) / good choice, 0.0% signal error (precisely zero)
+#define LOBAUD  127  // prescaler for 7812.5 baud speed (CCD-SCI / default low-speed diagnostic mode)
+#define HIBAUD  15   // prescaler for  62500 baud speed (SCI / high-speed parameter mode)
+#define USBBAUD 3    // prescaler for 250000 baud speed (USB)
 
 //#define ASCII_OUTPUT  // Choose this if you want a simple text output over USB for serial monitors
 #define PACKET_OUTPUT // Choose this if you want a byte-based packet output over USB for third-party applications
@@ -308,8 +307,9 @@ const uint16_t adc_supply_voltage = 500; // supply voltage multiplied by 100: 5.
 const uint16_t battery_rd1 = 120; // high resistor value in the divider (R19), multiplied by 10: 12 kOhm = 120
 const uint16_t battery_rd2 = 50;  // low resistor value in the divider (R20), multiplied by 10: 5 kOhm = 50
 uint16_t adc_max_value = 1023; // 1023 for 10-bit resolution
-uint16_t battery_adc = 0;   // Raw analog reading is stored here
-uint16_t battery_volts = 0; // Converted to battery voltage and multiplied by 100: 12.85V -> 1285
+uint16_t battery_adc = 0;   // raw analog reading is stored here
+uint16_t battery_volts = 0; // converted to battery voltage and multiplied by 100: 12.85V -> 1285
+uint8_t battery_volts_array[2]; // battery_volts is separated to byte components here
 
 bool connected_to_vehicle = false;
 uint8_t handshake_array[21];
@@ -318,6 +318,12 @@ uint32_t rx_led_ontime     = 0;
 uint32_t tx_led_ontime     = 0;
 uint32_t act_led_ontime    = 0;
 uint8_t led_blink_interval = 50; // milliseconds
+uint32_t current_millis_blink = 0;
+uint32_t previous_act_blink = 0;
+uint16_t act_led_heartbeat_interval = 1000; // milliseconds
+bool act_led_heartbeat_enabled = true;
+
+uint8_t mcu_millis[4]; // current time is stored here when "get_mcu_millis" is called
 
 
 // Interrupt Service Routines
@@ -401,7 +407,7 @@ Purpose:  called when the UART1 has received a character
     /* if the ccd-bus went idle recently then this byte is definitely an ID-byte */
     if (ccd_idle)
     {
-        lastRxError |= CCD_SOM; // add CCD_SOM (Start of Message) flag to the high byte
+        lastRxError |= CCD_SOM >> 8; // add CCD_SOM (Start of Message) flag to the high byte
         ccd_idle = false; // re-arm idle detection
         total_ccd_msg_count++; // increment message counter for statistic purposes
     } 
@@ -1576,24 +1582,18 @@ void ccd_clock_generator(uint8_t command)
     {
         case START:
         {
-            //Timer1.initialize(1); // 1us period for 1 MHz clock (2 MHz interrupt), 2 us = 500 kHz, 3 us = 333 kHz, 40 us = 25 kHz
-            //Timer1.pwm(CCD_CLOCK_PIN, 512);  // PB5 or D11 timer output pin (OC1A pin: Timer 1 / A output); 50% duty cycle: 0 - 1023, 512 = 50%
-            //Timer1.start();
-
             TCCR1A = 0;                        // clear register
             TCCR1B = 0;                        // clear register
             TCNT1  = 0;                        // clear counter
-            DDRB   = (1<<DDB5);                // set OC1A/PB5 as output
-            TCCR1A = (1<<COM1A0);              // toggle OC1A on compare match
+            DDRB   |= (1<<DDB5);               // set OC1A/PB5 as output
+            TCCR1A |= (1<<COM1A0);             // toggle OC1A on compare match
             OCR1A  = 7;                        // top value for counter, toggle after counting to 8 (0->7) = 2 MHz interrupt ( = 16 MHz clock frequency / 8)
-            TCCR1B = (1<<WGM12) | (1<<CS10);   // CTC mode, prescaler clock/1 (no prescaler)
+            TCCR1B |= (1<<WGM12) | (1<<CS10);  // CTC mode, prescaler clock/1 (no prescaler)
             
             break;
         }
         case STOP:
         {
-            //Timer1.stop();
-
             TCCR1A = 0;
             TCCR1B = 0;
             TCNT1  = 0;
@@ -1603,7 +1603,6 @@ void ccd_clock_generator(uint8_t command)
         }
         default:
         {
-            //Timer1.stop();
             break;
         }
     }
@@ -1695,6 +1694,23 @@ void configure_sci_bus(uint8_t bus, uint8_t configuration)
     }
 
 } // end of configure_sci_bus
+
+
+/*************************************************************************
+Function: get_mcu_millis()
+Purpose:  get elapsed milliseconds since power up/reset from microcontroller
+Note:     this function updates a global byte array which can be read from anywhere in the code
+**************************************************************************/
+void get_mcu_millis(uint8_t *_array)
+{
+    uint32_t mcu_current_millis = millis();
+
+    _array[0] = (mcu_current_millis >> 24) & 0xFF;
+    _array[1] = (mcu_current_millis >> 16) & 0xFF;
+    _array[2] = (mcu_current_millis >> 8) & 0xFF;
+    _array[3] = mcu_current_millis & 0xFF;
+    
+} // end of get_mcu_millis
 
 
 /*************************************************************************
@@ -1794,11 +1810,13 @@ void handle_usb_data(void)
         digitalWrite(RX_LED, LOW); // turn on RX LED
         rx_led_ontime = millis(); // save time when RX LED was turned on
 
-        // Find the first SYNC byte (0x3D)
-        // Peek the next available byte in the receive buffer
+        // Find the first SYNC byte (0x3D or 0x3E)
         command_timeout_start = millis(); // save current time
-        while (((usb_peek() & 0xFF) != PACKET_SYNC_BYTE) && (usb_rx_available() > 0) && !command_timeout_reached)
+        while ((usb_rx_available() > 0) && !command_timeout_reached)
         {
+            if ((usb_peek() & 0xFF) == PACKET_SYNC_BYTE) break; // the 0xFF mask gets rid of the high byte containing flags
+            if ((usb_peek() & 0xFF) == ASCII_SYNC_BYTE) break;
+            
             usb_getc(); // if it's not the SYNC byte then get rid of it (read into oblivion)
 
             // Determine if timeout has been reached
@@ -1811,734 +1829,727 @@ void handle_usb_data(void)
         }
 
         if (usb_rx_available() == 0) return; // exit if there's no data left
-
-        // If the next byte is the SYNC byte then continue here.
-        // Read and save 3 bytes into local variables (one SYNC and two LENGTH bytes).
-        // All UART reads are masked with 0xFF because the ring buffer contains words (two bytes).
-        // MSB contains UART flags, LSB contains the actual data byte. The "& 0xFF" mask gets rid of the MSB, effectively zeroing them out.
-        // TODO: it might be a good idea to check those flags if the data byte is correct or not; now just assume evereything is fine.
-        sync      = usb_getc() & 0xFF;
-        length_hb = usb_getc() & 0xFF;
-        length_lb = usb_getc() & 0xFF;
-
-        // Calculate how much more bytes should we read.
-        bytes_to_read = (length_hb << 8) + length_lb + 1; // +1 CHECKSUM byte
-
-        // Maximum packet length is 1024 bytes.
-        // Can't accept larger packets so if that's the case the function needs to exit after sending an error packet back to the laptop.
-        // Also can't accept packet with less than 2 bytes length (datacode and subdatacode is always needed).
-        if (((bytes_to_read - 3) > MAX_PAYLOAD_LENGTH) || ((bytes_to_read - 1) < 2))
+        
+        sync = usb_getc() & 0xFF; // read one sync byte
+        
+        if (sync == PACKET_SYNC_BYTE) // byte based commincation
         {
-            send_usb_packet(from_usb, to_usb, ok_error, error_length_invalid_value, err, 1);
-            return; // exit, let the loop call this function again
-        }
-
-        // Calculate the exact size of the payload
-        payload_length = bytes_to_read - 3; // in this case we have to be careful not to count data code byte, sub-data code byte and checksum byte
-
-        // Do not let this variable sink below zero
-        if (payload_length < 0) payload_length = 0; // !!!
-
-        // Wait here until all of the expected bytes are received or timeout occurs
-        command_timeout_start = millis();
-        while ((usb_rx_available() < bytes_to_read) && !command_timeout_reached) 
-        {
-            if (millis() - command_timeout_start > command_timeout) command_timeout_reached = true;
-        }
-
-        // Check if timeout has been reached, if not then continue processing stuff!
-        if (command_timeout_reached)
-        {
-            send_usb_packet(from_usb, to_usb, ok_error, error_packet_timeout_occured, err, 1);
-            return; // exit, let the loop call this function again
-        }
-
-        // There's at least one full command in the buffer now.
-        // Go ahead and read one DATA CODE byte (next in the row).
-        datacode = usb_getc() & 0xFF;
-
-        // Read one SUB-DATA CODE byte that's following.
-        subdatacode = usb_getc() & 0xFF;
-
-        // Make some space for the payload bytes
-        uint8_t cmd_payload[payload_length];
-
-        // If the payload length is greater than zero then read those bytes too
-        if (payload_length > 0)
-        {
-            // Read all the PAYLOAD bytes
-            for (uint16_t i = 0; i < payload_length; i++)
+            length_hb = usb_getc() & 0xFF; // read first length byte
+            length_lb = usb_getc() & 0xFF; // read second length byte
+    
+            // Calculate how much more bytes should we read by combining the two length bytes into a word.
+            bytes_to_read = (length_hb << 8) + length_lb + 1; // +1 CHECKSUM byte
+    
+            // Maximum packet length is 1024 bytes.
+            // Can't accept larger packets so if that's the case the function needs to exit after sending an error packet back to the laptop.
+            // Also can't accept packet with less than 2 bytes length (datacode and subdatacode is always needed).
+            if (((bytes_to_read - 3) > MAX_PAYLOAD_LENGTH) || ((bytes_to_read - 1) < 2))
             {
-                cmd_payload[i] = usb_getc() & 0xFF;
+                send_usb_packet(from_usb, to_usb, ok_error, error_length_invalid_value, err, 1);
+                return; // exit, let the loop call this function again
             }
-            // And set flag so the rest of the code knows.
-            payload_bytes = true;
-        }
-        // Set flag if there are no PAYLOAD bytes available.
-        else payload_bytes = false;
-
-        // Read last CHECKSUM byte.
-        checksum = usb_getc() & 0xFF;
-
-        // Verify the received packet by calculating what the checksum byte should be.
-        calculated_checksum = length_hb + length_lb + datacode + subdatacode; // add the first few bytes together manually
-
-        // Add payload bytes here together if present
-        if (payload_bytes)
-        {
-            for (uint16_t j = 0; j < payload_length; j++)
+    
+            // Calculate the exact size of the payload
+            payload_length = bytes_to_read - 3; // in this case we have to be careful not to count data code byte, sub-data code byte and checksum byte
+    
+            // Do not let this variable sink below zero
+            if (payload_length < 0) payload_length = 0; // !!!
+    
+            // Wait here until all of the expected bytes are received or timeout occurs
+            command_timeout_start = millis();
+            while ((usb_rx_available() < bytes_to_read) && !command_timeout_reached) 
             {
-                calculated_checksum += cmd_payload[j];
+                if (millis() - command_timeout_start > command_timeout) command_timeout_reached = true;
             }
-        }
-
-        // Keep the low byte of the result
-        calculated_checksum = calculated_checksum & 0xFF;
-
-        // Compare calculated checksum to the received CHECKSUM byte
-        if (calculated_checksum != checksum) // if they are not the same
-        {
-            // Echo back the full received packet in the payload section for further investigation
-            uint16_t temp_packet_length = (length_hb << 8) + length_lb + 4;
-            uint8_t temp_packet[temp_packet_length];
-            
-            // Start assembling the debug-packet by manually filling the first few slots
-            temp_packet[0] = sync; // add received SYNC byte (0x3D by default)
-            temp_packet[1] = length_hb; // add received LENGTH high byte
-            temp_packet[2] = length_lb; // add received LENGTH low byte
-            temp_packet[3] = datacode; // add received DATA CODE byte
-            temp_packet[4] = subdatacode; // add received SUB-DATA CODE byte
-            
-            if (payload_bytes)
+    
+            // Check if timeout has been reached, if not then continue processing stuff!
+            if (command_timeout_reached)
             {
+                send_usb_packet(from_usb, to_usb, ok_error, error_packet_timeout_occured, err, 1);
+                return; // exit, let the loop call this function again
+            }
+    
+            // There's at least one full command in the buffer now.
+            // Go ahead and read one DATA CODE byte (next in the row).
+            datacode = usb_getc() & 0xFF;
+    
+            // Read one SUB-DATA CODE byte that's following.
+            subdatacode = usb_getc() & 0xFF;
+    
+            // Make some space for the payload bytes
+            uint8_t cmd_payload[payload_length];
+    
+            // If the payload length is greater than zero then read those bytes too
+            if (payload_length > 0)
+            {
+                // Read all the PAYLOAD bytes
                 for (uint16_t i = 0; i < payload_length; i++)
                 {
-                    temp_packet[5 + i] = cmd_payload[i]; // add received PAYLOAD bytes (if any)
+                    cmd_payload[i] = usb_getc() & 0xFF;
+                }
+                // And set flag so the rest of the code knows.
+                payload_bytes = true;
+            }
+            // Set flag if there are no PAYLOAD bytes available.
+            else payload_bytes = false;
+    
+            // Read last CHECKSUM byte.
+            checksum = usb_getc() & 0xFF;
+    
+            // Verify the received packet by calculating what the checksum byte should be.
+            calculated_checksum = length_hb + length_lb + datacode + subdatacode; // add the first few bytes together manually
+    
+            // Add payload bytes here together if present
+            if (payload_bytes)
+            {
+                for (uint16_t j = 0; j < payload_length; j++)
+                {
+                    calculated_checksum += cmd_payload[j];
                 }
             }
-
-            temp_packet[temp_packet_length - 1] = checksum; // add received CHECKSUM byte
-            send_usb_packet(from_usb, to_usb, ok_error, error_checksum_invalid_value, temp_packet, temp_packet_length);
-            return; // exit, let the loop call this function again
-        }
-
-        // If everything is good then continue processing the packet...
-        // Find out the source and the target of the packet by examining the DATA CODE byte's high nibble (upper 4 bits).
-        uint8_t source = (datacode >> 6) & 0x03; // keep the upper two bits
-        uint8_t target = (datacode >> 4) & 0x03; // keep the lower two bits
     
-        // Extract DC command value from the low nibble (lower 4 bits)
-        uint8_t dc_command = datacode & 0x0F;
+            // Keep the low byte of the result
+            calculated_checksum = calculated_checksum & 0xFF;
     
-        // Source isn't really checked here, the packet must come from an external computer...
-        switch (target) // Evaluate target value.
-        {
-            case to_usb: // 0x00 - Scanner is the target.
+            // Compare calculated checksum to the received CHECKSUM byte
+            if (calculated_checksum != checksum) // if they are not the same
             {
-                switch (dc_command) // Evaluate DC command
+                // Echo back the full received packet in the payload section for further investigation
+                uint16_t temp_packet_length = (length_hb << 8) + length_lb + 4;
+                uint8_t temp_packet[temp_packet_length];
+                
+                // Start assembling the debug-packet by manually filling the first few slots
+                temp_packet[0] = sync; // add received SYNC byte (0x3D by default)
+                temp_packet[1] = length_hb; // add received LENGTH high byte
+                temp_packet[2] = length_lb; // add received LENGTH low byte
+                temp_packet[3] = datacode; // add received DATA CODE byte
+                temp_packet[4] = subdatacode; // add received SUB-DATA CODE byte
+                
+                if (payload_bytes)
                 {
-                    case reboot: // 0x00 - Reboot scanner.
+                    for (uint16_t i = 0; i < payload_length; i++)
                     {
-                        // Send REBOOT packet back first to acknowledge the scanner has received the command
-                        send_usb_packet(from_usb, to_usb, reboot, ok, ack, 1);
-
-                        // Enter into an infinite loop. Watchdog timer doesn't get reset this way so it restarts the program eventually.
-                        while(true);
-                        break; // not necessary
+                        temp_packet[5 + i] = cmd_payload[i]; // add received PAYLOAD bytes (if any)
                     }
-                    case handshake: // 0x01 - Handshake request.
+                }
+    
+                temp_packet[temp_packet_length - 1] = checksum; // add received CHECKSUM byte
+                send_usb_packet(from_usb, to_usb, ok_error, error_checksum_invalid_value, temp_packet, temp_packet_length);
+                return; // exit, let the loop call this function again
+            }
+    
+            // If everything is good then continue processing the packet...
+            // Find out the source and the target of the packet by examining the DATA CODE byte's high nibble (upper 4 bits).
+            uint8_t source = (datacode >> 6) & 0x03; // keep the upper two bits
+            uint8_t target = (datacode >> 4) & 0x03; // keep the lower two bits
+        
+            // Extract DC command value from the low nibble (lower 4 bits)
+            uint8_t dc_command = datacode & 0x0F;
+        
+            // Source isn't really checked here, the packet must come from an external computer...
+            switch (target) // Evaluate target value.
+            {
+                case to_usb: // 0x00 - Scanner is the target.
+                {
+                    switch (dc_command) // Evaluate DC command
                     {
-                        //reset_diagnostic_comms();
-                        send_usb_packet(from_usb, to_usb, handshake, ok, handshake_array, 21);
-                        //scanner_connected = true;
-                        break;
-                    }
-                    case status: // 0x02 - Scanner status report request.
-                    {
-                        // Gather status data and send it back... not yet implemented
-                        send_usb_packet(from_usb, to_usb, status, ok, ack, 1); // the payload should contain all information but now it's just an ACK byte (0x00)
-                        break;
-                    }
-                    case settings: // 0x03 - Change scanner settings.
-                    {
-                        switch (subdatacode) // Evaluate sub-data code byte
+                        case reboot: // 0x00 - Reboot scanner.
                         {
-                            case read_settings: // 0x01 - Read scanner settings directly from EEPROM
-                            {
-                                send_usb_packet(from_usb, to_usb, settings, read_settings, ack, 1); // acknowledge
-                                break;
-                            }
-                            case write_settings: // 0x02 - Write scanner settings directly to EEPROM (values in PAYLOAD) (warning!)
-                            {
-                                send_usb_packet(from_usb, to_usb, settings, write_settings, ack, 1); // acknowledge with a zero byte in payload
-                                break;
-                            }
-                            case enable_ccd_bus: // 0x03 - Enable CCD-bus communication
-                            {
-                                ccd_enabled = true;
-                                send_usb_packet(from_usb, to_usb, settings, enable_ccd_bus, ack, 1); // acknowledge with a zero byte in payload
-                                break;
-                            }
-                            case disable_ccd_bus: // 0x04 - Disable CCD-bus communication
-                            {
-                                ccd_enabled = false;
-                                //stop_clock_generator();
-                
-                                send_usb_packet(from_usb, to_usb, settings, disable_ccd_bus, ack, 1); // acknowledge with a zero byte in payload
-                                break;
-                            }
-                            case enable_sci_bus: // 0x05 - Enable SCI-bus communication
-                            {
-                                //init_sci_bus();
-                                sci_enabled = true;
-                                //select_sci_bus_target(cmd_payload[0]); // payload contains which module to connect by default: 0x01 if PCM, 0x02 if TCM
-                                send_usb_packet(from_usb, to_usb, settings, enable_sci_bus, cmd_payload, 1); // acknowledge with 1 byte payload, that is the selected bus
-                                break;
-                            }
-                            case disable_sci_bus: // 0x06 - Disable SCI-bus communication
-                            {
-                                sci_enabled = false;
-                                //select_sci_bus_target(NON);
-                                send_usb_packet(from_usb, to_usb, settings, disable_sci_bus, cmd_payload, 1); // acknowledge with 1 byte payload, that is none of the buses
-                                break;
-                            }
-                            case enable_sci_bus_high_speed: // 0x13 - Enable SCI-bus high speed mode (62500 baud)
-                            {
-                                // The SCI-bus command 0x12 has to be sent previously, this is just an UART-speed changer case
-                                // The following speed change will break all ongoing communication
-                                //uart1_init(SCI_HI_BAUD); // configure UART1 to 62500 baud speed (62500 kbps high speed mode)
-                                //while (uart1_available() > 0) uart1_getc(); // clear buffer
-                                //sci_bus_high_speed = true; // set flag
-                                send_usb_packet(from_usb, to_usb, settings, enable_sci_bus_high_speed, ack, 1); // acknowledge
-                                break;
-                            }
-                            case disable_sci_bus_high_speed: // 0x14 - Disable SCI-bus high speed mode (7812.5 baud)
-                            {
-                                // The SCI-bus command 0xFE has to be sent previously, this is just an UART-speed changer case
-                                // The following speed change will break all ongoing communication
-                                //while (uart1_available() > 0) uart1_getc(); // clear buffer before exiting high speed mode
-                                //uart1_init(SCI_CCD_LO_SPEED); // configure UART1 to 7812.5 baud speed (7812.5 kbps default SCI-bus speed)
-                                //sci_bus_high_speed = false; // set flag
-                                send_usb_packet(from_usb, to_usb, settings, disable_sci_bus_high_speed, ack, 1); // acknowledge
-                                break;
-                            }
-                            case enable_act_led: // 0x1E - Enable ACT LED (action, blue color)
-                            {
-                                send_usb_packet(from_usb, to_usb, settings, enable_act_led, ack, 1);
-                                break;
-                            }
-                            case disable_act_led: // 0x1F - Disable ACT LED (action, blue color)
-                            {
-                                send_usb_packet(from_usb, to_usb, settings, disable_act_led, ack, 1);
-                                break;
-                            }
-                            default: // Other values are not used
-                            {
-                                send_usb_packet(from_usb, to_usb, settings, error_subdatacode_invalid_value, err, 1);
-                                break;
-                            }
+                            // Send REBOOT packet back first to acknowledge the scanner has received the command
+                            send_usb_packet(from_usb, to_usb, reboot, ok, ack, 1);
+    
+                            // Enter into an infinite loop. Watchdog timer doesn't get reset this way so it restarts the program eventually.
+                            while(true);
+                            break; // not necessary
                         }
-                        break;
-                    }
-                    case request: // 0x04 - General request from the scanner
-                    {
-                        switch (subdatacode)  // Evaluate sub-data code byte
+                        case handshake: // 0x01 - Handshake request.
                         {
-                            case firmware_version: // 0x01 - Scanner firmware version
+                            //reset_diagnostic_comms();
+                            send_usb_packet(from_usb, to_usb, handshake, ok, handshake_array, 21);
+                            //scanner_connected = true;
+                            break;
+                        }
+                        case status: // 0x02 - Scanner status report request.
+                        {
+                            // Gather status data and send it back... not yet implemented
+                            send_usb_packet(from_usb, to_usb, status, ok, ack, 1); // the payload should contain all information but now it's just an ACK byte (0x00)
+                            break;
+                        }
+                        case settings: // 0x03 - Change scanner settings.
+                        {
+                            switch (subdatacode) // Evaluate sub-data code byte
                             {
-                                uint8_t fw_value[5];
-                                fw_value[0] = (FW >> 32) & 0xFF;
-                                fw_value[1] = (FW >> 24) & 0xFF;
-                                fw_value[2] = (FW >> 16) & 0xFF;
-                                fw_value[3] = (FW >> 8) & 0xFF;
-                                fw_value[4] = FW & 0xFF;
-                                
-                                
-                                send_usb_packet(from_usb, to_usb, response, firmware_version, fw_value, 5);
-                                break;
+                                case read_settings: // 0x01 - Read scanner settings directly from EEPROM
+                                {
+                                    send_usb_packet(from_usb, to_usb, settings, read_settings, ack, 1); // acknowledge
+                                    break;
+                                }
+                                case write_settings: // 0x02 - Write scanner settings directly to EEPROM (values in PAYLOAD) (warning!)
+                                {
+                                    send_usb_packet(from_usb, to_usb, settings, write_settings, ack, 1); // acknowledge with a zero byte in payload
+                                    break;
+                                }
+                                case enable_ccd_bus: // 0x03 - Enable CCD-bus communication
+                                {
+                                    ccd_enabled = true;
+                                    send_usb_packet(from_usb, to_usb, settings, enable_ccd_bus, ack, 1); // acknowledge with a zero byte in payload
+                                    break;
+                                }
+                                case disable_ccd_bus: // 0x04 - Disable CCD-bus communication
+                                {
+                                    ccd_enabled = false;
+                                    //stop_clock_generator();
+                    
+                                    send_usb_packet(from_usb, to_usb, settings, disable_ccd_bus, ack, 1); // acknowledge with a zero byte in payload
+                                    break;
+                                }
+                                case enable_sci_bus: // 0x05 - Enable SCI-bus communication
+                                {
+                                    //init_sci_bus();
+                                    sci_enabled = true;
+                                    //select_sci_bus_target(cmd_payload[0]); // payload contains which module to connect by default: 0x01 if PCM, 0x02 if TCM
+                                    send_usb_packet(from_usb, to_usb, settings, enable_sci_bus, cmd_payload, 1); // acknowledge with 1 byte payload, that is the selected bus
+                                    break;
+                                }
+                                case disable_sci_bus: // 0x06 - Disable SCI-bus communication
+                                {
+                                    sci_enabled = false;
+                                    //select_sci_bus_target(NON);
+                                    send_usb_packet(from_usb, to_usb, settings, disable_sci_bus, cmd_payload, 1); // acknowledge with 1 byte payload, that is none of the buses
+                                    break;
+                                }
+                                case enable_sci_bus_high_speed: // 0x13 - Enable SCI-bus high speed mode (62500 baud)
+                                {
+                                    // The SCI-bus command 0x12 has to be sent previously, this is just an UART-speed changer case
+                                    // The following speed change will break all ongoing communication
+                                    //uart1_init(SCI_HI_BAUD); // configure UART1 to 62500 baud speed (62500 kbps high speed mode)
+                                    //while (uart1_available() > 0) uart1_getc(); // clear buffer
+                                    //sci_bus_high_speed = true; // set flag
+                                    send_usb_packet(from_usb, to_usb, settings, enable_sci_bus_high_speed, ack, 1); // acknowledge
+                                    break;
+                                }
+                                case disable_sci_bus_high_speed: // 0x14 - Disable SCI-bus high speed mode (7812.5 baud)
+                                {
+                                    // The SCI-bus command 0xFE has to be sent previously, this is just an UART-speed changer case
+                                    // The following speed change will break all ongoing communication
+                                    //while (uart1_available() > 0) uart1_getc(); // clear buffer before exiting high speed mode
+                                    //uart1_init(SCI_CCD_LO_SPEED); // configure UART1 to 7812.5 baud speed (7812.5 kbps default SCI-bus speed)
+                                    //sci_bus_high_speed = false; // set flag
+                                    send_usb_packet(from_usb, to_usb, settings, disable_sci_bus_high_speed, ack, 1); // acknowledge
+                                    break;
+                                }
+                                case enable_act_led: // 0x1E - Enable ACT LED (action, blue color)
+                                {
+                                    send_usb_packet(from_usb, to_usb, settings, enable_act_led, ack, 1);
+                                    break;
+                                }
+                                case disable_act_led: // 0x1F - Disable ACT LED (action, blue color)
+                                {
+                                    send_usb_packet(from_usb, to_usb, settings, disable_act_led, ack, 1);
+                                    break;
+                                }
+                                default: // Other values are not used
+                                {
+                                    send_usb_packet(from_usb, to_usb, settings, error_subdatacode_invalid_value, err, 1);
+                                    break;
+                                }
                             }
-                            case read_int_eeprom: // 0x02 - Read internal EEPROM in chunks (size in PAYLOAD)
+                            break;
+                        }
+                        case request: // 0x04 - General request from the scanner
+                        {
+                            switch (subdatacode)  // Evaluate sub-data code byte
                             {
-                                send_usb_packet(from_usb, to_usb, response, read_int_eeprom, ack, 1);
-                                break;
-                            }
-                            case read_ext_eeprom: // 0x03 - Read external EEPROM in chunks (size in PAYLOAD)
-                            {
-                                send_usb_packet(from_usb, to_usb, response, read_ext_eeprom, ack, 1);
-                                break;
-                            }
-                            case write_int_eeprom: // 0x04 - Write internal EEPROM in chunks (value(s) in PAYLOAD)
-                            {
-                                send_usb_packet(from_usb, to_usb, response, write_int_eeprom, ack, 1);
-                                break;
-                            }
-                            case write_ext_eeprom: // 0x05 - Write external EEPROM in chunks (value(s) in PAYLOAD)
-                            {
-                                send_usb_packet(from_usb, to_usb, response, write_ext_eeprom, ack, 1);
-                                break;
-                            }
-                            case scan_ccd_bus_modules: // 0x06 - Scan CCD-bus modules
-                            {
-//                                scan_ccd = true;
-//                
-//                                if (payload_length == 2) // start-end addresses in payload, default timeout (200 ms)
-//                                {
-//                                    ccd_scan_start_addr = cmd_payload[0];
-//                                    ccd_scan_end_addr = cmd_payload[1];
-//                                    ccd_scan_request_timeout = 200;
-//                                }
-//                                else if (payload_length == 4) // start-end addresses and timeout in payload
-//                                {
-//                                    ccd_scan_start_addr = cmd_payload[0];
-//                                    ccd_scan_end_addr = cmd_payload[1];
-//                                    ccd_scan_request_timeout = (cmd_payload[2] << 8) | cmd_payload[3];
-//                                }
-//                                else // no payload, default settings
-//                                {
-//                                    ccd_scan_start_addr = 0x00;
-//                                    ccd_scan_end_addr = 0xFE;
-//                                    ccd_scan_request_timeout = 200;
-//                                }
-                
-                                send_usb_packet(from_usb, to_usb, response, scan_ccd_bus_modules, ack, 1);
-                                break;
-                            }
-                            case mcu_counter_value: // 0x07 - MCU counter value (milliseconds elapsed)
-                            {
-                                // How many milliseconds passed since power on?
-                                uint32_t mcu_millis = millis();
-                
-                                // Create a local array of four bytes.
-                                uint8_t mcu_millis_array[4];
-                
-                                // Break mcu_millis qword into its byte components (32bit -> 4x8bit).
-                                mcu_millis_array[0] = (mcu_millis >> 24) & 0xFF;
-                                mcu_millis_array[1] = (mcu_millis >> 16) & 0xFF;
-                                mcu_millis_array[2] = (mcu_millis >> 8) & 0xFF;
-                                mcu_millis_array[3] = mcu_millis & 0xFF;
-                
-                                // Send the packet back to the laptop
-                                send_usb_packet(from_usb, to_usb, response, mcu_counter_value, mcu_millis_array, 4);
-                                break;
-                            }                 
-                            case 0xFA: // debug: high speed sci-bus memory dump for cruise system analysis
-                            {
-//                                // command should look like this: 33 00 1C 14 FA F4 0A 0B 0C 0D 0E 11 12 13 14 16 17 1B 1E 1F 27 28 2F 35 36 37 3B 3E 3F 42 DE 21
-//                                // payload being: F4 0A 0B 0C 0D 0E 11 12 13 14 16 17 1B 1E 1F 27 28 2F 35 36 37 3B 3E 3F 42 DE
-//                                // first byte is always the memory pointer address and the rest are the requested memory location, let's make an array of them
-//                
-//                                uint16_t result_length = (2*payload_length) - 1 + 4;
-//                                uint8_t result[result_length];
-//                                uint32_t timestamp = millis();
-//                                bool sci_addr_accepted = false;
-//                                      
-//                                // first 4 bytes are timestamp bytes (milliseconds elapsed since system start)
-//                                result[0] = (timestamp >> 24) & 0xFF;
-//                                result[1] = (timestamp >> 16) & 0xFF;
-//                                result[2] = (timestamp >> 8) & 0xFF;
-//                                result[3] = timestamp & 0xFF;
-//                
-//                                // 5th byte is the current SCI-bus memory pointer
-//                                result[4] = 0xF4; // here are most of the interesting data
-//                
-//                                // cycle through all of the memory location, copy them too and leave a blank spaces each after another
-//                                for (uint8_t i = 1; i < payload_length; i++)
-//                                {
-//                                  result[(2*i) - 1 + 4] = cmd_payload[i];
-//                                }
-//                
-//                                // now that we have a half completed result array let's ask the PCM for the values of these memory locations
-//                                for (uint8_t i = 1; i < payload_length; i++) // start from 1 instead of 0 to skip the first memory area selector byte
-//                                {
-//                                    // Save the current number of bytes in the receive buffer (most likely 0)
-//                                    uint8_t numbytes = uart1_available();
-//                  
-//                                    // Put one/next byte to the SCI-bus
-//                                    uart1_putc(cmd_payload[i]); // addresses are taken from the cmd_payload array directly
-//                  
-//                                    // Wait for answer or timeout
-//                                    bool timeout_reached = false;
-//                                    uint32_t timeout_start = millis();
-//                  
-//                                    // Unlike CCD-bus, SCI-bus needs a little bit of delay between bytes,
-//                                    // so we check here if the PCM/TCM has echoed the byte back.
-//                                    while ((numbytes >= uart1_available()) && !timeout_reached)
-//                                    {
-//                                        // Check the timeout condition only, the received byte is stored automatically in the ringbuffer
-//                                        if (millis() - timeout_start > SCI_INTERMESSAGE_RESPONSE_DELAY) timeout_reached = true;
-//                                    }
-//                  
-//                                    // If the SCI-bus responds in the given timeframe then save the value in the array's blank spaces
-//                                    if (!timeout_reached)
-//                                    {
-//                                        // save the received bytes to the result array's blank spaces
-//                                        result[2*i + 4] = uart1_getc() & 0xFF;
-//                                    }
-//                                    else // if no response then save 0xFF as a result
-//                                    {
-//                                        timeout_reached = false; // re-arm, don't care if true or false
-//                                        result[2*i + 4] = 0xFF; // in case of timeout the result is always 0xFF
-//                                    }
-//                                }
-                
-                                // send result back to laptop, note that the subdatacode is the request command byte (0xFA)
-                                //send_usb_packet(from_usb, to_usb, debug, 0xF4, result, result_length);
+                                case firmware_version: // 0x01 - Scanner firmware version
+                                {
+                                    uint8_t fw_value[5];
+                                    fw_value[0] = (FW >> 32) & 0xFF;
+                                    fw_value[1] = (FW >> 24) & 0xFF;
+                                    fw_value[2] = (FW >> 16) & 0xFF;
+                                    fw_value[3] = (FW >> 8) & 0xFF;
+                                    fw_value[4] = FW & 0xFF;
+                                    
+                                    
+                                    send_usb_packet(from_usb, to_usb, response, firmware_version, fw_value, 5);
+                                    break;
+                                }
+                                case read_int_eeprom: // 0x02 - Read internal EEPROM in chunks (size in PAYLOAD)
+                                {
+                                    send_usb_packet(from_usb, to_usb, response, read_int_eeprom, ack, 1);
+                                    break;
+                                }
+                                case read_ext_eeprom: // 0x03 - Read external EEPROM in chunks (size in PAYLOAD)
+                                {
+                                    send_usb_packet(from_usb, to_usb, response, read_ext_eeprom, ack, 1);
+                                    break;
+                                }
+                                case write_int_eeprom: // 0x04 - Write internal EEPROM in chunks (value(s) in PAYLOAD)
+                                {
+                                    send_usb_packet(from_usb, to_usb, response, write_int_eeprom, ack, 1);
+                                    break;
+                                }
+                                case write_ext_eeprom: // 0x05 - Write external EEPROM in chunks (value(s) in PAYLOAD)
+                                {
+                                    send_usb_packet(from_usb, to_usb, response, write_ext_eeprom, ack, 1);
+                                    break;
+                                }
+                                case scan_ccd_bus_modules: // 0x06 - Scan CCD-bus modules
+                                {
+    //                                scan_ccd = true;
+    //                
+    //                                if (payload_length == 2) // start-end addresses in payload, default timeout (200 ms)
+    //                                {
+    //                                    ccd_scan_start_addr = cmd_payload[0];
+    //                                    ccd_scan_end_addr = cmd_payload[1];
+    //                                    ccd_scan_request_timeout = 200;
+    //                                }
+    //                                else if (payload_length == 4) // start-end addresses and timeout in payload
+    //                                {
+    //                                    ccd_scan_start_addr = cmd_payload[0];
+    //                                    ccd_scan_end_addr = cmd_payload[1];
+    //                                    ccd_scan_request_timeout = (cmd_payload[2] << 8) | cmd_payload[3];
+    //                                }
+    //                                else // no payload, default settings
+    //                                {
+    //                                    ccd_scan_start_addr = 0x00;
+    //                                    ccd_scan_end_addr = 0xFE;
+    //                                    ccd_scan_request_timeout = 200;
+    //                                }
+                    
+                                    send_usb_packet(from_usb, to_usb, response, scan_ccd_bus_modules, ack, 1);
+                                    break;
+                                }
+                                case mcu_counter_value: // 0x07 - MCU counter value (milliseconds elapsed)
+                                {
+                                    get_mcu_millis(mcu_millis); // this function updates the global byte array "mcu_millis" with the current time
+                                    
+                                    // Send the packet back to the laptop
+                                    send_usb_packet(from_usb, to_usb, response, mcu_counter_value, mcu_millis, 4);
+                                    break;
+                                }                 
+                                case 0xFA: // debug: high speed sci-bus memory dump for cruise system analysis
+                                {
+    //                                // command should look like this: 33 00 1C 14 FA F4 0A 0B 0C 0D 0E 11 12 13 14 16 17 1B 1E 1F 27 28 2F 35 36 37 3B 3E 3F 42 DE 21
+    //                                // payload being: F4 0A 0B 0C 0D 0E 11 12 13 14 16 17 1B 1E 1F 27 28 2F 35 36 37 3B 3E 3F 42 DE
+    //                                // first byte is always the memory pointer address and the rest are the requested memory location, let's make an array of them
+    //                
+    //                                uint16_t result_length = (2*payload_length) - 1 + 4;
+    //                                uint8_t result[result_length];
+    //                                uint32_t timestamp = millis();
+    //                                bool sci_addr_accepted = false;
+    //                                      
+    //                                // first 4 bytes are timestamp bytes (milliseconds elapsed since system start)
+    //                                result[0] = (timestamp >> 24) & 0xFF;
+    //                                result[1] = (timestamp >> 16) & 0xFF;
+    //                                result[2] = (timestamp >> 8) & 0xFF;
+    //                                result[3] = timestamp & 0xFF;
+    //                
+    //                                // 5th byte is the current SCI-bus memory pointer
+    //                                result[4] = 0xF4; // here are most of the interesting data
+    //                
+    //                                // cycle through all of the memory location, copy them too and leave a blank spaces each after another
+    //                                for (uint8_t i = 1; i < payload_length; i++)
+    //                                {
+    //                                  result[(2*i) - 1 + 4] = cmd_payload[i];
+    //                                }
+    //                
+    //                                // now that we have a half completed result array let's ask the PCM for the values of these memory locations
+    //                                for (uint8_t i = 1; i < payload_length; i++) // start from 1 instead of 0 to skip the first memory area selector byte
+    //                                {
+    //                                    // Save the current number of bytes in the receive buffer (most likely 0)
+    //                                    uint8_t numbytes = uart1_available();
+    //                  
+    //                                    // Put one/next byte to the SCI-bus
+    //                                    uart1_putc(cmd_payload[i]); // addresses are taken from the cmd_payload array directly
+    //                  
+    //                                    // Wait for answer or timeout
+    //                                    bool timeout_reached = false;
+    //                                    uint32_t timeout_start = millis();
+    //                  
+    //                                    // Unlike CCD-bus, SCI-bus needs a little bit of delay between bytes,
+    //                                    // so we check here if the PCM/TCM has echoed the byte back.
+    //                                    while ((numbytes >= uart1_available()) && !timeout_reached)
+    //                                    {
+    //                                        // Check the timeout condition only, the received byte is stored automatically in the ringbuffer
+    //                                        if (millis() - timeout_start > SCI_INTERMESSAGE_RESPONSE_DELAY) timeout_reached = true;
+    //                                    }
+    //                  
+    //                                    // If the SCI-bus responds in the given timeframe then save the value in the array's blank spaces
+    //                                    if (!timeout_reached)
+    //                                    {
+    //                                        // save the received bytes to the result array's blank spaces
+    //                                        result[2*i + 4] = uart1_getc() & 0xFF;
+    //                                    }
+    //                                    else // if no response then save 0xFF as a result
+    //                                    {
+    //                                        timeout_reached = false; // re-arm, don't care if true or false
+    //                                        result[2*i + 4] = 0xFF; // in case of timeout the result is always 0xFF
+    //                                    }
+    //                                }
+                    
+                                    // send result back to laptop, note that the subdatacode is the request command byte (0xFA)
+                                    //send_usb_packet(from_usb, to_usb, debug, 0xF4, result, result_length);
+                                          
+                                    break;
+                                }
                                       
-                                break;
+                                case 0xFB: // debug: high speed sci-bus memory area dump, WARNING: this is not loop-safe, the program will freeze until this "case" is done
+                                {
+    //                                // prepare result array
+    //                                uint8_t result[256];
+    //                                bool sci_addr_accepted = false;
+    //                
+    //                                // make sure the address selector command is accepted by the PCM
+    //                                // it has to echo back the address byte ($F2, $F3, $F4...) that is the first payload byte
+    //                                while (!sci_addr_accepted)
+    //                                {
+    //                                    // Save the current number of bytes in the receive buffer (most likely 0)
+    //                                    uint8_t numbytes = uart1_available();
+    //                  
+    //                                    // Put the address selector byte to the SCI-bus (first byte of payload section)
+    //                                    uart1_putc(cmd_payload[0]);
+    //                  
+    //                                    // Wait for answer or timeout
+    //                                    bool timeout_reached = false;
+    //                                    uint32_t timeout_start = millis();
+    //                                    while ((numbytes >= uart1_available()) && !timeout_reached)
+    //                                    {
+    //                                        // Check the timeout condition only, the received byte is stored automatically in the ringbuffer
+    //                                        if (millis() - timeout_start > SCI_INTERMESSAGE_RESPONSE_DELAY) timeout_reached = true;
+    //                                    }
+    //                  
+    //                                    if (timeout_reached)
+    //                                    {
+    //                                        timeout_reached = false; // re-arm, don't care if true or false
+    //                                        break; // exit from this "case" if the SCI-bus won't respond
+    //                                    }
+    //                  
+    //                                    uint8_t dummy2 = uart1_getc() & 0xFF; // get the echo from the SCI-bus
+    //                                    if (dummy2 == cmd_payload[0]) sci_addr_accepted = true; // exit this loop if the proper byte has been received
+    //                                }
+    //                
+    //                                // now cycle through every possible address one time only!
+    //                                // skip the last 16 bytes (they are most likely area selector bytes)
+    //                                for (uint8_t i = 0; i < 0xF0; i++)
+    //                                {
+    //                                    // Save the current number of bytes in the receive buffer (most likely 0)
+    //                                    uint8_t numbytes = uart1_available();
+    //                  
+    //                                    // Put one/next byte to the SCI-bus
+    //                                    uart1_putc(i); // address is the loop-variable itself, so this line is okay
+    //                  
+    //                                    // Wait for answer or timeout
+    //                                    bool timeout_reached = false;
+    //                                    uint32_t timeout_start = millis();
+    //                  
+    //                                    // Unlike CCD-bus, SCI-bus needs a little bit of delay between bytes,
+    //                                    // so we check here if the PCM/TCM has echoed the byte back.
+    //                                    while ((numbytes >= uart1_available()) && !timeout_reached)
+    //                                    {
+    //                                        // Check the timeout condition only, the received byte is stored automatically in the ringbuffer
+    //                                        if (millis() - timeout_start > SCI_INTERMESSAGE_RESPONSE_DELAY) timeout_reached = true;
+    //                                    }
+    //                  
+    //                                    // If the SCI-bus doesn't respond in the given timeframe then save an $FF byte in the array
+    //                                    if (timeout_reached)
+    //                                    {
+    //                                        timeout_reached = false; // re-arm, don't care if true or false
+    //                                        result[i] = 0xFF; 
+    //                                    }
+    //                                    else
+    //                                    {
+    //                                        result[i] = uart1_getc() & 0xFF;
+    //                                    }
+    //                                }
+    //                
+    //                                // add the last 16 bytes (0xFF) manually to the result array so there's a whole 256-bytes block
+    //                                for (uint8_t k = 0; k < 16; k++)
+    //                                {
+    //                                    result[0xF0 + k] = 0xFF;
+    //                                }
+                    
+                                    // send result back to laptop, note that the subdatacode is the actual SCI-bus memory area address
+                                    //send_usb_packet(from_usb, to_usb, debug, cmd_payload[0], result, 256);
+                                    break;
+                                }
+                                case 0xFC: // enable sci-bus command 14, sensor request
+                                {
+                                    //sci_command_14 = true; 
+                                    //send_usb_packet(from_sci_bus, to_usb, send_msg, ok, ack, 1); // acknowledge
+                                    break;
+                                }
+                                case 0xFD: // disable sci-bus command 14, sensor request
+                                {
+                                    //sci_command_14 = false; 
+                                    //send_usb_packet(from_sci_bus, to_usb, send_msg, ok, ack, 1); // acknowledge
+                                    break;
+                                }
+                                case 0xFE: // dummy sensor request
+                                {
+    //                                // Fill the pending buffer with the message to be sent
+    //                                for (uint8_t i = 0; i < payload_length; i++)
+    //                                {
+    //                                  sci_bus_msg_to_send[i] = cmd_payload[i];
+    //                                }
+    //                                sci_bus_msg_to_send_ptr = payload_length;
+    //                
+    //                                // Set flag so the main loop knows there's something to do
+    //                                sci_bus_msg_pending = true;
+                    
+                                    //send_usb_packet(from_sci_bus, to_usb, send_msg, ok, ack, 1); // acknowledge
+                                    break;
+                                }
+                                default: // Other values are not used
+                                {
+                                    send_usb_packet(from_usb, to_usb, response, error_subdatacode_invalid_value, err, 1);
+                                    break;
+                                }
                             }
+                            break;
+                        }
+                        case self_diag: // 0x0A - Run self-diagnostics
+                        {
+                            send_usb_packet(from_usb, to_usb, self_diag, ok, ack, 1); // acknowledge
+                            break;
+                        }
+                        case make_backup: // 0x0B - Create scanner settings backup packet (int. EEPROM dump)
+                        {
+                            send_usb_packet(from_usb, to_usb, make_backup, ok, ack, 1); // acknowledge
+                            break;
+                        }
+                        case restore_backup: // 0x0C - Restore scanner settings from backup
+                        {
+                            send_usb_packet(from_usb, to_usb, restore_backup, ok, ack, 1); // acknowledge
+                            break;
+                        }
+                        case restore_default: // 0x0D - Restore default scanner settings (factory reset)
+                        {
+                            send_usb_packet(from_usb, to_usb, restore_default, ok, ack, 1); // acknowledge
+                            break;
+                        }
+                        case debug: // 0x0E - Debug
+                        {
+                            switch (subdatacode)
+                            {
+                                case 0x00: // test watchdog reset
+                                {
+                                    while(true); // LED activity should freeze for 2 seconds, reset occurs, normal operation resumes
+                                    break;
+                                }
+                                default:
+                                {
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        case ok_error: // 0x0F - OK/ERROR message
+                        {
+                            send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
+                            break;
+                        }
+                        default: // Other values are not used.
+                        {
+                            send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_dc_command, err, 1);
+                            break;
+                        }
+                    }
+                    break;
+                }
+                case to_ccd: // 0x01 - CCD-bus is the target.
+                {
+                    switch (dc_command) // Evaluate data code low nibble
+                    {
+                        case send_msg: // 0x06 - Send message to the CCD-bus
+                        {
+                            // Fill the pending buffer with the message to be sent
+                            for (uint8_t i = 0; i < payload_length; i++)
+                            {
+                                ccd_msg_to_send[i] = cmd_payload[i];
+                            }
+                            ccd_msg_to_send_ptr = payload_length;
+    
+                            // Check if the crc byte in the message is correct
+                            uint16_t calculated_checksum = 0;
+                            for (uint16_t i = 0; i < (ccd_msg_to_send_ptr - 1); i++)
+                            {
+                                calculated_checksum += ccd_msg_to_send[i];
+                            }
+                            calculated_checksum = calculated_checksum & 0xFF;
+                    
+                            // Correct the last checksum byte if wrong
+                            if (ccd_msg_to_send[ccd_msg_to_send_ptr - 1] != calculated_checksum)
+                            {
+                                ccd_msg_to_send[ccd_msg_to_send_ptr - 1] = calculated_checksum;
+                            }
+                
+                            // Set flag so the main loop knows there's something to do
+                            ccd_msg_pending = true;
+                            
+                            // acknowledge by sending back the (corrected) CCD-bus message to the laptop
+                            send_usb_packet(from_usb, to_usb, send_msg, to_ccd, ccd_msg_to_send, ccd_msg_to_send_ptr); 
+                            break;
+                        }
+                        case send_rep_msg: // 0x07 - Send message(s) repeatedly to the CCD-bus
+                        {
+                            send_usb_packet(from_usb, to_usb, send_rep_msg, to_ccd, ack, 1); // acknowledge
+                            break;
+                        }
+                        case stop_msg_flow: // 0x08 - Stop message flow to the CCD-bus
+                        {
+                            //ccd_bus_msg_rep = false;
+                            //ccd_bus_msg_to_send_ptr = 0;
+                
+                            send_usb_packet(from_usb, to_usb, stop_msg_flow, to_ccd, ack, 1); // acknowledge
+                            break;
+                        }
+                        default: // Other values are not used.
+                        {
+                            send_usb_packet(from_usb, to_usb, ok_error, to_ccd, error_datacode_invalid_dc_command, 1);
+                            break;
+                        }
+                    }
+                    break;
+                }
+                case to_pcm: // 0x02 - SCI-bus (PCM) is the target.
+                case to_tcm: // 0x03 - SCI-bus (TCM) is the target.
+                {
+                    switch (dc_command) // Evaluate data code low nibble
+                    {
+                        case send_msg: // 0x01 - Send message to the SCI-bus
+                        {
+                            // Fill the pending buffer with the message to be sent
+                            if (target == to_pcm)
+                            {
+                                for (uint8_t i = 0; i < payload_length; i++)
+                                {
+                                    pcm_msg_to_send[i] = cmd_payload[i];
+                                }
+                                pcm_msg_to_send_ptr = payload_length;
+                                pcm_msg_pending = true; // set flag so the main loop knows there's something to do
+                                send_usb_packet(from_pcm, to_usb, send_msg, ok, ack, 1); // acknowledge
+                            }
+                            else if (target == to_tcm)
+                            {
+                                for (uint8_t i = 0; i < payload_length; i++)
+                                {
+                                    tcm_msg_to_send[i] = cmd_payload[i];
+                                }
+                                tcm_msg_to_send_ptr = payload_length;
+                                tcm_msg_pending = true; // set flag so the main loop knows there's something to do
+                                send_usb_packet(from_tcm, to_usb, send_msg, ok, ack, 1); // acknowledge
+                            }
+                            break;
+                        }
+                        case send_rep_msg: // 0x02 - Send message(s) repeatedly to the SCI-bus
+                        {
+                            /**********************************************************************
+                            Frame format:
+                            33 00 11 37 F4 03 07 00 02 04 02 02 03 F4 1A F4 1B F4 1C 1D 9D 
+                
+                            $33: SYNC byte
+                            $00 $11: LENGTH bytes
+                            $37: DATA CODE byte (from laptop, to sci-bus, send repeated messages)
+                            $F4: SUB-DATA CODE byte (sci-bus high speed memory area target)
+                              $03: length of parameter location and length arrays
+                              $07: length of parameters array
+                              $00 $02 $04: 3 location bytes 
+                              $02 $02 $03: 3 length bytes
+                              $F4 $1A: first parameter (starts at relative address 0)
+                              $F4 $1B: second parameter (starts at relative address 2)
+                              $F4 $1C $1D: third parameter (starts at relative address 4)
+                            $9D: CHECKSUM byte
+                
+                            **********************************************************************/
                                   
-                            case 0xFB: // debug: high speed sci-bus memory area dump, WARNING: this is not loop-safe, the program will freeze until this "case" is done
+                            switch (subdatacode)
                             {
-//                                // prepare result array
-//                                uint8_t result[256];
-//                                bool sci_addr_accepted = false;
-//                
-//                                // make sure the address selector command is accepted by the PCM
-//                                // it has to echo back the address byte ($F2, $F3, $F4...) that is the first payload byte
-//                                while (!sci_addr_accepted)
-//                                {
-//                                    // Save the current number of bytes in the receive buffer (most likely 0)
-//                                    uint8_t numbytes = uart1_available();
-//                  
-//                                    // Put the address selector byte to the SCI-bus (first byte of payload section)
-//                                    uart1_putc(cmd_payload[0]);
-//                  
-//                                    // Wait for answer or timeout
-//                                    bool timeout_reached = false;
-//                                    uint32_t timeout_start = millis();
-//                                    while ((numbytes >= uart1_available()) && !timeout_reached)
-//                                    {
-//                                        // Check the timeout condition only, the received byte is stored automatically in the ringbuffer
-//                                        if (millis() - timeout_start > SCI_INTERMESSAGE_RESPONSE_DELAY) timeout_reached = true;
-//                                    }
-//                  
-//                                    if (timeout_reached)
-//                                    {
-//                                        timeout_reached = false; // re-arm, don't care if true or false
-//                                        break; // exit from this "case" if the SCI-bus won't respond
-//                                    }
-//                  
-//                                    uint8_t dummy2 = uart1_getc() & 0xFF; // get the echo from the SCI-bus
-//                                    if (dummy2 == cmd_payload[0]) sci_addr_accepted = true; // exit this loop if the proper byte has been received
-//                                }
-//                
-//                                // now cycle through every possible address one time only!
-//                                // skip the last 16 bytes (they are most likely area selector bytes)
-//                                for (uint8_t i = 0; i < 0xF0; i++)
-//                                {
-//                                    // Save the current number of bytes in the receive buffer (most likely 0)
-//                                    uint8_t numbytes = uart1_available();
-//                  
-//                                    // Put one/next byte to the SCI-bus
-//                                    uart1_putc(i); // address is the loop-variable itself, so this line is okay
-//                  
-//                                    // Wait for answer or timeout
-//                                    bool timeout_reached = false;
-//                                    uint32_t timeout_start = millis();
-//                  
-//                                    // Unlike CCD-bus, SCI-bus needs a little bit of delay between bytes,
-//                                    // so we check here if the PCM/TCM has echoed the byte back.
-//                                    while ((numbytes >= uart1_available()) && !timeout_reached)
-//                                    {
-//                                        // Check the timeout condition only, the received byte is stored automatically in the ringbuffer
-//                                        if (millis() - timeout_start > SCI_INTERMESSAGE_RESPONSE_DELAY) timeout_reached = true;
-//                                    }
-//                  
-//                                    // If the SCI-bus doesn't respond in the given timeframe then save an $FF byte in the array
-//                                    if (timeout_reached)
-//                                    {
-//                                        timeout_reached = false; // re-arm, don't care if true or false
-//                                        result[i] = 0xFF; 
-//                                    }
-//                                    else
-//                                    {
-//                                        result[i] = uart1_getc() & 0xFF;
-//                                    }
-//                                }
-//                
-//                                // add the last 16 bytes (0xFF) manually to the result array so there's a whole 256-bytes block
-//                                for (uint8_t k = 0; k < 16; k++)
-//                                {
-//                                    result[0xF0 + k] = 0xFF;
-//                                }
-                
-                                // send result back to laptop, note that the subdatacode is the actual SCI-bus memory area address
-                                //send_usb_packet(from_usb, to_usb, debug, cmd_payload[0], result, 256);
-                                break;
+                                case 0xF4: // High speed mode memory area
+                                {
+    //                                // Read payload for parameter location(s) and command(s) 
+    //                                if (payload_bytes)
+    //                                {
+    //                                    // The first byte in the payload refers to the length of the parameter locations and length
+    //                                    if (cmd_payload[0] <= 64)
+    //                                    {
+    //                                        // Add these bytes to two separate array with for-loops
+    //                                        for (uint8_t m = 0; m < cmd_payload[0]; m++)
+    //                                        {
+    //                                            mode_f4_parameters_loc[m] = cmd_payload[2 + m]; // First two bytes have to be ignored
+    //                                        }
+    //                    
+    //                                        for (uint8_t m = 0; m < cmd_payload[0]; m++)
+    //                                        {
+    //                                            mode_f4_parameters_length[m] = cmd_payload[2 + cmd_payload[0] + m];
+    //                                        }
+    //                                    }
+    //                  
+    //                                    // The second byte in the payload refers to the length of the parameter command list
+    //                                    if (cmd_payload[1] <= 128)
+    //                                    {
+    //                                        // Add these bytes to a separate array
+    //                                        for (uint8_t n = 0; n < cmd_payload[1]; n++)
+    //                                        {
+    //                                            mode_f4_parameters[n] = cmd_payload[2 + (2 * cmd_payload[0]) + n]; // First two bytes and the parameter locations and lengths have to be ignored
+    //                                        }
+    //                                    }
+    //                  
+    //                                    mode_f4_ptr_length = cmd_payload[0];
+    //                                    mode_f4_length = cmd_payload[1];
+    //                                    mode_f4_ptr = 0;
+    //                  
+    //                                    // Set flag so the SCI-bus routine begins execution as soon as possible
+    //                                    sci_hs_mode_f4 = true;
+    //                                    //send_usb_packet(from_sci_bus, to_usb, send_rep_msg, ok, ack, 1); // acknowledge
+    //                  
+    //                                    // Debug: send back these three arrays separately
+    //                                    send_usb_packet(from_usb, to_usb, send_rep_msg, 0x00, mode_f4_parameters_loc, mode_f4_ptr_length);
+    //                                    send_usb_packet(from_usb, to_usb, send_rep_msg, 0x01, mode_f4_parameters_length, mode_f4_ptr_length);
+    //                                    send_usb_packet(from_usb, to_usb, send_rep_msg, 0x02, mode_f4_parameters, mode_f4_length);
+    //                                }
+                                    break;
+                                }
+                                default:
+                                {
+                                    break;
+                                }
                             }
-                            case 0xFC: // enable sci-bus command 14, sensor request
-                            {
-                                //sci_command_14 = true; 
-                                //send_usb_packet(from_sci_bus, to_usb, send_msg, ok, ack, 1); // acknowledge
-                                break;
-                            }
-                            case 0xFD: // disable sci-bus command 14, sensor request
-                            {
-                                //sci_command_14 = false; 
-                                //send_usb_packet(from_sci_bus, to_usb, send_msg, ok, ack, 1); // acknowledge
-                                break;
-                            }
-                            case 0xFE: // dummy sensor request
-                            {
-//                                // Fill the pending buffer with the message to be sent
-//                                for (uint8_t i = 0; i < payload_length; i++)
-//                                {
-//                                  sci_bus_msg_to_send[i] = cmd_payload[i];
-//                                }
-//                                sci_bus_msg_to_send_ptr = payload_length;
-//                
-//                                // Set flag so the main loop knows there's something to do
-//                                sci_bus_msg_pending = true;
-                
-                                //send_usb_packet(from_sci_bus, to_usb, send_msg, ok, ack, 1); // acknowledge
-                                break;
-                            }
-                            default: // Other values are not used
-                            {
-                                send_usb_packet(from_usb, to_usb, response, error_subdatacode_invalid_value, err, 1);
-                                break;
-                            }
+                            break;
                         }
-                        break;
-                    }
-                    case self_diag: // 0x0A - Run self-diagnostics
-                    {
-                        send_usb_packet(from_usb, to_usb, self_diag, ok, ack, 1); // acknowledge
-                        break;
-                    }
-                    case make_backup: // 0x0B - Create scanner settings backup packet (int. EEPROM dump)
-                    {
-                        send_usb_packet(from_usb, to_usb, make_backup, ok, ack, 1); // acknowledge
-                        break;
-                    }
-                    case restore_backup: // 0x0C - Restore scanner settings from backup
-                    {
-                        send_usb_packet(from_usb, to_usb, restore_backup, ok, ack, 1); // acknowledge
-                        break;
-                    }
-                    case restore_default: // 0x0D - Restore default scanner settings (factory reset)
-                    {
-                        send_usb_packet(from_usb, to_usb, restore_default, ok, ack, 1); // acknowledge
-                        break;
-                    }
-                    case debug: // 0x0E - Debug
-                    {
-                        switch (subdatacode)
+                        case stop_msg_flow: // 0x08 - Stop message flow to the SCI-bus
                         {
-                            case 0x00: // test watchdog reset
-                            {
-                                while(true); // LED activity should freeze for 2 seconds, reset occurs, normal operation resumes
-                                break;
-                            }
-                            default:
-                            {
-                                break;
-                            }
+                            //sci_bus_msg_rep = false;
+                            //sci_hs_mode_f4 = false;
+                            //mode_f4_ptr_length = 0;
+                            //mode_f4_length = 0;
+                            //mode_f4_ptr = 0;
+                
+                            //sci_bus_msg_to_send_ptr = 0;
+                
+                            //send_usb_packet(from_sci_bus, to_usb, send_msg, ok, ack, 1); // acknowledge
+                            break;
                         }
-                        break;
+                        default: // Other values are not used.
+                        {
+                            // Sub-data code missing, not enough information is given
+                            if (target == to_pcm) send_usb_packet(from_pcm, to_usb, ok_error, error_datacode_invalid_dc_command, err, 1);
+                            else if (target == to_tcm) send_usb_packet(from_tcm, to_usb, ok_error, error_datacode_invalid_dc_command, err, 1);
+                            break;
+                        }
                     }
-                    case ok_error: // 0x0F - OK/ERROR message
-                    {
-                        send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
-                        break;
-                    }
-                    default: // Other values are not used.
-                    {
-                        send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_dc_command, err, 1);
-                        break;
-                    }
+                    break;
                 }
-                break;
-            }
-            case to_ccd: // 0x01 - CCD-bus is the target.
-            {
-                switch (dc_command) // Evaluate data code low nibble
+                default: // Other values are not used.
                 {
-                    case send_msg: // 0x06 - Send message to the CCD-bus
-                    {
-                        // Fill the pending buffer with the message to be sent
-                        for (uint8_t i = 0; i < payload_length; i++)
-                        {
-                            ccd_msg_to_send[i] = cmd_payload[i];
-                        }
-                        ccd_msg_to_send_ptr = payload_length;
-
-                        // Check if the crc byte in the message is correct
-                        uint16_t calculated_checksum = 0;
-                        for (uint16_t i = 0; i < (ccd_msg_to_send_ptr - 1); i++)
-                        {
-                            calculated_checksum += ccd_msg_to_send[i];
-                        }
-                        calculated_checksum = calculated_checksum & 0xFF;
-                
-                        // Correct the last checksum byte if wrong
-                        if (ccd_msg_to_send[ccd_msg_to_send_ptr - 1] != calculated_checksum)
-                        {
-                            ccd_msg_to_send[ccd_msg_to_send_ptr - 1] = calculated_checksum;
-                        }
-            
-                        // Set flag so the main loop knows there's something to do
-                        ccd_msg_pending = true;
-                        
-                        // acknowledge by sending back the (corrected) CCD-bus message to the laptop
-                        send_usb_packet(from_usb, to_usb, send_msg, to_ccd, ccd_msg_to_send, ccd_msg_to_send_ptr); 
-                        break;
-                    }
-                    case send_rep_msg: // 0x07 - Send message(s) repeatedly to the CCD-bus
-                    {
-                        send_usb_packet(from_usb, to_usb, send_rep_msg, to_ccd, ack, 1); // acknowledge
-                        break;
-                    }
-                    case stop_msg_flow: // 0x08 - Stop message flow to the CCD-bus
-                    {
-                        //ccd_bus_msg_rep = false;
-                        //ccd_bus_msg_to_send_ptr = 0;
-            
-                        send_usb_packet(from_usb, to_usb, stop_msg_flow, to_ccd, ack, 1); // acknowledge
-                        break;
-                    }
-                    default: // Other values are not used.
-                    {
-                        send_usb_packet(from_usb, to_usb, ok_error, to_ccd, error_datacode_invalid_dc_command, 1);
-                        break;
-                    }
+                    send_usb_packet(from_usb, to_usb, ok_error, error_datacode_source_target_conflict, err, 1);
+                    break;            
                 }
-                break;
-            }
-            case to_pcm: // 0x02 - SCI-bus (PCM) is the target.
-            case to_tcm: // 0x03 - SCI-bus (TCM) is the target.
-            {
-                switch (dc_command) // Evaluate data code low nibble
-                {
-                    case send_msg: // 0x01 - Send message to the SCI-bus
-                    {
-                        // Fill the pending buffer with the message to be sent
-                        if (target == to_pcm)
-                        {
-                            for (uint8_t i = 0; i < payload_length; i++)
-                            {
-                                pcm_msg_to_send[i] = cmd_payload[i];
-                            }
-                            pcm_msg_to_send_ptr = payload_length;
-                            pcm_msg_pending = true; // set flag so the main loop knows there's something to do
-                            send_usb_packet(from_pcm, to_usb, send_msg, ok, ack, 1); // acknowledge
-                        }
-                        else if (target == to_tcm)
-                        {
-                            for (uint8_t i = 0; i < payload_length; i++)
-                            {
-                                tcm_msg_to_send[i] = cmd_payload[i];
-                            }
-                            tcm_msg_to_send_ptr = payload_length;
-                            tcm_msg_pending = true; // set flag so the main loop knows there's something to do
-                            send_usb_packet(from_tcm, to_usb, send_msg, ok, ack, 1); // acknowledge
-                        }
-                        break;
-                    }
-                    case send_rep_msg: // 0x02 - Send message(s) repeatedly to the SCI-bus
-                    {
-                        /**********************************************************************
-                        Frame format:
-                        33 00 11 37 F4 03 07 00 02 04 02 02 03 F4 1A F4 1B F4 1C 1D 9D 
-            
-                        $33: SYNC byte
-                        $00 $11: LENGTH bytes
-                        $37: DATA CODE byte (from laptop, to sci-bus, send repeated messages)
-                        $F4: SUB-DATA CODE byte (sci-bus high speed memory area target)
-                          $03: length of parameter location and length arrays
-                          $07: length of parameters array
-                          $00 $02 $04: 3 location bytes 
-                          $02 $02 $03: 3 length bytes
-                          $F4 $1A: first parameter (starts at relative address 0)
-                          $F4 $1B: second parameter (starts at relative address 2)
-                          $F4 $1C $1D: third parameter (starts at relative address 4)
-                        $9D: CHECKSUM byte
-            
-                        **********************************************************************/
-                              
-                        switch (subdatacode)
-                        {
-                            case 0xF4: // High speed mode memory area
-                            {
-//                                // Read payload for parameter location(s) and command(s) 
-//                                if (payload_bytes)
-//                                {
-//                                    // The first byte in the payload refers to the length of the parameter locations and length
-//                                    if (cmd_payload[0] <= 64)
-//                                    {
-//                                        // Add these bytes to two separate array with for-loops
-//                                        for (uint8_t m = 0; m < cmd_payload[0]; m++)
-//                                        {
-//                                            mode_f4_parameters_loc[m] = cmd_payload[2 + m]; // First two bytes have to be ignored
-//                                        }
-//                    
-//                                        for (uint8_t m = 0; m < cmd_payload[0]; m++)
-//                                        {
-//                                            mode_f4_parameters_length[m] = cmd_payload[2 + cmd_payload[0] + m];
-//                                        }
-//                                    }
-//                  
-//                                    // The second byte in the payload refers to the length of the parameter command list
-//                                    if (cmd_payload[1] <= 128)
-//                                    {
-//                                        // Add these bytes to a separate array
-//                                        for (uint8_t n = 0; n < cmd_payload[1]; n++)
-//                                        {
-//                                            mode_f4_parameters[n] = cmd_payload[2 + (2 * cmd_payload[0]) + n]; // First two bytes and the parameter locations and lengths have to be ignored
-//                                        }
-//                                    }
-//                  
-//                                    mode_f4_ptr_length = cmd_payload[0];
-//                                    mode_f4_length = cmd_payload[1];
-//                                    mode_f4_ptr = 0;
-//                  
-//                                    // Set flag so the SCI-bus routine begins execution as soon as possible
-//                                    sci_hs_mode_f4 = true;
-//                                    //send_usb_packet(from_sci_bus, to_usb, send_rep_msg, ok, ack, 1); // acknowledge
-//                  
-//                                    // Debug: send back these three arrays separately
-//                                    send_usb_packet(from_usb, to_usb, send_rep_msg, 0x00, mode_f4_parameters_loc, mode_f4_ptr_length);
-//                                    send_usb_packet(from_usb, to_usb, send_rep_msg, 0x01, mode_f4_parameters_length, mode_f4_ptr_length);
-//                                    send_usb_packet(from_usb, to_usb, send_rep_msg, 0x02, mode_f4_parameters, mode_f4_length);
-//                                }
-                                break;
-                            }
-                            default:
-                            {
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                    case stop_msg_flow: // 0x08 - Stop message flow to the SCI-bus
-                    {
-                        //sci_bus_msg_rep = false;
-                        //sci_hs_mode_f4 = false;
-                        //mode_f4_ptr_length = 0;
-                        //mode_f4_length = 0;
-                        //mode_f4_ptr = 0;
-            
-                        //sci_bus_msg_to_send_ptr = 0;
-            
-                        //send_usb_packet(from_sci_bus, to_usb, send_msg, ok, ack, 1); // acknowledge
-                        break;
-                    }
-                    default: // Other values are not used.
-                    {
-                        // Sub-data code missing, not enough information is given
-                        if (target == to_pcm) send_usb_packet(from_pcm, to_usb, ok_error, error_datacode_invalid_dc_command, err, 1);
-                        else if (target == to_tcm) send_usb_packet(from_tcm, to_usb, ok_error, error_datacode_invalid_dc_command, err, 1);
-                        break;
-                    }
-                }
-                break;
-            }
-            default: // Other values are not used.
-            {
-                send_usb_packet(from_usb, to_usb, ok_error, error_datacode_source_target_conflict, err, 1);
-                break;            
-            }
-        } // switch (target)                
+            } // switch (target)   
+        }
+        else if (sync == ASCII_SYNC_BYTE) // text based commincation
+        {
+            // TODO
+        }
     }
     else
     {
@@ -2568,13 +2579,11 @@ void handle_ccd_data(void)
         if ((dummy_read & CCD_SOM) && (ccd_bytes_buffer_ptr > 0))
         {
             uint8_t usb_msg[4+ccd_bytes_buffer_ptr]; // create local array which will hold the timestamp and the CCD-bus message
-            uint32_t mcu_millis = millis(); // get current time for timestamp
-
-            // Break mcu_millis into its byte components (32bit -> 4x8bit) and save it at the beginning of the array as timestamp.
-            usb_msg[0] = (mcu_millis >> 24) & 0xFF;
-            usb_msg[1] = (mcu_millis >> 16) & 0xFF;
-            usb_msg[2] = (mcu_millis >> 8) & 0xFF;
-            usb_msg[3] = mcu_millis & 0xFF;
+            get_mcu_millis(mcu_millis); // get current time for the timestamp
+            usb_msg[0] = mcu_millis[0]; // no need to bitshift result, the time is already in arrays
+            usb_msg[1] = mcu_millis[1];
+            usb_msg[2] = mcu_millis[2];
+            usb_msg[3] = mcu_millis[3];
 
             for (uint8_t i = 0; i < ccd_bytes_buffer_ptr; i++)
             {
@@ -2600,19 +2609,22 @@ void handle_ccd_data(void)
                 send_usb_packet(from_ccd, to_usb, receive_msg, error_checksum_invalid_value, usb_msg, 4+ccd_bytes_buffer_ptr);
             }
 
-            //process_ccd_msg(); // TODO
             ccd_bytes_buffer_ptr = 0; // reset pointer so the new message starts at the beginning of the array
 
             // And finally save the new ID-byte as the first one in the buffer (the code so far is responsible to forward previous message)
             ccd_bytes_buffer[ccd_bytes_buffer_ptr] = ccd_getc() & 0xFF; // getc = read it while deleting it from the buffer
             ccd_bytes_buffer_ptr++; // increase pointer value by one so it points to the next empty slot in the buffer
-            if (ccd_bytes_buffer_ptr > (TEMP_BUFFER_SIZE - 1)) ccd_bytes_buffer_ptr = 0; // don't let buffer pointer overflow, instead overwrite previous message
+            if (ccd_bytes_buffer_ptr > (TEMP_BUFFER_SIZE - 1)) // don't let buffer pointer overflow, send the whole 32 byte buffer back to the laptop to figure out what's wrong
+            {
+                ccd_bytes_buffer_ptr = 0;
+                send_usb_packet(from_ccd, to_usb, receive_msg, error_buffer_overflow, ccd_bytes_buffer, TEMP_BUFFER_SIZE);
+            }
         }
         else // get this byte and save to the temporary buffer in the next available position
         {
             ccd_bytes_buffer[ccd_bytes_buffer_ptr] = ccd_getc() & 0xFF; // getc = read it while deleting it from the buffer
             ccd_bytes_buffer_ptr++; // increase pointer value by one so it points to the next empty slot in the buffer
-            if (ccd_bytes_buffer_ptr > (TEMP_BUFFER_SIZE - 1)); // don't let buffer pointer overflow, send the whole 32 byte buffer back to the laptop to figure out what's wrong
+            if (ccd_bytes_buffer_ptr > (TEMP_BUFFER_SIZE - 1)) // don't let buffer pointer overflow, send the whole 32 byte buffer back to the laptop to figure out what's wrong
             {
                 ccd_bytes_buffer_ptr = 0;
                 send_usb_packet(from_ccd, to_usb, receive_msg, error_buffer_overflow, ccd_bytes_buffer, TEMP_BUFFER_SIZE);
@@ -2637,7 +2649,7 @@ void handle_ccd_data(void)
         ccd_msg_to_send_ptr = 0; // reset pointer
         ccd_msg_pending = false; // re-arm, make it possible to send a message again
     }
-  
+
 } // end of handle_ccd_data
 
 
@@ -2668,10 +2680,28 @@ void check_battery_volts(void)
 {
     battery_adc = analogRead(BATT);
     battery_volts = (uint16_t)(((((battery_adc/adc_max_value)*(adc_supply_voltage/100.0))*((battery_rd1/10.0)+(battery_rd2/10.0)))/(battery_rd2/10.0))*100.0); // an overly complicated code for a resistor voltage divider
+    battery_volts_array[0] = (battery_volts >> 8) & 0xFF;
+    battery_volts_array[1] = battery_volts & 0xFF;
     if (battery_volts > 700) connected_to_vehicle = true; // consider a sensed voltage of 7.00V to be connected
     else connected_to_vehicle = false; // or bad battery
     
 } // end of check_battery_volts
+
+
+/*************************************************************************
+Function: act_led_heartbeat()
+Purpose:  blinks ACT LED at a fixed time interval like it was a heart beating
+**************************************************************************/
+void act_led_heartbeat(void)
+{
+    if (current_millis_blink - previous_act_blink >= act_led_heartbeat_interval)
+    {
+        previous_act_blink = current_millis_blink; // save current time
+        digitalWrite(ACT_LED, LOW);
+        act_led_ontime = millis(); // save time when ACT LED was turned on
+    }
+    
+} // end of act_led_heartbeat
 
 
 /*************************************************************************

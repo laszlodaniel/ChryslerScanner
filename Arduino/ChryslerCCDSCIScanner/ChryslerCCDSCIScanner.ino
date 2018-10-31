@@ -27,8 +27,8 @@
 #include <avr/pgmspace.h>
 #include <avr/wdt.h>
 #include <util/atomic.h>
-//#include <TimerOne.h>  // https://github.com/PaulStoffregen/TimerOne
-#include <extEEPROM.h> // https://github.com/JChristensen/extEEPROM
+#include <extEEPROM.h>         // https://github.com/JChristensen/extEEPROM
+#include <LiquidCrystal_I2C.h> // https://bitbucket.org/fmalpartida/new-liquidcrystal/downloads/
 #include <Wire.h>
 #include "ccdsciuart.h"
 
@@ -39,11 +39,8 @@
 // Construct an object called "eep" for the external 24LC32A EEPROM chip
 extEEPROM eep(kbits_32, 1, 32, 0x50); // device size: 32 kilobits = 4 kilobytes, number of devices: 1, page size: 32 bytes (from datasheet), device address: 0x50 by default
 
-uint32_t current_millis_blink = 0;
-uint32_t previous_millis_blink = 0;
-uint16_t interval = 250; // milliseconds
-bool act_led_state = false;
-uint8_t cycles = 0;
+// Construct an object called lcd for the external display (optional)
+LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 
 void setup()
 {
@@ -74,19 +71,18 @@ void setup()
     /* END */
     
     // Initialize serial interfaces with default speeds and interrupt control enabled
-    usb_init(USBBAUD);// 115200 baud, an external serial monitor should have the same speed (115200 baud)
+    usb_init(USBBAUD);//  38400 baud, an external serial monitor should have the same speed (115200 baud)
     ccd_init(LOBAUD); // 7812.5 baud
     pcm_init(LOBAUD); // 7812.5 baud
     tcm_init(LOBAUD); // 7812.5 baud
 
     // Define digital pin states
     // No need to re-define input states...
-    //pinMode(INT4, INPUT);         // D2 (INT4), CCD-bus idle detector
-    //pinMode(INT5, INPUT);         // D3 (INT5), CCD-bus active byte detector
-    //digitalWrite(INT4, HIGH);     // Enable internal pull-up resistor on D2 (INT4), it's pulled up by hardware
-    //digitalWrite(INT5, HIGH);     // Enable internal pull-up resistor on D3 (INT5), it's pulled up by hardware
+    pinMode(INT4, INPUT_PULLUP);         // D2 (INT4), CCD-bus idle detector
+    pinMode(INT5, INPUT_PULLUP);         // D3 (INT5), CCD-bus active byte detector
     pinMode(RX_LED,  OUTPUT);     // This LED flashes whenever data is received by the scanner
     pinMode(TX_LED,  OUTPUT);     // This LED flashes whenever data is transmitted from the scanner
+    // PWR LED is tied to +5V directly, stays on when the scanner has power, draws about 2mA current
     pinMode(ACT_LED, OUTPUT);     // This LED flashes when some "action" takes place in the scanner
     digitalWrite(RX_LED, HIGH);   // LEDs are grounded through the microcontroller, so HIGH/HI-Z = OFF, LOW = ON
     digitalWrite(TX_LED, HIGH);   // ---||---
@@ -111,29 +107,41 @@ void setup()
     digitalWrite(PA7, LOW); // |
 
     sei(); // enable interrupts, serial interrupt control resumes working
-    attachInterrupt(INT4, ccd_eom, FALLING); // execute "ccd_eom" function if the CCD-transceiver pulls D2 pin low indicating an "End of Message" condition so the byte reader ISR can flag the next byte as ID-byte
-    attachInterrupt(INT5, ccd_active_byte, FALLING); // execute "ccd_active_byte" function if the CCD-transceiver pulls D3 pin low indicating a byte being transmitted on the CCD-bus
-    // We don't know the byte's value right away, we have to wait for all 8 data bits and a few other bits for framing to arrive.
+    attachInterrupt(digitalPinToInterrupt(INT4), ccd_eom, FALLING); // execute "ccd_eom" function if the CCD-transceiver pulls D2 pin low indicating an "End of Message" condition so the byte reader ISR can flag the next byte as ID-byte
+    attachInterrupt(digitalPinToInterrupt(INT5), ccd_active_byte, FALLING); // execute "ccd_active_byte" function if the CCD-transceiver pulls D3 pin low indicating a byte being transmitted on the CCD-bus
+    // active byte = we don't know the byte's value right away, we have to wait for all 8 data bits and a few other bits for framing to arrive.
   
     // Initialize external EEPROM
     uint8_t eep_status = eep.begin(extEEPROM::twiClock400kHz); // go fast!
     if (eep_status) { ext_eeprom_present = false; }
     else { ext_eeprom_present = true; }
 
+    // Initialize external display
+    lcd.begin(20, 4);                  // start LCD with 20 columns and 4 rows
+    lcd.backlight();                   // backlight on
+    lcd.clear();                       // clear display
+    lcd.home();                        // set cursor in home position (0, 0)
+    lcd.print(F("--------------------"));
+    lcd.setCursor(0, 1);
+    lcd.print(F("  CHRYSLER CCD/SCI  "));
+    lcd.setCursor(0, 2);
+    lcd.print(F(" SCANNER V1.40 2018 "));
+    lcd.setCursor(0, 3);
+    lcd.print(F("--------------------"));
+
     check_battery_volts(); // calculate battery voltage from OBD16 pin
     ccd_clock_generator(START); // start listening to the CCD-bus
     delay(2000); // wait for ccd clock to stabilize
-    ccd_rx_flush(); // clear buffer again
+    ccd_rx_flush(); // clear buffer again (unstable clock causes dummy bytes to appear)
+    lcd.clear();
 
-    // Copy handshake bytes from flash to ram
+    // Copy handshake bytes from flash to ram (needed for connection purposes to an external computer)
     for (uint8_t i = 0; i < 21; i++)
     {
         handshake_array[i] = pgm_read_byte(&handshake_progmem[i]);
     }
 
-    wdt_enable(WDTO_2S); // reset program if the watchdog timer reaches 2 seconds
-    wdt_reset(); // reset watchdog timer
-    
+    wdt_enable(WDTO_2S); // enable watchdog timer that resets program if the timer reaches 2 seconds
     get_bus_config(); // figure out how to talk to the vehicle
 }
 
@@ -146,14 +154,7 @@ void loop()
     if (sci_enabled) { handle_sci_data(); } // do SCI-bus stuff if it's enabled
 
     current_millis_blink = millis(); // check current time
-    if (current_millis_blink - previous_millis_blink >= interval) // is it time to invert led state?
-    {
-        previous_millis_blink = current_millis_blink; // save current time
-        if (act_led_state) act_led_state = false;
-        else act_led_state = true;
-        digitalWrite(ACT_LED, act_led_state);
-    }
-
+    if (act_led_heartbeat_enabled) act_led_heartbeat();
     if (current_millis_blink - rx_led_ontime >= led_blink_interval)
     {
         digitalWrite(RX_LED, HIGH); // turn off RX LED
@@ -162,6 +163,13 @@ void loop()
     if (current_millis_blink - tx_led_ontime >= led_blink_interval)
     {
         digitalWrite(TX_LED, HIGH); // turn off TX LED
+    }
+
+    if (current_millis_blink - act_led_ontime >= led_blink_interval)
+    {
+        digitalWrite(ACT_LED, HIGH); // turn off ACT LED
+        lcd.setCursor(0, 0);
+        lcd.print(total_ccd_msg_count);
     }
 }
 
