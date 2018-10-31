@@ -7,10 +7,6 @@ GUI folder contains the C# source code and compiled binary for an external compu
 
 PCB folder contains everything to manufacture and assemble the hardware.
 
-![alt tag](https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/PCB/renders/ChryslerCCDSCIScanner_V140_top_render.png)
-
-![alt tag](https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/PCB/renders/ChryslerCCDSCIScanner_V140_bottom_render.png)
-
 Make sure to check out katemonster33's scanner too: https://github.com/katemonster33/CDJPScanMaster
 
 Her project covers more communication protocols like J1850 and ISO9141. 
