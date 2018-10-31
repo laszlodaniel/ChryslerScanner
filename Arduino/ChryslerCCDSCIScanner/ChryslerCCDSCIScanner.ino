@@ -71,15 +71,15 @@ void setup()
     /* END */
     
     // Initialize serial interfaces with default speeds and interrupt control enabled
-    usb_init(USBBAUD);//  38400 baud, an external serial monitor should have the same speed (115200 baud)
+    usb_init(USBBAUD);// 250000 baud, an external serial monitor should have the same speed
     ccd_init(LOBAUD); // 7812.5 baud
     pcm_init(LOBAUD); // 7812.5 baud
     tcm_init(LOBAUD); // 7812.5 baud
 
     // Define digital pin states
     // No need to re-define input states...
-    pinMode(INT4, INPUT_PULLUP);         // D2 (INT4), CCD-bus idle detector
-    pinMode(INT5, INPUT_PULLUP);         // D3 (INT5), CCD-bus active byte detector
+    pinMode(INT4, INPUT_PULLUP);  // D2 (INT4), CCD-bus idle detector
+    pinMode(INT5, INPUT_PULLUP);  // D3 (INT5), CCD-bus active byte detector
     pinMode(RX_LED,  OUTPUT);     // This LED flashes whenever data is received by the scanner
     pinMode(TX_LED,  OUTPUT);     // This LED flashes whenever data is transmitted from the scanner
     // PWR LED is tied to +5V directly, stays on when the scanner has power, draws about 2mA current
