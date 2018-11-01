@@ -131,9 +131,6 @@ void setup()
 
     check_battery_volts(); // calculate battery voltage from OBD16 pin
     ccd_clock_generator(START); // start listening to the CCD-bus
-    delay(2000); // wait for ccd clock to stabilize
-    ccd_rx_flush(); // clear buffer again (unstable clock causes dummy bytes to appear)
-    lcd.clear();
 
     // Copy handshake bytes from flash to ram (needed for connection purposes to an external computer)
     for (uint8_t i = 0; i < 21; i++)
@@ -168,8 +165,6 @@ void loop()
     if (current_millis_blink - act_led_ontime >= led_blink_interval)
     {
         digitalWrite(ACT_LED, HIGH); // turn off ACT LED
-        lcd.setCursor(0, 0);
-        lcd.print(total_ccd_msg_count);
     }
 }
 

@@ -22,7 +22,7 @@
 #ifndef CCDSCIUART_H
 #define CCDSCIUART_H
 
-#define FW 0x2EFCD4F5FE // Firmware version, actually the date/time of compilation (0x2EFCD4F5FE = 201810310654 -> 2018.10.31 06:54
+#define FW 0x2EFCDFA514 // Firmware version, actually the date/time of compilation (0x2EFCDFA514 = 201811010836 -> 2018.11.01 08:36
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -582,7 +582,7 @@ Returns:  none
 **************************************************************************/
 void usb_init(uint8_t ubrr)
 {
-    /* reset usb ringbuffer */
+    /* reset ringbuffer */
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
         USB_RxHead = 0;
@@ -595,10 +595,10 @@ void usb_init(uint8_t ubrr)
     UBRR0L = ubrr; // don't mess with the high register, low is all you need
 
     /* enable USART receiver and transmitter and receive complete interrupt */
-    USB_CONTROL = (1 << RXCIE0) | (1 << RXEN0) | (1 << TXEN0);
+    USB_CONTROL |= (1 << RXCIE0) | (1 << RXEN0) | (1 << TXEN0);
 
     /* set frame format: asynchronous, 8 data bit, no parity, 1 stop bit */
-    UCSR0C = (1 << UCSZ00) | (1 << UCSZ01);
+    UCSR0C |= (1 << UCSZ00) | (1 << UCSZ01);
 
 } /* usb_init */
 
@@ -779,11 +779,6 @@ void usb_rx_flush(void)
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
         USB_RxHead = USB_RxTail;
-
-        //USB_RxHead = 0; // equivalent with the equation above
-        //USB_RxTail = 0;
-        //USB_TxHead = 0;
-        //USB_TxTail = 0;
     }
     
 } /* usb_rx_flush */
@@ -800,11 +795,6 @@ void usb_tx_flush(void)
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
         USB_TxHead = USB_TxTail;
-
-        //USB_RxHead = 0; // equivalent with the equation above
-        //USB_RxTail = 0;
-        //USB_TxHead = 0;
-        //USB_TxTail = 0;
     }
     
 } /* usb_tx_flush */
@@ -821,7 +811,7 @@ Returns:  none
 **************************************************************************/
 void ccd_init(uint8_t ubrr)
 {
-    /* reset ccd ringbuffer */
+    /* reset ringbuffer */
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
         CCD_RxHead = 0;
@@ -834,10 +824,10 @@ void ccd_init(uint8_t ubrr)
     UBRR1L = ubrr; // don't mess with the high register, you already know why lol
 
     /* enable USART receiver and transmitter and receive complete interrupt */
-    CCD_CONTROL = (1 << RXCIE1) | (1 << RXEN1) | (1 << TXEN1);
+    CCD_CONTROL |= (1 << RXCIE1) | (1 << RXEN1) | (1 << TXEN1);
 
     /* set frame format: asynchronous, 8 data bit, no parity, 1 stop bit */
-    UCSR1C = (1 << UCSZ10) | (1 << UCSZ11);
+    UCSR1C |= (1 << UCSZ10) | (1 << UCSZ11);
     
 } /* ccd_init */
 
@@ -1018,11 +1008,6 @@ void ccd_rx_flush(void)
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
         CCD_RxHead = CCD_RxTail;
-
-        //CCD_RxHead = 0; // equivalent with the equation above
-        //CCD_RxTail = 0;
-        //CCD_TxHead = 0;
-        //CCD_TxTail = 0;
     }
     
 } /* ccd_rx_flush */
@@ -1038,12 +1023,7 @@ void ccd_tx_flush(void)
 {
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
-        CCD_RxHead = CCD_RxTail;
-
-        //CCD_RxHead = 0; // equivalent with the equation above
-        //CCD_RxTail = 0;
-        //CCD_TxHead = 0;
-        //CCD_TxTail = 0;
+        CCD_TxHead = CCD_TxTail;
     }
     
 } /* ccd_tx_flush */
@@ -1060,7 +1040,7 @@ Returns:  none
 **************************************************************************/
 void pcm_init(uint8_t ubrr)
 {
-    /* reset ccd ringbuffer */
+    /* reset ringbuffer */
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
         PCM_RxHead = 0;
@@ -1073,10 +1053,10 @@ void pcm_init(uint8_t ubrr)
     UBRR2L = ubrr; // don't mess with the high register, you already know why lol
 
     /* enable USART receiver and transmitter and receive complete interrupt */
-    PCM_CONTROL = (1 << RXCIE2) | (1 << RXEN2) | (1 << TXEN2);
+    PCM_CONTROL |= (1 << RXCIE2) | (1 << RXEN2) | (1 << TXEN2);
 
     /* set frame format: asynchronous, 8 data bit, no parity, 1 stop bit */
-    UCSR2C = (1 << UCSZ20) | (1 << UCSZ21);
+    UCSR2C |= (1 << UCSZ20) | (1 << UCSZ21);
     
 } /* pcm_init */
 
@@ -1257,11 +1237,6 @@ void pcm_rx_flush(void)
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
         PCM_RxHead = PCM_RxTail;
-
-        //PCM_RxHead = 0; // equivalent with the equation above
-        //PCM_RxTail = 0;
-        //PCM_TxHead = 0;
-        //PCM_TxTail = 0;
     }
     
 } /* pcm_rx_flush */
@@ -1277,12 +1252,7 @@ void pcm_tx_flush(void)
 {
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
-        PCM_RxHead = PCM_RxTail;
-
-        //PCM_RxHead = 0; // equivalent with the equation above
-        //PCM_RxTail = 0;
-        //PCM_TxHead = 0;
-        //PCM_TxTail = 0;
+        PCM_TxHead = PCM_TxTail;
     }
     
 } /* pcm_tx_flush */
@@ -1299,7 +1269,7 @@ Returns:  none
 **************************************************************************/
 void tcm_init(uint8_t ubrr)
 {
-    /* reset ccd ringbuffer */
+    /* reset ringbuffer */
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
         TCM_RxHead = 0;
@@ -1312,10 +1282,10 @@ void tcm_init(uint8_t ubrr)
     UBRR3L = ubrr; // don't mess with the high register, you already know why lol
 
     /* enable USART receiver and transmitter and receive complete interrupt */
-    TCM_CONTROL = (1 << RXCIE3) | (1 << RXEN3) | (1 << TXEN3);
+    TCM_CONTROL |= (1 << RXCIE3) | (1 << RXEN3) | (1 << TXEN3);
 
     /* set frame format: asynchronous, 8 data bit, no parity, 1 stop bit */
-    UCSR3C = (1 << UCSZ30) | (1 << UCSZ31);
+    UCSR3C |= (1 << UCSZ30) | (1 << UCSZ31);
     
 } /* tcm_init */
 
@@ -1496,11 +1466,6 @@ void tcm_rx_flush(void)
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
         TCM_RxHead = TCM_RxTail;
-
-        //TCM_RxHead = 0; // equivalent with the equation above
-        //TCM_RxTail = 0;
-        //TCM_TxHead = 0;
-        //TCM_TxTail = 0;
     }
     
 } /* tcm_rx_flush */
@@ -1516,12 +1481,7 @@ void tcm_tx_flush(void)
 {
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
-        TCM_RxHead = TCM_RxTail;
-
-        //TCM_RxHead = 0; // equivalent with the equation above
-        //TCM_RxTail = 0;
-        //TCM_TxHead = 0;
-        //TCM_TxTail = 0;
+        TCM_TxHead = TCM_TxTail;
     }
     
 } /* tcm_tx_flush */
@@ -2546,7 +2506,7 @@ void handle_usb_data(void)
                 }
             } // switch (target)   
         }
-        else if (sync == ASCII_SYNC_BYTE) // text based commincation
+        else if (sync == ASCII_SYNC_BYTE) // text based communication
         {
             // TODO
         }
