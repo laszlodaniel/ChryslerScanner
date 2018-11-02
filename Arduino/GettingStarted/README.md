@@ -5,6 +5,7 @@
 2. Go to the Arduino IDE installation directory and create a new directory called "Arduino". Copy the content of the "Arduino" folder inside the GitHub zip file to this location 
 
 3. Start the Arduino IDE and go to File / Preferences
+
 ![alt tag](https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/Arduino/GettingStarted/arduino_setup_01.png)
 
 4. Make sure that the Sketchbook location is the "Arduino" directory that you have just created
@@ -14,6 +15,7 @@
 ![alt tag](https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/Arduino/GettingStarted/arduino_setup_03.png)
 
 6. In case of multiple COM-ports head to the Device Manager and look for a Port using CP210X as bridge and note the COM-number
+
 ![alt tag](https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/Arduino/GettingStarted/arduino_setup_04.png)
 
 7. Make sure that the Board settings are reflected correctly on the bottom of the window and open the scanner sketch from File / Sketchbook / ChryslerCCDSCIScanner
