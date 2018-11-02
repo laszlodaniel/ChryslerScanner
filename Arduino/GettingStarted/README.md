@@ -35,7 +35,7 @@
 
 ![alt tag](https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/Arduino/GettingStarted/arduino_setup_07.png)
 
-11. Click the "Upload" button on top of the window to verify once more and upload the code to the scanner
+11. Click the "Upload" button on top of the window to verify once again and upload the code to the scanner
 
 ![alt tag](https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/Arduino/GettingStarted/arduino_setup_08.png)
 
