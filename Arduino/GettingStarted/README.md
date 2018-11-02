@@ -3,7 +3,7 @@
 * latest GitHub repository update from https://github.com/laszlodaniel/ChryslerCCDSCIScanner/archive/master.zip
 * latest external dependencies from https://github.com/JChristensen/extEEPROM/archive/master.zip and https://bitbucket.org/fmalpartida/new-liquidcrystal/downloads/
 
-2. Go to the Arduino IDE installation directory and create a new directory called "Arduino". Copy the content of the "Arduino" folder inside the GitHub zip file to this location.
+2. Go to the Arduino IDE installation directory and create a new directory called "Arduino". Copy the content of the "Arduino" folder inside the first GitHub zip file to this location.
 
 3. Create a new directory inside "Arduino" called "libraries" and copy the external dependencies here. Make sure that the names of the libraries are "extEEPROM" and "LiquidCrystal_I2C".
 
