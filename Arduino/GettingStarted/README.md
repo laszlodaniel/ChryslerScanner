@@ -1,6 +1,6 @@
 1. Download and install/unpack the following:
 * latest Arduino IDE from https://www.arduino.cc/en/Main/Software
-* latest GitHub update from https://github.com/laszlodaniel/ChryslerCCDSCIScanner/archive/master.zip
+* latest GitHub repository update from https://github.com/laszlodaniel/ChryslerCCDSCIScanner/archive/master.zip
 
 2. Go to the Arduino IDE installation directory and create a new directory called "Arduino". Copy the content of the "Arduino" folder inside the GitHub zip file to this location 
 
@@ -39,3 +39,5 @@
 11. "Done uploading" means the code is successfully uploaded to the scanner
 
 ![alt tag](https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/Arduino/GettingStarted/arduino_setup_09.png)
+
+Done.
