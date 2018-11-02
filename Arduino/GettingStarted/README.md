@@ -43,4 +43,4 @@
 
 ![alt tag](https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/Arduino/GettingStarted/arduino_setup_09.png)
 
-Done.
+Repeat 9-12 as necessary. Done.
