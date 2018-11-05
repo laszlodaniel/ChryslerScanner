@@ -6,7 +6,7 @@ Use 4pcs 2.9x6.5/9.5mm (M3) self tapping sheetmetal screws. The shorter ones fas
 
 The internal screw holes are intentionally misaligned a little bit to help internal fixture with transparent part slide into place easier.
 
-Recommended print settings:
+Recommended print settings for PET-G material:
 * first layer height: 0.3 mm,
 * layer height otherwise: 0.2 mm,
 * transparent part has 0.3 mm layer height everywhere to help light pass through (thin layers make light scatter so much there's nothing left at the other side),
