@@ -5,7 +5,7 @@
 
 2. Go to the Arduino IDE installation directory and create a new directory called "Arduino". Copy the content of the "Arduino" folder inside the first GitHub zip file to this location.
 
-3. Create a new directory inside "Arduino" called "libraries" and copy the external dependencies here. Make sure that the names of the libraries are "extEEPROM" and "LiquidCrystal_I2C".
+3. Create a new directory inside "Arduino" called "libraries" and copy the external dependencies here. Make sure that the names of the folders are "extEEPROM" and "LiquidCrystal_I2C".
 
 4. Start the Arduino IDE and go to File / Preferences.
 
