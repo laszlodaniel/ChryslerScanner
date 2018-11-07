@@ -39,7 +39,7 @@
 // Construct an object called "eep" for the external 24LC32A EEPROM chip
 extEEPROM eep(kbits_32, 1, 32, 0x50); // device size: 32 kilobits = 4 kilobytes, number of devices: 1, page size: 32 bytes (from datasheet), device address: 0x50 by default
 
-// Construct an object called lcd for the external display (optional)
+// Construct an object called "lcd" for the external display (optional)
 LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 
 void setup()
@@ -117,28 +117,27 @@ void setup()
     else { ext_eeprom_present = true; }
 
     // Initialize external display
-    lcd.begin(20, 4);                  // start LCD with 20 columns and 4 rows
-    lcd.backlight();                   // backlight on
-    lcd.clear();                       // clear display
-    lcd.home();                        // set cursor in home position (0, 0)
-    lcd.print(F("--------------------"));
-    lcd.setCursor(0, 1);
-    lcd.print(F("  CHRYSLER CCD/SCI  "));
-    lcd.setCursor(0, 2);
-    lcd.print(F(" SCANNER V1.40 2018 "));
-    lcd.setCursor(0, 3);
-    lcd.print(F("--------------------"));
+//    lcd.begin(20, 4); // start LCD with 20 columns and 4 rows
+//    lcd.backlight();  // backlight on
+//    lcd.clear();      // clear display
+//    lcd.home();       // set cursor in home position (0, 0)
+//    lcd.print(F("--------------------")); // F(" ") makes the compiler store the string inside to flash memory
+//    lcd.setCursor(0, 1);
+//    lcd.print(F("  CHRYSLER CCD/SCI  "));
+//    lcd.setCursor(0, 2);
+//    lcd.print(F(" SCANNER V1.40 2018 "));
+//    lcd.setCursor(0, 3);
+//    lcd.print(F("--------------------"));
 
     check_battery_volts(); // calculate battery voltage from OBD16 pin
     ccd_clock_generator(START); // start listening to the CCD-bus
 
-    // Copy handshake bytes from flash to ram (needed for connection purposes to an external computer)
-    for (uint8_t i = 0; i < 21; i++)
+    for (uint8_t i = 0; i < 21; i++) // copy handshake bytes from flash to ram
     {
         handshake_array[i] = pgm_read_byte(&handshake_progmem[i]);
     }
 
-    wdt_enable(WDTO_2S); // enable watchdog timer that resets program if the timer reaches 2 seconds
+    wdt_enable(WDTO_2S); // enable watchdog timer that resets program if the timer reaches 2 seconds (usefule if the prorgam hangs for some reason and needs auto-reset)
     get_bus_config(); // figure out how to talk to the vehicle
 }
 
@@ -167,4 +166,3 @@ void loop()
         digitalWrite(ACT_LED, HIGH); // turn off ACT LED
     }
 }
-

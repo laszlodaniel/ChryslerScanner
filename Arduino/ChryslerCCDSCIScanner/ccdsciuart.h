@@ -22,7 +22,7 @@
 #ifndef CCDSCIUART_H
 #define CCDSCIUART_H
 
-#define FW 0x2EFCDFA514 // Firmware version, actually the date/time of compilation (0x2EFCDFA514 = 201811010836 -> 2018.11.01 08:36
+#define FW 0x000000005BE2B322  // Firmware version, actually the date/time of compilation in 64-bit UNIX time
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -198,7 +198,7 @@
 
 // DC command 0x04-0x05 (request-response)
 // Both commands share the same sub-data codes
-#define firmware_version            0x01
+#define firmware_date               0x01
 #define read_int_eeprom             0x02
 #define read_ext_eeprom             0x03
 #define write_int_eeprom            0x04
@@ -1743,6 +1743,28 @@ void send_usb_packet(uint8_t source, uint8_t target, uint8_t dc_command, uint8_t
 
 
 /*************************************************************************
+Function: send_firmware_date()
+Purpose:  break firmware date into 8 bytes and send through serial link
+**************************************************************************/
+void send_firmware_date(void)
+{
+    uint8_t fw_value[8];
+                                    
+    fw_value[0] = (FW >> 56) & 0xFF;
+    fw_value[1] = (FW >> 48) & 0xFF;
+    fw_value[2] = (FW >> 40) & 0xFF;
+    fw_value[3] = (FW >> 32) & 0xFF;
+    fw_value[4] = (FW >> 24) & 0xFF;
+    fw_value[5] = (FW >> 16) & 0xFF;
+    fw_value[6] = (FW >> 8) & 0xFF;
+    fw_value[7] = FW & 0xFF;
+
+    send_usb_packet(from_usb, to_usb, response, firmware_date, fw_value, 8);
+    
+} /* send_firmware_date */
+
+
+/*************************************************************************
 Function: handle_usb_data()
 Purpose:  handle USB commands coming from an external computer
 Note:     refer to ChryslerCCDSCIScanner_UART_Protocol.pdf to find out 
@@ -1792,7 +1814,7 @@ void handle_usb_data(void)
         
         sync = usb_getc() & 0xFF; // read one sync byte
         
-        if (sync == PACKET_SYNC_BYTE) // byte based commincation
+        if (sync == PACKET_SYNC_BYTE) // byte based communication
         {
             length_hb = usb_getc() & 0xFF; // read first length byte
             length_lb = usb_getc() & 0xFF; // read second length byte
@@ -1926,6 +1948,7 @@ void handle_usb_data(void)
                         {
                             //reset_diagnostic_comms();
                             send_usb_packet(from_usb, to_usb, handshake, ok, handshake_array, 21);
+                            send_firmware_date();
                             //scanner_connected = true;
                             break;
                         }
@@ -2020,17 +2043,9 @@ void handle_usb_data(void)
                         {
                             switch (subdatacode)  // Evaluate sub-data code byte
                             {
-                                case firmware_version: // 0x01 - Scanner firmware version
+                                case firmware_date: // 0x01 - Scanner firmware date
                                 {
-                                    uint8_t fw_value[5];
-                                    fw_value[0] = (FW >> 32) & 0xFF;
-                                    fw_value[1] = (FW >> 24) & 0xFF;
-                                    fw_value[2] = (FW >> 16) & 0xFF;
-                                    fw_value[3] = (FW >> 8) & 0xFF;
-                                    fw_value[4] = FW & 0xFF;
-                                    
-                                    
-                                    send_usb_packet(from_usb, to_usb, response, firmware_version, fw_value, 5);
+                                    send_firmware_date();
                                     break;
                                 }
                                 case read_int_eeprom: // 0x02 - Read internal EEPROM in chunks (size in PAYLOAD)
