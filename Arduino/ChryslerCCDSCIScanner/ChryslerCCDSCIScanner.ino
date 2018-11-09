@@ -150,18 +150,18 @@ void loop()
     if (sci_enabled) { handle_sci_data(); } // do SCI-bus stuff if it's enabled
 
     current_millis_blink = millis(); // check current time
-    if (act_led_heartbeat_enabled) act_led_heartbeat();
-    if (current_millis_blink - rx_led_ontime >= led_blink_interval)
+    if (heartbeat_enabled) act_led_heartbeat();
+    if (current_millis_blink - rx_led_ontime >= led_blink_duration)
     {
         digitalWrite(RX_LED, HIGH); // turn off RX LED
     }
 
-    if (current_millis_blink - tx_led_ontime >= led_blink_interval)
+    if (current_millis_blink - tx_led_ontime >= led_blink_duration)
     {
         digitalWrite(TX_LED, HIGH); // turn off TX LED
     }
 
-    if (current_millis_blink - act_led_ontime >= led_blink_interval)
+    if (current_millis_blink - act_led_ontime >= led_blink_duration)
     {
         digitalWrite(ACT_LED, HIGH); // turn off ACT LED
     }
