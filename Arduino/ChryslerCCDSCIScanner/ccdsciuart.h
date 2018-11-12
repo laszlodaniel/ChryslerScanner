@@ -22,7 +22,7 @@
 #ifndef CCDSCIUART_H
 #define CCDSCIUART_H
 
-#define FW 0x000000005BE56B8F  // Firmware version, actually the date/time of compilation in 64-bit UNIX time
+#define FW 0x000000005BE98469  // Firmware version, actually the date/time of compilation in 64-bit UNIX time
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -201,6 +201,7 @@
 // DC command 0x04 & 0x05 (request and response)
 #define firmware_date     0x00 // 64-bit UNIX time of code compilation, defined as "FW"
 #define timestamp         0x01 // elapsed milliseconds since system start
+#define battery_voltage   0x02 // as the name says
 // 0x02-0xFF reserved
 
 // SUB-DATA CODE byte
@@ -278,6 +279,7 @@ uint8_t ccd_msg_to_send[TEMP_BUFFER_SIZE]; // custom ccd-bus message is copied h
 uint8_t ccd_msg_to_send_ptr = 0; // custom ccd-bus message length
 uint8_t ccd_module_addr[TEMP_BUFFER_SIZE]; // recognised CCD-bus modules are stored here with ascending order
 uint8_t ccd_module_count = 0; // number of currently recognized CCD-bus modules
+volatile uint32_t last_ccd_byte_sent = 0;
 
 // SCI-bus
 volatile bool pcm_idle = false;
@@ -311,7 +313,7 @@ const uint8_t handshake_progmem[] PROGMEM = { 0x43, 0x48, 0x52, 0x59, 0x53, 0x4C
                              //               "C     H     R     Y     S     L     E     R     C     C     D     S     C     I     S     C     A     N     N     E     R"
 // Battery voltage detector
 const uint16_t adc_supply_voltage = 500; // supply voltage multiplied by 100: 5.00V -> 500
-const uint16_t battery_rd1 = 120; // high resistor value in the divider (R19), multiplied by 10: 12 kOhm = 120
+const uint16_t battery_rd1 = 270; // high resistor value in the divider (R19), multiplied by 10: 27 kOhm = 270
 const uint16_t battery_rd2 = 50;  // low resistor value in the divider (R20), multiplied by 10: 5 kOhm = 50
 uint16_t adc_max_value = 1023; // 1023 for 10-bit resolution
 uint16_t battery_adc = 0;   // raw analog reading is stored here
@@ -434,7 +436,8 @@ Purpose:  called when the UART1 has received a character
         /* store received data in buffer */
         CCD_RxBuf[tmphead] = (lastRxError << 8) + data;
     }
-    CCD_LastRxError = lastRxError;   
+    CCD_LastRxError = lastRxError;
+    last_ccd_byte_sent = millis();
 }
 
 ISR(CCD_TRANSMIT_INTERRUPT)
@@ -873,12 +876,12 @@ uint16_t ccd_getc(void)
 
 /*************************************************************************
 Function: ccd_peek()
-Purpose:  return the next byte waiting in the receive buffer
-          without removing it
+Purpose:  return byte waiting in the receive buffer at index
+          without removing it (by default the next byte available to read)
 Returns:  low byte:  next byte in the receive buffer
           high byte: error flags
 **************************************************************************/
-uint16_t ccd_peek(void)
+uint16_t ccd_peek(uint16_t index = 0)
 {
     uint16_t tmptail;
     uint16_t data;
@@ -891,7 +894,7 @@ uint16_t ccd_peek(void)
         }
     }
   
-    tmptail = (CCD_RxTail + 1) & CCD_RX1_BUFFER_MASK;
+    tmptail = (CCD_RxTail + 1 + index) & CCD_RX1_BUFFER_MASK;
 
     /* get data from receive buffer */
     data = CCD_RxBuf[tmptail];
@@ -1817,7 +1820,7 @@ void handle_usb_data(void)
             return; // exit, let the loop call this function again
         }
 
-        if (usb_rx_available() == 0) return; // exit if there's no data left
+        if (usb_rx_available() == 0) return; // exit if there's no data left, don't send error packet back to the laptop
         
         sync = usb_getc() & 0xFF; // read one sync byte
         
@@ -1838,13 +1841,14 @@ void handle_usb_data(void)
                 return; // exit, let the loop call this function again
             }
     
-            // Calculate the exact size of the payload
+            // Calculate the exact size of the payload.
             payload_length = bytes_to_read - 3; // in this case we have to be careful not to count data code byte, sub-data code byte and checksum byte
     
-            // Do not let this variable sink below zero
+            // Do not let this variable sink below zero.
             if (payload_length < 0) payload_length = 0; // !!!
     
-            // Wait here until all of the expected bytes are received or timeout occurs
+            // Wait here until all of the expected bytes are received or timeout occurs.
+            // Data reception is controlled by ISRs (Interrupt Service Routine) so it's okay to block the code here for a while.
             command_timeout_start = millis();
             while ((usb_rx_available() < bytes_to_read) && !command_timeout_reached) 
             {
@@ -1865,10 +1869,10 @@ void handle_usb_data(void)
             // Read one SUB-DATA CODE byte that's following.
             subdatacode = usb_getc() & 0xFF;
     
-            // Make some space for the payload bytes
+            // Make some space for the payload bytes.
             uint8_t cmd_payload[payload_length];
     
-            // If the payload length is greater than zero then read those bytes too
+            // If the payload length is greater than zero then read those bytes too.
             if (payload_length > 0)
             {
                 // Read all the PAYLOAD bytes
@@ -1946,7 +1950,7 @@ void handle_usb_data(void)
                         {
                             // Send acknowledge packet back to the scanner.
                             send_usb_packet(from_usb, to_usb, reset, ok, ack, 1);
-    
+                            digitalWrite(ACT_LED, LOW);
                             // Enter into an infinite loop. Watchdog timer doesn't get reset this way so it restarts the program eventually.
                             // Be aware that this method only resets the program counter (so setup() gets called again),
                             // but variables retain their values. This is not equivalent to hardware reset (which resets everything).
@@ -1984,9 +1988,9 @@ void handle_usb_data(void)
                                         heartbeat_interval = flashing_interval;
                                         heartbeat_enabled = true;
                                     }
-
+                                    
                                     uint16_t blink_duration = (cmd_payload[2] << 8) + cmd_payload[3]; // 0-65535 milliseconds
-                                    led_blink_duration = blink_duration;
+                                    led_blink_duration = blink_duration; // this applies to all 3 status leds! (rx, tx, act)
 
                                     send_usb_packet(from_usb, to_usb, settings, heartbeat, ok, 1); // acknowledge
                                     break;
@@ -2016,20 +2020,20 @@ void handle_usb_data(void)
                                     bool enabled    = cmd_payload[0] & 0x01; // lowest bit indicates disabled (0) or enabled (1)
                                     bool set_config = cmd_payload[0] & 0x02; // next bit tells which SCI-bus configuration to enable: A (0) or B (1)
                                     bool set_speed  = cmd_payload[0] & 0x04; // next bit tells speed mode: low speed/7812.5 baud (0) or high speed/62500 baud (1)
-                                    
-                                    if (target == to_pcm)
-                                    {
-                                        pcm_enabled = enabled;
-                                        // TODO: config and speed
-                                    }
-                                    else if (target == to_tcm)
-                                    {
-                                        tcm_enabled = enabled;
-                                        // TODO: config and speed
-                                    }
-                                    
-                                    if (!pcm_enabled & !tcm_enabled) sci_enabled = false;
-                                    else sci_enabled = true;
+// !!!!!!!!!THIS WON'T WORK, target is the scanner, can't be other than that!                                  
+//                                    if (target == to_pcm)
+//                                    {
+//                                        pcm_enabled = enabled;
+//                                        // TODO: config and speed
+//                                    }
+//                                    else if (target == to_tcm)
+//                                    {
+//                                        tcm_enabled = enabled;
+//                                        // TODO: config and speed
+//                                    }
+//                                    
+//                                    if (!pcm_enabled & !tcm_enabled) sci_enabled = false;
+//                                    else sci_enabled = true;
                                     
                                     send_usb_packet(from_usb, to_usb, settings, set_sci_bus, ok, 1); // acknowledge
                                     break;
@@ -2056,7 +2060,12 @@ void handle_usb_data(void)
                                     get_mcu_millis(mcu_millis); // this function updates the global byte array "mcu_millis" with the current time
                                     send_usb_packet(from_usb, to_usb, response, timestamp, mcu_millis, 4);
                                     break;
-                                }                 
+                                }
+                                case battery_voltage:
+                                {
+                                    send_usb_packet(from_usb, to_usb, response, battery_voltage, battery_volts_array, 2);
+                                    break;
+                                }
                                 default: // other values are not used
                                 {
                                     send_usb_packet(from_usb, to_usb, response, error_subdatacode_invalid_value, err, 1);
@@ -2081,7 +2090,7 @@ void handle_usb_data(void)
                         }
                         case ok_error: // 0x0F - OK/ERROR message
                         {
-                            // TODO
+                            // TODO, although it's rare that the laptop sends an error message out of the blue
                             send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
                             break;
                         }
@@ -2092,7 +2101,7 @@ void handle_usb_data(void)
                         }
                     }
                     break;
-                }
+                } // case to_usb:
                 case to_ccd: // 0x01 - CCD-bus is the target
                 {
                     switch (dc_command) // evaluate DC command
@@ -2156,7 +2165,7 @@ void handle_usb_data(void)
                         }
                     }
                     break;
-                }
+                } // case to_ccd:
                 case to_pcm: // 0x02 - SCI-bus (PCM) is the target
                 {
                     switch (dc_command) // evaluate DC command
@@ -2177,6 +2186,7 @@ void handle_usb_data(void)
                                     {
                                         pcm_msg_to_send[i] = cmd_payload[i];
                                     }
+                                    // Checksum isn't used on SCI-bus transmissions, except when receiving fault codes.
                                     pcm_msg_to_send_ptr = payload_length;
                                     pcm_msg_pending = true; // set flag so the main loop knows there's something to do
                                     send_usb_packet(from_usb, to_usb, msg_tx, single_msg, to_pcm, 1); // acknowledge
@@ -2203,7 +2213,7 @@ void handle_usb_data(void)
                         }
                     }
                     break;
-                }
+                } // case to_pcm:
                 case to_tcm: // 0x03 - SCI-bus (TCM) is the target
                 {
                     switch (dc_command) // evaluate DC command
@@ -2224,6 +2234,7 @@ void handle_usb_data(void)
                                     {
                                         tcm_msg_to_send[i] = cmd_payload[i];
                                     }
+                                    // Checksum isn't used on SCI-bus transmissions, except when receiving fault codes.
                                     tcm_msg_to_send_ptr = payload_length;
                                     tcm_msg_pending = true; // set flag so the main loop knows there's something to do
                                     send_usb_packet(from_usb, to_usb, msg_tx, single_msg, to_tcm, 1); // acknowledge
@@ -2250,11 +2261,7 @@ void handle_usb_data(void)
                         }
                     }
                     break;
-                }
-                default: // Other values are not used.
-                {
-                    break;            
-                }
+                } // case to_tcm:
             } // switch (target)   
         }
         else if (sync == ASCII_SYNC_BYTE) // text based communication
@@ -2271,6 +2278,51 @@ void handle_usb_data(void)
 
 
 /*************************************************************************
+Function: handle_ccd_data_sub01()
+Purpose:  sub-function for "handle_ccd_data" to avoid writing the same code twice
+Note:     this piece of code is responsible to transmit completed CCD-bus messages back to the laptop,
+          and it needs to be called when a new ID byte arrives
+          or when no new message arrives and the last one stays for too long in the buffer
+**************************************************************************/
+void handle_ccd_data_sub01(void)
+{
+    uint8_t usb_msg[4+ccd_bytes_buffer_ptr]; // create local array which will hold the timestamp and the CCD-bus message
+    get_mcu_millis(mcu_millis); // get current time for the timestamp
+    usb_msg[0] = mcu_millis[0]; // no need to bitshift result, the time is already in arrays
+    usb_msg[1] = mcu_millis[1];
+    usb_msg[2] = mcu_millis[2];
+    usb_msg[3] = mcu_millis[3];
+
+    for (uint8_t i = 0; i < ccd_bytes_buffer_ptr; i++)
+    {
+        usb_msg[4+i] = ccd_bytes_buffer[i]; // put every byte in the CCD-bus message after the timestamp
+    }
+
+    // Check if the crc byte in the CCD-bus message is correct
+    uint16_t calculated_checksum = 0;
+    for (uint16_t i = 0; i < (ccd_bytes_buffer_ptr - 1); i++)
+    {
+        calculated_checksum += ccd_bytes_buffer[i]; // add bytes together (including ID-byte)
+    }
+    calculated_checksum = calculated_checksum & 0xFF;
+
+    if (ccd_bytes_buffer[ccd_bytes_buffer_ptr - 1] == calculated_checksum) // if they match
+    {
+        // Send CCD-bus message back to the laptop
+        send_usb_packet(from_ccd, to_usb, msg_rx, ok, usb_msg, 4+ccd_bytes_buffer_ptr);
+    }
+    else // if they do not
+    {
+        // Send CCD-bus message back to the laptop with wrong checksum flag
+        send_usb_packet(from_ccd, to_usb, msg_rx, error_checksum_invalid_value, usb_msg, 4+ccd_bytes_buffer_ptr);
+    }
+    
+    ccd_bytes_buffer_ptr = 0; // reset pointer so the new message starts at the beginning of the array
+    
+} // end of handle_ccd_data_sub01
+
+
+/*************************************************************************
 Function: handle_ccd_data()
 Purpose:  handle CCD-bus messages
 **************************************************************************/
@@ -2278,70 +2330,45 @@ void handle_ccd_data(void)
 {
     // #1 - Collecting bytes from the CCD-bus:
     // Check if there are any data bytes in the CCD-ringbuffer
-    // Note that this piece of code only reads 1 byte every program loop but it's fast enough to not cause problems
-    if (ccd_rx_available() > 0)
+    uint8_t datalength = ccd_rx_available(); // how many bytes are readily available? (only read this much bytes, don't let them accumulate in the for-loop)
+    if (datalength > 0)
     {
-        // Peek one byte (don't remove it from the buffer yet)
-        uint16_t dummy_read = ccd_peek();
-
-        // #2 - Detecting end of message condition
-        // If the peaked value is an ID-byte then send the previous bytes to the laptop (if any)
-        if ((dummy_read & CCD_SOM) && (ccd_bytes_buffer_ptr > 0))
+        for (uint8_t i=0; i<datalength; i++)
         {
-            uint8_t usb_msg[4+ccd_bytes_buffer_ptr]; // create local array which will hold the timestamp and the CCD-bus message
-            get_mcu_millis(mcu_millis); // get current time for the timestamp
-            usb_msg[0] = mcu_millis[0]; // no need to bitshift result, the time is already in arrays
-            usb_msg[1] = mcu_millis[1];
-            usb_msg[2] = mcu_millis[2];
-            usb_msg[3] = mcu_millis[3];
-
-            for (uint8_t i = 0; i < ccd_bytes_buffer_ptr; i++)
+            // Peek one byte (don't remove it from the buffer yet)
+            uint16_t msgbyte = ccd_peek();
+    
+            // #2 - Detecting end of message condition
+            // If the peaked value is an ID-byte then send the previous bytes to the laptop (if any)
+            // Send too if no new bytes are coming for a short time (for example ccd-bus goes to idle)
+            if ((msgbyte & CCD_SOM) && (ccd_bytes_buffer_ptr > 0))
             {
-                usb_msg[4+i] = ccd_bytes_buffer[i]; // put every byte in the CCD-bus message after the timestamp
+                handle_ccd_data_sub01();
+    
+                // Save the new ID-byte as the first one in the buffer
+                ccd_bytes_buffer[ccd_bytes_buffer_ptr] = ccd_getc() & 0xFF; // getc = read it while deleting it from the buffer
+                ccd_bytes_buffer_ptr++; // increase pointer value by one so it points to the next empty slot in the buffer
+                if (ccd_bytes_buffer_ptr > (TEMP_BUFFER_SIZE - 1)) // don't let buffer pointer overflow, send the whole 32 byte buffer back to the laptop to figure out what's wrong
+                {
+                    ccd_bytes_buffer_ptr = 0;
+                    send_usb_packet(from_ccd, to_usb, msg_rx, error_buffer_overflow, ccd_bytes_buffer, TEMP_BUFFER_SIZE);
+                }
             }
-
-            // Check if the crc byte in the CCD-bus message is correct
-            uint16_t calculated_checksum = 0;
-            for (uint16_t i = 0; i < (ccd_bytes_buffer_ptr - 1); i++)
+            else // get this byte and save to the temporary buffer in the next available position
             {
-                calculated_checksum += ccd_bytes_buffer[i]; // add bytes together (including ID-byte)
+                ccd_bytes_buffer[ccd_bytes_buffer_ptr] = ccd_getc() & 0xFF; // getc = read it while deleting it from the buffer
+                ccd_bytes_buffer_ptr++; // increase pointer value by one so it points to the next empty slot in the buffer
+                if (ccd_bytes_buffer_ptr > (TEMP_BUFFER_SIZE - 1)) // don't let buffer pointer overflow, send the whole 32 byte buffer back to the laptop to figure out what's wrong
+                {
+                    ccd_bytes_buffer_ptr = 0;
+                    send_usb_packet(from_ccd, to_usb, msg_rx, error_buffer_overflow, ccd_bytes_buffer, TEMP_BUFFER_SIZE);
+                }
+                // It's highly unlikely that a vehicle computer sends a message bigger than the buffer size (32 bytes in this case), so don't worry about this branch
             }
-            calculated_checksum = calculated_checksum & 0xFF;
-
-            if (ccd_bytes_buffer[ccd_bytes_buffer_ptr - 1] == calculated_checksum) // if they match
-            {
-                // Send CCD-bus message back to the laptop
-                send_usb_packet(from_ccd, to_usb, msg_rx, ok, usb_msg, 4+ccd_bytes_buffer_ptr);
-            }
-            else // if they do not
-            {
-                // Send CCD-bus message back to the laptop with wrong checksum flag
-                send_usb_packet(from_ccd, to_usb, msg_rx, error_checksum_invalid_value, usb_msg, 4+ccd_bytes_buffer_ptr);
-            }
-
-            ccd_bytes_buffer_ptr = 0; // reset pointer so the new message starts at the beginning of the array
-
-            // And finally save the new ID-byte as the first one in the buffer (the code so far is responsible to forward previous message)
-            ccd_bytes_buffer[ccd_bytes_buffer_ptr] = ccd_getc() & 0xFF; // getc = read it while deleting it from the buffer
-            ccd_bytes_buffer_ptr++; // increase pointer value by one so it points to the next empty slot in the buffer
-            if (ccd_bytes_buffer_ptr > (TEMP_BUFFER_SIZE - 1)) // don't let buffer pointer overflow, send the whole 32 byte buffer back to the laptop to figure out what's wrong
-            {
-                ccd_bytes_buffer_ptr = 0;
-                send_usb_packet(from_ccd, to_usb, msg_rx, error_buffer_overflow, ccd_bytes_buffer, TEMP_BUFFER_SIZE);
-            }
-        }
-        else // get this byte and save to the temporary buffer in the next available position
-        {
-            ccd_bytes_buffer[ccd_bytes_buffer_ptr] = ccd_getc() & 0xFF; // getc = read it while deleting it from the buffer
-            ccd_bytes_buffer_ptr++; // increase pointer value by one so it points to the next empty slot in the buffer
-            if (ccd_bytes_buffer_ptr > (TEMP_BUFFER_SIZE - 1)) // don't let buffer pointer overflow, send the whole 32 byte buffer back to the laptop to figure out what's wrong
-            {
-                ccd_bytes_buffer_ptr = 0;
-                send_usb_packet(from_ccd, to_usb, msg_rx, error_buffer_overflow, ccd_bytes_buffer, TEMP_BUFFER_SIZE);
-            }
-            // It's highly unlikely that a vehicle computer sends a message bigger than the buffer size (32 bytes in this case), so don't worry about this branch
         }
     }
+
+    if (((millis() - last_ccd_byte_sent) > 1000) && (ccd_bytes_buffer_ptr > 0)) handle_ccd_data_sub01(); // if a message (or fragment) stays too long in the buffer
 
     // #3 - Sending bytes to the CCD-bus:
     // If there's a message to be sent to the CCD-bus and the bus happens to be idling then send it here and now
@@ -2384,12 +2411,16 @@ void handle_sci_data(void)
 
 /*************************************************************************
 Function: check_battery_volts()
-Purpose:  measure battery voltage through a resistor divider circuit
+Purpose:  measure battery voltage through the OBD16 pin
+Note:     be aware that this voltage isn't like a multimeter reading, 
+          it is produced by a resistor divider circuit with imperfect
+          resistors (1% tolreance, but still lots of headroom in it);
+          the circuit tolerates +24V batteries too
 **************************************************************************/
 void check_battery_volts(void)
 {
     battery_adc = analogRead(BATT);
-    battery_volts = (uint16_t)(((((battery_adc/adc_max_value)*(adc_supply_voltage/100.0))*((battery_rd1/10.0)+(battery_rd2/10.0)))/(battery_rd2/10.0))*100.0); // an overly complicated code for a resistor voltage divider
+    battery_volts = (uint16_t)(battery_adc*(adc_supply_voltage/100.0)/adc_max_value*((battery_rd1/10.0)+(battery_rd2/10.0))/(battery_rd2/10.0)*100);
     battery_volts_array[0] = (battery_volts >> 8) & 0xFF;
     battery_volts_array[1] = battery_volts & 0xFF;
     if (battery_volts > 700) connected_to_vehicle = true; // consider a sensed voltage of 7.00V to be connected

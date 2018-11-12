@@ -84,6 +84,7 @@ void setup()
     pinMode(TX_LED,  OUTPUT);     // This LED flashes whenever data is transmitted from the scanner
     // PWR LED is tied to +5V directly, stays on when the scanner has power, draws about 2mA current
     pinMode(ACT_LED, OUTPUT);     // This LED flashes when some "action" takes place in the scanner
+    pinMode(BATT, INPUT);
     digitalWrite(RX_LED, HIGH);   // LEDs are grounded through the microcontroller, so HIGH/HI-Z = OFF, LOW = ON
     digitalWrite(TX_LED, HIGH);   // ---||---
     digitalWrite(ACT_LED, HIGH);  // ---||---
@@ -107,6 +108,7 @@ void setup()
     digitalWrite(PA7, LOW); // |
 
     sei(); // enable interrupts, serial interrupt control resumes working
+    wdt_enable(WDTO_2S); // enable watchdog timer that resets program if the timer reaches 2 seconds (usefule if the prorgam hangs for some reason and needs auto-reset)
     attachInterrupt(digitalPinToInterrupt(INT4), ccd_eom, FALLING); // execute "ccd_eom" function if the CCD-transceiver pulls D2 pin low indicating an "End of Message" condition so the byte reader ISR can flag the next byte as ID-byte
     attachInterrupt(digitalPinToInterrupt(INT5), ccd_active_byte, FALLING); // execute "ccd_active_byte" function if the CCD-transceiver pulls D3 pin low indicating a byte being transmitted on the CCD-bus
     // active byte = we don't know the byte's value right away, we have to wait for all 8 data bits and a few other bits for framing to arrive.
@@ -129,6 +131,7 @@ void setup()
 //    lcd.setCursor(0, 3);
 //    lcd.print(F("--------------------"));
 
+    analogReference(DEFAULT); // use default voltage reference applied to AVCC (+5V)
     check_battery_volts(); // calculate battery voltage from OBD16 pin
     ccd_clock_generator(START); // start listening to the CCD-bus
 
@@ -137,8 +140,9 @@ void setup()
         handshake_array[i] = pgm_read_byte(&handshake_progmem[i]);
     }
 
-    wdt_enable(WDTO_2S); // enable watchdog timer that resets program if the timer reaches 2 seconds (usefule if the prorgam hangs for some reason and needs auto-reset)
     get_bus_config(); // figure out how to talk to the vehicle
+    digitalWrite(ACT_LED, LOW);
+    act_led_ontime = millis();
 }
 
 void loop()
