@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<VehicleProfiles>
+  <Vehicle vname = "1995 Chrysler Stratus 2.0L JA">
+    <CCD>
+      <Message ccdid="E4">
+        <Length>4</Length>
+        <Description>ENGINE RPM | INTAKE MANIFOLD ABSOLUTE PRESSURE</Description>
+        <Scaling>
+          <Metric>32;0.4100</Metric>
+          <Imperial>32;0.8731</Imperial>
+        </Scaling>
+        <Units>
+          <Metric>1/MIN;KPA</Metric>
+          <Imperial>1/MIN;PSI</Imperial>
+        </Units>
+      </Message>
+      <Message ccdid="24">
+        <Length>4</Length>
+        <Description>VEHICLE SPEED</Description>
+        <Scaling>
+          <Metric>0;1</Metric>
+          <Imperial>1;0</Imperial>
+        </Scaling>
+        <Units>
+          <Metric>KM/H</Metric>
+          <Imperial>MPH</Imperial>
+        </Units>
+      </Message>
+    </CCD>
+    <SCIPCM>
+      <Message scipcmid="10">
+        <Length>var</Length>
+        <Description>ENGINE FAULT CODE (DTC) LIST</Description>
+        <Scaling></Scaling>
+        <Units></Units>
+      </Message>
+    </SCIPCM>
+  </Vehicle>
+  <Vehicle vname = "1998 Chrysler Stratus 2.5L JA">
+  </Vehicle>
+</VehicleProfiles>

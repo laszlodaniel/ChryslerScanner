@@ -98,17 +98,35 @@ void setup()
     pinMode(PA5, OUTPUT);   // |
     pinMode(PA6, OUTPUT);   // |
     pinMode(PA7, OUTPUT);   // |
-    digitalWrite(PA0, LOW); // Set PA0 low to disable SCI-bus communication by default
-    digitalWrite(PA1, LOW); // |
-    digitalWrite(PA2, LOW); // |
-    digitalWrite(PA3, LOW); // |
-    digitalWrite(PA4, LOW); // |
-    digitalWrite(PA5, LOW); // |
-    digitalWrite(PA6, LOW); // |
-    digitalWrite(PA7, LOW); // |
+//    digitalWrite(PA0, LOW); // Set PA0 low to disable SCI-bus communication by default
+//    digitalWrite(PA1, LOW); // |
+//    digitalWrite(PA2, LOW); // |
+//    digitalWrite(PA3, LOW); // |
+//    digitalWrite(PA4, LOW); // |
+//    digitalWrite(PA5, LOW); // |
+//    digitalWrite(PA6, LOW); // |
+//    digitalWrite(PA7, LOW); // |
+    
+//    digitalWrite(PA0, HIGH); // SCI-bus "A" configuration
+//    digitalWrite(PA1, HIGH);
+//    digitalWrite(PA2, HIGH);
+//    digitalWrite(PA3, HIGH);
+//    digitalWrite(PA4, LOW);
+//    digitalWrite(PA5, LOW);
+//    digitalWrite(PA6, LOW);
+//    digitalWrite(PA7, LOW);
+
+    digitalWrite(PA0, LOW); // SCI-bus "B" configuration
+    digitalWrite(PA1, LOW);
+    digitalWrite(PA2, LOW);
+    digitalWrite(PA3, LOW);
+    digitalWrite(PA4, HIGH);
+    digitalWrite(PA5, HIGH);
+    digitalWrite(PA6, HIGH);
+    digitalWrite(PA7, HIGH);
 
     sei(); // enable interrupts, serial interrupt control resumes working
-    wdt_enable(WDTO_2S); // enable watchdog timer that resets program if the timer reaches 2 seconds (usefule if the prorgam hangs for some reason and needs auto-reset)
+    wdt_enable(WDTO_2S); // enable watchdog timer that resets program if the timer reaches 2 seconds (useful if the prorgam hangs for some reason and needs auto-reset)
     attachInterrupt(digitalPinToInterrupt(INT4), ccd_eom, FALLING); // execute "ccd_eom" function if the CCD-transceiver pulls D2 pin low indicating an "End of Message" condition so the byte reader ISR can flag the next byte as ID-byte
     attachInterrupt(digitalPinToInterrupt(INT5), ccd_active_byte, FALLING); // execute "ccd_active_byte" function if the CCD-transceiver pulls D3 pin low indicating a byte being transmitted on the CCD-bus
     // active byte = we don't know the byte's value right away, we have to wait for all 8 data bits and a few other bits for framing to arrive.
@@ -123,7 +141,7 @@ void setup()
 //    lcd.backlight();  // backlight on
 //    lcd.clear();      // clear display
 //    lcd.home();       // set cursor in home position (0, 0)
-//    lcd.print(F("--------------------")); // F(" ") makes the compiler store the string inside to flash memory
+//    lcd.print(F("--------------------")); // F(" ") makes the compiler store the string inside flash memory
 //    lcd.setCursor(0, 1);
 //    lcd.print(F("  CHRYSLER CCD/SCI  "));
 //    lcd.setCursor(0, 2);
@@ -141,7 +159,7 @@ void setup()
     }
 
     get_bus_config(); // figure out how to talk to the vehicle
-    digitalWrite(ACT_LED, LOW);
+    digitalWrite(ACT_LED, LOW); // flash action LED once to indicate setup is complete and the scanner is ready to accept instructions
     act_led_ontime = millis();
 }
 
@@ -159,12 +177,10 @@ void loop()
     {
         digitalWrite(RX_LED, HIGH); // turn off RX LED
     }
-
     if (current_millis_blink - tx_led_ontime >= led_blink_duration)
     {
         digitalWrite(TX_LED, HIGH); // turn off TX LED
     }
-
     if (current_millis_blink - act_led_ontime >= led_blink_duration)
     {
         digitalWrite(ACT_LED, HIGH); // turn off ACT LED
