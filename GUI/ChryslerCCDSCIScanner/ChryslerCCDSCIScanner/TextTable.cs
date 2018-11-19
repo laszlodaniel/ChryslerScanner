@@ -31,11 +31,17 @@ namespace ChryslerCCDSCIScanner
 
         public TextTable(string VehicleProfilesFileName)
         {
-            VehicleProfiles.Load(VehicleProfilesFileName);
-
-            foreach (XmlNode node in VehicleProfiles.DocumentElement.ChildNodes)
+            try
             {
-                string text = node.InnerText;
+                VehicleProfiles.Load(VehicleProfilesFileName);
+                foreach (XmlNode node in VehicleProfiles.DocumentElement.ChildNodes)
+                {
+                    string text = node.InnerText;
+                }
+            }
+            catch
+            {
+                
             }
 
             Table.Add("┌─────────────────────────┐                                                                                               ");

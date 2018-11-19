@@ -28,6 +28,50 @@ namespace ChryslerCCDSCIScanner
         public byte[] HandshakeRequest = new byte[] { 0x3D, 0x00, 0x02, 0x01, 0x00, 0x03 };
         public byte[] MillisRequest = new byte[] { 0x3D, 0x00, 0x02, 0x04, 0x01, 0x07 };
 
+        public enum TransmissionMethod
+        {
+            Hex = 0,
+            Ascii = 1
+        }
+        public byte TM = 0;
+
+        public enum Source
+        {
+            USB = 0,
+            CCDBus = 1,
+            SCIBusPCM = 2,
+            SCIBusTCM = 3
+        }
+
+        public enum Target
+        {
+            USB = 0,
+            CCDBus = 1,
+            SCIBusPCM = 2,
+            SCIBusTCM = 3
+        }
+
+        public enum Command
+        {
+            Reset = 0,
+            Handshake = 1,
+            Status = 2,
+            Settings = 3,
+            Request = 4,
+            Response = 5,
+            SendMessage = 6,
+            MessageReceived = 7,
+            Debug = 14,
+            OkError = 15
+        }
+
+        public enum Response
+        {
+            FirmwareDate = 0,
+            Timestamp = 1,
+            BatteryVoltage = 2
+        }
+
         private const int SB_VERT = 0x0001;
         private const int WM_VSCROLL = 0x0115;
         private const int SB_THUMBPOSITION = 0x0004;
@@ -41,7 +85,7 @@ namespace ChryslerCCDSCIScanner
 
         SerialPort Serial = new SerialPort();
         PacketManager PM = new PacketManager();
-        CircularBuffer<byte> SerialRxBuffer;
+        CircularBuffer<byte> SerialRxBuffer = new CircularBuffer<byte>(2048);
         TextTable TT = new TextTable(@"VehicleProfiles.xml");
         System.Timers.Timer TimeoutTimer = new System.Timers.Timer();
         WebClient Client = new WebClient();
@@ -53,7 +97,7 @@ namespace ChryslerCCDSCIScanner
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            groupBox2.Visible = false;
+            DiagnosticsGroupBox.Visible = false;
             this.Size = new Size(405, 650);
             this.CenterToScreen();
 
@@ -67,8 +111,6 @@ namespace ChryslerCCDSCIScanner
             PCMLogFilename = @"LOG/pcmlog_" + DateTimeNow + ".txt";
             TCMLogFilename = @"LOG/tcmlog_" + DateTimeNow + ".txt";
 
-            SerialRxBuffer = new CircularBuffer<byte>(2048);
-
             TimeoutTimer.Elapsed += new ElapsedEventHandler(TimeoutHandler);
             TimeoutTimer.Interval = 500; // ms
             TimeoutTimer.Enabled = false;
@@ -76,12 +118,30 @@ namespace ChryslerCCDSCIScanner
             PM.PropertyChanged += new PropertyChangedEventHandler(DataReceived);
             TT.PropertyChanged += new PropertyChangedEventHandler(TableUpdated);
 
-            textBox2.Text = String.Join(Environment.NewLine, TT.Table);
+            DiagnosticsTextBox.Text = String.Join(Environment.NewLine, TT.Table);
             USBCommunicationGroupBox.Enabled = false;
             TargetComboBox.SelectedIndex = 0;
             ModeComboBox.SelectedIndex = 1;
             CommandComboBox.SelectedIndex = 0;
-            ActiveControl = ConnectButton;
+
+            try // loading saved settings
+            {
+                if ((string)Properties.Settings.Default["Units"] == "metric") MetricUnitRadioButton.Checked = true;
+                else if ((string)Properties.Settings.Default["Units"] == "imperial") ImperialUnitRadioButton.Checked = true;
+                if ((string)Properties.Settings.Default["TransmissionMethod"] == "hex") HexCommMethodRadioButton.Checked = true;
+                else if ((string)Properties.Settings.Default["TransmissionMethod"] == "ascii") AsciiCommMethodRadioButton.Checked = true;
+            }
+            catch
+            {
+                Util.UpdateTextBox(USBTextBox, "[INFO] Application config file is missing (ChryslerCCDSCIScanner.exe.config)", null);
+            }
+
+            if (!File.Exists("VehicleProfiles.xml"))
+            {
+                Util.UpdateTextBox(USBTextBox, "[INFO] Vehicle profiles file is missing (VehicleProfiles.xml)", null);
+            }
+
+            ActiveControl = ConnectButton; // put focus on the connect button
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -104,6 +164,7 @@ namespace ChryslerCCDSCIScanner
                 if (ports.Length == 0) // if there's none, do nothing
                 {
                     Util.UpdateTextBox(USBTextBox, "[INFO] No scanner available", null);
+                    ConnectButton.Enabled = true;
                     return;
                 }
 
@@ -118,7 +179,17 @@ namespace ChryslerCCDSCIScanner
                     Serial.Parity = Parity.None;
                     Serial.ReadTimeout = 500;
                     Serial.WriteTimeout = 500;
-                    Serial.Open(); // open current serial port
+
+                    try
+                    {
+                        Serial.Open(); // open current serial port
+                    }
+                    catch
+                    {
+                        Util.UpdateTextBox(USBTextBox, "[INFO] " + Serial.PortName + " is opened by another application", null);
+                        continue; // skip current iteration and jump to next comport (if any)
+                    }
+
                     Serial.DiscardInBuffer();
                     Serial.DiscardOutBuffer();
                     Serial.BaseStream.Flush();
@@ -280,84 +351,77 @@ namespace ChryslerCCDSCIScanner
 
                 switch (source)
                 {
-                    case 0x00: // message is coming from the scanner directly, no need to analyze target, it has to be an external computer
+                    case (byte)Source.USB: // message is coming from the scanner directly, no need to analyze target, it has to be an external computer
                         switch (dc_command)
                         {
-                            case 0x00: // reset
-                                Util.UpdateTextBox(USBTextBox, "[->RX] Scanner is resetting now", msg);
+                            case (byte)Command.Reset:
+                                if (TM == (byte)TransmissionMethod.Hex)
+                                {
+                                    Util.UpdateTextBox(USBTextBox, "[->RX] Scanner is resetting now", msg);
+                                }
+                                else if (TM == (byte)TransmissionMethod.Ascii)
+                                {
+                                    Util.UpdateTextBox(USBTextBox, "> Scanner is resetting now", null);
+                                }
                                 break;
-
-                            case 0x01: // handshake
+                            case (byte)Command.Handshake:
                                 if (Encoding.ASCII.GetString(payload) == "CHRYSLERCCDSCISCANNER")
                                 {
                                     Util.UpdateTextBox(USBTextBox, "[->RX] Handshake response (" + Serial.PortName + ")", msg);
                                     Util.UpdateTextBox(USBTextBox, "[INFO] Handshake OK: " + Encoding.ASCII.GetString(payload), null);
-
                                     ScannerFound = true;
-
-                                    string comport_number_only = Serial.PortName; // status strip formatting
-                                    comport_number_only = comport_number_only.Remove(0, 3); // remove "COM" from "COM#"
-                                    byte comport_number = Convert.ToByte(comport_number_only);
                                 }
                                 else
                                 {
                                     Util.UpdateTextBox(USBTextBox, "[->RX] Handshake response (" + Serial.PortName + ")", msg);
                                     Util.UpdateTextBox(USBTextBox, "[INFO] Handshake ERROR", null);
-
                                     ScannerFound = false;
                                 }
                                 break;
-
-                            case 0x05: // general response
+                            case (byte)Command.Response:
                                 switch (subdatacode)
                                 {
-                                    case 0x00: // firmware date response
+                                    case (byte)Response.FirmwareDate:
+                                        DateTime FirmwareDate = Util.UnixTimeStampToDateTime(payload[0] << 56 | payload[1] << 48 | payload[2] << 40 | payload[3] << 32 | payload[4] << 24 | payload[5] << 16 | payload[6] << 8 | payload[7]);
+                                        string FirmwareDateString = FirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
                                         Util.UpdateTextBox(USBTextBox, "[->RX] Firmware date response", msg);
-                                        double seconds = payload[0] << 56 | payload[1] << 48 | payload[2] << 40 | payload[3] << 32 | payload[4] << 24 | payload[5] << 16 | payload[6] << 8 | payload[7];
-                                        DateTime time = Util.UnixTimeStampToDateTime(seconds);
-                                        string displayTime = time.ToString("yyyy.MM.dd HH:mm:ss");
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Firmware date: " + displayTime, null);
+                                        Util.UpdateTextBox(USBTextBox, "[INFO] Firmware date: " + FirmwareDateString, null);
                                         break;
-                                    case 0x01: // millis response
+                                    case (byte)Response.Timestamp:
+                                        TimeSpan ElapsedTime = TimeSpan.FromMilliseconds(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]);
+                                        DateTime Timestamp = DateTime.Today.Add(ElapsedTime);
+                                        string TimestampString = Timestamp.ToString("HH:mm:ss.fff");
                                         Util.UpdateTextBox(USBTextBox, "[->RX] Timestamp response", msg);
-                                        double milliseconds3 = payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3];
-                                        TimeSpan elapsed3 = TimeSpan.FromMilliseconds(milliseconds3);
-                                        DateTime time3 = DateTime.Today.Add(elapsed3);
-                                        string displayTime3 = time3.ToString("HH:mm:ss.fff");
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Timestamp: " + displayTime3, null);
+                                        Util.UpdateTextBox(USBTextBox, "[INFO] Timestamp: " + TimestampString, null);
                                         break;
-                                    case 0x02:
+                                    case (byte)Response.BatteryVoltage:
+                                        string BatteryVoltageString = ((payload[0] << 8 | payload[1]) / 100).ToString() + " V";
                                         Util.UpdateTextBox(USBTextBox, "[->RX] Battery voltage response", msg);
-                                        double voltage = payload[0] << 8 | payload[1];
-                                        string BatteryVoltage = (voltage / 100).ToString() + " V";
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + BatteryVoltage, null);
+                                        Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + BatteryVoltageString, null);
                                         break;
                                     default:
                                         Util.UpdateTextBox(USBTextBox, "[->RX] Data received", msg);
                                         break;
                                 }
-
                                 break;
                             default:
                                 Util.UpdateTextBox(USBTextBox, "[->RX] Data received", msg);
                                 break;
                         }
-
                         break;
-
-                    case 0x01: // message is coming from ccd-bus
+                    case (byte)Source.CCDBus:
                         Util.UpdateTextBox(USBTextBox, "[->RX] CCD-bus message", msg);
                         TT.UpdateTextTable(source, payload, 4, payload.Length);
                         if (IncludeTimestap) File.AppendAllText(CCDLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
                         else File.AppendAllText(CCDLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
                         break;
-                    case 0x02: // sci-bus (pcm)
+                    case (byte)Source.SCIBusPCM:
                         Util.UpdateTextBox(USBTextBox, "[->RX] SCI-bus message (PCM)", msg);
                         TT.UpdateTextTable(source, payload, 4, payload.Length);
                         if (IncludeTimestap) File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
                         else File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
                         break;
-                    case 0x03: // sci-bus (tcm)
+                    case (byte)Source.SCIBusTCM:
                         Util.UpdateTextBox(USBTextBox, "[->RX] SCI-bus message (TCM)", msg);
                         TT.UpdateTextTable(source, payload, 4, payload.Length);
                         if (IncludeTimestap) File.AppendAllText(TCMLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
@@ -367,7 +431,6 @@ namespace ChryslerCCDSCIScanner
                         Util.UpdateTextBox(USBTextBox, "[->RX] Data received", msg);
                         break;
                 }
-
                 if (SerialRxBuffer.ReadLength > 0) goto Here;
                 else SerialRxBuffer.Reset(); // said unsafety is handled by resetting the ringbuffer whenever it's empty so the head and tail variable points to zero
             }
@@ -413,11 +476,6 @@ namespace ChryslerCCDSCIScanner
             }
         }
 
-        private void USBClearHistoryButton_Click(object sender, EventArgs e)
-        {
-            USBSendComboBox.Items.Clear();
-        }
-
         private void USBShowTrafficCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             if (USBShowTrafficCheckBox.Checked)
@@ -436,13 +494,12 @@ namespace ChryslerCCDSCIScanner
         {
             if (e.PropertyName == "TableUpdated")
             {
-                //Util.UpdateTextBox(textBox2, String.Join(Environment.NewLine, TT.Table), null, false, false); // don't scroll textbox when refreshed
-                textBox2.Invoke((MethodInvoker)delegate
+                DiagnosticsTextBox.Invoke((MethodInvoker)delegate
                 {
-                    int savedVpos = GetScrollPos(textBox2.Handle, SB_VERT);
-                    textBox2.Text = String.Join(Environment.NewLine, TT.Table);
-                    SetScrollPos(textBox2.Handle, SB_VERT, savedVpos, true);
-                    PostMessageA(textBox2.Handle, WM_VSCROLL, SB_THUMBPOSITION + 0x10000 * savedVpos, 0);
+                    int savedVpos = GetScrollPos(DiagnosticsTextBox.Handle, SB_VERT);
+                    DiagnosticsTextBox.Text = String.Join(Environment.NewLine, TT.Table);
+                    SetScrollPos(DiagnosticsTextBox.Handle, SB_VERT, savedVpos, true);
+                    PostMessageA(DiagnosticsTextBox.Handle, WM_VSCROLL, SB_THUMBPOSITION + 0x10000 * savedVpos, 0);
                 });  
             }
         }
@@ -484,8 +541,8 @@ namespace ChryslerCCDSCIScanner
 
         private void button1_Click(object sender, EventArgs e)
         {
-            if (textBox2.Visible) textBox2.Visible = false;
-            else textBox2.Visible = true;
+            if (DiagnosticsTextBox.Visible) DiagnosticsTextBox.Visible = false;
+            else DiagnosticsTextBox.Visible = true;
         }
 
         private void ExpandButton_Click(object sender, EventArgs e)
@@ -494,12 +551,12 @@ namespace ChryslerCCDSCIScanner
             {
                 this.Size = new Size(1300, 650);
                 this.CenterToScreen();
-                groupBox2.Visible = true;
+                DiagnosticsGroupBox.Visible = true;
                 ExpandButton.Text = "<< Collapse";
             }
             else if (ExpandButton.Text == "<< Collapse")
             {
-                groupBox2.Visible = false;
+                DiagnosticsGroupBox.Visible = false;
                 this.Size = new Size(405, 650);
                 this.CenterToScreen();
                 ExpandButton.Text = "Expand >>";
@@ -519,7 +576,17 @@ namespace ChryslerCCDSCIScanner
                 HintTextBox.Visible = true;
                 USBSendComboBox.Text = String.Empty;
                 USBTextBox.Size = new Size(359, 220);
+                TM = (byte)TransmissionMethod.Hex;
                 USBTextBox.ScrollToCaret();
+                try
+                {
+                    Properties.Settings.Default["TransmissionMethod"] = "hex";
+                    Properties.Settings.Default.Save(); // Saves settings in application configuration file
+                }
+                catch
+                {
+
+                }
             }
             else if (!HexCommMethodRadioButton.Checked && AsciiCommMethodRadioButton.Checked)
             {
@@ -532,13 +599,23 @@ namespace ChryslerCCDSCIScanner
                 HintTextBox.Visible = false;
                 USBSendComboBox.Text = ">";
                 USBTextBox.Size = new Size(359, 430);
+                TM = (byte)TransmissionMethod.Ascii;
                 USBTextBox.ScrollToCaret();
+                try
+                {
+                    Properties.Settings.Default["TransmissionMethod"] = "ascii";
+                    Properties.Settings.Default.Save(); // Saves settings in application configuration file
+                }
+                catch
+                {
+
+                }
             }
         }
 
         private void USBSendComboBox_TextChanged(object sender, EventArgs e)
         {
-            if (AsciiCommMethodRadioButton.Checked && ((USBSendComboBox.Text == String.Empty) || (USBSendComboBox.Text.Length == 1)))
+            if (USBCommunicationGroupBox.Enabled && AsciiCommMethodRadioButton.Checked && ((USBSendComboBox.Text == String.Empty) || (USBSendComboBox.Text.Length == 1)))
             {
                 USBSendComboBox.Text = ">";
                 SendKeys.Send("{End}");
@@ -551,6 +628,28 @@ namespace ChryslerCCDSCIScanner
             {
                 USBSendButton.PerformClick();
                 e.Handled = true;
+            }
+        }
+
+        private void UnitsRadioButtons_CheckedChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                if (MetricUnitRadioButton.Checked && !ImperialUnitRadioButton.Checked)
+                {
+                    Properties.Settings.Default["Units"] = "metric";
+                    Properties.Settings.Default.Save(); // Saves settings in application configuration file
+                }
+
+                else if (!MetricUnitRadioButton.Checked && ImperialUnitRadioButton.Checked)
+                {
+                    Properties.Settings.Default["Units"] = "imperial";
+                    Properties.Settings.Default.Save(); // Saves settings in application configuration file
+                }
+            }
+            catch
+            {
+
             }
         }
     }

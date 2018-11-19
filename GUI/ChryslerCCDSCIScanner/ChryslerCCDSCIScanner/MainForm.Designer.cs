@@ -58,16 +58,16 @@
             this.USBShowTrafficCheckBox = new System.Windows.Forms.CheckBox();
             this.HandshakeButton = new System.Windows.Forms.Button();
             this.MillisButton = new System.Windows.Forms.Button();
-            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.DiagnosticsGroupBox = new System.Windows.Forms.GroupBox();
             this.button1 = new System.Windows.Forms.Button();
-            this.textBox2 = new System.Windows.Forms.TextBox();
+            this.DiagnosticsTextBox = new System.Windows.Forms.TextBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.ExpandButton = new System.Windows.Forms.Button();
-            this.imperialUnitRadioButton = new System.Windows.Forms.RadioButton();
-            this.metricUnitRadioButton = new System.Windows.Forms.RadioButton();
+            this.ImperialUnitRadioButton = new System.Windows.Forms.RadioButton();
+            this.MetricUnitRadioButton = new System.Windows.Forms.RadioButton();
             this.UnitsLabel = new System.Windows.Forms.Label();
             this.USBCommunicationGroupBox.SuspendLayout();
-            this.groupBox2.SuspendLayout();
+            this.DiagnosticsGroupBox.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -131,6 +131,7 @@
             // AsciiCommMethodRadioButton
             // 
             this.AsciiCommMethodRadioButton.AutoSize = true;
+            this.AsciiCommMethodRadioButton.Enabled = false;
             this.AsciiCommMethodRadioButton.Location = new System.Drawing.Point(103, 486);
             this.AsciiCommMethodRadioButton.Name = "AsciiCommMethodRadioButton";
             this.AsciiCommMethodRadioButton.Size = new System.Drawing.Size(46, 17);
@@ -331,7 +332,7 @@
             // ModeLabel
             // 
             this.ModeLabel.AutoSize = true;
-            this.ModeLabel.Location = new System.Drawing.Point(20, 276);
+            this.ModeLabel.Location = new System.Drawing.Point(20, 277);
             this.ModeLabel.Name = "ModeLabel";
             this.ModeLabel.Size = new System.Drawing.Size(37, 13);
             this.ModeLabel.TabIndex = 101;
@@ -398,7 +399,7 @@
             this.USBShowTrafficCheckBox.AutoSize = true;
             this.USBShowTrafficCheckBox.Checked = true;
             this.USBShowTrafficCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.USBShowTrafficCheckBox.Location = new System.Drawing.Point(348, 517);
+            this.USBShowTrafficCheckBox.Location = new System.Drawing.Point(9, 517);
             this.USBShowTrafficCheckBox.Name = "USBShowTrafficCheckBox";
             this.USBShowTrafficCheckBox.Size = new System.Drawing.Size(82, 17);
             this.USBShowTrafficCheckBox.TabIndex = 6;
@@ -409,7 +410,7 @@
             // HandshakeButton
             // 
             this.HandshakeButton.Enabled = false;
-            this.HandshakeButton.Location = new System.Drawing.Point(98, 535);
+            this.HandshakeButton.Location = new System.Drawing.Point(97, 544);
             this.HandshakeButton.Name = "HandshakeButton";
             this.HandshakeButton.Size = new System.Drawing.Size(75, 23);
             this.HandshakeButton.TabIndex = 97;
@@ -420,7 +421,7 @@
             // MillisButton
             // 
             this.MillisButton.Enabled = false;
-            this.MillisButton.Location = new System.Drawing.Point(197, 540);
+            this.MillisButton.Location = new System.Drawing.Point(178, 544);
             this.MillisButton.Name = "MillisButton";
             this.MillisButton.Size = new System.Drawing.Size(75, 23);
             this.MillisButton.TabIndex = 98;
@@ -428,23 +429,23 @@
             this.MillisButton.UseVisualStyleBackColor = true;
             this.MillisButton.Click += new System.EventHandler(this.MillisButton_Click);
             // 
-            // groupBox2
+            // DiagnosticsGroupBox
             // 
-            this.groupBox2.Controls.Add(this.button1);
-            this.groupBox2.Controls.Add(this.textBox2);
-            this.groupBox2.Controls.Add(this.HandshakeButton);
-            this.groupBox2.Controls.Add(this.MillisButton);
-            this.groupBox2.Controls.Add(this.USBShowTrafficCheckBox);
-            this.groupBox2.Location = new System.Drawing.Point(383, 12);
-            this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(889, 573);
-            this.groupBox2.TabIndex = 3;
-            this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "Diagnostics";
+            this.DiagnosticsGroupBox.Controls.Add(this.button1);
+            this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsTextBox);
+            this.DiagnosticsGroupBox.Controls.Add(this.HandshakeButton);
+            this.DiagnosticsGroupBox.Controls.Add(this.MillisButton);
+            this.DiagnosticsGroupBox.Controls.Add(this.USBShowTrafficCheckBox);
+            this.DiagnosticsGroupBox.Location = new System.Drawing.Point(383, 12);
+            this.DiagnosticsGroupBox.Name = "DiagnosticsGroupBox";
+            this.DiagnosticsGroupBox.Size = new System.Drawing.Size(889, 573);
+            this.DiagnosticsGroupBox.TabIndex = 3;
+            this.DiagnosticsGroupBox.TabStop = false;
+            this.DiagnosticsGroupBox.Text = "Diagnostics";
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(19, 499);
+            this.button1.Location = new System.Drawing.Point(6, 544);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(85, 23);
             this.button1.TabIndex = 99;
@@ -452,23 +453,23 @@
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
-            // textBox2
+            // DiagnosticsTextBox
             // 
-            this.textBox2.BackColor = System.Drawing.SystemColors.Window;
-            this.textBox2.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox2.Location = new System.Drawing.Point(3, 16);
-            this.textBox2.Multiline = true;
-            this.textBox2.Name = "textBox2";
-            this.textBox2.ReadOnly = true;
-            this.textBox2.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.textBox2.Size = new System.Drawing.Size(883, 477);
-            this.textBox2.TabIndex = 9;
+            this.DiagnosticsTextBox.BackColor = System.Drawing.SystemColors.Window;
+            this.DiagnosticsTextBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.DiagnosticsTextBox.Location = new System.Drawing.Point(3, 16);
+            this.DiagnosticsTextBox.Multiline = true;
+            this.DiagnosticsTextBox.Name = "DiagnosticsTextBox";
+            this.DiagnosticsTextBox.ReadOnly = true;
+            this.DiagnosticsTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.DiagnosticsTextBox.Size = new System.Drawing.Size(883, 477);
+            this.DiagnosticsTextBox.TabIndex = 9;
             // 
             // groupBox3
             // 
             this.groupBox3.Controls.Add(this.ExpandButton);
-            this.groupBox3.Controls.Add(this.imperialUnitRadioButton);
-            this.groupBox3.Controls.Add(this.metricUnitRadioButton);
+            this.groupBox3.Controls.Add(this.ImperialUnitRadioButton);
+            this.groupBox3.Controls.Add(this.MetricUnitRadioButton);
             this.groupBox3.Controls.Add(this.UnitsLabel);
             this.groupBox3.Controls.Add(this.ConnectButton);
             this.groupBox3.Location = new System.Drawing.Point(12, 529);
@@ -488,27 +489,28 @@
             this.ExpandButton.UseVisualStyleBackColor = true;
             this.ExpandButton.Click += new System.EventHandler(this.ExpandButton_Click);
             // 
-            // imperialUnitRadioButton
+            // ImperialUnitRadioButton
             // 
-            this.imperialUnitRadioButton.AutoSize = true;
-            this.imperialUnitRadioButton.Location = new System.Drawing.Point(302, 22);
-            this.imperialUnitRadioButton.Name = "imperialUnitRadioButton";
-            this.imperialUnitRadioButton.Size = new System.Drawing.Size(60, 17);
-            this.imperialUnitRadioButton.TabIndex = 11;
-            this.imperialUnitRadioButton.Text = "imperial";
-            this.imperialUnitRadioButton.UseVisualStyleBackColor = true;
+            this.ImperialUnitRadioButton.AutoSize = true;
+            this.ImperialUnitRadioButton.Location = new System.Drawing.Point(302, 22);
+            this.ImperialUnitRadioButton.Name = "ImperialUnitRadioButton";
+            this.ImperialUnitRadioButton.Size = new System.Drawing.Size(60, 17);
+            this.ImperialUnitRadioButton.TabIndex = 11;
+            this.ImperialUnitRadioButton.Text = "imperial";
+            this.ImperialUnitRadioButton.UseVisualStyleBackColor = true;
             // 
-            // metricUnitRadioButton
+            // MetricUnitRadioButton
             // 
-            this.metricUnitRadioButton.AutoSize = true;
-            this.metricUnitRadioButton.Checked = true;
-            this.metricUnitRadioButton.Location = new System.Drawing.Point(243, 22);
-            this.metricUnitRadioButton.Name = "metricUnitRadioButton";
-            this.metricUnitRadioButton.Size = new System.Drawing.Size(53, 17);
-            this.metricUnitRadioButton.TabIndex = 10;
-            this.metricUnitRadioButton.TabStop = true;
-            this.metricUnitRadioButton.Text = "metric";
-            this.metricUnitRadioButton.UseVisualStyleBackColor = true;
+            this.MetricUnitRadioButton.AutoSize = true;
+            this.MetricUnitRadioButton.Checked = true;
+            this.MetricUnitRadioButton.Location = new System.Drawing.Point(243, 22);
+            this.MetricUnitRadioButton.Name = "MetricUnitRadioButton";
+            this.MetricUnitRadioButton.Size = new System.Drawing.Size(53, 17);
+            this.MetricUnitRadioButton.TabIndex = 10;
+            this.MetricUnitRadioButton.TabStop = true;
+            this.MetricUnitRadioButton.Text = "metric";
+            this.MetricUnitRadioButton.UseVisualStyleBackColor = true;
+            this.MetricUnitRadioButton.CheckedChanged += new System.EventHandler(this.UnitsRadioButtons_CheckedChanged);
             // 
             // UnitsLabel
             // 
@@ -525,7 +527,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1284, 612);
             this.Controls.Add(this.groupBox3);
-            this.Controls.Add(this.groupBox2);
+            this.Controls.Add(this.DiagnosticsGroupBox);
             this.Controls.Add(this.USBCommunicationGroupBox);
             this.DoubleBuffered = true;
             this.Name = "MainForm";
@@ -535,8 +537,8 @@
             this.Load += new System.EventHandler(this.MainForm_Load);
             this.USBCommunicationGroupBox.ResumeLayout(false);
             this.USBCommunicationGroupBox.PerformLayout();
-            this.groupBox2.ResumeLayout(false);
-            this.groupBox2.PerformLayout();
+            this.DiagnosticsGroupBox.ResumeLayout(false);
+            this.DiagnosticsGroupBox.PerformLayout();
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
             this.ResumeLayout(false);
@@ -548,16 +550,16 @@
         private System.Windows.Forms.TextBox USBTextBox;
         private System.Windows.Forms.Button ConnectButton;
         private System.Windows.Forms.GroupBox USBCommunicationGroupBox;
-        private System.Windows.Forms.GroupBox groupBox2;
+        private System.Windows.Forms.GroupBox DiagnosticsGroupBox;
         private System.Windows.Forms.Button MillisButton;
         private System.Windows.Forms.Button USBClearButton;
         private System.Windows.Forms.Button USBSendButton;
         private System.Windows.Forms.CheckBox USBShowTrafficCheckBox;
         private System.Windows.Forms.GroupBox groupBox3;
-        private System.Windows.Forms.RadioButton imperialUnitRadioButton;
-        private System.Windows.Forms.RadioButton metricUnitRadioButton;
+        private System.Windows.Forms.RadioButton ImperialUnitRadioButton;
+        private System.Windows.Forms.RadioButton MetricUnitRadioButton;
         private System.Windows.Forms.Label UnitsLabel;
-        private System.Windows.Forms.TextBox textBox2;
+        private System.Windows.Forms.TextBox DiagnosticsTextBox;
         private System.Windows.Forms.Button HandshakeButton;
         private System.Windows.Forms.Button USBClearAllButton;
         private System.Windows.Forms.ComboBox USBSendComboBox;

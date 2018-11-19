@@ -22,5 +22,29 @@ namespace ChryslerCCDSCIScanner.Properties {
                 return defaultInstance;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("metric")]
+        public string Units {
+            get {
+                return ((string)(this["Units"]));
+            }
+            set {
+                this["Units"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("hex")]
+        public string TransmissionMethod {
+            get {
+                return ((string)(this["TransmissionMethod"]));
+            }
+            set {
+                this["TransmissionMethod"] = value;
+            }
+        }
     }
 }
