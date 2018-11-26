@@ -22,7 +22,7 @@
 #ifndef CCDSCIUART_H
 #define CCDSCIUART_H
 
-#define FW 0x000000005BFB9AB2  // Firmware version, actually the date/time of compilation in 64-bit UNIX time
+#define FW 0x000000005BFBAF1C  // Firmware version, actually the date/time of compilation in 64-bit UNIX time
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -1784,7 +1784,7 @@ Function: handle_usb_data()
 Purpose:  handle USB commands coming from an external computer
 Note:     refer to ChryslerCCDSCIScanner_UART_Protocol.pdf to find out 
           more about the message format:
-          | SYNC | LENGTH_HB | LENGTH_LB | DATACODE | SUBDATACODE | ?PAYLOAD? | CHECKSUM |
+          [ SYNC | LENGTH_HB | LENGTH_LB | DATACODE | SUBDATACODE | <?PAYLOAD?> | CHECKSUM ]
 **************************************************************************/
 void handle_usb_data(void)
 {
@@ -1832,8 +1832,8 @@ void handle_usb_data(void)
         
         if (sync == PACKET_SYNC_BYTE) // byte based communication
         {
-            length_hb = usb_getc() & 0xFF; // read first length byte
-            length_lb = usb_getc() & 0xFF; // read second length byte
+            length_hb = usb_getc() & 0xFF; // read first length byte (according to specification this is the next byte after sync byte)
+            length_lb = usb_getc() & 0xFF; // read second length byte (once again we rely on specification and assume the next byte is the length low byte)
     
             // Calculate how much more bytes should we read by combining the two length bytes into a word.
             bytes_to_read = (length_hb << 8) + length_lb + 1; // +1 CHECKSUM byte
@@ -1875,7 +1875,7 @@ void handle_usb_data(void)
             // Read one SUB-DATA CODE byte that's following.
             subdatacode = usb_getc() & 0xFF;
     
-            // Make some space for the payload bytes.
+            // Make some space for the payload bytes (even if there is none).
             uint8_t cmd_payload[payload_length];
     
             // If the payload length is greater than zero then read those bytes too.
@@ -1998,7 +1998,7 @@ void handle_usb_data(void)
                                     uint16_t blink_duration = (cmd_payload[2] << 8) + cmd_payload[3]; // 0-65535 milliseconds
                                     led_blink_duration = blink_duration; // this applies to all 3 status leds! (rx, tx, act)
 
-                                    send_usb_packet(from_usb, to_usb, settings, heartbeat, ok, 1); // acknowledge
+                                    send_usb_packet(from_usb, to_usb, settings, heartbeat, ack, 1); // acknowledge
                                     break;
                                 }
                                 case set_ccd_bus: // 0x01 - ON-OFF state is stored in payload
@@ -2012,7 +2012,7 @@ void handle_usb_data(void)
                                     if (cmd_payload[0] == 0x00) ccd_enabled = false;
                                     else if (cmd_payload[0] == 0x01) ccd_enabled = true;
                                     
-                                    send_usb_packet(from_usb, to_usb, settings, set_ccd_bus, ok, 1); // acknowledge
+                                    send_usb_packet(from_usb, to_usb, settings, set_ccd_bus, ack, 1); // acknowledge
                                     break;
                                 }
                                 case set_sci_bus: // 0x02 - ON-OFF state, A/B configuration and speed are stored in payload
@@ -2041,12 +2041,12 @@ void handle_usb_data(void)
 //                                    if (!pcm_enabled & !tcm_enabled) sci_enabled = false;
 //                                    else sci_enabled = true;
                                     
-                                    send_usb_packet(from_usb, to_usb, settings, set_sci_bus, ok, 1); // acknowledge
+                                    send_usb_packet(from_usb, to_usb, settings, set_sci_bus, ack, 1); // acknowledge
                                     break;
                                 }
                                 default: // other values are not used
                                 {
-                                    send_usb_packet(from_usb, to_usb, settings, error_subdatacode_invalid_value, err, 1);
+                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
                                     break;
                                 }
                             }
@@ -2074,7 +2074,7 @@ void handle_usb_data(void)
                                 }
                                 default: // other values are not used
                                 {
-                                    send_usb_packet(from_usb, to_usb, response, error_subdatacode_invalid_value, err, 1);
+                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
                                     break;
                                 }
                             }
@@ -2088,7 +2088,7 @@ void handle_usb_data(void)
                                 
                                 default:
                                 {
-                                    send_usb_packet(from_usb, to_usb, debug, ok, ack, 1); // acknowledge
+                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
                                     break;
                                 }
                             }
@@ -2160,8 +2160,7 @@ void handle_usb_data(void)
                                 }
                                 default:
                                 {
-                                    ret[0] = to_ccd;
-                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, ret, 1);
+                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
                                     break;
                                 }
                             }
@@ -2170,8 +2169,7 @@ void handle_usb_data(void)
 
                         default: // other values are not used
                         {
-                            ret[0] = to_ccd;
-                            send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_dc_command, ret, 1);
+                            send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_dc_command, err, 1);
                             break;
                         }
                     }
@@ -2214,8 +2212,7 @@ void handle_usb_data(void)
                                 }
                                 default:
                                 {
-                                    ret[0] = to_pcm;
-                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, ret, 1);
+                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
                                     break;
                                 }
                             }
@@ -2223,8 +2220,7 @@ void handle_usb_data(void)
                         }
                         default: // other values are not used.
                         {
-                            ret[0] = to_pcm;
-                            send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_dc_command, to_pcm, 1);
+                            send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_dc_command, err, 1);
                             break;
                         }
                     }
@@ -2267,8 +2263,7 @@ void handle_usb_data(void)
                                 }
                                 default:
                                 {
-                                    ret[0] = to_tcm;
-                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, ret, 1);
+                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
                                     break;
                                 }
                             }
@@ -2276,8 +2271,7 @@ void handle_usb_data(void)
                         }
                         default: // other values are not used.
                         {
-                            ret[0] = to_tcm;
-                            send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_dc_command, ret, 1);
+                            send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_dc_command, err, 1);
                             break;
                         }
                     }
