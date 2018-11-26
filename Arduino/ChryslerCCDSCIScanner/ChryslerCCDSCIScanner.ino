@@ -107,23 +107,23 @@ void setup()
 //    digitalWrite(PA6, LOW); // |
 //    digitalWrite(PA7, LOW); // |
     
-//    digitalWrite(PA0, HIGH); // SCI-bus "A" configuration
-//    digitalWrite(PA1, HIGH);
-//    digitalWrite(PA2, HIGH);
-//    digitalWrite(PA3, HIGH);
-//    digitalWrite(PA4, LOW);
-//    digitalWrite(PA5, LOW);
-//    digitalWrite(PA6, LOW);
-//    digitalWrite(PA7, LOW);
-
-    digitalWrite(PA0, LOW); // SCI-bus "B" configuration
-    digitalWrite(PA1, LOW);
+    digitalWrite(PA0, HIGH); // SCI-bus "A" configuration, PCM only
+    digitalWrite(PA1, HIGH);
     digitalWrite(PA2, LOW);
     digitalWrite(PA3, LOW);
-    digitalWrite(PA4, HIGH);
-    digitalWrite(PA5, HIGH);
-    digitalWrite(PA6, HIGH);
-    digitalWrite(PA7, HIGH);
+    digitalWrite(PA4, LOW);
+    digitalWrite(PA5, LOW);
+    digitalWrite(PA6, LOW);
+    digitalWrite(PA7, LOW);
+
+//    digitalWrite(PA0, LOW); // SCI-bus "B" configuration
+//    digitalWrite(PA1, LOW);
+//    digitalWrite(PA2, LOW);
+//    digitalWrite(PA3, LOW);
+//    digitalWrite(PA4, HIGH);
+//    digitalWrite(PA5, HIGH);
+//    digitalWrite(PA6, HIGH);
+//    digitalWrite(PA7, HIGH);
 
     sei(); // enable interrupts, serial interrupt control resumes working
     wdt_enable(WDTO_2S); // enable watchdog timer that resets program if the timer reaches 2 seconds (useful if the prorgam hangs for some reason and needs auto-reset)

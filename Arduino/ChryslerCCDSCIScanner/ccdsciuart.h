@@ -22,7 +22,7 @@
 #ifndef CCDSCIUART_H
 #define CCDSCIUART_H
 
-#define FW 0x000000005BEFDC53  // Firmware version, actually the date/time of compilation in 64-bit UNIX time
+#define FW 0x000000005BFB9AB2  // Firmware version, actually the date/time of compilation in 64-bit UNIX time
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -1800,6 +1800,7 @@ void handle_usb_data(void)
 
         uint8_t ack[1] = { 0x00 }; // acknowledge payload array
         uint8_t err[1] = { 0xFF }; // error payload array
+        uint8_t ret[1];
 
         uint32_t command_timeout_start = 0;
         bool command_timeout_reached = false;
@@ -2118,7 +2119,8 @@ void handle_usb_data(void)
                                 case stop_msg_flow: // 0x00 - stop message transmission (single and repeated as well)
                                 {
                                     // TODO
-                                    send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, to_ccd, 1);
+                                    ret[0] = to_ccd;
+                                    send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 1);
                                     break;
                                 }
                                 case single_msg: // 0x01 - send message to the CCD-bus, message is stored in payload 
@@ -2145,18 +2147,21 @@ void handle_usb_data(void)
                                     }
 
                                     ccd_msg_pending = true; // set flag so the main loop knows there's something to do
-                                    //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, to_ccd, 1); // acknowledge
+                                    ret[0] = to_ccd;
+                                    send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
                                     break;
                                 }
                                 case repeated_msg: // 0x02 - send message(s) to the CCD-bus, number of messages, repeat interval(s) are stored in payload
                                 {
                                     // TODO
-                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, to_ccd, 1); // acknowledge
+                                    ret[0] = to_ccd;
+                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
                                     break;
                                 }
                                 default:
                                 {
-                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, to_ccd, 1);
+                                    ret[0] = to_ccd;
+                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, ret, 1);
                                     break;
                                 }
                             }
@@ -2165,7 +2170,8 @@ void handle_usb_data(void)
 
                         default: // other values are not used
                         {
-                            send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_dc_command, to_ccd, 1);
+                            ret[0] = to_ccd;
+                            send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_dc_command, ret, 1);
                             break;
                         }
                     }
@@ -2182,7 +2188,8 @@ void handle_usb_data(void)
                                 case stop_msg_flow: // 0x00 - stop message transmission (single and repeated as well)
                                 {
                                     // TODO
-                                    send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, to_pcm, 1);
+                                    ret[0] = to_pcm;
+                                    send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 1);
                                     break;
                                 }
                                 case single_msg: // 0x01 - send message to the SCI-bus, message is stored in payload 
@@ -2194,18 +2201,21 @@ void handle_usb_data(void)
                                     // Checksum isn't used on SCI-bus transmissions, except when receiving fault codes.
                                     pcm_msg_to_send_ptr = payload_length;
                                     pcm_msg_pending = true; // set flag so the main loop knows there's something to do
-                                    //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, to_pcm, 1); // acknowledge
+                                    ret[0] = to_pcm;
+                                    send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
                                     break;
                                 }
                                 case repeated_msg: // 0x02 - send message(s) to the SCI-bus, number of messages, repeat interval(s) are stored in payload
                                 {
                                     // TODO
-                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, to_pcm, 1); // acknowledge
+                                    ret[0] = to_pcm;
+                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
                                     break;
                                 }
                                 default:
                                 {
-                                    send_usb_packet(from_usb, to_usb, ok_error, msg_tx, error_subdatacode_invalid_value, 1);
+                                    ret[0] = to_pcm;
+                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, ret, 1);
                                     break;
                                 }
                             }
@@ -2213,6 +2223,7 @@ void handle_usb_data(void)
                         }
                         default: // other values are not used.
                         {
+                            ret[0] = to_pcm;
                             send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_dc_command, to_pcm, 1);
                             break;
                         }
@@ -2230,7 +2241,8 @@ void handle_usb_data(void)
                                 case stop_msg_flow: // 0x00 - stop message transmission (single and repeated as well)
                                 {
                                     // TODO
-                                    send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, to_tcm, 1);
+                                    ret[0] = to_tcm;
+                                    send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 1);
                                     break;
                                 }
                                 case single_msg: // 0x01 - send message to the SCI-bus, message is stored in payload 
@@ -2242,18 +2254,21 @@ void handle_usb_data(void)
                                     // Checksum isn't used on SCI-bus transmissions, except when receiving fault codes.
                                     tcm_msg_to_send_ptr = payload_length;
                                     tcm_msg_pending = true; // set flag so the main loop knows there's something to do
-                                    //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, to_tcm, 1); // acknowledge
+                                    ret[0] = to_tcm;
+                                    send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
                                     break;
                                 }
                                 case repeated_msg: // 0x02 - send message(s) to the SCI-bus, number of messages, repeat interval(s) are stored in payload
                                 {
                                     // TODO
-                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, to_tcm, 1); // acknowledge
+                                    ret[0] = to_tcm;
+                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
                                     break;
                                 }
                                 default:
                                 {
-                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, to_tcm, 1);
+                                    ret[0] = to_tcm;
+                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, ret, 1);
                                     break;
                                 }
                             }
@@ -2261,7 +2276,8 @@ void handle_usb_data(void)
                         }
                         default: // other values are not used.
                         {
-                            send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_dc_command, to_tcm, 1);
+                            ret[0] = to_tcm;
+                            send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_dc_command, ret, 1);
                             break;
                         }
                     }
