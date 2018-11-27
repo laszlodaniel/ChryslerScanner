@@ -35,20 +35,20 @@
             this.HintTextBox = new System.Windows.Forms.TextBox();
             this.HexCommMethodRadioButton = new System.Windows.Forms.RadioButton();
             this.MethodLabel = new System.Windows.Forms.Label();
-            this.label7 = new System.Windows.Forms.Label();
-            this.label6 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
+            this.Param3Label2 = new System.Windows.Forms.Label();
+            this.Param2Label2 = new System.Windows.Forms.Label();
+            this.Param1Label2 = new System.Windows.Forms.Label();
             this.USBSendButton = new System.Windows.Forms.Button();
-            this.comboBox3 = new System.Windows.Forms.ComboBox();
-            this.label4 = new System.Windows.Forms.Label();
-            this.comboBox2 = new System.Windows.Forms.ComboBox();
-            this.label3 = new System.Windows.Forms.Label();
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
-            this.label2 = new System.Windows.Forms.Label();
+            this.Param3ComboBox = new System.Windows.Forms.ComboBox();
+            this.Param3Label1 = new System.Windows.Forms.Label();
+            this.Param2ComboBox = new System.Windows.Forms.ComboBox();
+            this.Param2Label1 = new System.Windows.Forms.Label();
+            this.Param1ComboBox = new System.Windows.Forms.ComboBox();
+            this.Param1Label1 = new System.Windows.Forms.Label();
             this.PreviewLabel = new System.Windows.Forms.Label();
             this.CommandLabel = new System.Windows.Forms.Label();
-            this.CommandComboBox = new System.Windows.Forms.ComboBox();
             this.ModeComboBox = new System.Windows.Forms.ComboBox();
+            this.CommandComboBox = new System.Windows.Forms.ComboBox();
             this.ModeLabel = new System.Windows.Forms.Label();
             this.TargetLabel = new System.Windows.Forms.Label();
             this.TargetComboBox = new System.Windows.Forms.ComboBox();
@@ -100,20 +100,20 @@
             this.USBCommunicationGroupBox.Controls.Add(this.HintTextBox);
             this.USBCommunicationGroupBox.Controls.Add(this.HexCommMethodRadioButton);
             this.USBCommunicationGroupBox.Controls.Add(this.MethodLabel);
-            this.USBCommunicationGroupBox.Controls.Add(this.label7);
-            this.USBCommunicationGroupBox.Controls.Add(this.label6);
-            this.USBCommunicationGroupBox.Controls.Add(this.label5);
+            this.USBCommunicationGroupBox.Controls.Add(this.Param3Label2);
+            this.USBCommunicationGroupBox.Controls.Add(this.Param2Label2);
+            this.USBCommunicationGroupBox.Controls.Add(this.Param1Label2);
             this.USBCommunicationGroupBox.Controls.Add(this.USBSendButton);
-            this.USBCommunicationGroupBox.Controls.Add(this.comboBox3);
-            this.USBCommunicationGroupBox.Controls.Add(this.label4);
-            this.USBCommunicationGroupBox.Controls.Add(this.comboBox2);
-            this.USBCommunicationGroupBox.Controls.Add(this.label3);
-            this.USBCommunicationGroupBox.Controls.Add(this.comboBox1);
-            this.USBCommunicationGroupBox.Controls.Add(this.label2);
+            this.USBCommunicationGroupBox.Controls.Add(this.Param3ComboBox);
+            this.USBCommunicationGroupBox.Controls.Add(this.Param3Label1);
+            this.USBCommunicationGroupBox.Controls.Add(this.Param2ComboBox);
+            this.USBCommunicationGroupBox.Controls.Add(this.Param2Label1);
+            this.USBCommunicationGroupBox.Controls.Add(this.Param1ComboBox);
+            this.USBCommunicationGroupBox.Controls.Add(this.Param1Label1);
             this.USBCommunicationGroupBox.Controls.Add(this.PreviewLabel);
             this.USBCommunicationGroupBox.Controls.Add(this.CommandLabel);
-            this.USBCommunicationGroupBox.Controls.Add(this.CommandComboBox);
             this.USBCommunicationGroupBox.Controls.Add(this.ModeComboBox);
+            this.USBCommunicationGroupBox.Controls.Add(this.CommandComboBox);
             this.USBCommunicationGroupBox.Controls.Add(this.ModeLabel);
             this.USBCommunicationGroupBox.Controls.Add(this.TargetLabel);
             this.USBCommunicationGroupBox.Controls.Add(this.TargetComboBox);
@@ -152,8 +152,7 @@
             this.HintTextBox.Size = new System.Drawing.Size(290, 54);
             this.HintTextBox.TabIndex = 115;
             this.HintTextBox.TabStop = false;
-            this.HintTextBox.Text = "Hint:\r\nRequest handshake message from the scanner.\r\nIt should answer the string \"" +
-    "CHRYSLERCCDSCISCANNER\".\r\nLine 3";
+            this.HintTextBox.Text = "-\r\n-\r\n-\r\n-";
             // 
             // HexCommMethodRadioButton
             // 
@@ -177,35 +176,35 @@
             this.MethodLabel.TabIndex = 15;
             this.MethodLabel.Text = "Method:";
             // 
-            // label7
+            // Param3Label2
             // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(259, 368);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(76, 13);
-            this.label7.TabIndex = 114;
-            this.label7.Text = "Param#3Label";
-            this.label7.Visible = false;
+            this.Param3Label2.AutoSize = true;
+            this.Param3Label2.Location = new System.Drawing.Point(259, 368);
+            this.Param3Label2.Name = "Param3Label2";
+            this.Param3Label2.Size = new System.Drawing.Size(76, 13);
+            this.Param3Label2.TabIndex = 114;
+            this.Param3Label2.Text = "Param#3Label";
+            this.Param3Label2.Visible = false;
             // 
-            // label6
+            // Param2Label2
             // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(259, 337);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(76, 13);
-            this.label6.TabIndex = 113;
-            this.label6.Text = "Param#2Label";
-            this.label6.Visible = false;
+            this.Param2Label2.AutoSize = true;
+            this.Param2Label2.Location = new System.Drawing.Point(259, 337);
+            this.Param2Label2.Name = "Param2Label2";
+            this.Param2Label2.Size = new System.Drawing.Size(76, 13);
+            this.Param2Label2.TabIndex = 113;
+            this.Param2Label2.Text = "Param#2Label";
+            this.Param2Label2.Visible = false;
             // 
-            // label5
+            // Param1Label2
             // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(259, 306);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(76, 13);
-            this.label5.TabIndex = 112;
-            this.label5.Text = "Param#1Label";
-            this.label5.Visible = false;
+            this.Param1Label2.AutoSize = true;
+            this.Param1Label2.Location = new System.Drawing.Point(259, 306);
+            this.Param1Label2.Name = "Param1Label2";
+            this.Param1Label2.Size = new System.Drawing.Size(76, 13);
+            this.Param1Label2.TabIndex = 112;
+            this.Param1Label2.Text = "Param#1Label";
+            this.Param1Label2.Visible = false;
             // 
             // USBSendButton
             // 
@@ -217,65 +216,66 @@
             this.USBSendButton.UseVisualStyleBackColor = true;
             this.USBSendButton.Click += new System.EventHandler(this.USBSendButton_Click);
             // 
-            // comboBox3
+            // Param3ComboBox
             // 
-            this.comboBox3.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
-            this.comboBox3.FormattingEnabled = true;
-            this.comboBox3.Location = new System.Drawing.Point(57, 364);
-            this.comboBox3.Name = "comboBox3";
-            this.comboBox3.Size = new System.Drawing.Size(200, 23);
-            this.comboBox3.TabIndex = 111;
-            this.comboBox3.Visible = false;
+            this.Param3ComboBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.Param3ComboBox.FormattingEnabled = true;
+            this.Param3ComboBox.Location = new System.Drawing.Point(57, 364);
+            this.Param3ComboBox.Name = "Param3ComboBox";
+            this.Param3ComboBox.Size = new System.Drawing.Size(200, 23);
+            this.Param3ComboBox.TabIndex = 111;
+            this.Param3ComboBox.Visible = false;
             // 
-            // label4
+            // Param3Label1
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(4, 368);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(53, 13);
-            this.label4.TabIndex = 110;
-            this.label4.Text = "Param#3:";
-            this.label4.Visible = false;
+            this.Param3Label1.AutoSize = true;
+            this.Param3Label1.Location = new System.Drawing.Point(4, 368);
+            this.Param3Label1.Name = "Param3Label1";
+            this.Param3Label1.Size = new System.Drawing.Size(53, 13);
+            this.Param3Label1.TabIndex = 110;
+            this.Param3Label1.Text = "Param#3:";
+            this.Param3Label1.Visible = false;
             // 
-            // comboBox2
+            // Param2ComboBox
             // 
-            this.comboBox2.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
-            this.comboBox2.FormattingEnabled = true;
-            this.comboBox2.Location = new System.Drawing.Point(57, 333);
-            this.comboBox2.Name = "comboBox2";
-            this.comboBox2.Size = new System.Drawing.Size(200, 23);
-            this.comboBox2.TabIndex = 109;
-            this.comboBox2.Visible = false;
+            this.Param2ComboBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.Param2ComboBox.FormattingEnabled = true;
+            this.Param2ComboBox.Location = new System.Drawing.Point(57, 333);
+            this.Param2ComboBox.Name = "Param2ComboBox";
+            this.Param2ComboBox.Size = new System.Drawing.Size(200, 23);
+            this.Param2ComboBox.TabIndex = 109;
+            this.Param2ComboBox.Visible = false;
             // 
-            // label3
+            // Param2Label1
             // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(4, 337);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(53, 13);
-            this.label3.TabIndex = 108;
-            this.label3.Text = "Param#2:";
-            this.label3.Visible = false;
+            this.Param2Label1.AutoSize = true;
+            this.Param2Label1.Location = new System.Drawing.Point(4, 337);
+            this.Param2Label1.Name = "Param2Label1";
+            this.Param2Label1.Size = new System.Drawing.Size(53, 13);
+            this.Param2Label1.TabIndex = 108;
+            this.Param2Label1.Text = "Param#2:";
+            this.Param2Label1.Visible = false;
             // 
-            // comboBox1
+            // Param1ComboBox
             // 
-            this.comboBox1.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
-            this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Location = new System.Drawing.Point(57, 302);
-            this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(200, 23);
-            this.comboBox1.TabIndex = 107;
-            this.comboBox1.Visible = false;
+            this.Param1ComboBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.Param1ComboBox.FormattingEnabled = true;
+            this.Param1ComboBox.Location = new System.Drawing.Point(57, 302);
+            this.Param1ComboBox.Name = "Param1ComboBox";
+            this.Param1ComboBox.Size = new System.Drawing.Size(200, 23);
+            this.Param1ComboBox.TabIndex = 107;
+            this.Param1ComboBox.Visible = false;
             // 
-            // label2
+            // Param1Label1
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(4, 306);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(53, 13);
-            this.label2.TabIndex = 106;
-            this.label2.Text = "Param#1:";
-            this.label2.Visible = false;
+            this.Param1Label1.AutoSize = true;
+            this.Param1Label1.Location = new System.Drawing.Point(4, 306);
+            this.Param1Label1.Name = "Param1Label1";
+            this.Param1Label1.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.Param1Label1.Size = new System.Drawing.Size(53, 13);
+            this.Param1Label1.TabIndex = 106;
+            this.Param1Label1.Text = "Param#1:";
+            this.Param1Label1.Visible = false;
             // 
             // PreviewLabel
             // 
@@ -295,25 +295,25 @@
             this.CommandLabel.TabIndex = 104;
             this.CommandLabel.Text = "Command:";
             // 
-            // CommandComboBox
-            // 
-            this.CommandComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.CommandComboBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
-            this.CommandComboBox.FormattingEnabled = true;
-            this.CommandComboBox.Items.AddRange(new object[] {
-            "None",
-            "With firmware date"});
-            this.CommandComboBox.Location = new System.Drawing.Point(57, 273);
-            this.CommandComboBox.Name = "CommandComboBox";
-            this.CommandComboBox.Size = new System.Drawing.Size(304, 21);
-            this.CommandComboBox.TabIndex = 103;
-            // 
             // ModeComboBox
             // 
             this.ModeComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.ModeComboBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             this.ModeComboBox.FormattingEnabled = true;
             this.ModeComboBox.Items.AddRange(new object[] {
+            "None",
+            "With firmware date"});
+            this.ModeComboBox.Location = new System.Drawing.Point(57, 273);
+            this.ModeComboBox.Name = "ModeComboBox";
+            this.ModeComboBox.Size = new System.Drawing.Size(304, 21);
+            this.ModeComboBox.TabIndex = 103;
+            // 
+            // CommandComboBox
+            // 
+            this.CommandComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.CommandComboBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
+            this.CommandComboBox.FormattingEnabled = true;
+            this.CommandComboBox.Items.AddRange(new object[] {
             "Reset",
             "Handshake",
             "Status",
@@ -321,13 +321,14 @@
             "Request",
             "Response",
             "Send message",
-            "Receive message",
+            "Message received",
             "Debug",
             "OK/Error"});
-            this.ModeComboBox.Location = new System.Drawing.Point(236, 244);
-            this.ModeComboBox.Name = "ModeComboBox";
-            this.ModeComboBox.Size = new System.Drawing.Size(125, 21);
-            this.ModeComboBox.TabIndex = 102;
+            this.CommandComboBox.Location = new System.Drawing.Point(236, 244);
+            this.CommandComboBox.Name = "CommandComboBox";
+            this.CommandComboBox.Size = new System.Drawing.Size(125, 21);
+            this.CommandComboBox.TabIndex = 102;
+            this.CommandComboBox.SelectedIndexChanged += new System.EventHandler(this.CommandComboBox_SelectedIndexChanged);
             // 
             // ModeLabel
             // 
@@ -361,6 +362,7 @@
             this.TargetComboBox.Name = "TargetComboBox";
             this.TargetComboBox.Size = new System.Drawing.Size(105, 21);
             this.TargetComboBox.TabIndex = 104;
+            this.TargetComboBox.SelectedIndexChanged += new System.EventHandler(this.TargetComboBox_SelectedIndexChanged);
             // 
             // USBSendComboBox
             // 
@@ -566,21 +568,21 @@
         private System.Windows.Forms.Button ExpandButton;
         private System.Windows.Forms.ComboBox TargetComboBox;
         private System.Windows.Forms.Label TargetLabel;
-        private System.Windows.Forms.ComboBox ModeComboBox;
+        private System.Windows.Forms.ComboBox CommandComboBox;
         private System.Windows.Forms.Label ModeLabel;
         private System.Windows.Forms.Label CommandLabel;
-        private System.Windows.Forms.ComboBox CommandComboBox;
+        private System.Windows.Forms.ComboBox ModeComboBox;
         private System.Windows.Forms.Label PreviewLabel;
         private System.Windows.Forms.Button button1;
-        private System.Windows.Forms.ComboBox comboBox1;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.ComboBox comboBox3;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.ComboBox comboBox2;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.ComboBox Param1ComboBox;
+        private System.Windows.Forms.Label Param1Label1;
+        private System.Windows.Forms.ComboBox Param3ComboBox;
+        private System.Windows.Forms.Label Param3Label1;
+        private System.Windows.Forms.ComboBox Param2ComboBox;
+        private System.Windows.Forms.Label Param2Label1;
+        private System.Windows.Forms.Label Param3Label2;
+        private System.Windows.Forms.Label Param2Label2;
+        private System.Windows.Forms.Label Param1Label2;
         private System.Windows.Forms.TextBox HintTextBox;
         private System.Windows.Forms.RadioButton AsciiCommMethodRadioButton;
         private System.Windows.Forms.RadioButton HexCommMethodRadioButton;

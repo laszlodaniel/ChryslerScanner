@@ -22,10 +22,12 @@ namespace ChryslerCCDSCIScanner
         
         private int CCDListStart = 5; // row number
         private int CCDListEnd = 5;
-        private int SCIPCMListStart = 14;
-        private int SCIPCMListEnd = 14;
-        private int SCITCMListStart = 23;
-        private int SCITCMListEnd = 23;
+        private int CCDB2Start = 7;
+        private int CCDF2Start = 8;
+        private int SCIPCMListStart = 17;
+        private int SCIPCMListEnd = 17;
+        private int SCITCMListStart = 26;
+        private int SCITCMListEnd = 26;
 
         private XmlDocument VehicleProfiles = new XmlDocument();
 
@@ -50,6 +52,9 @@ namespace ChryslerCCDSCIScanner
             Table.Add("│ MESSAGE [HEX]           │ DESCRIPTION                                        │ VALUE                    │ UNIT         │");
             Table.Add("╞═════════════════════════╪════════════════════════════════════════════════════╪══════════════════════════╪══════════════╡");
             Table.Add("│                         │                                                    │                          │              │");
+            Table.Add("├─────────────────────────┼────────────────────────────────────────────────────┼──────────────────────────┼──────────────┤");
+            Table.Add("│ B2 -- -- -- -- --       │                                                    │                          │              │");
+            Table.Add("│ F2 -- -- -- -- --       │                                                    │                          │              │");
             Table.Add("└─────────────────────────┴────────────────────────────────────────────────────┴──────────────────────────┴──────────────┘");
             Table.Add("  DETAILS:                                                                                                                ");
             Table.Add("                                                                                                                          ");
@@ -131,29 +136,50 @@ namespace ChryslerCCDSCIScanner
                     // Now decide where to put this message in reality
                     if (!CCDIDList.Contains(data[index])) // if this ID-byte is not in the list
                     {
-                        CCDIDList.Add(data[index]); // add ID-byte to the list
-                        CCDIDList.Sort(); // sort ID-bytes by ascending order
-                        location = CCDIDList.FindIndex(x => x == data[index]); // now see where this new ID-byte ends up after sorting
-                        if (CCDIDList.Count == 1)
+                        if ((data[index] != 0xB2) && (data[index] != 0xF2)) // if it's not diagnostic request or response message
                         {
-                            Table.RemoveAt(CCDListStart);
+                            CCDIDList.Add(data[index]); // add ID-byte to the list
+                            CCDIDList.Sort(); // sort ID-bytes by ascending order
+                            location = CCDIDList.FindIndex(x => x == data[index]); // now see where this new ID-byte ends up after sorting
+
+                            if (CCDIDList.Count == 1)
+                            {
+                                Table.RemoveAt(CCDListStart);
+                            }
+                            else
+                            {
+                                CCDListEnd++; // increment start/end row-numbers (new data causes the table to grow)
+                                CCDB2Start++;
+                                CCDF2Start++;
+                                SCIPCMListStart++;
+                                SCIPCMListEnd++;
+                                SCITCMListStart++;
+                                SCITCMListEnd++;
+                            }
+                            Table.Insert(CCDListStart + location, ccdlistitem.ToString());
                         }
-                        else
-                        {
-                            CCDListEnd++; // increment start/end row-numbers (new data causes the table to grow)
-                            SCIPCMListStart++;
-                            SCIPCMListEnd++;
-                            SCITCMListStart++;
-                            SCITCMListEnd++;
-                        }
-                        Table.Insert(CCDListStart + location, ccdlistitem.ToString());
                     }
-                    else // if this ID-byte is already displayed
+                    else
                     {
-                        location = CCDIDList.FindIndex(x => x == data[index]);
-                        Table.RemoveAt(CCDListStart + location);
-                        Table.Insert(CCDListStart + location, ccdlistitem.ToString());
+                        if ((data[index] != 0xB2) && (data[index] != 0xF2)) // if it's not diagnostic request or response message
+                        {
+                            location = CCDIDList.FindIndex(x => x == data[index]);
+                            Table.RemoveAt(CCDListStart + location);
+                            Table.Insert(CCDListStart + location, ccdlistitem.ToString());
+                        }
                     }
+
+                    if (data[index] == 0xB2)
+                    {
+                        Table.RemoveAt(CCDB2Start);
+                        Table.Insert(CCDB2Start, ccdlistitem.ToString());
+                    }
+                    else if (data[index] == 0xF2)
+                    {
+                        Table.RemoveAt(CCDF2Start);
+                        Table.Insert(CCDF2Start, ccdlistitem.ToString());
+                    }
+                    
                     break;
                 case 0x02: // SCI-bus message (PCM)
                     StringBuilder scipcmlistitem = new StringBuilder(EmptyLine); // start with a pre-defined empty line
