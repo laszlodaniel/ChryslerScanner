@@ -44,32 +44,6 @@ LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 
 void setup()
 {
-    /* In case of WATCHDOG reset */
-    ccd_clock_generator(STOP); // stop listening to the ccd-bus by cutting off the 1 MHz clock signal to the CCD-transceiver chip
-    cli(); // disable interrupts thus stop serial communication in every possible way
-    usb_rx_flush(); // reset serial buffers
-    usb_tx_flush();
-    ccd_rx_flush();
-    ccd_tx_flush();
-    pcm_rx_flush();
-    pcm_tx_flush();
-    tcm_rx_flush();
-    tcm_tx_flush();
-    ccd_bytes_buffer_ptr = 0; // reset buffer pointers / indexers
-    pcm_bytes_buffer_ptr = 0;
-    tcm_bytes_buffer_ptr = 0;
-    ccd_msg_pending = false;  // delete any pending message
-    pcm_msg_pending = false;
-    tcm_msg_pending = false;
-    ccd_msg_to_send_ptr = 0;
-    pcm_msg_to_send_ptr = 0;
-    tcm_msg_to_send_ptr = 0;
-    ccd_idle = false;         // wait for the next ID-byte
-    pcm_idle = false;         // wait for the next byte following an idle-time
-    tcm_idle = false;         // ---||---
-    connected_to_vehicle = false;
-    /* END */
-    
     // Initialize serial interfaces with default speeds and interrupt control enabled
     usb_init(USBBAUD);// 250000 baud, an external serial monitor should have the same speed
     ccd_init(LOBAUD); // 7812.5 baud
@@ -98,6 +72,7 @@ void setup()
     pinMode(PA5, OUTPUT);   // |
     pinMode(PA6, OUTPUT);   // |
     pinMode(PA7, OUTPUT);   // |
+
 //    digitalWrite(PA0, LOW); // Set PA0 low to disable SCI-bus communication by default
 //    digitalWrite(PA1, LOW); // |
 //    digitalWrite(PA2, LOW); // |
@@ -130,7 +105,7 @@ void setup()
     attachInterrupt(digitalPinToInterrupt(INT4), ccd_eom, FALLING); // execute "ccd_eom" function if the CCD-transceiver pulls D2 pin low indicating an "End of Message" condition so the byte reader ISR can flag the next byte as ID-byte
     attachInterrupt(digitalPinToInterrupt(INT5), ccd_active_byte, FALLING); // execute "ccd_active_byte" function if the CCD-transceiver pulls D3 pin low indicating a byte being transmitted on the CCD-bus
     // active byte = we don't know the byte's value right away, we have to wait for all 8 data bits and a few other bits for framing to arrive.
-  
+    
     // Initialize external EEPROM
     uint8_t eep_status = eep.begin(extEEPROM::twiClock400kHz); // go fast!
     if (eep_status) { ext_eeprom_present = false; }
@@ -168,8 +143,8 @@ void loop()
     wdt_reset(); // reset watchdog timer to 0 seconds so no accidental restart occurs
     check_battery_volts(); // calculate battery voltage from OBD16 pin
     handle_usb_data(); // check if a command has been received over the USB connection
-    if (ccd_enabled) { handle_ccd_data(); } // do CCD-bus stuff if it's enabled
-    if (sci_enabled) { handle_sci_data(); } // do SCI-bus stuff if it's enabled
+    handle_ccd_data(); // do CCD-bus stuff
+    handle_sci_data(); // do SCI-bus stuff
 
     current_millis_blink = millis(); // check current time
     if (heartbeat_enabled) act_led_heartbeat();
