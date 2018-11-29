@@ -22,7 +22,7 @@
 #ifndef CCDSCIUART_H
 #define CCDSCIUART_H
 
-#define FW 0x000000005C004AC2  // Firmware version, actually the date/time of compilation in 64-bit UNIX time
+#define FW 0x000000005C0050DD  // Firmware version, actually the date/time of compilation in 64-bit UNIX time
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -2308,7 +2308,6 @@ void handle_ccd_data(void)
     {
         if (ccd_idle)
         {
-            ccd_idle = false;
             if (ccd_bytes_count > 0)
             {
                 uint8_t usb_msg[4+ccd_bytes_count]; // create local array which will hold the timestamp and the CCD-bus message
@@ -2334,6 +2333,7 @@ void handle_ccd_data(void)
                 ccd_msg_to_send_ptr = 0; // reset pointer
                 ccd_msg_pending = false; // re-arm, make it possible to send a message again
             }
+            ccd_idle = false;
         }
     }
     else
@@ -2458,6 +2458,45 @@ void handle_sci_data(void)
 
 
 /*************************************************************************
+Function: act_led_heartbeat()
+Purpose:  blinks ACT LED at a fixed time interval like it was a heart beating
+**************************************************************************/
+void act_led_heartbeat(void)
+{
+    if (current_millis_blink - previous_act_blink >= heartbeat_interval)
+    {
+        previous_act_blink = current_millis_blink; // save current time
+        blink_led(ACT_LED);
+    }
+    
+} // end of act_led_heartbeat
+
+
+/*************************************************************************
+Function: handle_leds()
+Purpose:  turn off indicator LEDs when blink duration expires
+**************************************************************************/
+void handle_leds(void)
+{
+    current_millis_blink = millis(); // check current time
+    if (heartbeat_enabled) act_led_heartbeat();
+    if (current_millis_blink - rx_led_ontime >= led_blink_duration)
+    {
+        digitalWrite(RX_LED, HIGH); // turn off RX LED
+    }
+    if (current_millis_blink - tx_led_ontime >= led_blink_duration)
+    {
+        digitalWrite(TX_LED, HIGH); // turn off TX LED
+    }
+    if (current_millis_blink - act_led_ontime >= led_blink_duration)
+    {
+        digitalWrite(ACT_LED, HIGH); // turn off ACT LED
+    }
+    
+} // end of handle_leds
+
+
+/*************************************************************************
 Function: check_battery_volts()
 Purpose:  measure battery voltage through the OBD16 pin
 Note:     be aware that this voltage isn't precise like a multimeter reading, 
@@ -2483,21 +2522,6 @@ void check_battery_volts(void)
     }
     
 } // end of check_battery_volts
-
-
-/*************************************************************************
-Function: act_led_heartbeat()
-Purpose:  blinks ACT LED at a fixed time interval like it was a heart beating
-**************************************************************************/
-void act_led_heartbeat(void)
-{
-    if (current_millis_blink - previous_act_blink >= heartbeat_interval)
-    {
-        previous_act_blink = current_millis_blink; // save current time
-        blink_led(ACT_LED);
-    }
-    
-} // end of act_led_heartbeat
 
 
 /*************************************************************************

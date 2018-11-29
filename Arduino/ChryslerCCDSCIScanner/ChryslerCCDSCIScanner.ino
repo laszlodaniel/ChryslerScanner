@@ -134,8 +134,7 @@ void setup()
     }
 
     get_bus_config(); // figure out how to talk to the vehicle
-    digitalWrite(ACT_LED, LOW); // flash action LED once to indicate setup is complete and the scanner is ready to accept instructions
-    act_led_ontime = millis();
+    blink_led(ACT_LED);
 }
 
 void loop()
@@ -145,19 +144,5 @@ void loop()
     handle_usb_data(); // check if a command has been received over the USB connection
     handle_ccd_data(); // do CCD-bus stuff
     handle_sci_data(); // do SCI-bus stuff
-
-    current_millis_blink = millis(); // check current time
-    if (heartbeat_enabled) act_led_heartbeat();
-    if (current_millis_blink - rx_led_ontime >= led_blink_duration)
-    {
-        digitalWrite(RX_LED, HIGH); // turn off RX LED
-    }
-    if (current_millis_blink - tx_led_ontime >= led_blink_duration)
-    {
-        digitalWrite(TX_LED, HIGH); // turn off TX LED
-    }
-    if (current_millis_blink - act_led_ontime >= led_blink_duration)
-    {
-        digitalWrite(ACT_LED, HIGH); // turn off ACT LED
-    }
+    handle_leds(); // do LED stuff
 }
