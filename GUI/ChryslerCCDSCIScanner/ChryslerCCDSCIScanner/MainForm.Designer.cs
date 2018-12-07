@@ -66,9 +66,13 @@
             this.ImperialUnitRadioButton = new System.Windows.Forms.RadioButton();
             this.MetricUnitRadioButton = new System.Windows.Forms.RadioButton();
             this.UnitsLabel = new System.Windows.Forms.Label();
+            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.updateScannerFirmwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.USBCommunicationGroupBox.SuspendLayout();
             this.DiagnosticsGroupBox.SuspendLayout();
             this.groupBox3.SuspendLayout();
+            this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // USBTextBox
@@ -121,7 +125,7 @@
             this.USBCommunicationGroupBox.Controls.Add(this.USBClearAllButton);
             this.USBCommunicationGroupBox.Controls.Add(this.USBClearButton);
             this.USBCommunicationGroupBox.Controls.Add(this.USBTextBox);
-            this.USBCommunicationGroupBox.Location = new System.Drawing.Point(12, 12);
+            this.USBCommunicationGroupBox.Location = new System.Drawing.Point(12, 27);
             this.USBCommunicationGroupBox.Name = "USBCommunicationGroupBox";
             this.USBCommunicationGroupBox.Size = new System.Drawing.Size(365, 511);
             this.USBCommunicationGroupBox.TabIndex = 2;
@@ -228,12 +232,12 @@
             // 
             // Param3Label1
             // 
-            this.Param3Label1.AutoSize = true;
             this.Param3Label1.Location = new System.Drawing.Point(4, 368);
             this.Param3Label1.Name = "Param3Label1";
             this.Param3Label1.Size = new System.Drawing.Size(53, 13);
             this.Param3Label1.TabIndex = 110;
             this.Param3Label1.Text = "Param#3:";
+            this.Param3Label1.TextAlign = System.Drawing.ContentAlignment.TopRight;
             this.Param3Label1.Visible = false;
             // 
             // Param2ComboBox
@@ -248,12 +252,12 @@
             // 
             // Param2Label1
             // 
-            this.Param2Label1.AutoSize = true;
             this.Param2Label1.Location = new System.Drawing.Point(4, 337);
             this.Param2Label1.Name = "Param2Label1";
             this.Param2Label1.Size = new System.Drawing.Size(53, 13);
             this.Param2Label1.TabIndex = 108;
             this.Param2Label1.Text = "Param#2:";
+            this.Param2Label1.TextAlign = System.Drawing.ContentAlignment.TopRight;
             this.Param2Label1.Visible = false;
             // 
             // Param1ComboBox
@@ -268,13 +272,13 @@
             // 
             // Param1Label1
             // 
-            this.Param1Label1.AutoSize = true;
             this.Param1Label1.Location = new System.Drawing.Point(4, 306);
             this.Param1Label1.Name = "Param1Label1";
             this.Param1Label1.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.Param1Label1.Size = new System.Drawing.Size(53, 13);
             this.Param1Label1.TabIndex = 106;
             this.Param1Label1.Text = "Param#1:";
+            this.Param1Label1.TextAlign = System.Drawing.ContentAlignment.TopRight;
             this.Param1Label1.Visible = false;
             // 
             // PreviewLabel
@@ -307,23 +311,13 @@
             this.ModeComboBox.Name = "ModeComboBox";
             this.ModeComboBox.Size = new System.Drawing.Size(304, 21);
             this.ModeComboBox.TabIndex = 103;
+            this.ModeComboBox.SelectedIndexChanged += new System.EventHandler(this.ModeComboBox_SelectedIndexChanged);
             // 
             // CommandComboBox
             // 
             this.CommandComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.CommandComboBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             this.CommandComboBox.FormattingEnabled = true;
-            this.CommandComboBox.Items.AddRange(new object[] {
-            "Reset",
-            "Handshake",
-            "Status",
-            "Settings",
-            "Request",
-            "Response",
-            "Send message",
-            "Message received",
-            "Debug",
-            "OK/Error"});
             this.CommandComboBox.Location = new System.Drawing.Point(236, 244);
             this.CommandComboBox.Name = "CommandComboBox";
             this.CommandComboBox.Size = new System.Drawing.Size(125, 21);
@@ -438,7 +432,7 @@
             this.DiagnosticsGroupBox.Controls.Add(this.HandshakeButton);
             this.DiagnosticsGroupBox.Controls.Add(this.MillisButton);
             this.DiagnosticsGroupBox.Controls.Add(this.USBShowTrafficCheckBox);
-            this.DiagnosticsGroupBox.Location = new System.Drawing.Point(383, 12);
+            this.DiagnosticsGroupBox.Location = new System.Drawing.Point(383, 27);
             this.DiagnosticsGroupBox.Name = "DiagnosticsGroupBox";
             this.DiagnosticsGroupBox.Size = new System.Drawing.Size(889, 573);
             this.DiagnosticsGroupBox.TabIndex = 3;
@@ -466,6 +460,7 @@
             this.DiagnosticsTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.DiagnosticsTextBox.Size = new System.Drawing.Size(883, 477);
             this.DiagnosticsTextBox.TabIndex = 9;
+            this.DiagnosticsTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
             // groupBox3
             // 
@@ -474,7 +469,7 @@
             this.groupBox3.Controls.Add(this.MetricUnitRadioButton);
             this.groupBox3.Controls.Add(this.UnitsLabel);
             this.groupBox3.Controls.Add(this.ConnectButton);
-            this.groupBox3.Location = new System.Drawing.Point(12, 529);
+            this.groupBox3.Location = new System.Drawing.Point(12, 544);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Size = new System.Drawing.Size(365, 56);
             this.groupBox3.TabIndex = 13;
@@ -523,6 +518,30 @@
             this.UnitsLabel.TabIndex = 12;
             this.UnitsLabel.Text = "Units:";
             // 
+            // menuStrip1
+            // 
+            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolsToolStripMenuItem});
+            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
+            this.menuStrip1.Name = "menuStrip1";
+            this.menuStrip1.Size = new System.Drawing.Size(1284, 24);
+            this.menuStrip1.TabIndex = 14;
+            this.menuStrip1.Text = "menuStrip1";
+            // 
+            // toolsToolStripMenuItem
+            // 
+            this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.updateScannerFirmwareToolStripMenuItem});
+            this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
+            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
+            this.toolsToolStripMenuItem.Text = "Tools";
+            // 
+            // updateScannerFirmwareToolStripMenuItem
+            // 
+            this.updateScannerFirmwareToolStripMenuItem.Name = "updateScannerFirmwareToolStripMenuItem";
+            this.updateScannerFirmwareToolStripMenuItem.Size = new System.Drawing.Size(206, 22);
+            this.updateScannerFirmwareToolStripMenuItem.Text = "Update scanner firmware";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -531,7 +550,9 @@
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.DiagnosticsGroupBox);
             this.Controls.Add(this.USBCommunicationGroupBox);
+            this.Controls.Add(this.menuStrip1);
             this.DoubleBuffered = true;
+            this.MainMenuStrip = this.menuStrip1;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Chrysler CCD/SCI Scanner";
@@ -543,7 +564,10 @@
             this.DiagnosticsGroupBox.PerformLayout();
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
+            this.menuStrip1.ResumeLayout(false);
+            this.menuStrip1.PerformLayout();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -587,6 +611,9 @@
         private System.Windows.Forms.RadioButton AsciiCommMethodRadioButton;
         private System.Windows.Forms.RadioButton HexCommMethodRadioButton;
         private System.Windows.Forms.Label MethodLabel;
+        private System.Windows.Forms.MenuStrip menuStrip1;
+        private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem updateScannerFirmwareToolStripMenuItem;
     }
 }
 

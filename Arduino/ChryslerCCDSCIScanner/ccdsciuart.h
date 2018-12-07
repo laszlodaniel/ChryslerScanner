@@ -22,7 +22,7 @@
 #ifndef CCDSCIUART_H
 #define CCDSCIUART_H
 
-#define FW 0x000000005C0050DD  // Firmware version, actually the date/time of compilation in 64-bit UNIX time
+#define FW_DATE 0x000000005C0A9185  // Firmware date/time of compilation in 64-bit UNIX time
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -98,19 +98,6 @@
 #define HIBAUD  15   // prescaler for  62500 baud speed (SCI / high-speed parameter mode)
 #define USBBAUD 3    // prescaler for 250000 baud speed (USB)
 
-//#define ASCII_OUTPUT  // Choose this if you want a simple text output over USB for serial monitors
-#define PACKET_OUTPUT // Choose this if you want a byte-based packet output over USB for third-party applications
-
-// Make sure they are not defined at the same time
-#if defined(ASCII_OUTPUT) || defined(PACKET_OUTPUT)
-#undef ASCII_OUTPUT // packet output ftw
-#endif
-
-// If accidentally no output is given 
-#if !defined(ASCII_OUTPUT) && !defined(PACKET_OUTPUT)
-#define PACKET_OUTPUT // packet output ftw
-#endif
-
 #define INT4          2  // CCD-bus idle interrupt pin
 #define INT5          3  // CCD-bus active byte interrupt pin
 #define CCD_CLOCK_PIN 11 // clock generator output for CCD-bus
@@ -122,18 +109,6 @@
 #define SCI_INTERFRAME_RESPONSE_DELAY   100  // milliseconds elapsed after last received byte to consider the SCI-bus idling
 #define SCI_INTERMESSAGE_RESPONSE_DELAY 50   // ms
 #define SCI_INTERMESSAGE_REQUEST_DELAY  50   // ms
-
-// PCM-TCM selector
-#define NON 0x00 // neither computer is active
-#define PCM 0x01 // pcm only
-#define TCM 0x02 // tcm only
-#define BOT 0x03 // both computer active
-
-#define SCI_CONF_A 0x01 // SCI-bus configuration A
-#define SCI_CONF_B 0x02 // SCI-bus configuration B
-
-#define LOSPEED 0x01 // low speed flag (7812.5 baud)
-#define HISPEED 0x02 // high speed flag (62500 baud)
 
 #define PA0 22 // SCI-bus configuration selector digital pins on ATmega2560
 #define PA1 23 // |
@@ -199,7 +174,7 @@
 
 // SUB-DATA CODE byte
 // DC command 0x04 & 0x05 (request and response)
-#define firmware_date     0x00 // 64-bit UNIX time of code compilation, defined as "FW"
+#define hwfw_info         0x00 // Hardware version/date and firmware date in this particular order (dates are in 64-bit UNIX time format)
 #define timestamp         0x01 // elapsed milliseconds since system start
 #define battery_voltage   0x02 // as the name says
 // 0x02-0xFF reserved
@@ -277,7 +252,6 @@ volatile uint8_t ccd_bytes_count = 0;
 bool ccd_msg_pending = false; // flag for custom ccd-bus message transmission
 uint8_t ccd_msg_to_send[TEMP_BUFFER_SIZE]; // custom ccd-bus message is copied here
 uint8_t ccd_msg_to_send_ptr = 0; // custom ccd-bus message length
-volatile uint32_t last_ccd_byte_sent = 0;
 
 // SCI-bus
 bool sci_enabled = true;
@@ -334,9 +308,15 @@ uint16_t led_blink_duration = 50; // milliseconds
 uint16_t heartbeat_interval = 5000; // milliseconds
 bool heartbeat_enabled = true;
 
-uint8_t mcu_millis[4]; // current time is stored here when "get_mcu_millis" is called
+uint8_t current_timestamp[4]; // current time is stored here when "update_timestamp" is called
 
 const char ascii_autoreply[] = "I GOT YOUR MESSAGE!\n";
+
+uint8_t eep_status = 0;
+uint8_t eep_result = 0;
+
+uint8_t hw_version[2];
+uint8_t hw_date[8];
 
 
 // Interrupt Service Routines
@@ -433,8 +413,6 @@ Purpose:  called when the UART1 has received a character
         CCD_RxBuf[tmphead] = data;
     }
     CCD_LastRxError = lastRxError;
-    
-    last_ccd_byte_sent = millis();
 }
 
 ISR(CCD_TRANSMIT_INTERRUPT)
@@ -807,7 +785,6 @@ void usb_tx_flush(void)
 } /* usb_tx_flush */
 
 
-
 // CCD-bus functions
 /*************************************************************************
 Function: ccd_init()
@@ -890,7 +867,7 @@ uint16_t ccd_peek(uint16_t index = 0)
             return UART_RX_NO_DATA; /* no data available */
         }
     }
-  
+    
     tmptail = (CCD_RxTail + 1 + index) & CCD_RX1_BUFFER_MASK;
 
     /* get data from receive buffer */
@@ -1034,7 +1011,6 @@ void ccd_tx_flush(void)
     }
     
 } /* ccd_tx_flush */
-
 
 
 // SCI-bus functions (for PCM)
@@ -1263,7 +1239,6 @@ void pcm_tx_flush(void)
     }
     
 } /* pcm_tx_flush */
-
 
 
 // SCI-bus functions (for TCM)
@@ -1537,6 +1512,28 @@ void ccd_active_byte(void) { ccd_ctrl = true; /* set flag */ } // end of ccd_ctr
 
 
 /*************************************************************************
+Function: calculate_checksum()
+Purpose:  calculate checksum in a given buffer with specified length
+Note:     index = starting index in buffer
+          len = buffer full length
+**************************************************************************/
+uint8_t calculate_checksum(uint8_t *buff, uint16_t index, uint16_t len)
+{
+    uint8_t a = 0;
+    
+    for (uint16_t i = index ; i < len; i++)
+    {
+        a += buff[i]; 
+    }
+    
+    a &= 0xFF;
+    
+    return a;
+    
+} // end of calculate_checksum
+
+
+/*************************************************************************
 Function: ccd_clock_generator()
 Purpose:  generates 1 MHz clock signal for the CDP68HC68S1 chip
 Note:     
@@ -1584,84 +1581,86 @@ void ccd_clock_generator(uint8_t command)
 
 /*************************************************************************
 Function: configure_sci_bus()
-Purpose:  change between SCI-bus configuration (A/B);
-          - A: old configuration until 2002;
-          - B: new configuration starting from 2002.
-Returns:  none
+Purpose:  as the name says
 **************************************************************************/
-void configure_sci_bus(uint8_t bus, uint8_t configuration)
+void configure_sci_bus(uint8_t data)
 {
-    switch (bus)
-    {
-        case NON: // 0x00, no data flow between scanner and SCI-bus
-        {
-            // TODO
-            break;
-        }
-        case PCM: // 0x01
-        {
-            // TODO
-            break;
-        }
-        case TCM: // 0x02
-        {
-            // TODO
-            break;
-        }
-        case BOT: // 0x03
-        {
-            // TODO
-            break;
-        }
-        default:  // 0x04-0xFF
-        {
-            // TODO
-            break;
-        }
-    }
+    // Lower half of the byte (4-bits) encode configuration as follows (lowest to highest bit)
+    bool pcm_tcm    = data & 0x01; // PCM (0) or TCM (1)
+    bool enable     = data & 0x02; // disable (0) or enable (1)
+    bool bus_config = data & 0x04; // bus configuration: A (0) or B (1)
+    bool bus_speed  = data & 0x08; // speed: low speed/7812.5 baud (0) or high speed/62500 baud (1)
     
-    switch (configuration)
+    if (!bus_config) // "A" configuration, routes to PCM and TCM cannot be active simultaneously 
     {
-        // TODO: save current pin states to remember when necessary
-        
-        case SCI_CONF_A: // 0x01
+        if (!pcm_tcm) // PCM
         {
-            // Configuration A
-            digitalWrite(PA0, HIGH);
-            digitalWrite(PA1, HIGH);
+            pcm_enabled = true;
+            tcm_enabled = false;
+            
+            // PA0..PA3 controls "A" configuration, PA4..PA7 controls "B" configuration
+            digitalWrite(PA0, HIGH); // SCI-BUS_PCM_A_RX enabled
+            digitalWrite(PA1, HIGH); // SCI-BUS_PCM_A_TX enabled
+            digitalWrite(PA2, LOW);  // SCI-BUS_TCM_A_RX disabled
+            digitalWrite(PA3, LOW);  // SCI-BUS_TCM_A_TX disabled
+            digitalWrite(PA4, LOW);  // SCI-BUS_PCM_B_RX disabled
+            digitalWrite(PA5, LOW);  // SCI-BUS_PCM_B_TX disabled
+            digitalWrite(PA6, LOW);  // SCI-BUS_TCM_B_RX disabled
+            digitalWrite(PA7, LOW);  // SCI-BUS_TCM_B_TX disabled
+        }
+        else // TCM
+        {
+            pcm_enabled = false;
+            tcm_enabled = true;
+            
+            digitalWrite(PA0, LOW);
+            digitalWrite(PA1, LOW);
             digitalWrite(PA2, HIGH);
             digitalWrite(PA3, HIGH);
             digitalWrite(PA4, LOW);
             digitalWrite(PA5, LOW);
             digitalWrite(PA6, LOW);
             digitalWrite(PA7, LOW);
-            break;
         }
-        case SCI_CONF_B: // 0x02
+    }
+    else // "B" configuration, routes to PCM and TCM can be active simultaneously 
+    {
+        if (!pcm_tcm) pcm_enabled = true;
+        else tcm_enabled = true;
+        
+        digitalWrite(PA0, LOW);
+        digitalWrite(PA1, LOW);
+        digitalWrite(PA2, LOW);
+        digitalWrite(PA3, LOW);
+        digitalWrite(PA4, HIGH);
+        digitalWrite(PA5, HIGH);
+        digitalWrite(PA6, HIGH);
+        digitalWrite(PA7, HIGH);
+    }
+
+    if (pcm_enabled && tcm_enabled) sci_enabled = true;
+    if (!pcm_enabled && !tcm_enabled) sci_enabled = false;
+
+    if (!pcm_tcm) // PCM
+    {
+        if (!bus_speed) // low speed
         {
-            // Configuration B
-            digitalWrite(PA0, LOW);
-            digitalWrite(PA1, LOW);
-            digitalWrite(PA2, LOW);
-            digitalWrite(PA3, LOW);
-            digitalWrite(PA4, HIGH);
-            digitalWrite(PA5, HIGH);
-            digitalWrite(PA6, HIGH);
-            digitalWrite(PA7, HIGH);
-            break;
+            pcm_init(LOBAUD); // 7812.5 baud
         }
-        default: // 0x00, 0x03-0xFF
+        else // high speed
         {
-            // No valid configuration selected, SCI-bus offline
-            digitalWrite(PA0, LOW);
-            digitalWrite(PA1, LOW);
-            digitalWrite(PA2, LOW);
-            digitalWrite(PA3, LOW);
-            digitalWrite(PA4, LOW);
-            digitalWrite(PA5, LOW);
-            digitalWrite(PA6, LOW);
-            digitalWrite(PA7, LOW);
-            break;
+            pcm_init(HIBAUD); // 62500 baud
+        }
+    }
+    else // TCM
+    {
+        if (!bus_speed) // low speed
+        {
+            tcm_init(LOBAUD); // 7812.5 baud
+        }
+        else // high speed
+        {
+            tcm_init(HIBAUD); // 62500 baud
         }
     }
 
@@ -1669,32 +1668,51 @@ void configure_sci_bus(uint8_t bus, uint8_t configuration)
 
 
 /*************************************************************************
-Function: get_mcu_millis()
-Purpose:  get elapsed milliseconds since power up/reset from microcontroller
+Function: update_timestamp()
+Purpose:  get elapsed milliseconds since power up/reset from microcontroller and convert it to an array containing 4 bytes
 Note:     this function updates a global byte array which can be read from anywhere in the code
 **************************************************************************/
-void get_mcu_millis(uint8_t *_array)
+void update_timestamp(uint8_t *target)
 {
     uint32_t mcu_current_millis = millis();
-
-    _array[0] = (mcu_current_millis >> 24) & 0xFF;
-    _array[1] = (mcu_current_millis >> 16) & 0xFF;
-    _array[2] = (mcu_current_millis >> 8) & 0xFF;
-    _array[3] = mcu_current_millis & 0xFF;
+    target[0] = (mcu_current_millis >> 24) & 0xFF;
+    target[1] = (mcu_current_millis >> 16) & 0xFF;
+    target[2] = (mcu_current_millis >> 8) & 0xFF;
+    target[3] = mcu_current_millis & 0xFF;
     
-} // end of get_mcu_millis
+} // end of update_timestamp
 
 
 /*************************************************************************
 Function: blink_led()
 Purpose:  turn on one of the indicator LEDs
+Note:     this is only turning the LED on, other function turns it off when it needs to
 **************************************************************************/
 void blink_led(uint8_t led)
 {
     digitalWrite(led, LOW); // turn on LED
-    if (led == RX_LED) rx_led_ontime = millis(); // save time when RX LED was turned on
-    else if (led == TX_LED) tx_led_ontime = millis(); // save time when TX LED was turned on
-    else if (led == ACT_LED) act_led_ontime = millis(); // save time when ACT LED was turned on
+    switch (led)
+    {
+        case RX_LED:
+        {
+            rx_led_ontime = millis();
+            break;
+        }
+        case TX_LED:
+        {
+            tx_led_ontime = millis();
+            break;
+        }
+        case ACT_LED:
+        {
+            act_led_ontime = millis();
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
     
 } /* blink_led */
 
@@ -1768,25 +1786,65 @@ void send_usb_packet(uint8_t source, uint8_t target, uint8_t dc_command, uint8_t
 
 
 /*************************************************************************
-Function: send_firmware_date()
-Purpose:  break firmware date into 8 bytes and send through serial link
+Function: send_hwfw_info()
+Purpose:  gather hardware version/date and firmware date into an array and send through the serial link
 **************************************************************************/
-void send_firmware_date(void)
+void send_hwfw_info(void)
 {
-    uint8_t fw_value[8];
+    uint8_t hwfw_value[18];
                                     
-    fw_value[0] = (FW >> 56) & 0xFF;
-    fw_value[1] = (FW >> 48) & 0xFF;
-    fw_value[2] = (FW >> 40) & 0xFF;
-    fw_value[3] = (FW >> 32) & 0xFF;
-    fw_value[4] = (FW >> 24) & 0xFF;
-    fw_value[5] = (FW >> 16) & 0xFF;
-    fw_value[6] = (FW >> 8) & 0xFF;
-    fw_value[7] = FW & 0xFF;
-
-    send_usb_packet(from_usb, to_usb, response, firmware_date, fw_value, 8);
+    hwfw_value[0] = hw_version[0];
+    hwfw_value[1] = hw_version[1];
     
-} /* send_firmware_date */
+    hwfw_value[2] = hw_date[0];
+    hwfw_value[3] = hw_date[1];
+    hwfw_value[4] = hw_date[2];
+    hwfw_value[5] = hw_date[3];
+    hwfw_value[6] = hw_date[4];
+    hwfw_value[7] = hw_date[5];
+    hwfw_value[8] = hw_date[6];
+    hwfw_value[9] = hw_date[7];
+    
+    hwfw_value[10] = (FW_DATE >> 56) & 0xFF;
+    hwfw_value[11] = (FW_DATE >> 48) & 0xFF;
+    hwfw_value[12] = (FW_DATE >> 40) & 0xFF;
+    hwfw_value[13] = (FW_DATE >> 32) & 0xFF;
+    hwfw_value[14] = (FW_DATE >> 24) & 0xFF;
+    hwfw_value[15] = (FW_DATE >> 16) & 0xFF;
+    hwfw_value[16] = (FW_DATE >> 8) & 0xFF;
+    hwfw_value[17] = FW_DATE & 0xFF;
+
+    send_usb_packet(from_usb, to_usb, response, hwfw_info, hwfw_value, 18);
+    
+} /* send_hwfw_info */
+
+
+/*************************************************************************
+Function: check_battery_volts()
+Purpose:  measure battery voltage through the OBD16 pin
+Note:     be aware that this voltage isn't precise like a multimeter reading, 
+          it is produced by a resistor divider circuit with imperfect
+          resistors (1% tolreance, but still lots of headroom in it);
+          the circuit tolerates +24V batteries too
+**************************************************************************/
+void check_battery_volts(void)
+{
+    battery_adc = analogRead(BATT);
+    battery_volts = (uint16_t)(battery_adc*(adc_supply_voltage/100.0)/adc_max_value*((battery_rd1/10.0)+(battery_rd2/10.0))/(battery_rd2/10.0)*100); // resistor divider equation
+    if (battery_volts < 600) // battery_volts < 6V
+    {
+        battery_volts_array[0] = 0; // workaround if scanner's power switch is at OFF position and analog pin is floating
+        battery_volts_array[1] = 0;
+        connected_to_vehicle = false;
+    }
+    else // battery_volts >= 6V
+    {
+        battery_volts_array[0] = (battery_volts >> 8) & 0xFF;
+        battery_volts_array[1] = battery_volts & 0xFF;
+        connected_to_vehicle = true;
+    }
+    
+} // end of check_battery_volts
 
 
 /*************************************************************************
@@ -1917,7 +1975,7 @@ void handle_usb_data(void)
             }
     
             // Keep the low byte of the result
-            calculated_checksum = calculated_checksum & 0xFF;
+            calculated_checksum &= 0xFF;
     
             // Compare calculated checksum to the received CHECKSUM byte
             if (calculated_checksum != checksum) // if they are not the same
@@ -1952,7 +2010,7 @@ void handle_usb_data(void)
                         case handshake: // 0x01 - handshake request coming from an external computer
                         {
                             send_usb_packet(from_usb, to_usb, handshake, ok, handshake_array, 21);
-                            if (subdatacode == 0x01) send_firmware_date();
+                            if (subdatacode == 0x01) send_hwfw_info();
                             break;
                         }
                         case status: // 0x02 - status report request
@@ -1984,7 +2042,7 @@ void handle_usb_data(void)
                                     uint16_t blink_duration = (cmd_payload[2] << 8) + cmd_payload[3]; // 0-65535 milliseconds
                                     led_blink_duration = blink_duration; // this applies to all 3 status leds! (rx, tx, act)
 
-                                    send_usb_packet(from_usb, to_usb, settings, heartbeat, ack, 1); // acknowledge
+                                    send_usb_packet(from_usb, to_usb, settings, heartbeat, cmd_payload, 4); // acknowledge
                                     break;
                                 }
                                 case set_ccd_bus: // 0x01 - ON-OFF state is stored in payload
@@ -1993,40 +2051,56 @@ void handle_usb_data(void)
                                     {
                                         send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
                                         break;
-                                    }         
-                                                               
-                                    if (cmd_payload[0] == 0x00) ccd_enabled = false;
-                                    else if (cmd_payload[0] == 0x01) ccd_enabled = true;
-                                    
-                                    send_usb_packet(from_usb, to_usb, settings, set_ccd_bus, ack, 1); // acknowledge
+                                    }
+                                    switch (cmd_payload[0])
+                                    {
+                                        case 0x00: // disable ccd-bus transceiver
+                                        {
+                                            if (ccd_enabled)
+                                            {
+                                                ccd_enabled = false;
+                                                ccd_clock_generator(STOP);
+                                                send_usb_packet(from_usb, to_usb, settings, set_ccd_bus, cmd_payload, 1); // acknowledge
+                                            }
+                                            else
+                                            {
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, already disabled
+                                            }
+                                            break;
+                                        }
+                                        case 0x01: // enable ccd-bus transceiver
+                                        {
+                                            if (!ccd_enabled)
+                                            {
+                                                ccd_enabled = true;
+                                                ccd_clock_generator(START);
+                                                send_usb_packet(from_usb, to_usb, settings, set_ccd_bus, cmd_payload, 1); // acknowledge
+                                            }
+                                            else
+                                            {
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, already enabled
+                                            }
+                                            break;
+                                        }
+                                        default: // other values are not valid
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, already enabled
+                                            break;
+                                        }
+                                    }
                                     break;
                                 }
                                 case set_sci_bus: // 0x02 - ON-OFF state, A/B configuration and speed are stored in payload
                                 {
-                                    if (!payload_bytes)
+                                    if (!payload_bytes) // if no payload byte is present
                                     {
                                         send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
                                         break;
                                     }
                                     
-                                    bool enabled    = cmd_payload[0] & 0x01; // lowest bit indicates disabled (0) or enabled (1)
-                                    bool set_config = cmd_payload[0] & 0x02; // next bit tells which SCI-bus configuration to enable: A (0) or B (1)
-                                    bool set_speed  = cmd_payload[0] & 0x04; // next bit tells speed mode: low speed/7812.5 baud (0) or high speed/62500 baud (1)
-// !!!!!!!!!THIS WON'T WORK, target is the scanner, can't be other than that!                                  
-//                                    if (target == to_pcm)
-//                                    {
-//                                        pcm_enabled = enabled;
-//                                        // TODO: config and speed
-//                                    }
-//                                    else if (target == to_tcm)
-//                                    {
-//                                        tcm_enabled = enabled;
-//                                        // TODO: config and speed
-//                                    }
-//                                    
-                                    if (!pcm_enabled & !tcm_enabled) sci_enabled = false;
-                                    else sci_enabled = true;
-                                    send_usb_packet(from_usb, to_usb, settings, set_sci_bus, ack, 1); // acknowledge
+                                    configure_sci_bus(cmd_payload[0]); // pass settings to this function
+
+                                    send_usb_packet(from_usb, to_usb, settings, set_sci_bus, cmd_payload, 1); // acknowledge
                                     break;
                                 }
                                 default: // other values are not used
@@ -2041,19 +2115,20 @@ void handle_usb_data(void)
                         {
                             switch (subdatacode) // evaluate SUB-DATA CODE byte
                             {
-                                case firmware_date: // 0x00 - scanner firmware date
+                                case hwfw_info: // 0x00 - hardware version/date and firmware date in this particular order (dates are in 64-bit UNIX time format)
                                 {
-                                    send_firmware_date();
+                                    send_hwfw_info();
                                     break;
                                 }
                                 case timestamp: // 0x01 - timestamp / MCU counter value (milliseconds elapsed)
                                 {
-                                    get_mcu_millis(mcu_millis); // this function updates the global byte array "mcu_millis" with the current time
-                                    send_usb_packet(from_usb, to_usb, response, timestamp, mcu_millis, 4);
+                                    update_timestamp(current_timestamp); // this function updates the global byte array "current_timestamp" with the current time
+                                    send_usb_packet(from_usb, to_usb, response, timestamp, current_timestamp, 4);
                                     break;
                                 }
                                 case battery_voltage:
                                 {
+                                    check_battery_volts();
                                     send_usb_packet(from_usb, to_usb, response, battery_voltage, battery_volts_array, 2);
                                     break;
                                 }
@@ -2125,7 +2200,7 @@ void handle_usb_data(void)
                                         {
                                             calculated_checksum += ccd_msg_to_send[i];
                                         }
-                                        calculated_checksum = calculated_checksum & 0xFF;
+                                        calculated_checksum &= 0xFF;
                                 
                                         // Correct the last checksum byte if wrong
                                         if (ccd_msg_to_send[ccd_msg_to_send_ptr - 1] != calculated_checksum)
@@ -2287,7 +2362,7 @@ void handle_usb_data(void)
         }
         else if (sync == ASCII_SYNC_BYTE) // text based communication
         {
-            usb_puts(ascii_autoreply);
+            usb_puts(ascii_autoreply); // TODO
         }
     }
     else
@@ -2304,41 +2379,57 @@ Purpose:  handle CCD-bus messages
 **************************************************************************/
 void handle_ccd_data(void)
 {
-    if (ccd_enabled)
+    if (ccd_enabled) // when clock signal is fed into the ccd-chip
     {
-        if (ccd_idle)
+        if (ccd_idle) // CCD-bus is idling, find out if there's a message in the circular buffer
         {
-            if (ccd_bytes_count > 0)
+            if (ccd_bytes_count > 0) // the exact message length is recorded in the CCD-bus idle ISR so it's pretty accurate
             {
                 uint8_t usb_msg[4+ccd_bytes_count]; // create local array which will hold the timestamp and the CCD-bus message
-                get_mcu_millis(mcu_millis); // get current time for the timestamp
+                update_timestamp(current_timestamp); // get current time for the timestamp
                 for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
                 {
-                    usb_msg[i] = mcu_millis[i];
+                    usb_msg[i] = current_timestamp[i];
                 }
                 for (uint8_t i = 0; i < ccd_bytes_count; i++) // put every byte in the CCD-bus message after the timestamp
                 {
-                    usb_msg[4+i] = ccd_getc() & 0xFF; 
+                    usb_msg[4+i] = ccd_getc() & 0xFF; // new message bytes may arrive in the circular buffer but this way only one message is removed
                 }
+                // TODO: check here if echo is expected from a pending message, otherwise good to know if a custom message is heard by the other modules
                 send_usb_packet(from_ccd, to_usb, msg_rx, single_msg, usb_msg, 4+ccd_bytes_count); // send CCD-bus message back to the laptop
-                ccd_bytes_count = 0;
+                ccd_bytes_count = 0; // force ISR to update this value again so we don't end up here in the next program loop
             }
 
-            if (ccd_msg_pending)
+            if (ccd_msg_pending) // received over usb connection, checksum corrected there (if wrong)
             {     
-                for (uint8_t i = 0; i < ccd_msg_to_send_ptr; i++) // repeat for the length of the message
+                for (uint8_t i = 0; i < ccd_msg_to_send_ptr; i++) // since the bus is already idling start filling the transmit buffer with bytes right away
                 {
-                    ccd_putc(ccd_msg_to_send[i]); // fill the transmit buffer with data, transmission occurs automatically if the code senses at least 1 byte in this buffer
+                    ccd_putc(ccd_msg_to_send[i]); // transmission occurs automatically if the code senses at least 1 byte in this buffer
                 }
-                ccd_msg_to_send_ptr = 0; // reset pointer
-                ccd_msg_pending = false; // re-arm, make it possible to send a message again
+                ccd_msg_to_send_ptr = 0; // reset pointer, TODO: perhaps don't reset it until proper echo is heard on the bus
+                ccd_msg_pending = false; // re-arm, make it possible to send a message again, TODO: same as above
             }
-            ccd_idle = false;
+            ccd_idle = false; // re-arm so the next program loop doesn't enter here again unless the ISR changes this variable to true
         }
     }
-    else
+    else // monitor ccd-bus receive buffer for garbage bytes when clock signal is suspended and purge if necessary
     {
-        // WHAT TODO
+        uint8_t data_length = ccd_rx_available(); // probably half completed messages end up here when the ccd-chip's clock signal is stopped during active bytes on the bus
+        if (data_length > 0)
+        {
+            uint8_t usb_msg[4+data_length]; // create local array which will hold the timestamp and the CCD-bus message
+            update_timestamp(current_timestamp); // get current time for the timestamp
+            for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+            {
+                usb_msg[i] = current_timestamp[i];
+            }
+            for (uint8_t i = 0; i < ccd_bytes_count; i++) // put every byte in the CCD-bus message after the timestamp
+            {
+                usb_msg[4+i] = ccd_getc() & 0xFF; // new message bytes may arrive in the circular buffer but this way only one message is removed
+            }
+            // TODO: mark this message somewhere to indicate it's probably not complete
+            send_usb_packet(from_ccd, to_usb, msg_rx, single_msg, usb_msg, 4+ccd_bytes_count); // send CCD-bus message back to the laptop
+        }
     }
 
 } // end of handle_ccd_data
@@ -2350,6 +2441,8 @@ Purpose:  handle SCI-bus messages from both PCM and TCM
 Note:     be aware that in "A" configuration PCM and TCM TX-pins are joined
           so they can't talk at the same time. I mean they can but
           Arduino won't understand a single bit because of framing errors.
+TODO:     use a separate timer (and its interrupts) to measure idle condition
+          just like the CCD-chip does with the idle pin
 **************************************************************************/
 void handle_sci_data(void)
 {
@@ -2378,12 +2471,11 @@ void handle_sci_data(void)
             if (((millis() - pcm_last_msgbyte_received) > SCI_INTERFRAME_RESPONSE_DELAY) && (pcm_bytes_buffer_ptr > 0))
             {
                 uint8_t usb_msg[4+pcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the CCD-bus message
-                get_mcu_millis(mcu_millis); // get current time for the timestamp
-                usb_msg[0] = mcu_millis[0]; // no need to bitshift result, the time is already in arrays
-                usb_msg[1] = mcu_millis[1];
-                usb_msg[2] = mcu_millis[2];
-                usb_msg[3] = mcu_millis[3];
-    
+                update_timestamp(current_timestamp); // get current time for the timestamp
+                for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+                {
+                    usb_msg[i] = current_timestamp[i];
+                }
                 for (uint8_t i = 0; i < pcm_bytes_buffer_ptr; i++)
                 {
                     usb_msg[4+i] = pcm_bytes_buffer[i]; // put every byte in the SCI-bus message after the timestamp
@@ -2427,12 +2519,11 @@ void handle_sci_data(void)
             if (((millis() - tcm_last_msgbyte_received) > SCI_INTERFRAME_RESPONSE_DELAY) && (tcm_bytes_buffer_ptr > 0))
             {
                 uint8_t usb_msg[4+tcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the CCD-bus message
-                get_mcu_millis(mcu_millis); // get current time for the timestamp
-                usb_msg[0] = mcu_millis[0]; // no need to bitshift result, the time is already in arrays
-                usb_msg[1] = mcu_millis[1];
-                usb_msg[2] = mcu_millis[2];
-                usb_msg[3] = mcu_millis[3];
-    
+                update_timestamp(current_timestamp); // get current time for the timestamp
+                for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+                {
+                    usb_msg[i] = current_timestamp[i];
+                }
                 for (uint8_t i = 0; i < tcm_bytes_buffer_ptr; i++)
                 {
                     usb_msg[4+i] = tcm_bytes_buffer[i]; // put every byte in the SCI-bus message after the timestamp
@@ -2466,7 +2557,7 @@ void act_led_heartbeat(void)
     if (current_millis_blink - previous_act_blink >= heartbeat_interval)
     {
         previous_act_blink = current_millis_blink; // save current time
-        blink_led(ACT_LED);
+        blink_led(ACT_LED); // this only lights up the led, the "handle_leds" function below turns it off after a short time, which is called frequently in the main loop
     }
     
 } // end of act_led_heartbeat
@@ -2494,34 +2585,6 @@ void handle_leds(void)
     }
     
 } // end of handle_leds
-
-
-/*************************************************************************
-Function: check_battery_volts()
-Purpose:  measure battery voltage through the OBD16 pin
-Note:     be aware that this voltage isn't precise like a multimeter reading, 
-          it is produced by a resistor divider circuit with imperfect
-          resistors (1% tolreance, but still lots of headroom in it);
-          the circuit tolerates +24V batteries too
-**************************************************************************/
-void check_battery_volts(void)
-{
-    battery_adc = analogRead(BATT);
-    battery_volts = (uint16_t)(battery_adc*(adc_supply_voltage/100.0)/adc_max_value*((battery_rd1/10.0)+(battery_rd2/10.0))/(battery_rd2/10.0)*100); // resistor divider equation
-    if (battery_volts < 600) // battery_volts < 6V
-    {
-        battery_volts_array[0] = 0; // workaround if scanner's power switch is at OFF position and analog pin is floating
-        battery_volts_array[1] = 0;
-        connected_to_vehicle = false;
-    }
-    else // battery_volts >= 6V
-    {
-        battery_volts_array[0] = (battery_volts >> 8) & 0xFF;
-        battery_volts_array[1] = battery_volts & 0xFF;
-        connected_to_vehicle = true;
-    }
-    
-} // end of check_battery_volts
 
 
 /*************************************************************************

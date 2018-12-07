@@ -17,6 +17,7 @@ namespace ChryslerCCDSCIScanner
     {
         public string DateTimeNow;
         public static string USBLogFilename;
+        public static string USBBinaryLogFilename;
         public static string CCDLogFilename;
         public static string PCMLogFilename;
         public static string TCMLogFilename;
@@ -27,6 +28,8 @@ namespace ChryslerCCDSCIScanner
         public byte[] buffer = new byte[2048];
         public byte[] HandshakeRequest = new byte[] { 0x3D, 0x00, 0x02, 0x01, 0x00, 0x03 };
         public byte[] MillisRequest = new byte[] { 0x3D, 0x00, 0x02, 0x04, 0x01, 0x07 };
+        public int HeartbeatInterval = 1000; // ms
+        public int HeartbeatDuration = 50; // ms
 
         public enum TransmissionMethod
         {
@@ -67,7 +70,7 @@ namespace ChryslerCCDSCIScanner
 
         public enum Response
         {
-            FirmwareDate = 0,
+            HwFwInfo = 0,
             Timestamp = 1,
             BatteryVoltage = 2
         }
@@ -97,30 +100,33 @@ namespace ChryslerCCDSCIScanner
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            DiagnosticsGroupBox.Visible = false;
-            this.Size = new Size(405, 650);
-            this.CenterToScreen();
+            DiagnosticsGroupBox.Visible = false; // hide the expanded view components all at once
+            this.Size = new Size(405, 650); // resize form to collapsed view
+            this.CenterToScreen(); // put window at the center of the screen
 
-            Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); // Set application icon
-            if (!Directory.Exists("LOG")) Directory.CreateDirectory("LOG"); // Create LOG directory if it doesn't exist
+            Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); // set application icon
+            if (!Directory.Exists("LOG")) Directory.CreateDirectory("LOG"); // create LOG directory if it doesn't exist
 
             // Set logfile names inside the LOG directory
             DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             USBLogFilename = @"LOG/usblog_" + DateTimeNow + ".txt";
+            USBBinaryLogFilename = @"LOG/usblog_" + DateTimeNow + ".bin";
             CCDLogFilename = @"LOG/ccdlog_" + DateTimeNow + ".txt";
             PCMLogFilename = @"LOG/pcmlog_" + DateTimeNow + ".txt";
             TCMLogFilename = @"LOG/tcmlog_" + DateTimeNow + ".txt";
 
+            // Setup timeout timer
             TimeoutTimer.Elapsed += new ElapsedEventHandler(TimeoutHandler);
             TimeoutTimer.Interval = 500; // ms
             TimeoutTimer.Enabled = false;
 
-            PM.PropertyChanged += new PropertyChangedEventHandler(DataReceived);
-            TT.PropertyChanged += new PropertyChangedEventHandler(TableUpdated);
+            // Associate event handler methods to specific events
+            PM.PropertyChanged += new PropertyChangedEventHandler(DataReceived); // packet manager
+            TT.PropertyChanged += new PropertyChangedEventHandler(TableUpdated); // text table
 
-            DiagnosticsTextBox.Text = String.Join(Environment.NewLine, TT.Table);
-            USBCommunicationGroupBox.Enabled = false;
-            TargetComboBox.SelectedIndex = 0;
+            DiagnosticsTextBox.Text = String.Join(Environment.NewLine, TT.Table); // put default text in the
+            USBCommunicationGroupBox.Enabled = false; // disable by default
+            TargetComboBox.SelectedIndex = 0; // set combobox positions
             CommandComboBox.SelectedIndex = 2;
             ModeComboBox.SelectedIndex = 0;
 
@@ -344,7 +350,7 @@ namespace ChryslerCCDSCIScanner
                 byte subdatacode = msg[4];
                 byte[] payload = new byte[PacketSize - 6];
                 Array.Copy(msg, 5, payload, 0, PacketSize - 6);
-                byte checksum = msg[PacketSize - 1];
+                byte checksum = msg[PacketSize - 1]; // -1 because zero-indexing
 
                 byte source = (byte)((datacode >> 6) & 0x03);
                 byte target = (byte)((datacode >> 4) & 0x03);
@@ -356,14 +362,8 @@ namespace ChryslerCCDSCIScanner
                         switch (dc_command)
                         {
                             case (byte)Command.Reset:
-                                if (TM == (byte)TransmissionMethod.Hex)
-                                {
-                                    Util.UpdateTextBox(USBTextBox, "[->RX] Scanner is resetting now", msg);
-                                }
-                                else if (TM == (byte)TransmissionMethod.Ascii)
-                                {
-                                    Util.UpdateTextBox(USBTextBox, "> Scanner is resetting now", null);
-                                }
+                                if (payload[0] == 0) Util.UpdateTextBox(USBTextBox, "[->RX] Scanner is resetting, please wait", msg);
+                                else if (payload[0] == 1) Util.UpdateTextBox(USBTextBox, "[->RX] Scanner is ready to accept instructions", msg);
                                 break;
                             case (byte)Command.Handshake:
                                 if (Encoding.ASCII.GetString(payload) == "CHRYSLERCCDSCISCANNER")
@@ -379,14 +379,59 @@ namespace ChryslerCCDSCIScanner
                                     ScannerFound = false;
                                 }
                                 break;
+                            case (byte)Command.Settings:
+                                switch (subdatacode)
+                                {
+                                    case 0x00: // Heartbeat
+                                        Util.UpdateTextBox(USBTextBox, "[->RX] Heartbeat settings changed" , msg);
+                                        if ((payload[0] << 8 | payload[1]) > 0)
+                                        {
+                                            string interval = (payload[0] << 8 | payload[1]).ToString() + " ms";
+                                            string duration = (payload[2] << 8 | payload[3]).ToString() + " ms";
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Heartbeat enabled:" + Environment.NewLine + "- interval: " + interval + Environment.NewLine + "- duration: " + duration, null);
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Heartbeat disabled", null);
+                                        }
+                                        break;
+                                    case 0x01: // Set CCD-bus
+                                        Util.UpdateTextBox(USBTextBox, "[->RX] CCD-bus settings changed", msg);
+                                        if (payload[0] == 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus transceiver disabled", null);
+                                        else if (payload[0] == 1) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus transceiver enabled @ 7812.5 baud", null);
+                                        break;
+                                    case 0x02: // Set SCI-bus
+                                        string configuration = String.Empty;
+
+                                        if (((payload[0] >> 2) & 0x01) == 0) configuration += "SCI-BUS_A";
+                                        else if (((payload[0] >> 2) & 0x01) == 1) configuration += "SCI-BUS_B";
+
+                                        if ((payload[0] & 0x01) == 0) configuration += "_PCM";
+                                        else if ((payload[0] & 0x01) == 1) configuration += "_TCM";
+
+                                        if (((payload[0] >> 1) & 0x01) == 0) configuration += " disabled";
+                                        else if (((payload[0] >> 1) & 0x01) == 1)
+                                        {
+                                            if (((payload[0] >> 3) & 0x01) == 0) configuration += " enabled @ 7812.5 baud";
+                                            else if (((payload[0] >> 3) & 0x01) == 1) configuration += " enabled @ 62500 baud";
+                                        }
+
+                                        Util.UpdateTextBox(USBTextBox, "[->RX] SCI-bus settings changed", msg);
+                                        Util.UpdateTextBox(USBTextBox, "[INFO] " + configuration, null);
+                                        break;
+                                }
+                                break;
                             case (byte)Command.Response:
                                 switch (subdatacode)
                                 {
-                                    case (byte)Response.FirmwareDate:
-                                        DateTime FirmwareDate = Util.UnixTimeStampToDateTime(payload[0] << 56 | payload[1] << 48 | payload[2] << 40 | payload[3] << 32 | payload[4] << 24 | payload[5] << 16 | payload[6] << 8 | payload[7]);
+                                    case (byte)Response.HwFwInfo:
+                                        string HardwareVersionString = "V" + ((payload[0] << 8 | payload[1]) / 100.00).ToString("0.00").Replace(",", ".");
+                                        DateTime HardwareDate = Util.UnixTimeStampToDateTime(payload[2] << 56 | payload[3] << 48 | payload[4] << 40 | payload[5] << 32 | payload[6] << 24 | payload[7] << 16 | payload[8] << 8 | payload[9]);
+                                        DateTime FirmwareDate = Util.UnixTimeStampToDateTime(payload[10] << 56 | payload[11] << 48 | payload[12] << 40 | payload[13] << 32 | payload[14] << 24 | payload[15] << 16 | payload[16] << 8 | payload[17]);
+                                        string HardwareDateString = HardwareDate.ToString("yyyy.MM.dd HH:mm:ss");
                                         string FirmwareDateString = FirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
-                                        Util.UpdateTextBox(USBTextBox, "[->RX] Firmware date response", msg);
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Firmware date: " + FirmwareDateString, null);
+                                        Util.UpdateTextBox(USBTextBox, "[->RX] Hardware/Firmware information response", msg);
+                                        Util.UpdateTextBox(USBTextBox, "[INFO] Hardware version: " + HardwareVersionString + Environment.NewLine + "       Hardware date: " + HardwareDateString + Environment.NewLine + "       Firmware date: " + FirmwareDateString, null);
                                         break;
                                     case (byte)Response.Timestamp:
                                         TimeSpan ElapsedTime = TimeSpan.FromMilliseconds(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]);
@@ -396,7 +441,7 @@ namespace ChryslerCCDSCIScanner
                                         Util.UpdateTextBox(USBTextBox, "[INFO] Timestamp: " + TimestampString, null);
                                         break;
                                     case (byte)Response.BatteryVoltage:
-                                        string BatteryVoltageString = ((payload[0] << 8 | payload[1]) / 100).ToString("0.00") + " V";
+                                        string BatteryVoltageString = ((payload[0] << 8 | payload[1]) / 100.00).ToString("0.00").Replace(",", ".") + " V";
                                         Util.UpdateTextBox(USBTextBox, "[->RX] Battery voltage response", msg);
                                         Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + BatteryVoltageString, null);
                                         break;
@@ -409,19 +454,19 @@ namespace ChryslerCCDSCIScanner
                                 switch (subdatacode)
                                 {
                                     case 0x00:
-                                        if (payload[0] == 0x01) Util.UpdateTextBox(USBTextBox, "[->RX] CCD-bus message transmission stopped", msg);
-                                        else if (payload[0] == 0x02) Util.UpdateTextBox(USBTextBox, "[->RX] SCI-bus (PCM) message transmission stopped", msg);
-                                        else if (payload[0] == 0x03) Util.UpdateTextBox(USBTextBox, "[->RX] SCI-bus (TCM) message transmission stopped", msg);
+                                        if (payload[0] == 0x01) Util.UpdateTextBox(USBTextBox, "[->RX] CCD-bus message TX stopped", msg);
+                                        else if (payload[0] == 0x02) Util.UpdateTextBox(USBTextBox, "[->RX] SCI-bus (PCM) message TX stopped", msg);
+                                        else if (payload[0] == 0x03) Util.UpdateTextBox(USBTextBox, "[->RX] SCI-bus (TCM) message TX stopped", msg);
                                         break;
                                     case 0x01:
-                                        if (payload[0] == 0x01) Util.UpdateTextBox(USBTextBox, "[->RX] CCD-bus message prepared for transmission", msg);
-                                        else if (payload[0] == 0x02) Util.UpdateTextBox(USBTextBox, "[->RX] SCI-bus (PCM) message prepared for transmission", msg);
-                                        else if (payload[0] == 0x03) Util.UpdateTextBox(USBTextBox, "[->RX] SCI-bus (TCM) message prepared for transmission", msg);
+                                        if (payload[0] == 0x01) Util.UpdateTextBox(USBTextBox, "[->RX] CCD-bus message prepared for TX", msg);
+                                        else if (payload[0] == 0x02) Util.UpdateTextBox(USBTextBox, "[->RX] SCI-bus (PCM) message prepared for TX", msg);
+                                        else if (payload[0] == 0x03) Util.UpdateTextBox(USBTextBox, "[->RX] SCI-bus (TCM) message prepared for TX", msg);
                                         break;
                                     case 0x02:
-                                        if (payload[0] == 0x01) Util.UpdateTextBox(USBTextBox, "[->RX] CCD-bus message transmission started", msg);
-                                        else if (payload[0] == 0x02) Util.UpdateTextBox(USBTextBox, "[->RX] SCI-bus (PCM) message transmission started", msg);
-                                        else if (payload[0] == 0x03) Util.UpdateTextBox(USBTextBox, "[->RX] SCI-bus (TCM) message transmission started", msg);
+                                        if (payload[0] == 0x01) Util.UpdateTextBox(USBTextBox, "[->RX] CCD-bus message TX started", msg);
+                                        else if (payload[0] == 0x02) Util.UpdateTextBox(USBTextBox, "[->RX] SCI-bus (PCM) message TX started", msg);
+                                        else if (payload[0] == 0x03) Util.UpdateTextBox(USBTextBox, "[->RX] SCI-bus (TCM) message TX started", msg);
                                         break;
                                     default:
                                         Util.UpdateTextBox(USBTextBox, "[->RX] Data received", msg);
@@ -432,34 +477,34 @@ namespace ChryslerCCDSCIScanner
                                 switch (subdatacode)
                                 {
                                     case 0x00:
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] OK", msg);
+                                        Util.UpdateTextBox(USBTextBox, "[->RX] OK", msg);
                                         break;
                                     case 0x01:
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Error: invalid length", msg);
+                                        Util.UpdateTextBox(USBTextBox, "[->RX] Error: invalid length", msg);
                                         break;
                                     case 0x02:
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Error: invalid dc command", msg);
+                                        Util.UpdateTextBox(USBTextBox, "[->RX] Error: invalid dc command", msg);
                                         break;
                                     case 0x03:
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Error: invalid sub-data code", msg);
+                                        Util.UpdateTextBox(USBTextBox, "[->RX] Error: invalid sub-data code", msg);
                                         break;
                                     case 0x04:
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Error: invalid payload value(s)", msg);
+                                        Util.UpdateTextBox(USBTextBox, "[->RX] Error: invalid payload value(s)", msg);
                                         break;
                                     case 0x05:
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Error: invalid checksum", msg);
+                                        Util.UpdateTextBox(USBTextBox, "[->RX] Error: invalid checksum", msg);
                                         break;
                                     case 0x06:
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Error: packet timeout occured", msg);
+                                        Util.UpdateTextBox(USBTextBox, "[->RX] Error: packet timeout occured", msg);
                                         break;
                                     case 0x07:
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Error: buffer overflow", msg);
+                                        Util.UpdateTextBox(USBTextBox, "[->RX] Error: buffer overflow", msg);
                                         break;
                                     case 0xFE:
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Error: internal error", msg);
+                                        Util.UpdateTextBox(USBTextBox, "[->RX] Error: internal error", msg);
                                         break;
                                     case 0xFF:
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Error: fatal error", msg);
+                                        Util.UpdateTextBox(USBTextBox, "[->RX] Error: fatal error", msg);
                                         break;
                                 }
                                 break;
@@ -529,7 +574,6 @@ namespace ChryslerCCDSCIScanner
                     else if (AsciiCommMethodRadioButton.Checked)
                     {
                         Util.UpdateTextBox(USBTextBox, USBSendComboBox.Text, null);
-
                     }
                 }
             }
@@ -722,9 +766,9 @@ namespace ChryslerCCDSCIScanner
         {
             switch (TargetComboBox.SelectedIndex)
             {
-                case 0x00: // Scanner
+                case 0: // Scanner
                     CommandComboBox.Items.Clear();
-                    CommandComboBox.Items.AddRange(new string[] { "Reset", "Handshake", "Status", "Settings", "Request", "Response", "Debug" });
+                    CommandComboBox.Items.AddRange(new string[] { "Reset", "Handshake", "Status", "Settings", "Request", "Debug" });
                     ModeComboBox.Items.Clear();
                     ModeComboBox.Items.AddRange(new string[] { "None" });
                     CommandComboBox.SelectedIndex = 2; // Command: Status
@@ -738,8 +782,9 @@ namespace ChryslerCCDSCIScanner
                     Param3Label1.Visible = false;
                     Param3Label2.Visible = false;
                     Param3ComboBox.Visible = false;
+                    USBSendComboBox.Text = "3D 00 02 02 00 04";
                     break;
-                case 0x01: // CCD-bus
+                case 1: // CCD-bus
                     CommandComboBox.Items.Clear();
                     CommandComboBox.Items.AddRange(new string[] { "Send message" });
                     ModeComboBox.Items.Clear();
@@ -756,24 +801,161 @@ namespace ChryslerCCDSCIScanner
                     Param3Label2.Visible = false;
                     Param3ComboBox.Visible = false;
                     Param1Label1.Text = "Message:"; // Rename first label
-                    Param1Label2.Text = ""; // Rename second label
+                    Param1Label2.Text = String.Empty; // Rename second label
+                    Param1ComboBox.Text = String.Empty; // Perhaps save last message and re-load it here?
+                    USBSendComboBox.Text = "3D 00 02 16 01 19";
                     break;
-                case 0x02: // SCI-bus (PCM)
+                case 2: // SCI-bus (PCM)
                     CommandComboBox.Items.Clear();
                     CommandComboBox.Items.AddRange(new string[] { "Send message" });
+                    ModeComboBox.Items.Clear();
+                    ModeComboBox.Items.AddRange(new string[] { "Stop message transmission", "Single message", "Repeated message(s)" });
                     CommandComboBox.SelectedIndex = 0; // Send message
+                    ModeComboBox.SelectedIndex = 1; // Single message
+                    Param1Label1.Visible = true; // Show firs parameter labels and combobox
+                    Param1Label2.Visible = true;
+                    Param1ComboBox.Visible = true;
+                    Param2Label1.Visible = false;
+                    Param2Label2.Visible = false;
+                    Param2ComboBox.Visible = false;
+                    Param3Label1.Visible = false;
+                    Param3Label2.Visible = false;
+                    Param3ComboBox.Visible = false;
+                    Param1Label1.Text = "Message:"; // Rename first label
+                    Param1Label2.Text = String.Empty; // Rename second label
+                    Param1ComboBox.Text = String.Empty; // Perhaps save last message and re-load it here?
                     break;
-                case 0x03: // SCI-bus (TCM)
+                case 3: // SCI-bus (TCM)
                     CommandComboBox.Items.Clear();
                     CommandComboBox.Items.AddRange(new string[] { "Send message" });
+                    ModeComboBox.Items.Clear();
+                    ModeComboBox.Items.AddRange(new string[] { "Stop message transmission", "Single message", "Repeated message(s)" });
                     CommandComboBox.SelectedIndex = 0; // Send message
+                    ModeComboBox.SelectedIndex = 1; // Single message
+                    Param1Label1.Visible = true; // Show firs parameter labels and combobox
+                    Param1Label2.Visible = true;
+                    Param1ComboBox.Visible = true;
+                    Param2Label1.Visible = false;
+                    Param2Label2.Visible = false;
+                    Param2ComboBox.Visible = false;
+                    Param3Label1.Visible = false;
+                    Param3Label2.Visible = false;
+                    Param3ComboBox.Visible = false;
+                    Param1Label1.Text = "Message:"; // Rename first label
+                    Param1Label2.Text = String.Empty; // Rename second label
+                    Param1ComboBox.Text = String.Empty; // Perhaps save last message and re-load it here?
                     break;
             }
         }
 
         private void CommandComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            // TODO
+            switch (TargetComboBox.SelectedIndex)
+            {
+                case 0: // Scanner
+                    switch (CommandComboBox.SelectedIndex)
+                    {
+                        case 0: // Reset
+                            ModeComboBox.Items.Clear();
+                            ModeComboBox.Items.AddRange(new string[] { "None" });
+                            ModeComboBox.SelectedIndex = 0; // None
+                            Param1Label1.Visible = false;
+                            Param1Label2.Visible = false;
+                            Param1ComboBox.Visible = false;
+                            Param2Label1.Visible = false;
+                            Param2Label2.Visible = false;
+                            Param2ComboBox.Visible = false;
+                            Param3Label1.Visible = false;
+                            Param3Label2.Visible = false;
+                            Param3ComboBox.Visible = false;
+                            USBSendComboBox.Text = "3D 00 02 00 00 02";
+                            break;
+                        case 1: // Handshake
+                            ModeComboBox.Items.Clear();
+                            ModeComboBox.Items.AddRange(new string[] { "None", "Include hardware/firmware information" });
+                            ModeComboBox.SelectedIndex = 0; // None
+                            Param1Label1.Visible = false;
+                            Param1Label2.Visible = false;
+                            Param1ComboBox.Visible = false;
+                            Param2Label1.Visible = false;
+                            Param2Label2.Visible = false;
+                            Param2ComboBox.Visible = false;
+                            Param3Label1.Visible = false;
+                            Param3Label2.Visible = false;
+                            Param3ComboBox.Visible = false;
+                            USBSendComboBox.Text = "3D 00 02 01 00 03";
+                            break;
+                        case 2: // Status
+                            ModeComboBox.Items.Clear();
+                            ModeComboBox.Items.AddRange(new string[] { "None" });
+                            ModeComboBox.SelectedIndex = 0; // None
+                            Param1Label1.Visible = false;
+                            Param1Label2.Visible = false;
+                            Param1ComboBox.Visible = false;
+                            Param2Label1.Visible = false;
+                            Param2Label2.Visible = false;
+                            Param2ComboBox.Visible = false;
+                            Param3Label1.Visible = false;
+                            Param3Label2.Visible = false;
+                            Param3ComboBox.Visible = false;
+                            USBSendComboBox.Text = "3D 00 02 02 00 04";
+                            break;
+                        case 3: // Settings
+                            ModeComboBox.Items.Clear();
+                            ModeComboBox.Items.AddRange(new string[] { "Heartbeat", "Set CCD-bus", "Set SCI-bus" });
+                            ModeComboBox.SelectedIndex = 0; // Heartbeat
+                            Param1Label1.Visible = true;
+                            Param1Label2.Visible = true;
+                            Param1ComboBox.Visible = true;
+                            Param2Label1.Visible = true;
+                            Param2Label2.Visible = true;
+                            Param2ComboBox.Visible = true;
+                            Param3Label1.Visible = false;
+                            Param3Label2.Visible = false;
+                            Param3ComboBox.Visible = false;
+                            Param1Label1.Text = "Interval:";
+                            Param1ComboBox.Text = HeartbeatInterval.ToString();
+                            Param1Label2.Text = "millisecond";
+                            Param2Label1.Text = "Duration:";
+                            Param2ComboBox.Text = HeartbeatDuration.ToString();
+                            Param2Label2.Text = "millisecond";
+                            break;
+                        case 4: // Request
+                            ModeComboBox.Items.Clear();
+                            ModeComboBox.Items.AddRange(new string[] { "Hardware/Firmware information", "Timestamp", "Battery voltage" });
+                            ModeComboBox.SelectedIndex = 0; // Firmware date
+                            Param1Label1.Visible = false;
+                            Param1Label2.Visible = false;
+                            Param1ComboBox.Visible = false;
+                            Param2Label1.Visible = false;
+                            Param2Label2.Visible = false;
+                            Param2ComboBox.Visible = false;
+                            Param3Label1.Visible = false;
+                            Param3Label2.Visible = false;
+                            Param3ComboBox.Visible = false;
+                            break;
+                        case 5: // Debug
+                            ModeComboBox.Items.Clear();
+                            ModeComboBox.Items.AddRange(new string[] { "None" });
+                            ModeComboBox.SelectedIndex = 0; // None
+                            Param1Label1.Visible = false;
+                            Param1Label2.Visible = false;
+                            Param1ComboBox.Visible = false;
+                            Param2Label1.Visible = false;
+                            Param2Label2.Visible = false;
+                            Param2ComboBox.Visible = false;
+                            Param3Label1.Visible = false;
+                            Param3Label2.Visible = false;
+                            Param3ComboBox.Visible = false;
+                            break;
+                    }
+                    break;
+            }
+        }
+
+        private void ModeComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

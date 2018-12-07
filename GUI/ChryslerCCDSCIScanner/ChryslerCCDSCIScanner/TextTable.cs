@@ -18,8 +18,17 @@ namespace ChryslerCCDSCIScanner
         private List<byte> SCITCMIDList = new List<byte>(256);
         private List<string> DetailList = new List<string>();
 
-        private string EmptyLine  = "│                         │                                                    │                          │              │";
-        
+        private string EmptyLine                  = "│                         │                                                    │                          │              │";
+        private string CCDBusStateLineNA          = "│ CCD-BUS MODULES         │ STATE: N/A                                                                                    ";
+        private string CCDBusStateLineDisabled    = "│ CCD-BUS MODULES         │ STATE: DISABLED | ID BYTES:  | # OF MESSAGES: RX= TX=                                         ";
+        private string CCDBusStateLineEnabled     = "│ CCD-BUS MODULES         │ STATE: ENABLED @  BAUD | ID BYTES:  | # OF MESSAGES: RX= TX=                                  ";
+        private string SCIBusPCMStateLineNA       = "│ SCI-BUS ENGINE          │ STATE: N/A                                                                                    ";
+        private string SCIBusPCMStateLineDisabled = "│ SCI-BUS ENGINE          │ STATE: DISABLED | CONFIGURATION:  | # OF MESSAGES: RX= TX=                                    ";
+        private string SCIBusPCMStateLineEnabled  = "│ SCI-BUS ENGINE          │ STATE: ENABLED @  BAUD | CONFIGURATION:  | # OF MESSAGES: RX= TX=                             ";
+        private string SCIBusTCMStateLineNA       = "│ SCI-BUS TRANSMISSION    │ STATE: N/A                                                                                    ";
+        private string SCIBusTCMStateLineDisabled = "│ SCI-BUS TRANSMISSION    │ STATE: DISABLED | CONFIGURATION:  | # OF MESSAGES: RX= TX=                                    ";
+        private string SCIBusTCMStateLineEnabled  = "│ SCI-BUS TRANSMISSION    │ STATE: ENABLED @  BAUD | CONFIGURATION:  | # OF MESSAGES: RX= TX=                             ";
+
         private int CCDListStart = 5; // row number
         private int CCDListEnd = 5;
         private int CCDB2Start = 7;
@@ -33,21 +42,21 @@ namespace ChryslerCCDSCIScanner
 
         public TextTable(string VehicleProfilesFileName)
         {
-            try
-            {
-                VehicleProfiles.Load(VehicleProfilesFileName);
-                foreach (XmlNode node in VehicleProfiles.DocumentElement.ChildNodes)
-                {
-                    string text = node.InnerText;
-                }
-            }
-            catch
-            {
+            //try
+            //{
+            //    VehicleProfiles.Load(VehicleProfilesFileName);
+            //    foreach (XmlNode node in VehicleProfiles.DocumentElement.ChildNodes)
+            //    {
+            //        string text = node.InnerText;
+            //    }
+            //}
+            //catch
+            //{
                 
-            }
+            //}
 
             Table.Add("┌─────────────────────────┐                                                                                               ");
-            Table.Add("│ CCD-BUS MODULES         │                                                                                               ");
+            Table.Add("│ CCD-BUS MODULES         │ STATE: N/A                                                                                    ");
             Table.Add("├─────────────────────────┼────────────────────────────────────────────────────┬──────────────────────────┬──────────────┐");
             Table.Add("│ MESSAGE [HEX]           │ DESCRIPTION                                        │ VALUE                    │ UNIT         │");
             Table.Add("╞═════════════════════════╪════════════════════════════════════════════════════╪══════════════════════════╪══════════════╡");
@@ -56,16 +65,16 @@ namespace ChryslerCCDSCIScanner
             Table.Add("│ B2 -- -- -- -- --       │                                                    │                          │              │");
             Table.Add("│ F2 -- -- -- -- --       │                                                    │                          │              │");
             Table.Add("└─────────────────────────┴────────────────────────────────────────────────────┴──────────────────────────┴──────────────┘");
-            Table.Add("  DETAILS:                                                                                                                ");
+            Table.Add("                                                                                                                          ");
             Table.Add("                                                                                                                          ");
             Table.Add("┌─────────────────────────┐                                                                                               ");
-            Table.Add("│ SCI-BUS_A_ENGINE        │                                                                                               ");
+            Table.Add("│ SCI-BUS ENGINE          │ STATE: N/A                                                                                    ");
             Table.Add("├─────────────────────────┼────────────────────────────────────────────────────┬──────────────────────────┬──────────────┐");
             Table.Add("│ MESSAGE [HEX]           │ DESCRIPTION                                        │ VALUE                    │ UNIT         │");
             Table.Add("╞═════════════════════════╪════════════════════════════════════════════════════╪══════════════════════════╪══════════════╡");
             Table.Add("│                         │                                                    │                          │              │");
             Table.Add("└─────────────────────────┴────────────────────────────────────────────────────┴──────────────────────────┴──────────────┘");
-            Table.Add("  DETAILS:                                                                                                                ");
+            Table.Add("                                                                                                                          ");
             //Table.Add("   ┌────┬─────────────────────────────────────────────────┐    ┌────┬─────────────────────────────────────────────────┐   ");
             //Table.Add("   │ -- │ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F │    │ F4 │ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F │   ");
             //Table.Add("   ├────┼─────────────────────────────────────────────────┤    ├────┼─────────────────────────────────────────────────┤   ");
@@ -90,15 +99,15 @@ namespace ChryslerCCDSCIScanner
             //Table.Add("   └────┴────────┴───────────────────┴────────────────────┘    └────┴────────┴───────────────────┴────────────────────┘   ");
             Table.Add("                                                                                                                          ");
             Table.Add("┌─────────────────────────┐                                                                                               ");
-            Table.Add("│ SCI-BUS_A_TRANSMISSION  │                                                                                               ");
+            Table.Add("│ SCI-BUS TRANSMISSION    │ STATE: N/A                                                                                    ");
             Table.Add("├─────────────────────────┼────────────────────────────────────────────────────┬──────────────────────────┬──────────────┐");
             Table.Add("│ MESSAGE [HEX]           │ DESCRIPTION                                        │ VALUE                    │ UNIT         │");
             Table.Add("╞═════════════════════════╪════════════════════════════════════════════════════╪══════════════════════════╪══════════════╡");
             Table.Add("│                         │                                                    │                          │              │");
             Table.Add("└─────────────────────────┴────────────────────────────────────────────────────┴──────────────────────────┴──────────────┘");
-            Table.Add("  DETAILS:                                                                                                                ");
+            Table.Add("                                                                                                                          ");
             //Table.Add("   ┌────┬─────────────────────────────────────────────────┐    ┌────┬─────────────────────────────────────────────────┐   ");
-            //Table.Add("   │ -- │ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F │    │ FX │ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F │   ");
+            //Table.Add("   │ -- │  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F │    │ FX │ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F │   ");
             //Table.Add("   ├────┼─────────────────────────────────────────────────┤    ├────┼─────────────────────────────────────────────────┤   ");
             //Table.Add("   │ 00 │ FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF │    │ 00 │ FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF │   ");
             //Table.Add("   │ 10 │ FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF │    │ 10 │ FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF │   ");

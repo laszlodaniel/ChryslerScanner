@@ -82,8 +82,18 @@ namespace ChryslerCCDSCIScanner
                 }
             }
 
-            // Save text to a logfile
+            // Save generated text to a logfile
             if (textbox.Name == "USBTextBox") File.AppendAllText(MainForm.USBLogFilename, ret);
+
+            // Save raw USB packet to a binary logfile
+            using (BinaryWriter writer = new BinaryWriter(File.Open(MainForm.USBBinaryLogFilename, FileMode.Append)))
+            {
+                if (bytes != null)
+                {
+                    writer.Write(bytes);
+                    writer.Close();
+                }
+            }
         }
 
         public static DateTime UnixTimeStampToDateTime(double unixTimeStamp)
