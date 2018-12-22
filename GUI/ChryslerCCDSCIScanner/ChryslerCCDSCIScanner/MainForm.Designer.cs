@@ -68,7 +68,7 @@
             this.UnitsLabel = new System.Windows.Forms.Label();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.updateScannerFirmwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.UpdateScannerFirmwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.USBCommunicationGroupBox.SuspendLayout();
             this.DiagnosticsGroupBox.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -229,6 +229,8 @@
             this.Param3ComboBox.Size = new System.Drawing.Size(200, 23);
             this.Param3ComboBox.TabIndex = 111;
             this.Param3ComboBox.Visible = false;
+            this.Param3ComboBox.TextChanged += new System.EventHandler(this.ParamsComboBox_TextChanged);
+            this.Param3ComboBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.Param3ComboBox_KeyPress);
             // 
             // Param3Label1
             // 
@@ -249,6 +251,8 @@
             this.Param2ComboBox.Size = new System.Drawing.Size(200, 23);
             this.Param2ComboBox.TabIndex = 109;
             this.Param2ComboBox.Visible = false;
+            this.Param2ComboBox.TextChanged += new System.EventHandler(this.ParamsComboBox_TextChanged);
+            this.Param2ComboBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.Param2ComboBox_KeyPress);
             // 
             // Param2Label1
             // 
@@ -269,6 +273,8 @@
             this.Param1ComboBox.Size = new System.Drawing.Size(200, 23);
             this.Param1ComboBox.TabIndex = 107;
             this.Param1ComboBox.Visible = false;
+            this.Param1ComboBox.TextChanged += new System.EventHandler(this.ParamsComboBox_TextChanged);
+            this.Param1ComboBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.Param1ComboBox_KeyPress);
             // 
             // Param1Label1
             // 
@@ -460,7 +466,6 @@
             this.DiagnosticsTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.DiagnosticsTextBox.Size = new System.Drawing.Size(883, 477);
             this.DiagnosticsTextBox.TabIndex = 9;
-            this.DiagnosticsTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
             // groupBox3
             // 
@@ -531,16 +536,17 @@
             // toolsToolStripMenuItem
             // 
             this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.updateScannerFirmwareToolStripMenuItem});
+            this.UpdateScannerFirmwareToolStripMenuItem});
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
             this.toolsToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
             this.toolsToolStripMenuItem.Text = "Tools";
             // 
-            // updateScannerFirmwareToolStripMenuItem
+            // UpdateScannerFirmwareToolStripMenuItem
             // 
-            this.updateScannerFirmwareToolStripMenuItem.Name = "updateScannerFirmwareToolStripMenuItem";
-            this.updateScannerFirmwareToolStripMenuItem.Size = new System.Drawing.Size(206, 22);
-            this.updateScannerFirmwareToolStripMenuItem.Text = "Update scanner firmware";
+            this.UpdateScannerFirmwareToolStripMenuItem.Name = "UpdateScannerFirmwareToolStripMenuItem";
+            this.UpdateScannerFirmwareToolStripMenuItem.Size = new System.Drawing.Size(206, 22);
+            this.UpdateScannerFirmwareToolStripMenuItem.Text = "Update scanner firmware";
+            this.UpdateScannerFirmwareToolStripMenuItem.Click += new System.EventHandler(this.UpdateScannerFirmwareToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -613,7 +619,7 @@
         private System.Windows.Forms.Label MethodLabel;
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem updateScannerFirmwareToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem UpdateScannerFirmwareToolStripMenuItem;
     }
 }
 

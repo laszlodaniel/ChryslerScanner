@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 
@@ -30,6 +31,23 @@ namespace ChryslerCCDSCIScanner
                         }
                     }
                 }
+                if (counter == 0) ret = ret.Remove(ret.Length - 1, 1); // remove newline character if text is touching the textbox wall
+                ret.Replace(" ", String.Empty, ret.Length - 1, 1); // remove whitespace at the end caused by PadRight(3, ' ')
+            }
+            return ret.ToString();
+        }
+
+        public static string ByteToHexStringSimple(byte[] data)
+        {
+            StringBuilder ret = new StringBuilder();
+
+            if (data != null)
+            {
+                for (int i = 0; i < data.Length; i++)
+                {
+                    ret.Append(Convert.ToString(data[i], 16).PadLeft(2, '0').PadRight(3, ' ').ToUpper());
+                }
+                
                 ret.Replace(" ", String.Empty, ret.Length - 1, 1); // remove whitespace at the end caused by PadRight(3, ' ')
             }
             return ret.ToString();
@@ -45,7 +63,7 @@ namespace ChryslerCCDSCIScanner
             }
             catch
             {
-                return new byte[] { 0x00 }; // return a zero byte if something is wrong
+                return new byte[] { }; // return an empty byte array if something is wrong
             }
         }
 
@@ -102,6 +120,13 @@ namespace ChryslerCCDSCIScanner
             DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
             dtDateTime = dtDateTime.AddSeconds(unixTimeStamp).ToLocalTime();
             return dtDateTime;
+        }
+
+        // Chop off input string's end so it becomes maxLength long
+        public static string Truncate(string value, int maxLength)
+        {
+            if (string.IsNullOrEmpty(value)) return value;
+            return value.Length <= maxLength ? value : value.Substring(0, maxLength);
         }
     }
 }

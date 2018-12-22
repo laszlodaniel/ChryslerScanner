@@ -22,7 +22,7 @@
 #ifndef CCDSCIUART_H
 #define CCDSCIUART_H
 
-#define FW_DATE 0x000000005C0A9185  // Firmware date/time of compilation in 64-bit UNIX time
+#define FW_DATE 0x000000005C1E1FFC  // Firmware date/time of compilation in 64-bit UNIX time
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -128,30 +128,30 @@
 #define MAX_PAYLOAD_LENGTH  USB_RX0_BUFFER_SIZE - 6  // 1024-6 bytes
 #define EMPTY_PAYLOAD       0xFE  // Random byte, could be anything
 
-#define TEMP_BUFFER_SIZE     32
+#define TEMP_BUFFER_SIZE    32
 
 // DATA CODE byte building blocks
 // Source and Target masks (high nibble (2+2 bits))
-#define from_usb          0x00 // when sending packets back to laptop use "from_" masks to specify source
-#define from_ccd          0x01
-#define from_pcm          0x02
-#define from_tcm          0x03
-#define to_usb            0x00 // when receiving packets from laptop use "to_" masks as target, "to_usb" meaning the scanner itself
-#define to_ccd            0x01
-#define to_pcm            0x02
-#define to_tcm            0x03
+#define from_usb            0x00 // when sending packets back to laptop use "from_" masks to specify source
+#define from_ccd            0x01
+#define from_pcm            0x02
+#define from_tcm            0x03
+#define to_usb              0x00 // when receiving packets from laptop use "to_" masks as target, "to_usb" meaning the scanner itself
+#define to_ccd              0x01
+#define to_pcm              0x02
+#define to_tcm              0x03
 // DC commands (low nibble (4 bits))
-#define reset             0x00
-#define handshake         0x01
-#define status            0x02
-#define settings          0x03
-#define request           0x04
-#define response          0x05
-#define msg_tx            0x06
-#define msg_rx            0x07
+#define reset               0x00
+#define handshake           0x01
+#define status              0x02
+#define settings            0x03
+#define request             0x04
+#define response            0x05
+#define msg_tx              0x06
+#define msg_rx              0x07
 // 0x08-0x0D reserved
-#define debug             0x0E
-#define ok_error          0x0F
+#define debug               0x0E
+#define ok_error            0x0F
 
 // SUB-DATA CODE byte
 // DC command 0x00 (reset)
@@ -167,23 +167,24 @@
 
 // SUB-DATA CODE byte
 // DC command 0x03 (settings)
-#define heartbeat         0x00 // ACT_LED flashing interval is stored in payload
-#define set_ccd_bus       0x01 // ON-OFF state is stored in payload
-#define set_sci_bus       0x02 // ON-OFF state, A/B configuration and speed are stored in payload
+#define heartbeat           0x00 // ACT_LED flashing interval is stored in payload
+#define set_ccd_bus         0x01 // ON-OFF state is stored in payload
+#define set_sci_bus         0x02 // ON-OFF state, A/B configuration and speed are stored in payload
 // 0x03-0xFF reserved 
 
 // SUB-DATA CODE byte
 // DC command 0x04 & 0x05 (request and response)
-#define hwfw_info         0x00 // Hardware version/date and firmware date in this particular order (dates are in 64-bit UNIX time format)
-#define timestamp         0x01 // elapsed milliseconds since system start
-#define battery_voltage   0x02 // as the name says
+#define hwfw_info           0x00 // Hardware version/date and firmware date in this particular order (dates are in 64-bit UNIX time format)
+#define timestamp           0x01 // elapsed milliseconds since system start
+#define battery_voltage     0x02 // as the name says
+#define exteeprom_checksum  0x03
 // 0x02-0xFF reserved
 
 // SUB-DATA CODE byte
 // DC command 0x06 (msg_tx)
-#define stop_msg_flow     0x00 // stop message transmission (single and repeated as well)         
-#define single_msg        0x01 // send message to the target bus specified in DATA CODE; message is stored in payload 
-#define repeated_msg      0x02 // send message(s) to the target bus sepcified in DATA CODE; number of messages, repeat interval(s) are stored in payload
+#define stop_msg_flow       0x00 // stop message transmission (single and repeated as well)         
+#define single_msg          0x01 // send message to the target bus specified in DATA CODE; message is stored in payload 
+#define repeated_msg        0x02 // send message(s) to the target bus sepcified in DATA CODE; number of messages, repeat interval(s) are stored in payload
 // 0x03-0xFF reserved
 
 // SUB-DATA CODE byte
@@ -204,7 +205,11 @@
 #define error_checksum_invalid_value            0x05
 #define error_packet_timeout_occured            0x06
 #define error_buffer_overflow                   0x07
-// 0x08-0xFD reserved
+// 0x08-0xFB reserved
+#define error_eep_not_found                     0xFA
+#define error_eep_checksum_invalid_value        0xFB
+#define error_eep_read                          0xFC
+#define error_eep_write                         0xFD
 #define error_internal_error                    0xFE
 #define error_fatal                             0xFF
 
@@ -241,7 +246,7 @@ volatile uint8_t  TCM_TxHead;
 volatile uint8_t  TCM_TxTail;
 volatile uint8_t  TCM_LastRxError;
 
-bool ext_eeprom_present = false;
+bool eep_present = false;
 
 // CCD-bus
 bool ccd_enabled = true;
@@ -312,11 +317,15 @@ uint8_t current_timestamp[4]; // current time is stored here when "update_timest
 
 const char ascii_autoreply[] = "I GOT YOUR MESSAGE!\n";
 
-uint8_t eep_status = 0;
-uint8_t eep_result = 0;
+uint8_t eep_status = 0; // extEEPROM connection status is stored here
+uint8_t eep_result = 0; // extEEPROM 
+uint8_t eep_checksum[1];
+uint8_t eep_calculated_checksum = 0;
+bool    eep_checksum_ok = false;
 
 uint8_t hw_version[2];
 uint8_t hw_date[8];
+uint8_t assembly_date[8];
 
 
 // Interrupt Service Routines
@@ -1517,17 +1526,13 @@ Purpose:  calculate checksum in a given buffer with specified length
 Note:     index = starting index in buffer
           len = buffer full length
 **************************************************************************/
-uint8_t calculate_checksum(uint8_t *buff, uint16_t index, uint16_t len)
+uint8_t calculate_checksum(uint8_t *buff, uint16_t startindex, uint16_t len)
 {
     uint8_t a = 0;
-    
-    for (uint16_t i = index ; i < len; i++)
+    for (uint16_t i = startindex ; i < len; i++)
     {
-        a += buff[i]; 
+        a += buff[i]; // add bytes together
     }
-    
-    a &= 0xFF;
-    
     return a;
     
 } // end of calculate_checksum
@@ -1585,7 +1590,7 @@ Purpose:  as the name says
 **************************************************************************/
 void configure_sci_bus(uint8_t data)
 {
-    // Lower half of the byte (4-bits) encode configuration as follows (lowest to highest bit)
+    // Lower half of the input byte (4-bits) encode configuration as follows (lowest to highest bit)
     bool pcm_tcm    = data & 0x01; // PCM (0) or TCM (1)
     bool enable     = data & 0x02; // disable (0) or enable (1)
     bool bus_config = data & 0x04; // bus configuration: A (0) or B (1)
@@ -1686,7 +1691,7 @@ void update_timestamp(uint8_t *target)
 /*************************************************************************
 Function: blink_led()
 Purpose:  turn on one of the indicator LEDs
-Note:     this is only turning the LED on, other function turns it off when it needs to
+Note:     this is only turning the chosen LED on, other function turns it off when it needs to
 **************************************************************************/
 void blink_led(uint8_t led)
 {
@@ -1737,7 +1742,7 @@ void send_usb_packet(uint8_t source, uint8_t target, uint8_t dc_command, uint8_t
     uint16_t packet_length = payloadbufflen + 6;    
     uint8_t packet[packet_length]; // create a temporary byte-array
     bool payload_bytes = true;
-    uint16_t calculated_checksum = 0;
+    uint8_t calculated_checksum = 0;
     uint8_t datacode = 0;
 
     if (payloadbufflen <= 0) payload_bytes = false;
@@ -1772,7 +1777,7 @@ void send_usb_packet(uint8_t source, uint8_t target, uint8_t dc_command, uint8_t
     }
 
     // Place checksum byte (lower half of the original 16-bit word)
-    packet[packet_length - 1] = calculated_checksum & 0xFF;
+    packet[packet_length - 1] = calculated_checksum;
 
     blink_led(TX_LED);
 
@@ -1787,11 +1792,12 @@ void send_usb_packet(uint8_t source, uint8_t target, uint8_t dc_command, uint8_t
 
 /*************************************************************************
 Function: send_hwfw_info()
-Purpose:  gather hardware version/date and firmware date into an array and send through the serial link
+Purpose:  gather hardware version/date, assembly date and firmware date
+          into an array and send through serial link
 **************************************************************************/
 void send_hwfw_info(void)
 {
-    uint8_t hwfw_value[18];
+    uint8_t hwfw_value[26];
                                     
     hwfw_value[0] = hw_version[0];
     hwfw_value[1] = hw_version[1];
@@ -1804,19 +1810,56 @@ void send_hwfw_info(void)
     hwfw_value[7] = hw_date[5];
     hwfw_value[8] = hw_date[6];
     hwfw_value[9] = hw_date[7];
-    
-    hwfw_value[10] = (FW_DATE >> 56) & 0xFF;
-    hwfw_value[11] = (FW_DATE >> 48) & 0xFF;
-    hwfw_value[12] = (FW_DATE >> 40) & 0xFF;
-    hwfw_value[13] = (FW_DATE >> 32) & 0xFF;
-    hwfw_value[14] = (FW_DATE >> 24) & 0xFF;
-    hwfw_value[15] = (FW_DATE >> 16) & 0xFF;
-    hwfw_value[16] = (FW_DATE >> 8) & 0xFF;
-    hwfw_value[17] = FW_DATE & 0xFF;
 
-    send_usb_packet(from_usb, to_usb, response, hwfw_info, hwfw_value, 18);
+    hwfw_value[10] = assembly_date[0];
+    hwfw_value[11] = assembly_date[1];
+    hwfw_value[12] = assembly_date[2];
+    hwfw_value[13] = assembly_date[3];
+    hwfw_value[14] = assembly_date[4];
+    hwfw_value[15] = assembly_date[5];
+    hwfw_value[16] = assembly_date[6];
+    hwfw_value[17] = assembly_date[7];
+    
+    hwfw_value[18] = (FW_DATE >> 56) & 0xFF;
+    hwfw_value[19] = (FW_DATE >> 48) & 0xFF;
+    hwfw_value[20] = (FW_DATE >> 40) & 0xFF;
+    hwfw_value[21] = (FW_DATE >> 32) & 0xFF;
+    hwfw_value[22] = (FW_DATE >> 24) & 0xFF;
+    hwfw_value[23] = (FW_DATE >> 16) & 0xFF;
+    hwfw_value[24] = (FW_DATE >> 8) & 0xFF;
+    hwfw_value[25] = FW_DATE & 0xFF;
+
+    send_usb_packet(from_usb, to_usb, response, hwfw_info, hwfw_value, 26);
     
 } /* send_hwfw_info */
+
+
+/*************************************************************************
+Function: evaluate_eep_checksum()
+Purpose:  compare external eeprom checksum value to the calculated one
+          and send results to laptop
+Note:     compared values are read during setup() automatically
+**************************************************************************/
+void evaluate_eep_checksum(void)
+{
+    if (eep_calculated_checksum == eep_checksum[0])
+    {
+        eep_checksum_ok = true;
+        uint8_t eep_checksum_response[2];
+        eep_checksum_response[0] = 0x00; // OK
+        eep_checksum_response[1] = eep_checksum[0]; // checksum byte
+        send_usb_packet(from_usb, to_usb, response, exteeprom_checksum, eep_checksum_response, 2);
+    }
+    else
+    {
+        eep_checksum_ok = false;
+        uint8_t eep_checksum_response[2];
+        eep_checksum_response[0] = eep_checksum[0]; // wrong checksum byte
+        eep_checksum_response[1] = eep_calculated_checksum; // correct checksum byte
+        send_usb_packet(from_usb, to_usb, ok_error, error_eep_checksum_invalid_value, eep_checksum_response, 2);
+    }
+    
+} /* evaluate_eep_checksum */
 
 
 /*************************************************************************
@@ -1830,7 +1873,7 @@ Note:     be aware that this voltage isn't precise like a multimeter reading,
 void check_battery_volts(void)
 {
     battery_adc = analogRead(BATT);
-    battery_volts = (uint16_t)(battery_adc*(adc_supply_voltage/100.0)/adc_max_value*((battery_rd1/10.0)+(battery_rd2/10.0))/(battery_rd2/10.0)*100); // resistor divider equation
+    battery_volts = (uint16_t)(battery_adc*(adc_supply_voltage/100.0)/adc_max_value*((battery_rd1/10.0)+(battery_rd2/10.0))/(battery_rd2/10.0)*100.0); // resistor divider equation
     if (battery_volts < 600) // battery_volts < 6V
     {
         battery_volts_array[0] = 0; // workaround if scanner's power switch is at OFF position and analog pin is floating
@@ -1973,10 +2016,7 @@ void handle_usb_data(void)
                     calculated_checksum += cmd_payload[j];
                 }
             }
-    
-            // Keep the low byte of the result
-            calculated_checksum &= 0xFF;
-    
+
             // Compare calculated checksum to the received CHECKSUM byte
             if (calculated_checksum != checksum) // if they are not the same
             {
@@ -2001,8 +2041,8 @@ void handle_usb_data(void)
                     {
                         case reset: // 0x00 - reset scanner request
                         {
-                            // Send acknowledge packet back to the scanner.
-                            send_usb_packet(from_usb, to_usb, reset, ok, ack, 1);
+                            // Send acknowledge packet back to the laptop.
+                            send_usb_packet(from_usb, to_usb, reset, ok, ack, 1); // RX LED is on by now and this function lights up TX LED
                             digitalWrite(ACT_LED, LOW); // blink all LEDs including this, good way to test if LEDs are working or not
                             while(true); // Enter into an infinite loop. Watchdog timer doesn't get reset this way so it restarts the program eventually.
                             break; // not necessary but every case needs a break
@@ -2010,7 +2050,11 @@ void handle_usb_data(void)
                         case handshake: // 0x01 - handshake request coming from an external computer
                         {
                             send_usb_packet(from_usb, to_usb, handshake, ok, handshake_array, 21);
-                            if (subdatacode == 0x01) send_hwfw_info();
+                            if (subdatacode == 0x01)
+                            {
+                                send_hwfw_info();
+                                evaluate_eep_checksum();
+                            }
                             break;
                         }
                         case status: // 0x02 - status report request
@@ -2032,7 +2076,7 @@ void handle_usb_data(void)
                                     }
                                     
                                     uint16_t flashing_interval = (cmd_payload[0] << 8) + cmd_payload[1]; // 0-65535 milliseconds
-                                    if (flashing_interval == 0) heartbeat_enabled = false;
+                                    if (flashing_interval == 0) heartbeat_enabled = false; // zero value is allowed, meaning no heartbeat
                                     else
                                     {
                                         heartbeat_interval = flashing_interval;
@@ -2040,8 +2084,8 @@ void handle_usb_data(void)
                                     }
                                     
                                     uint16_t blink_duration = (cmd_payload[2] << 8) + cmd_payload[3]; // 0-65535 milliseconds
-                                    led_blink_duration = blink_duration; // this applies to all 3 status leds! (rx, tx, act)
-
+                                    if (flashing_interval > 0) led_blink_duration = blink_duration; // zero value is not allowed, this applies to all 3 status leds! (rx, tx, act)
+                                    
                                     send_usb_packet(from_usb, to_usb, settings, heartbeat, cmd_payload, 4); // acknowledge
                                     break;
                                 }
@@ -2132,6 +2176,11 @@ void handle_usb_data(void)
                                     send_usb_packet(from_usb, to_usb, response, battery_voltage, battery_volts_array, 2);
                                     break;
                                 }
+                                case exteeprom_checksum:
+                                {
+                                    evaluate_eep_checksum();
+                                    break;
+                                }
                                 default: // other values are not used
                                 {
                                     send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
@@ -2194,23 +2243,18 @@ void handle_usb_data(void)
                                         }
                                         ccd_msg_to_send_ptr = payload_length;
                 
-                                        // Check if the crc byte in the message is correct
-                                        uint16_t calculated_checksum = 0;
-                                        for (uint16_t i = 0; i < (ccd_msg_to_send_ptr - 1); i++)
-                                        {
-                                            calculated_checksum += ccd_msg_to_send[i];
-                                        }
-                                        calculated_checksum &= 0xFF;
-                                
+                                        // Check if the checksum byte in the message is correct
+                                        uint8_t tmp = calculate_checksum(ccd_msg_to_send, 0, ccd_msg_to_send_ptr - 1);
+
                                         // Correct the last checksum byte if wrong
-                                        if (ccd_msg_to_send[ccd_msg_to_send_ptr - 1] != calculated_checksum)
+                                        if (ccd_msg_to_send[ccd_msg_to_send_ptr - 1] != tmp)
                                         {
-                                            ccd_msg_to_send[ccd_msg_to_send_ptr - 1] = calculated_checksum;
+                                            ccd_msg_to_send[ccd_msg_to_send_ptr - 1] = tmp;
                                         }
     
                                         ccd_msg_pending = true; // set flag so the main loop knows there's something to do
-                                        ret[0] = to_ccd;
-                                        send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
+                                        //ret[0] = to_ccd;
+                                        //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
                                     }
                                     else
                                     {
@@ -2268,8 +2312,8 @@ void handle_usb_data(void)
                                         // Checksum isn't used on SCI-bus transmissions, except when receiving fault codes.
                                         pcm_msg_to_send_ptr = payload_length;
                                         pcm_msg_pending = true; // set flag so the main loop knows there's something to do
-                                        ret[0] = to_pcm;
-                                        send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
+                                        //ret[0] = to_pcm;
+                                        //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
                                     }
                                     else
                                     {
@@ -2326,8 +2370,8 @@ void handle_usb_data(void)
                                         // Checksum isn't used on SCI-bus transmissions, except when receiving fault codes.
                                         tcm_msg_to_send_ptr = payload_length;
                                         tcm_msg_pending = true; // set flag so the main loop knows there's something to do
-                                        ret[0] = to_tcm;
-                                        send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
+                                        //ret[0] = to_tcm;
+                                        //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
                                     }
                                     else
                                     {

@@ -52,9 +52,9 @@ void setup()
     // PWR LED is tied to +5V directly, stays on when the scanner has power, draws about 2mA current
     pinMode(ACT_LED, OUTPUT);     // This LED flashes when some "action" takes place in the scanner
     pinMode(BATT, INPUT);         // This analog input pin measures battery voltage through a resistor divider (it tolerates 24V batteries!)
-    digitalWrite(RX_LED, HIGH);   // LEDs are grounded through the microcontroller, so HIGH/HI-Z = OFF, LOW = ON
-    digitalWrite(TX_LED, HIGH);   // ---||---
-    digitalWrite(ACT_LED, HIGH);  // ---||---
+    blink_led(RX_LED);
+    blink_led(TX_LED);
+    blink_led(ACT_LED);
 
     // SCI-bus A/B-configuration selector outputs
     pinMode(PA0, OUTPUT);   // Set PA0 pin to output
@@ -86,28 +86,75 @@ void setup()
     pcm_init(LOBAUD); // 7812.5 baud
     tcm_init(LOBAUD); // 7812.5 baud
     
-    // Initialize external EEPROM, read hardware version and hardware date
+    // Initialize external EEPROM, read hardware version/date, assembly date, firmware date and a checksum byte for all of this
     eep_status = eep.begin(extEEPROM::twiClock400kHz); // go fast!
-    if (eep_status)
+    if (eep_status) // non-zero = bad
     { 
-        ext_eeprom_present = false;
-        //send_usb_packet(...
+        eep_present = false;
+        uint8_t err[1];
+        err[0] = 0xFF;
+        send_usb_packet(from_usb, to_usb, ok_error, error_eep_not_found, err, 1);
     }
-    else
+    else // zero = good
     {
-        ext_eeprom_present = true;
+        eep_present = true;
+        eep_result = eep.read(0, hw_version, 2); // read first 2 bytes and store it in the hw_version array
+        if (eep_result)
+        {
+            uint8_t err[1];
+            err[0] = eep_result;
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
 
-        eep_result = eep.read(0, hw_version, 2); // read 2 bytes from the beginning address (0) of the external eeprom and store it in the hw_version array
-        if (eep_result)
-        {
-            // error 
-            // TODO: send_usb_packet(...
+            hw_version[0] = 0; // zero out values
+            hw_version[1] = 0;
         }
-        eep_result = eep.read(2, hw_date, 8); // read 8 bytes following hw_version and store it in the hw_date array
+        eep_result = eep.read(2, hw_date, 8); // read following 8 bytes in the hw_date array
         if (eep_result)
         {
-            // error 
-            // TODO: send_usb_packet(...
+            uint8_t err[1];
+            err[0] = eep_result;
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+
+            hw_date[0] = 0; // zero out values
+            hw_date[1] = 0;
+            hw_date[2] = 0;
+            hw_date[3] = 0;
+            hw_date[4] = 0;
+            hw_date[5] = 0;
+            hw_date[6] = 0;
+            hw_date[7] = 0;
+            
+        }
+        eep_result = eep.read(10, assembly_date, 8); // read following 8 bytes in the assembly_date array
+        if (eep_result)
+        {
+            uint8_t err[1];
+            err[0] = eep_result;
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+
+            assembly_date[0] = 0; // zero out values
+            assembly_date[1] = 0;
+            assembly_date[2] = 0;
+            assembly_date[3] = 0;
+            assembly_date[4] = 0;
+            assembly_date[5] = 0;
+            assembly_date[6] = 0;
+            assembly_date[7] = 0;
+        }
+        eep_result = eep.read(255, eep_checksum, 1); // read 255th byte for the checksum byte (total of 256 bytes are reserved for hardware description)
+        if (eep_result)
+        {
+            uint8_t err[1];
+            err[0] = eep_result;
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+
+            eep_checksum[0] = 0; // zero out value
+        }
+
+        eep_calculated_checksum = 0;
+        for (uint8_t i = 0; i < 255; i++) // add all 255 bytes together and skip last byte (where checksum byte is located) by setting the second parameter to 255 instead of 256
+        {
+            eep_calculated_checksum += eep.read(i); // checksum variable will roll over several times but it's okay, this is its purpose
         }
     }
 
@@ -116,7 +163,7 @@ void setup()
     lcd.backlight();  // backlight on
     lcd.clear();      // clear display
     lcd.home();       // set cursor in home position (0, 0)
-    lcd.print(F("--------------------")); // F(" ") makes the compiler store the string inside flash memory instead of ram
+    lcd.print(F("--------------------")); // F(" ") makes the compiler store the string inside flash memory instead of RAM, good practice if system is low on RAM
     lcd.setCursor(0, 1);
     lcd.print(F("  CHRYSLER CCD/SCI  "));
     lcd.setCursor(0, 2);
@@ -126,14 +173,14 @@ void setup()
 
     analogReference(DEFAULT); // use default voltage reference applied to AVCC (+5V)
     check_battery_volts(); // calculate battery voltage from OBD16 pin
-    ccd_clock_generator(START); // start listening to the CCD-bus
+    ccd_clock_generator(START); // start listening to the CCD-bus; the transceiver chip only works if it receives this continuos clock signal; clever way to turn it on/off
 
     for (uint8_t i = 0; i < 21; i++) // copy handshake bytes from flash to ram
     {
         handshake_array[i] = pgm_read_byte(&handshake_progmem[i]);
     }
 
-    usb_rx_flush(); // flush all buffers
+    usb_rx_flush(); // flush all uart buffers
     usb_tx_flush();
     ccd_rx_flush();
     ccd_tx_flush();
@@ -147,8 +194,6 @@ void setup()
     uint8_t scanner_ready[1];
     scanner_ready[0] = 0x01;
     send_usb_packet(from_usb, to_usb, reset, ok, scanner_ready, 1); // Scanner ready
-    
-    blink_led(ACT_LED);
 }
 
 void loop()

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
 using System.Xml;
@@ -21,7 +22,7 @@ namespace ChryslerCCDSCIScanner
         private string EmptyLine                  = "│                         │                                                    │                          │              │";
         private string CCDBusStateLineNA          = "│ CCD-BUS MODULES         │ STATE: N/A                                                                                    ";
         private string CCDBusStateLineDisabled    = "│ CCD-BUS MODULES         │ STATE: DISABLED | ID BYTES:  | # OF MESSAGES: RX= TX=                                         ";
-        private string CCDBusStateLineEnabled     = "│ CCD-BUS MODULES         │ STATE: ENABLED @  BAUD | ID BYTES:  | # OF MESSAGES: RX= TX=                                  ";
+        private string CCDBusStateLineEnabled     = "│ CCD-BUS MODULES         │ STATE: ENABLED @ 7812.5 BAUD | ID BYTES:  | # OF MESSAGES: RX= TX=                            ";
         private string SCIBusPCMStateLineNA       = "│ SCI-BUS ENGINE          │ STATE: N/A                                                                                    ";
         private string SCIBusPCMStateLineDisabled = "│ SCI-BUS ENGINE          │ STATE: DISABLED | CONFIGURATION:  | # OF MESSAGES: RX= TX=                                    ";
         private string SCIBusPCMStateLineEnabled  = "│ SCI-BUS ENGINE          │ STATE: ENABLED @  BAUD | CONFIGURATION:  | # OF MESSAGES: RX= TX=                             ";
@@ -37,6 +38,20 @@ namespace ChryslerCCDSCIScanner
         private int SCIPCMListEnd = 17;
         private int SCITCMListStart = 26;
         private int SCITCMListEnd = 26;
+
+        private int CCDBusMsgRxCount = 0;
+        public static int CCDBusMsgTxCount = 0;
+
+        private bool CCDBusEnabled = false;
+        private bool SCIBusPCMEnabled = false;
+        private bool SCIBusTCMEnabled = false;
+
+        private bool IDSorting = true; // Sort messages by ID-byte (CCD-bus and SCI-bus too)
+        private bool CCDBusB2MsgPresent = false;
+        private bool CCDBusF2MsgPresent = false;
+        private int CCDBusIDByteNum = 0;
+        private int SCIBusPCMIDByteNum = 0;
+        private int SCIBusTCMIDByteNum = 0;
 
         private XmlDocument VehicleProfiles = new XmlDocument();
 
@@ -131,24 +146,62 @@ namespace ChryslerCCDSCIScanner
             Table.Add("                                                                                                                          ");
         }
 
+        public void UpdateBusState(byte bus, bool enabled, byte speed)
+        {
+            switch (bus)
+            {
+                case 0x01: // CCD-bus
+                    if (!enabled)
+                    {
+                        string CCDBusHeaderText = CCDBusStateLineDisabled;
+                        CCDBusHeaderText = CCDBusHeaderText.Replace("ID BYTES: ", "ID BYTES: " + CCDBusIDByteNum.ToString()).
+                                                            Replace("# OF MESSAGES: RX=", "# OF MESSAGES: RX=" + CCDBusMsgRxCount.ToString()).
+                                                            Replace(" TX=", " TX=" + CCDBusMsgTxCount);
+                        CCDBusHeaderText = Util.Truncate(CCDBusHeaderText, EmptyLine.Length); // Replacing strings causes the base string to grow so cut it back to stay in line
+                        Table.RemoveAt(CCDListStart - 4); // Remove old CCD-bus header text
+                        Table.Insert(CCDListStart - 4, CCDBusHeaderText); // Insert new CCD-bus header text
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            SendPropertyChanged("TableUpdated");
+        }
+
         public void UpdateTextTable(byte source, byte[] data, int index, int count)
         {
             int location = 0;
             switch (source)
             {
                 case 0x01: // CCD-bus message
+                    CCDBusEnabled = true;
                     StringBuilder ccdlistitem = new StringBuilder(EmptyLine); // start with a pre-defined empty line
-                    string ccdmsgtoinsert = Util.ByteToHexString(data, index, count) + " ";
+                    string ccdmsgtoinsert = String.Empty;
+                    if ((data.Length - index) < 9) // max 8 byte fits the message column
+                    {
+                        ccdmsgtoinsert = Util.ByteToHexString(data, index, count) + " ";
+                    }
+                    else // Trim message (display 7 bytes only) and insert two dots at the end indicating there's more to it
+                    {
+                        ccdmsgtoinsert = Util.ByteToHexString(data, index, index + 7) + " .. ";
+                    }
                     ccdlistitem.Remove(2, ccdmsgtoinsert.Length); // remove as much whitespaces as the length of the message
                     ccdlistitem.Insert(2, ccdmsgtoinsert); // insert message where whitespaces were
 
-                    // Now decide where to put this message in reality
-                    if (!CCDIDList.Contains(data[index])) // if this ID-byte is not in the list
+                    // Now decide where to put this message in the table itself
+                    if (!CCDIDList.Contains(data[index])) // if this ID-byte is not on the list insert it into a new line
                     {
+                        CCDBusIDByteNum++;
+
+                        // Put B2 and F2 messages at the bottom of the table
                         if ((data[index] != 0xB2) && (data[index] != 0xF2)) // if it's not diagnostic request or response message
                         {
                             CCDIDList.Add(data[index]); // add ID-byte to the list
-                            CCDIDList.Sort(); // sort ID-bytes by ascending order
+                            if (IDSorting)
+                            {
+                                CCDIDList.Sort(); // sort ID-bytes by ascending order
+                            }
                             location = CCDIDList.FindIndex(x => x == data[index]); // now see where this new ID-byte ends up after sorting
 
                             if (CCDIDList.Count == 1)
@@ -180,27 +233,65 @@ namespace ChryslerCCDSCIScanner
 
                     if (data[index] == 0xB2)
                     {
+                        if (!CCDBusB2MsgPresent)
+                        {
+                            CCDBusB2MsgPresent = true;
+                        }
+                        else
+                        {
+                            CCDBusIDByteNum--; // workaround: B2 is not added to the ID-byte list so everytime it appears it increases this number
+                        }
                         Table.RemoveAt(CCDB2Start);
                         Table.Insert(CCDB2Start, ccdlistitem.ToString());
                     }
                     else if (data[index] == 0xF2)
                     {
+                        if (!CCDBusF2MsgPresent)
+                        {
+                            CCDBusF2MsgPresent = true;
+                        }
+                        else
+                        {
+                            CCDBusIDByteNum--; // workaround: F2 is not added to the ID-byte list so everytime it appears it increases this number
+                        }
                         Table.RemoveAt(CCDF2Start);
                         Table.Insert(CCDF2Start, ccdlistitem.ToString());
                     }
-                    
+
+                    CCDBusMsgRxCount++;
+                    string CCDBusHeaderText = CCDBusStateLineEnabled;
+                    CCDBusHeaderText = CCDBusHeaderText.Replace("ID BYTES: ", "ID BYTES: " + CCDBusIDByteNum.ToString()).
+                                                        Replace("# OF MESSAGES: RX=", "# OF MESSAGES: RX=" + CCDBusMsgRxCount.ToString()).
+                                                        Replace(" TX=", " TX=" + CCDBusMsgTxCount);
+                    CCDBusHeaderText = Util.Truncate(CCDBusHeaderText, EmptyLine.Length); // Replacing strings causes the base string to grow so cut it back to stay in line
+                    Table.RemoveAt(CCDListStart - 4); // Remove old CCD-bus header text
+                    Table.Insert(CCDListStart - 4, CCDBusHeaderText); // Insert new CCD-bus header text
                     break;
                 case 0x02: // SCI-bus message (PCM)
+                    SCIBusPCMEnabled = true;
                     StringBuilder scipcmlistitem = new StringBuilder(EmptyLine); // start with a pre-defined empty line
-                    string scipcmmsgtoinsert = Util.ByteToHexString(data, index, count) + " ";
+                    string scipcmmsgtoinsert = String.Empty;
+                    if ((data.Length - index) < 9) // max 8 byte fits the message column
+                    {
+                        scipcmmsgtoinsert = Util.ByteToHexString(data, index, count) + " ";
+                    }
+                    else // Trim message and insert two dots at the end indicating there's more to it
+                    {
+                        scipcmmsgtoinsert = Util.ByteToHexString(data, index, index + 7) + " .. ";
+                    }
+                    
                     scipcmlistitem.Remove(2, scipcmmsgtoinsert.Length); // remove as much whitespaces as the length of the message
                     scipcmlistitem.Insert(2, scipcmmsgtoinsert); // insert message where whitespaces were
 
                     // Now decide where to put this message in reality
-                    if (!SCIPCMIDList.Contains(data[index])) // if this ID-byte is not in the list
+                    if (!SCIPCMIDList.Contains(data[index])) // if this ID-byte is not on the list
                     {
+                        SCIBusPCMIDByteNum++;
                         SCIPCMIDList.Add(data[index]); // add ID-byte to the list
-                        SCIPCMIDList.Sort(); // sort ID-bytes by ascending order
+                        if (IDSorting)
+                        {
+                            SCIPCMIDList.Sort(); // sort ID-bytes by ascending order
+                        }
                         location = SCIPCMIDList.FindIndex(x => x == data[index]); // now see where this new ID-byte ends up after sorting
                         if (SCIPCMIDList.Count == 1)
                         {
@@ -222,16 +313,29 @@ namespace ChryslerCCDSCIScanner
                     }
                     break;
                 case 0x03: // SCI-bus message (TCM)
+                    SCIBusTCMEnabled = true;
                     StringBuilder scitcmlistitem = new StringBuilder(EmptyLine); // start with a pre-defined empty line
-                    string scitcmmsgtoinsert = Util.ByteToHexString(data, index, count) + " ";
+                    string scitcmmsgtoinsert = String.Empty;
+                    if ((data.Length - index) < 9) // max 8 byte fits the message column
+                    {
+                        scitcmmsgtoinsert = Util.ByteToHexString(data, index, count) + " ";
+                    }
+                    else // Trim message and insert two dots at the end indicating there's more to it
+                    {
+                        scitcmmsgtoinsert = Util.ByteToHexString(data, index, index + 7) + " .. ";
+                    }
                     scitcmlistitem.Remove(2, scitcmmsgtoinsert.Length); // remove as much whitespaces as the length of the message
                     scitcmlistitem.Insert(2, scitcmmsgtoinsert); // insert message where whitespaces were
 
                     // Now decide where to put this message in reality
-                    if (!SCITCMIDList.Contains(data[index])) // if this ID-byte is not in the list
+                    if (!SCITCMIDList.Contains(data[index])) // if this ID-byte is not on the list
                     {
+                        SCIBusTCMIDByteNum++;
                         SCITCMIDList.Add(data[index]); // add ID-byte to the list
-                        SCITCMIDList.Sort(); // sort ID-bytes by ascending order
+                        if (IDSorting)
+                        {
+                            SCITCMIDList.Sort(); // sort ID-bytes by ascending order
+                        }
                         location = SCITCMIDList.FindIndex(x => x == data[index]); // now see where this new ID-byte ends up after sorting
                         if (SCITCMIDList.Count == 1)
                         {
@@ -253,6 +357,7 @@ namespace ChryslerCCDSCIScanner
                 default:
                     break;
             }
+
             SendPropertyChanged("TableUpdated");
         }
 
