@@ -55,11 +55,7 @@
             this.USBSendComboBox = new System.Windows.Forms.ComboBox();
             this.USBClearAllButton = new System.Windows.Forms.Button();
             this.USBClearButton = new System.Windows.Forms.Button();
-            this.USBShowTrafficCheckBox = new System.Windows.Forms.CheckBox();
-            this.HandshakeButton = new System.Windows.Forms.Button();
-            this.MillisButton = new System.Windows.Forms.Button();
             this.DiagnosticsGroupBox = new System.Windows.Forms.GroupBox();
-            this.button1 = new System.Windows.Forms.Button();
             this.DiagnosticsTextBox = new System.Windows.Forms.TextBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.ExpandButton = new System.Windows.Forms.Button();
@@ -396,64 +392,16 @@
             this.USBClearButton.UseVisualStyleBackColor = true;
             this.USBClearButton.Click += new System.EventHandler(this.USBClearButton_Click);
             // 
-            // USBShowTrafficCheckBox
-            // 
-            this.USBShowTrafficCheckBox.AutoSize = true;
-            this.USBShowTrafficCheckBox.Checked = true;
-            this.USBShowTrafficCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.USBShowTrafficCheckBox.Location = new System.Drawing.Point(9, 517);
-            this.USBShowTrafficCheckBox.Name = "USBShowTrafficCheckBox";
-            this.USBShowTrafficCheckBox.Size = new System.Drawing.Size(82, 17);
-            this.USBShowTrafficCheckBox.TabIndex = 6;
-            this.USBShowTrafficCheckBox.Text = "Show traffic";
-            this.USBShowTrafficCheckBox.UseVisualStyleBackColor = true;
-            this.USBShowTrafficCheckBox.CheckedChanged += new System.EventHandler(this.USBShowTrafficCheckBox_CheckedChanged);
-            // 
-            // HandshakeButton
-            // 
-            this.HandshakeButton.Enabled = false;
-            this.HandshakeButton.Location = new System.Drawing.Point(97, 544);
-            this.HandshakeButton.Name = "HandshakeButton";
-            this.HandshakeButton.Size = new System.Drawing.Size(75, 23);
-            this.HandshakeButton.TabIndex = 97;
-            this.HandshakeButton.Text = "Handshake";
-            this.HandshakeButton.UseVisualStyleBackColor = true;
-            this.HandshakeButton.Click += new System.EventHandler(this.HandshakeButton_Click);
-            // 
-            // MillisButton
-            // 
-            this.MillisButton.Enabled = false;
-            this.MillisButton.Location = new System.Drawing.Point(178, 544);
-            this.MillisButton.Name = "MillisButton";
-            this.MillisButton.Size = new System.Drawing.Size(75, 23);
-            this.MillisButton.TabIndex = 98;
-            this.MillisButton.Text = "Millis";
-            this.MillisButton.UseVisualStyleBackColor = true;
-            this.MillisButton.Click += new System.EventHandler(this.MillisButton_Click);
-            // 
             // DiagnosticsGroupBox
             // 
-            this.DiagnosticsGroupBox.Controls.Add(this.button1);
             this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsTextBox);
-            this.DiagnosticsGroupBox.Controls.Add(this.HandshakeButton);
-            this.DiagnosticsGroupBox.Controls.Add(this.MillisButton);
-            this.DiagnosticsGroupBox.Controls.Add(this.USBShowTrafficCheckBox);
+            this.DiagnosticsGroupBox.Enabled = false;
             this.DiagnosticsGroupBox.Location = new System.Drawing.Point(383, 27);
             this.DiagnosticsGroupBox.Name = "DiagnosticsGroupBox";
             this.DiagnosticsGroupBox.Size = new System.Drawing.Size(889, 573);
             this.DiagnosticsGroupBox.TabIndex = 3;
             this.DiagnosticsGroupBox.TabStop = false;
             this.DiagnosticsGroupBox.Text = "Diagnostics";
-            // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(6, 544);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(85, 23);
-            this.button1.TabIndex = 99;
-            this.button1.Text = "Hide TextBox";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // DiagnosticsTextBox
             // 
@@ -543,6 +491,7 @@
             // 
             // UpdateScannerFirmwareToolStripMenuItem
             // 
+            this.UpdateScannerFirmwareToolStripMenuItem.Enabled = false;
             this.UpdateScannerFirmwareToolStripMenuItem.Name = "UpdateScannerFirmwareToolStripMenuItem";
             this.UpdateScannerFirmwareToolStripMenuItem.Size = new System.Drawing.Size(206, 22);
             this.UpdateScannerFirmwareToolStripMenuItem.Text = "Update scanner firmware";
@@ -583,16 +532,13 @@
         private System.Windows.Forms.Button ConnectButton;
         private System.Windows.Forms.GroupBox USBCommunicationGroupBox;
         private System.Windows.Forms.GroupBox DiagnosticsGroupBox;
-        private System.Windows.Forms.Button MillisButton;
         private System.Windows.Forms.Button USBClearButton;
         private System.Windows.Forms.Button USBSendButton;
-        private System.Windows.Forms.CheckBox USBShowTrafficCheckBox;
         private System.Windows.Forms.GroupBox groupBox3;
         private System.Windows.Forms.RadioButton ImperialUnitRadioButton;
         private System.Windows.Forms.RadioButton MetricUnitRadioButton;
         private System.Windows.Forms.Label UnitsLabel;
         private System.Windows.Forms.TextBox DiagnosticsTextBox;
-        private System.Windows.Forms.Button HandshakeButton;
         private System.Windows.Forms.Button USBClearAllButton;
         private System.Windows.Forms.ComboBox USBSendComboBox;
         private System.Windows.Forms.Button ExpandButton;
@@ -603,7 +549,6 @@
         private System.Windows.Forms.Label CommandLabel;
         private System.Windows.Forms.ComboBox ModeComboBox;
         private System.Windows.Forms.Label PreviewLabel;
-        private System.Windows.Forms.Button button1;
         private System.Windows.Forms.ComboBox Param1ComboBox;
         private System.Windows.Forms.Label Param1Label1;
         private System.Windows.Forms.ComboBox Param3ComboBox;

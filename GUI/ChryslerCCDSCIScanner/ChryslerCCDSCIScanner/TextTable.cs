@@ -30,6 +30,8 @@ namespace ChryslerCCDSCIScanner
         private string SCIBusTCMStateLineDisabled = "│ SCI-BUS TRANSMISSION    │ STATE: DISABLED | CONFIGURATION:  | # OF MESSAGES: RX= TX=                                    ";
         private string SCIBusTCMStateLineEnabled  = "│ SCI-BUS TRANSMISSION    │ STATE: ENABLED @  BAUD | CONFIGURATION:  | # OF MESSAGES: RX= TX=                             ";
 
+        private string VIN = "-----------------"; // 17 characters
+
         private int CCDListStart = 5; // row number
         private int CCDListEnd = 5;
         private int CCDB2Start = 7;
@@ -53,7 +55,11 @@ namespace ChryslerCCDSCIScanner
         private int SCIBusPCMIDByteNum = 0;
         private int SCIBusTCMIDByteNum = 0;
 
+        private double ImperialSlope = 0;
+        private double MetricSlope = 0;
+
         private XmlDocument VehicleProfiles = new XmlDocument();
+        LookupTable LT = new LookupTable();
 
         public TextTable(string VehicleProfilesFileName)
         {
@@ -77,8 +83,8 @@ namespace ChryslerCCDSCIScanner
             Table.Add("╞═════════════════════════╪════════════════════════════════════════════════════╪══════════════════════════╪══════════════╡");
             Table.Add("│                         │                                                    │                          │              │");
             Table.Add("├─────────────────────────┼────────────────────────────────────────────────────┼──────────────────────────┼──────────────┤");
-            Table.Add("│ B2 -- -- -- -- --       │                                                    │                          │              │");
-            Table.Add("│ F2 -- -- -- -- --       │                                                    │                          │              │");
+            Table.Add("│ B2 -- -- -- -- --       │ DRB REQUEST                                        │                          │              │");
+            Table.Add("│ F2 -- -- -- -- --       │ DRB RESPONSE                                       │                          │              │");
             Table.Add("└─────────────────────────┴────────────────────────────────────────────────────┴──────────────────────────┴──────────────┘");
             Table.Add("                                                                                                                          ");
             Table.Add("                                                                                                                          ");
@@ -178,6 +184,10 @@ namespace ChryslerCCDSCIScanner
                     CCDBusEnabled = true;
                     StringBuilder ccdlistitem = new StringBuilder(EmptyLine); // start with a pre-defined empty line
                     string ccdmsgtoinsert = String.Empty;
+                    string ccddescriptiontoinsert = String.Empty;
+                    string ccdvaluetoinsert = String.Empty;
+                    string ccdunittoinsert = String.Empty;
+
                     if ((data.Length - index) < 9) // max 8 byte fits the message column
                     {
                         ccdmsgtoinsert = Util.ByteToHexString(data, index, count) + " ";
@@ -186,8 +196,100 @@ namespace ChryslerCCDSCIScanner
                     {
                         ccdmsgtoinsert = Util.ByteToHexString(data, index, index + 7) + " .. ";
                     }
+
+                    // Insert message hex bytes in the line
                     ccdlistitem.Remove(2, ccdmsgtoinsert.Length); // remove as much whitespaces as the length of the message
                     ccdlistitem.Insert(2, ccdmsgtoinsert); // insert message where whitespaces were
+
+                    // Insert description in the line
+                    ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(data[index]);
+                    if (ccddescriptiontoinsert != String.Empty)
+                    {
+                        ccdlistitem.Remove(28, ccddescriptiontoinsert.Length);
+                        ccdlistitem.Insert(28, ccddescriptiontoinsert);
+                    }
+
+                    // Insert calculated value in the line
+                    switch (data[index])
+                    {
+                        case 0x24:
+                            if (MainForm.Units == 1) // Imperial
+                            {
+                                ccdvaluetoinsert = (data[index + 1]).ToString();
+                            }
+                            if (MainForm.Units == 0) // Metric
+                            {
+                                ccdvaluetoinsert = (data[index + 2]).ToString();
+                            }
+                            break;
+                        case 0x6D:
+                            // TODO:  replace characters in the VIN string
+                            ccdvaluetoinsert = VIN;
+                            break;
+                        case 0xCE:
+                            if (MainForm.Units == 1) // Imperial
+                            {
+                                ImperialSlope = LT.GetCCDBusMessageValueScalingSlopeImperial(0xCE)[0];
+                                ccdvaluetoinsert = ((data[index + 1] << 24 | data[index + 2] << 16 | data[index + 3] << 8 | data[index + 4]) * ImperialSlope).ToString("0.000").Replace(",", ".");
+                            }
+                            if (MainForm.Units == 0) // Metric
+                            {
+                                MetricSlope = (LT.GetCCDBusMessageValueScalingSlopeImperial(0xCE)[0] * LT.GetCCDBusMessageValueScalingSlopeMetric(0xCE)[0]);
+                                ccdvaluetoinsert = ((data[index + 1] << 24 | data[index + 2] << 16 | data[index + 3] << 8 | data[index + 4]) * MetricSlope).ToString("0.000").Replace(",", ".");
+                            }
+                            break;
+                        case 0xEE:
+                            if (MainForm.Units == 1) // Imperial
+                            {
+                                ImperialSlope = LT.GetCCDBusMessageValueScalingSlopeImperial(0xEE)[0];
+                                ccdvaluetoinsert = ((data[index + 1] << 16 | data[index + 2] << 8 | data[index + 3]) * ImperialSlope).ToString("0.000").Replace(",", ".");
+                            }
+                            if (MainForm.Units == 0) // Metric
+                            {
+                                MetricSlope = (LT.GetCCDBusMessageValueScalingSlopeImperial(0xEE)[0] * LT.GetCCDBusMessageValueScalingSlopeMetric(0xEE)[0]);
+                                ccdvaluetoinsert = ((data[index + 1] << 16 | data[index + 2] << 8 | data[index + 3]) * MetricSlope).ToString("0.000").Replace(",", ".");
+                            }
+                            break;
+                    }
+                    ccdlistitem.Remove(81, ccdvaluetoinsert.Length);
+                    ccdlistitem.Insert(81, ccdvaluetoinsert);
+
+                    // Insert unit in the line
+                    switch (data[index])
+                    {
+                        case 0x24:
+                            if (MainForm.Units == 1) // Imperial
+                            {
+                                ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x24)[0];
+                            }
+                            if (MainForm.Units == 0) // Metric
+                            {
+                                ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x24)[1];
+                            }
+                            break;
+                        case 0xCE:
+                            if (MainForm.Units == 1) // Imperial
+                            {
+                                ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0xCE)[0];
+                            }
+                            if (MainForm.Units == 0) // Metric
+                            {
+                                ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0xCE)[0];
+                            }
+                            break;
+                        case 0xEE:
+                            if (MainForm.Units == 1) // Imperial
+                            {
+                                ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0xEE)[0];
+                            }
+                            if (MainForm.Units == 0) // Metric
+                            {
+                                ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0xEE)[0];
+                            }
+                            break;
+                    }
+                    ccdlistitem.Remove(108, ccdunittoinsert.Length);
+                    ccdlistitem.Insert(108, ccdunittoinsert);
 
                     // Now decide where to put this message in the table itself
                     if (!CCDIDList.Contains(data[index])) // if this ID-byte is not on the list insert it into a new line
