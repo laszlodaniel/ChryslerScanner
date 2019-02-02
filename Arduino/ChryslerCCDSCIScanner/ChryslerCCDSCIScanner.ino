@@ -47,8 +47,8 @@ void setup()
     // Define digital pin states
     pinMode(INT4, INPUT_PULLUP);  // D2 (INT4), CCD-bus idle detector
     pinMode(INT5, INPUT_PULLUP);  // D3 (INT5), CCD-bus active byte detector
-    pinMode(RX_LED,  OUTPUT);     // This LED flashes whenever data is received by the scanner
-    pinMode(TX_LED,  OUTPUT);     // This LED flashes whenever data is transmitted from the scanner
+    pinMode(RX_LED, OUTPUT);     // This LED flashes whenever data is received by the scanner
+    pinMode(TX_LED, OUTPUT);     // This LED flashes whenever data is transmitted from the scanner
     // PWR LED is tied to +5V directly, stays on when the scanner has power, draws about 2mA current
     pinMode(ACT_LED, OUTPUT);     // This LED flashes when some "action" takes place in the scanner
     pinMode(BATT, INPUT);         // This analog input pin measures battery voltage through a resistor divider (it tolerates 24V batteries!)

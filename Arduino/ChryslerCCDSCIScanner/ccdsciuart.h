@@ -22,7 +22,7 @@
 #ifndef CCDSCIUART_H
 #define CCDSCIUART_H
 
-#define FW_DATE 0x000000005C52CB02  // Firmware date/time of compilation in 64-bit UNIX time
+#define FW_DATE 0x000000005C556BAC  // Firmware date/time of compilation in 64-bit UNIX time
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -1675,7 +1675,7 @@ void configure_sci_bus(uint8_t data)
             else // high speed
             {
                 tcm_init(HIBAUD); // 62500 baud
-                tcm_high_speed_enabled = false;
+                tcm_high_speed_enabled = true;
             }
         }
     }
