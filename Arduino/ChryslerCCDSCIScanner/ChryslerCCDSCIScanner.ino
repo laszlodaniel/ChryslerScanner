@@ -1,6 +1,6 @@
 /*
  * ChryslerCCDSCIScanner (https://github.com/laszlodaniel/ChryslerCCDSCIScanner)
- * Copyright (C) 2018, László Dániel
+ * Copyright (C) 2018-2019, László Dániel
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,13 +45,13 @@ LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 void setup()
 {
     // Define digital pin states
-    pinMode(INT4, INPUT_PULLUP);  // D2 (INT4), CCD-bus idle detector
-    pinMode(INT5, INPUT_PULLUP);  // D3 (INT5), CCD-bus active byte detector
+    pinMode(INT4, INPUT_PULLUP); // D2 (INT4), CCD-bus idle detector
+    pinMode(INT5, INPUT_PULLUP); // D3 (INT5), CCD-bus active byte detector
     pinMode(RX_LED, OUTPUT);     // This LED flashes whenever data is received by the scanner
     pinMode(TX_LED, OUTPUT);     // This LED flashes whenever data is transmitted from the scanner
     // PWR LED is tied to +5V directly, stays on when the scanner has power, draws about 2mA current
-    pinMode(ACT_LED, OUTPUT);     // This LED flashes when some "action" takes place in the scanner
-    pinMode(BATT, INPUT);         // This analog input pin measures battery voltage through a resistor divider (it tolerates 24V batteries!)
+    pinMode(ACT_LED, OUTPUT);    // This LED flashes when some "action" takes place in the scanner
+    pinMode(BATT, INPUT);        // This analog input pin measures battery voltage through a resistor divider (it tolerates 24V batteries!)
     blink_led(RX_LED);
     blink_led(TX_LED);
     blink_led(ACT_LED);
@@ -94,6 +94,27 @@ void setup()
         uint8_t err[1];
         err[0] = 0xFF;
         send_usb_packet(from_usb, to_usb, ok_error, error_eep_not_found, err, 1);
+
+        hw_version[0] = 0; // zero out values
+        hw_version[1] = 0;
+        hw_date[0] = 0; // zero out values
+        hw_date[1] = 0;
+        hw_date[2] = 0;
+        hw_date[3] = 0;
+        hw_date[4] = 0;
+        hw_date[5] = 0;
+        hw_date[6] = 0;
+        hw_date[7] = 0;
+        assembly_date[0] = 0; // zero out values
+        assembly_date[1] = 0;
+        assembly_date[2] = 0;
+        assembly_date[3] = 0;
+        assembly_date[4] = 0;
+        assembly_date[5] = 0;
+        assembly_date[6] = 0;
+        assembly_date[7] = 0;
+        eep_checksum[0] = 0; // zero out value
+        eep_calculated_checksum = 0;
     }
     else // zero = good
     {

@@ -1,6 +1,6 @@
 /*
  * ChryslerCCDSCIScanner (https://github.com/laszlodaniel/ChryslerCCDSCIScanner)
- * Copyright (C) 2018, László Dániel
+ * Copyright (C) 2018-2019, László Dániel
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
