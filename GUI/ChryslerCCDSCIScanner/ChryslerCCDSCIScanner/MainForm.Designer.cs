@@ -395,7 +395,6 @@
             // DiagnosticsGroupBox
             // 
             this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsTextBox);
-            this.DiagnosticsGroupBox.Enabled = false;
             this.DiagnosticsGroupBox.Location = new System.Drawing.Point(383, 27);
             this.DiagnosticsGroupBox.Name = "DiagnosticsGroupBox";
             this.DiagnosticsGroupBox.Size = new System.Drawing.Size(889, 573);
