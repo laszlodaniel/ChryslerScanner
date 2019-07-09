@@ -22,7 +22,7 @@
 #ifndef CCDSCIUART_H
 #define CCDSCIUART_H
 
-#define FW_DATE 0x000000005C556BAC  // Firmware date/time of compilation in 64-bit UNIX time
+#define FW_DATE 0x000000005D248686  // Firmware date/time of compilation in 64-bit UNIX time
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
