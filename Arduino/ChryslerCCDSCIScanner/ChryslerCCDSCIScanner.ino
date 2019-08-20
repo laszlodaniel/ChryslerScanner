@@ -19,8 +19,13 @@
  * https://github.com/andygock/avr-uart
  */
 
-// Board setting: Arduino/Genuino Mega or Mega 2560
-// Processor setting: ATmega2560 (Mega 2560)
+// Board: Arduino/Genuino Mega or Mega 2560
+// Processor: ATmega2560 (Mega 2560)
+// Fuse bytes:
+// - HF: 0xD0
+// - LF: 0xFF
+// - EF: 0xFD
+// - Lock: 0xFF
 
 #include <avr/interrupt.h>
 #include <avr/io.h>
@@ -30,7 +35,7 @@
 #include <extEEPROM.h>         // https://github.com/JChristensen/extEEPROM
 #include <LiquidCrystal_I2C.h> // https://bitbucket.org/fmalpartida/new-liquidcrystal/downloads/
 #include <Wire.h>
-#include "ccdsciuart.h"
+#include "main.h"
 
 #ifndef F_CPU
 #define F_CPU 16000000UL // 16 MHz system clock
@@ -57,141 +62,29 @@ void setup()
     blink_led(ACT_LED);
 
     // SCI-bus A/B-configuration selector outputs
-    pinMode(PA0, OUTPUT);   // Set PA0 pin to output
-    pinMode(PA1, OUTPUT);   // |
-    pinMode(PA2, OUTPUT);   // |
-    pinMode(PA3, OUTPUT);   // |
-    pinMode(PA4, OUTPUT);   // |
-    pinMode(PA5, OUTPUT);   // |
-    pinMode(PA6, OUTPUT);   // |
-    pinMode(PA7, OUTPUT);   // |
+    pinMode(PA0, OUTPUT);
+    pinMode(PA1, OUTPUT);
+    pinMode(PA2, OUTPUT);
+    pinMode(PA3, OUTPUT);
+    pinMode(PA4, OUTPUT);
+    pinMode(PA5, OUTPUT);
+    pinMode(PA6, OUTPUT);
+    pinMode(PA7, OUTPUT);
 
-    digitalWrite(PA0, HIGH); // Default settings: SCI-bus "A" configuration, PCM only
-    digitalWrite(PA1, HIGH);
-    digitalWrite(PA2, LOW);
-    digitalWrite(PA3, LOW);
-    digitalWrite(PA4, LOW);
-    digitalWrite(PA5, LOW);
-    digitalWrite(PA6, LOW);
-    digitalWrite(PA7, LOW);
-    
-    wdt_enable(WDTO_2S); // enable watchdog timer that resets program if its timer reaches 2 seconds (useful if the prorgam hangs for some reason and needs auto-reset)
+    configure_sci_bus(0x02); // SCI-bus "A" configuration, 7812.5 baud, PCM only
+
     attachInterrupt(digitalPinToInterrupt(INT4), ccd_eom, FALLING); // execute "ccd_eom" function if the CCD-transceiver pulls D2 pin low indicating an "End of Message" condition
     attachInterrupt(digitalPinToInterrupt(INT5), ccd_active_byte, FALLING); // execute "ccd_active_byte" function if the CCD-transceiver pulls D3 pin low indicating a byte being transmitted on the CCD-bus
-    // active byte = we don't know the byte's value right away, we have to wait for all 8 data bits and a few other bits for framing to arrive.
-
+    
     // Initialize serial interfaces with default speeds
     usb_init(USBBAUD);// 250000 baud, an external serial monitor should have the same speed
     ccd_init(LOBAUD); // 7812.5 baud
     pcm_init(LOBAUD); // 7812.5 baud
     tcm_init(LOBAUD); // 7812.5 baud
     
-    // Initialize external EEPROM, read hardware version/date, assembly date, firmware date and a checksum byte for all of this
-    eep_status = eep.begin(extEEPROM::twiClock400kHz); // go fast!
-    if (eep_status) // non-zero = bad
-    { 
-        eep_present = false;
-        uint8_t err[1];
-        err[0] = 0xFF;
-        send_usb_packet(from_usb, to_usb, ok_error, error_eep_not_found, err, 1);
-
-        hw_version[0] = 0; // zero out values
-        hw_version[1] = 0;
-        hw_date[0] = 0; // zero out values
-        hw_date[1] = 0;
-        hw_date[2] = 0;
-        hw_date[3] = 0;
-        hw_date[4] = 0;
-        hw_date[5] = 0;
-        hw_date[6] = 0;
-        hw_date[7] = 0;
-        assembly_date[0] = 0; // zero out values
-        assembly_date[1] = 0;
-        assembly_date[2] = 0;
-        assembly_date[3] = 0;
-        assembly_date[4] = 0;
-        assembly_date[5] = 0;
-        assembly_date[6] = 0;
-        assembly_date[7] = 0;
-        eep_checksum[0] = 0; // zero out value
-        eep_calculated_checksum = 0;
-    }
-    else // zero = good
-    {
-        eep_present = true;
-        eep_result = eep.read(0, hw_version, 2); // read first 2 bytes and store it in the hw_version array
-        if (eep_result)
-        {
-            uint8_t err[1];
-            err[0] = eep_result;
-            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
-
-            hw_version[0] = 0; // zero out values
-            hw_version[1] = 0;
-        }
-        eep_result = eep.read(2, hw_date, 8); // read following 8 bytes in the hw_date array
-        if (eep_result)
-        {
-            uint8_t err[1];
-            err[0] = eep_result;
-            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
-
-            hw_date[0] = 0; // zero out values
-            hw_date[1] = 0;
-            hw_date[2] = 0;
-            hw_date[3] = 0;
-            hw_date[4] = 0;
-            hw_date[5] = 0;
-            hw_date[6] = 0;
-            hw_date[7] = 0;
-            
-        }
-        eep_result = eep.read(10, assembly_date, 8); // read following 8 bytes in the assembly_date array
-        if (eep_result)
-        {
-            uint8_t err[1];
-            err[0] = eep_result;
-            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
-
-            assembly_date[0] = 0; // zero out values
-            assembly_date[1] = 0;
-            assembly_date[2] = 0;
-            assembly_date[3] = 0;
-            assembly_date[4] = 0;
-            assembly_date[5] = 0;
-            assembly_date[6] = 0;
-            assembly_date[7] = 0;
-        }
-        eep_result = eep.read(255, eep_checksum, 1); // read 255th byte for the checksum byte (total of 256 bytes are reserved for hardware description)
-        if (eep_result)
-        {
-            uint8_t err[1];
-            err[0] = eep_result;
-            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
-
-            eep_checksum[0] = 0; // zero out value
-        }
-
-        eep_calculated_checksum = 0;
-        for (uint8_t i = 0; i < 255; i++) // add all 255 bytes together and skip last byte (where checksum byte is located) by setting the second parameter to 255 instead of 256
-        {
-            eep_calculated_checksum += eep.read(i); // checksum variable will roll over several times but it's okay, this is its purpose
-        }
-    }
-
-    // Initialize external display (optional)
-    lcd.begin(20, 4); // start LCD with 20 columns and 4 rows
-    lcd.backlight();  // backlight on
-    lcd.clear();      // clear display
-    lcd.home();       // set cursor in home position (0, 0)
-    lcd.print(F("--------------------")); // F(" ") makes the compiler store the string inside flash memory instead of RAM, good practice if system is low on RAM
-    lcd.setCursor(0, 1);
-    lcd.print(F("  CHRYSLER CCD/SCI  "));
-    lcd.setCursor(0, 2);
-    lcd.print(F(" SCANNER V1.40 2018 "));
-    lcd.setCursor(0, 3);
-    lcd.print(F("--------------------"));
-
+    exteeprom_init();
+    lcd_init();
+    
     analogReference(DEFAULT); // use default voltage reference applied to AVCC (+5V)
     check_battery_volts(); // calculate battery voltage from OBD16 pin
     ccd_clock_generator(START); // start listening to the CCD-bus; the transceiver chip only works if it receives this continuos clock signal; clever way to turn it on/off
@@ -212,9 +105,14 @@ void setup()
 
     get_bus_config(); // figure out how to talk to the vehicle
     
+    delay(2000);
+    print_display_layout_1_metric();
+    
     uint8_t scanner_ready[1];
     scanner_ready[0] = 0x01;
     send_usb_packet(from_usb, to_usb, reset, ok, scanner_ready, 1); // Scanner ready
+
+    wdt_enable(WDTO_2S); // enable watchdog timer that resets program if its timer reaches 2 seconds (useful if the prorgam hangs for some reason and needs auto-reset)
 }
 
 void loop()
@@ -225,4 +123,5 @@ void loop()
     handle_ccd_data(); // do CCD-bus stuff
     handle_sci_data(); // do SCI-bus stuff
     handle_leds(); // do LED stuff
+    handle_lcd();  // do LCD stuff
 }

@@ -19,10 +19,15 @@
  * https://github.com/andygock/avr-uart
  */
 
-#ifndef CCDSCIUART_H
-#define CCDSCIUART_H
+#ifndef MAIN_H
+#define MAIN_H
 
-#define FW_DATE 0x000000005D248686  // Firmware date/time of compilation in 64-bit UNIX time
+extern extEEPROM eep;
+extern LiquidCrystal_I2C lcd;
+
+// Firmware date/time of compilation in 64-bit UNIX time
+// https://www.epochconverter.com/hex
+#define FW_DATE 0x000000005D5C5716
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -106,10 +111,6 @@
 #define ACT_LED       37 // status LED, activity
 #define BATT          A0 // battery voltage sensor
 
-#define SCI_INTERFRAME_RESPONSE_DELAY   100  // milliseconds elapsed after last received byte to consider the SCI-bus idling
-#define SCI_INTERMESSAGE_RESPONSE_DELAY 50   // ms
-#define SCI_INTERMESSAGE_REQUEST_DELAY  50   // ms
-
 #define PA0 22 // SCI-bus configuration selector digital pins on ATmega2560
 #define PA1 23 // |
 #define PA2 24 // |
@@ -118,6 +119,10 @@
 #define PA5 27 // |
 #define PA6 28 // |
 #define PA7 29 // |
+
+#define SCI_INTERFRAME_RESPONSE_DELAY   100  // milliseconds elapsed after last received byte to consider the SCI-bus idling
+#define SCI_INTERMESSAGE_RESPONSE_DELAY 50   // ms
+#define SCI_INTERMESSAGE_REQUEST_DELAY  50   // ms
 
 #define STOP  0x00
 #define START 0x01
@@ -128,7 +133,7 @@
 #define MAX_PAYLOAD_LENGTH  USB_RX0_BUFFER_SIZE - 6  // 1024-6 bytes
 #define EMPTY_PAYLOAD       0xFE  // Random byte, could be anything
 
-#define TEMP_BUFFER_SIZE    32
+#define BUFFER_SIZE         32
 
 // DATA CODE byte building blocks
 // Source and Target masks (high nibble (2+2 bits))
@@ -246,8 +251,6 @@ volatile uint8_t  TCM_TxHead;
 volatile uint8_t  TCM_TxTail;
 volatile uint8_t  TCM_LastRxError;
 
-bool eep_present = false;
-
 // CCD-bus
 bool ccd_enabled = true;
 volatile bool ccd_idle = false;
@@ -255,7 +258,7 @@ volatile bool ccd_ctrl = false;
 volatile uint32_t ccd_msg_count = 0;
 volatile uint8_t ccd_bytes_count = 0;
 bool ccd_msg_pending = false; // flag for custom ccd-bus message transmission
-uint8_t ccd_msg_to_send[TEMP_BUFFER_SIZE]; // custom ccd-bus message is copied here
+uint8_t ccd_msg_to_send[BUFFER_SIZE]; // custom ccd-bus message is copied here
 uint8_t ccd_msg_to_send_ptr = 0; // custom ccd-bus message length
 
 // SCI-bus
@@ -269,18 +272,18 @@ bool tcm_high_speed_enabled = false;
 bool pcm_echo_accepted = false;
 bool tcm_echo_accepted = false;
 
-uint8_t pcm_bytes_buffer[TEMP_BUFFER_SIZE]; // max. SCI-bus message length to the PCM limited to 32 bytes, should be enough
+uint8_t pcm_bytes_buffer[BUFFER_SIZE]; // max. SCI-bus message length to the PCM limited to 32 bytes, should be enough
 uint8_t pcm_bytes_buffer_ptr = 0; // pointer in the previous array
 bool pcm_msg_pending = false; // flag for custom sci-bus message
-uint8_t pcm_msg_to_send[TEMP_BUFFER_SIZE]; // custom sci-bus message is copied here
+uint8_t pcm_msg_to_send[BUFFER_SIZE]; // custom sci-bus message is copied here
 uint8_t pcm_msg_to_send_ptr = 0;  // custom sci-bus message length
 uint32_t pcm_last_msgbyte_received = 0;
 uint32_t pcm_msg_count = 0;
 
-uint8_t tcm_bytes_buffer[TEMP_BUFFER_SIZE]; // max. SCI-bus message length to the TCM limited to 32 bytes, should be enough
+uint8_t tcm_bytes_buffer[BUFFER_SIZE]; // max. SCI-bus message length to the TCM limited to 32 bytes, should be enough
 uint8_t tcm_bytes_buffer_ptr = 0; // pointer in the previous array
 bool tcm_msg_pending = false; // flag for custom sci-bus message
-uint8_t tcm_msg_to_send[TEMP_BUFFER_SIZE]; // custom sci-bus message is copied here
+uint8_t tcm_msg_to_send[BUFFER_SIZE]; // custom sci-bus message is copied here
 uint8_t tcm_msg_to_send_ptr = 0; // custom sci-bus message length
 uint32_t tcm_last_msgbyte_received = 0;
 uint32_t tcm_msg_count = 0;
@@ -318,9 +321,9 @@ uint16_t heartbeat_interval = 5000; // milliseconds
 bool heartbeat_enabled = true;
 
 uint8_t current_timestamp[4]; // current time is stored here when "update_timestamp" is called
-
 const char ascii_autoreply[] = "I GOT YOUR MESSAGE!\n";
 
+bool eep_present = false;
 uint8_t eep_status = 0; // extEEPROM connection status is stored here
 uint8_t eep_result = 0; // extEEPROM 
 uint8_t eep_checksum[1];
@@ -330,6 +333,16 @@ bool    eep_checksum_ok = false;
 uint8_t hw_version[2];
 uint8_t hw_date[8];
 uint8_t assembly_date[8];
+
+// LCD related variables
+// Custom LCD-characters
+// https://maxpromer.github.io/LCD-Character-Creator/
+uint8_t up_symbol[8]     = { 0x00, 0x04, 0x0E, 0x15, 0x04, 0x04, 0x00, 0x00 }; // ↑
+uint8_t down_symbol[8]   = { 0x00, 0x04, 0x04, 0x15, 0x0E, 0x04, 0x00, 0x00 }; // ↓
+uint8_t left_symbol[8]   = { 0x00, 0x04, 0x08, 0x1F, 0x08, 0x04, 0x00, 0x00 }; // ←
+uint8_t right_symbol[8]  = { 0x00, 0x04, 0x02, 0x1F, 0x02, 0x04, 0x00, 0x00 }; // →
+uint8_t enter_symbol[8]  = { 0x00, 0x01, 0x05, 0x09, 0x1F, 0x08, 0x04, 0x00 }; // 
+uint8_t degree_symbol[8] = { 0x06, 0x09, 0x09, 0x06, 0x00, 0x00, 0x00, 0x00 }; // °
 
 
 // Interrupt Service Routines
@@ -1773,7 +1786,7 @@ void blink_led(uint8_t led)
         }
     }
     
-} /* blink_led */
+} // end of blink_led
 
 
 /*************************************************************************
@@ -1803,7 +1816,6 @@ void send_usb_packet(uint8_t source, uint8_t target, uint8_t command, uint8_t su
     else payload_bytes = true;
 
     // Assemble datacode from the first 3 input parameters
-    // They all fit in one byte because only the lower two bits are considered meaningful for source and target, four bits for command
     datacode = (source << 6) + (target << 4) + command;
     //          xx000000     +  00yy0000     + 0000zzzz  =  xxyyzzzz  
 
@@ -1823,12 +1835,8 @@ void send_usb_packet(uint8_t source, uint8_t target, uint8_t command, uint8_t su
         }
     }
 
-    // Calculate checksum, skip SYNC byte by starting at index 1.
-    // Procedure is simple: add every byte together after SYNC byte and keep the lower byte as result
-    for (uint16_t j = 1; j < packet_length - 1; j++)
-    {
-        calculated_checksum += packet[j];
-    }
+    // Calculate checksum
+    calculated_checksum = calculate_checksum(packet, 1, packet_length - 1);
 
     // Place checksum byte
     packet[packet_length - 1] = calculated_checksum;
@@ -1842,6 +1850,108 @@ void send_usb_packet(uint8_t source, uint8_t target, uint8_t command, uint8_t su
     }
     
 } /* send_usb_packet */
+
+
+/*************************************************************************
+Function: exteeprom_init()
+Purpose:  initialize LCD
+**************************************************************************/
+void exteeprom_init(void)
+{
+    // Initialize external EEPROM, read hardware version/date, assembly date, firmware date and a checksum byte for all of this
+    eep_status = eep.begin(extEEPROM::twiClock400kHz); // go fast!
+    if (eep_status) // non-zero = bad
+    { 
+        eep_present = false;
+        uint8_t err[1];
+        err[0] = 0xFF;
+        send_usb_packet(from_usb, to_usb, ok_error, error_eep_not_found, err, 1);
+
+        hw_version[0] = 0; // zero out values
+        hw_version[1] = 0;
+        hw_date[0] = 0; // zero out values
+        hw_date[1] = 0;
+        hw_date[2] = 0;
+        hw_date[3] = 0;
+        hw_date[4] = 0;
+        hw_date[5] = 0;
+        hw_date[6] = 0;
+        hw_date[7] = 0;
+        assembly_date[0] = 0; // zero out values
+        assembly_date[1] = 0;
+        assembly_date[2] = 0;
+        assembly_date[3] = 0;
+        assembly_date[4] = 0;
+        assembly_date[5] = 0;
+        assembly_date[6] = 0;
+        assembly_date[7] = 0;
+        eep_checksum[0] = 0; // zero out value
+        eep_calculated_checksum = 0;
+    }
+    else // zero = good
+    {
+        eep_present = true;
+        eep_result = eep.read(0, hw_version, 2); // read first 2 bytes and store it in the hw_version array
+        if (eep_result)
+        {
+            uint8_t err[1];
+            err[0] = eep_result;
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+
+            hw_version[0] = 0; // zero out values
+            hw_version[1] = 0;
+        }
+        eep_result = eep.read(2, hw_date, 8); // read following 8 bytes in the hw_date array
+        if (eep_result)
+        {
+            uint8_t err[1];
+            err[0] = eep_result;
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+
+            hw_date[0] = 0; // zero out values
+            hw_date[1] = 0;
+            hw_date[2] = 0;
+            hw_date[3] = 0;
+            hw_date[4] = 0;
+            hw_date[5] = 0;
+            hw_date[6] = 0;
+            hw_date[7] = 0;
+            
+        }
+        eep_result = eep.read(10, assembly_date, 8); // read following 8 bytes in the assembly_date array
+        if (eep_result)
+        {
+            uint8_t err[1];
+            err[0] = eep_result;
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+
+            assembly_date[0] = 0; // zero out values
+            assembly_date[1] = 0;
+            assembly_date[2] = 0;
+            assembly_date[3] = 0;
+            assembly_date[4] = 0;
+            assembly_date[5] = 0;
+            assembly_date[6] = 0;
+            assembly_date[7] = 0;
+        }
+        eep_result = eep.read(255, eep_checksum, 1); // read 255th byte for the checksum byte (total of 256 bytes are reserved for hardware description)
+        if (eep_result)
+        {
+            uint8_t err[1];
+            err[0] = eep_result;
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+
+            eep_checksum[0] = 0; // zero out value
+        }
+
+        eep_calculated_checksum = 0;
+        for (uint8_t i = 0; i < 255; i++) // add all 255 bytes together and skip last byte (where checksum byte is located) by setting the second parameter to 255 instead of 256
+        {
+            eep_calculated_checksum += eep.read(i); // checksum variable will roll over several times but it's okay, this is its purpose
+        }
+    }
+    
+} // end of exteeprom_init
 
 
 /*************************************************************************
@@ -1996,8 +2106,8 @@ void handle_usb_data(void)
         
         if (sync == PACKET_SYNC_BYTE) // byte based communication
         {
-            length_hb = usb_getc() & 0xFF; // read first length byte (according to specification this is the next byte after sync byte)
-            length_lb = usb_getc() & 0xFF; // read second length byte (once again we rely on the specification and assume the next byte is the length low byte)
+            length_hb = usb_getc() & 0xFF; // read first length byte
+            length_lb = usb_getc() & 0xFF; // read second length byte
     
             // Calculate how much more bytes should we read by combining the two length bytes into a word.
             bytes_to_read = (length_hb << 8) + length_lb + 1; // +1 CHECKSUM byte
@@ -2274,7 +2384,7 @@ void handle_usb_data(void)
                                 }
                                 case single_msg: // 0x01 - send message to the CCD-bus, message is stored in payload 
                                 {
-                                    if ((payload_length > 0) && (payload_length <= TEMP_BUFFER_SIZE)) 
+                                    if ((payload_length > 0) && (payload_length <= BUFFER_SIZE)) 
                                     {
                                         // Fill the pending buffer with the message to be sent
                                         for (uint8_t i = 0; i < payload_length; i++)
@@ -2343,7 +2453,7 @@ void handle_usb_data(void)
                                 }
                                 case single_msg: // 0x01 - send message to the SCI-bus, message is stored in payload 
                                 {
-                                    if ((payload_length > 0) && (payload_length <= TEMP_BUFFER_SIZE))
+                                    if ((payload_length > 0) && (payload_length <= BUFFER_SIZE))
                                     {
                                         for (uint8_t i = 0; i < payload_length; i++) // fill the pending buffer with the message to be sent
                                         {
@@ -2401,7 +2511,7 @@ void handle_usb_data(void)
                                 }
                                 case single_msg: // 0x01 - send message to the SCI-bus, message is stored in payload 
                                 {
-                                    if ((payload_length > 0) && (payload_length <= TEMP_BUFFER_SIZE))
+                                    if ((payload_length > 0) && (payload_length <= BUFFER_SIZE))
                                     {
                                         for (uint8_t i = 0; i < payload_length; i++) // fill the pending buffer with the message to be sent
                                         {
@@ -2545,7 +2655,7 @@ void handle_sci_data(void)
                 {
                     pcm_bytes_buffer[pcm_bytes_buffer_ptr] = pcm_getc() & 0xFF;
                     pcm_bytes_buffer_ptr++; // increase pointer value by one so it points to the next empty slot in the buffer
-                    if (pcm_bytes_buffer_ptr >= TEMP_BUFFER_SIZE) // don't let buffer pointer overflow
+                    if (pcm_bytes_buffer_ptr >= BUFFER_SIZE) // don't let buffer pointer overflow
                     {
                         break; // exit for-loop if buffer is about to overflow
                     }
@@ -2554,7 +2664,7 @@ void handle_sci_data(void)
             }
 
             // Decide if a message is complete using a timeout (delay) condition or send the whole buffer if it can't hold more bytes
-            if ((((millis() - pcm_last_msgbyte_received) > SCI_INTERFRAME_RESPONSE_DELAY) && (pcm_bytes_buffer_ptr > 0)) || pcm_bytes_buffer_ptr == TEMP_BUFFER_SIZE)
+            if ((((millis() - pcm_last_msgbyte_received) > SCI_INTERFRAME_RESPONSE_DELAY) && (pcm_bytes_buffer_ptr > 0)) || pcm_bytes_buffer_ptr == BUFFER_SIZE)
             {
                 uint8_t usb_msg[4+pcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
                 update_timestamp(current_timestamp); // get current time for the timestamp, ironically the timestamp will indicate when the last byte was received but it's good enough
@@ -2612,7 +2722,7 @@ void handle_sci_data(void)
                         pcm_putc(pcm_msg_to_send[i]); // put the next byte in the transmit buffer
                         while((pcm_rx_available() <= i) && !timeout_reached)
                         {
-                            // wait here for echo
+                            // wait here for response
                             if ((millis() - timeout_start) > 200) timeout_reached = true;
                         }
                         if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
@@ -2638,7 +2748,7 @@ void handle_sci_data(void)
                 {
                     tcm_bytes_buffer[tcm_bytes_buffer_ptr] = tcm_getc() & 0xFF;
                     tcm_bytes_buffer_ptr++; // increase pointer value by one so it points to the next empty slot in the buffer
-                    if (tcm_bytes_buffer_ptr >= TEMP_BUFFER_SIZE) // don't let buffer pointer overflow
+                    if (tcm_bytes_buffer_ptr >= BUFFER_SIZE) // don't let buffer pointer overflow
                     {
                         break;
                     }
@@ -2646,7 +2756,7 @@ void handle_sci_data(void)
                 tcm_last_msgbyte_received = millis();
             }
     
-            if ((((millis() - tcm_last_msgbyte_received) > SCI_INTERFRAME_RESPONSE_DELAY) && (tcm_bytes_buffer_ptr > 0)) || tcm_bytes_buffer_ptr == TEMP_BUFFER_SIZE)
+            if ((((millis() - tcm_last_msgbyte_received) > SCI_INTERFRAME_RESPONSE_DELAY) && (tcm_bytes_buffer_ptr > 0)) || tcm_bytes_buffer_ptr == BUFFER_SIZE)
             {
                 uint8_t usb_msg[4+tcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (TCM) message
                 update_timestamp(current_timestamp); // get current time for the timestamp
@@ -2703,7 +2813,7 @@ void handle_sci_data(void)
                         tcm_putc(tcm_msg_to_send[i]); // put the next byte in the transmit buffer
                         while((tcm_rx_available() <= i) && !timeout_reached)
                         {
-                            // wait here for echo
+                            // wait here for response
                             if ((millis() - timeout_start) > 200) timeout_reached = true;
                         }
                         if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
@@ -2722,28 +2832,20 @@ void handle_sci_data(void)
 
 
 /*************************************************************************
-Function: act_led_heartbeat()
-Purpose:  blinks ACT LED at a fixed time interval like it was a heart beating
-**************************************************************************/
-void act_led_heartbeat(void)
-{
-    if (current_millis_blink - previous_act_blink >= heartbeat_interval)
-    {
-        previous_act_blink = current_millis_blink; // save current time
-        blink_led(ACT_LED); // this only lights up the led, the "handle_leds" function below turns it off after a short time, which is called frequently in the main loop
-    }
-    
-} // end of act_led_heartbeat
-
-
-/*************************************************************************
 Function: handle_leds()
 Purpose:  turn off indicator LEDs when blink duration expires
 **************************************************************************/
 void handle_leds(void)
 {
     current_millis_blink = millis(); // check current time
-    if (heartbeat_enabled) act_led_heartbeat();
+    if (heartbeat_enabled)
+    {
+        if (current_millis_blink - previous_act_blink >= heartbeat_interval)
+        {
+            previous_act_blink = current_millis_blink; // save current time
+            blink_led(ACT_LED);
+        }
+    }
     if (current_millis_blink - rx_led_ontime >= led_blink_duration)
     {
         digitalWrite(RX_LED, HIGH); // turn off RX LED
@@ -2779,4 +2881,95 @@ void get_bus_config(void)
     
 } // end of get_bus_config
 
-#endif // CCDSCIUART_H
+
+/*************************************************************************
+Function: lcd_init()
+Purpose:  initialize LCD
+**************************************************************************/
+void lcd_init(void)
+{
+    lcd.begin(20, 4); // start LCD with 20 columns and 4 rows
+    lcd.backlight();  // backlight on
+    lcd.clear();      // clear display
+    lcd.home();       // set cursor in home position (0, 0)
+    lcd.print(F("--------------------")); // F(" ") makes the compiler store the string inside flash memory instead of RAM, good practice if system is low on RAM
+    lcd.setCursor(0, 1);
+    lcd.print(F("  CHRYSLER CCD/SCI  "));
+    lcd.setCursor(0, 2);
+    lcd.print(F(" SCANNER V1.40 2018 "));
+    lcd.setCursor(0, 3);
+    lcd.print(F("--------------------"));
+    lcd.createChar(0, up_symbol); // custom character from "upsymbol" variable with id number 0
+    lcd.createChar(1, down_symbol);
+    lcd.createChar(2, left_symbol);
+    lcd.createChar(3, right_symbol);
+    lcd.createChar(4, enter_symbol);
+    lcd.createChar(5, degree_symbol);
+    
+} // end of lcd_init
+
+
+/*************************************************************************
+Function: handle_lcd()
+Purpose:  write stuff to LCD
+**************************************************************************/
+void handle_lcd(void)
+{
+    // TODO
+    
+} // end of handle_lcd
+
+
+/*************************************************************************
+Function: print_display_layout_1_metric()
+Purpose:  printing default metric display layout to LCD (km/h, km...)
+Note:     prints when switching between different layouts
+**************************************************************************/
+void print_display_layout_1_metric(void)
+{
+//    lcd.setCursor(0, 0);
+//    lcd.print(F("S:  0km/h  E:   0rpm")); // 1st line
+//    lcd.setCursor(0, 1);
+//    lcd.print(F("M: 0kPa B: 0.0/ 0.0V")); // 2nd line
+//    lcd.setCursor(0, 2);
+//    lcd.print(F("G:-  T:  0.0/  0.0 C")); // 3rd line
+//    lcd.setCursor(0, 3);
+//    lcd.print(F("P: 0% O:     0.000km")); // 4th line
+//    lcd.setCursor(18, 2);
+//    lcd.write((uint8_t)5); // print degree symbol
+
+    lcd.setCursor(0, 0);
+    lcd.print(F("  0km/h    0rpm   0%")); // 1st line
+    lcd.setCursor(0, 1);
+    lcd.print(F(" 0.0kPa    0.0/ 0.0V")); // 2nd line 
+    lcd.setCursor(0, 2);
+    lcd.print(F("  0.0/  0.0 C       ")); // 3rd line
+    lcd.setCursor(0, 3);
+    lcd.print(F("     0.000km        ")); // 4th line
+    lcd.setCursor(11, 2);
+    lcd.write((uint8_t)5); // print degree symbol
+
+} // end of print_display_layout_1_metric
+
+
+/*************************************************************************
+Function: print_display_layout_1_imperial()
+Purpose:  printing default metric display layout to LCD (mph, mi...)
+Note:     prints when switching between different layouts
+**************************************************************************/
+void print_display_layout_1_imperial(void)
+{
+    lcd.setCursor(0, 0);
+    lcd.print(F("S:  0mph   E:   0rpm")); // 1st line
+    lcd.setCursor(0, 1);
+    lcd.print(F("M: 0psi B: 0.0/ 0.0V")); // 2nd line
+    lcd.setCursor(0, 2);
+    lcd.print(F("G:-  T:  0.0/  0.0 F")); // 3rd line
+    lcd.setCursor(0, 3);
+    lcd.print(F("P: 0% O:     0.000mi")); // 4th line
+    lcd.setCursor(18, 2);
+    lcd.write((uint8_t)5); // print degree symbol
+  
+} // end of print_display_layout_1_imperial
+
+#endif // MAIN_H
