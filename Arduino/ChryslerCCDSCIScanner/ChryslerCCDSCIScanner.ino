@@ -103,8 +103,6 @@ void setup()
     tcm_rx_flush();
     tcm_tx_flush();
 
-    get_bus_config(); // figure out how to talk to the vehicle
-    
     delay(2000);
     print_display_layout_1_metric();
     
