@@ -38,9 +38,12 @@ namespace ChryslerCCDSCIScanner
         public byte[] CCDBusMessageToSend = new byte[] { 0xB2, 0x20, 0x22, 0x00, 0x00, 0xF4 };
         public byte[] SCIBusPCMMessageToSend = new byte[] { 0x10 };
         public byte[] SCIBusTCMMessageToSend = new byte[] { 0x10 };
-        public static string UpdatePort = String.Empty;
         public List<byte> PacketBytes = new List<byte>();
         public byte PacketBytesChecksum = 0;
+
+        public static string UpdatePort = String.Empty;
+        public static Int64 OldUNIXTime = 0;
+        public static Int64 NewUNIXTime = 0;
 
 
         byte LastTargetIndex = 0; // Scanner
@@ -108,7 +111,10 @@ namespace ChryslerCCDSCIScanner
         CircularBuffer<byte> SerialRxBuffer = new CircularBuffer<byte>(2048);
         TextTable TT = new TextTable(@"VehicleProfiles.xml");
         System.Timers.Timer TimeoutTimer = new System.Timers.Timer();
-        WebClient Client = new WebClient();
+        WebClient Downloader = new WebClient();
+        Uri FlashFile = new Uri("https://github.com/laszlodaniel/ChryslerCCDSCIScanner/raw/master/Arduino/ChryslerCCDSCIScanner/ChryslerCCDSCIScanner.ino.mega.hex");
+        Uri SourceFile = new Uri("https://github.com/laszlodaniel/ChryslerCCDSCIScanner/raw/master/Arduino/ChryslerCCDSCIScanner/main.h");
+
 
         public MainForm()
         {
@@ -254,6 +260,8 @@ namespace ChryslerCCDSCIScanner
                         ConnectButton.Text = "Disconnect";
                         ConnectButton.Enabled = true;
                         USBCommunicationGroupBox.Enabled = true;
+                        UpdateScannerFirmwareToolStripMenuItem.Enabled = true;
+
                         if (HexCommMethodRadioButton.Checked)
                         {
                             USBSendComboBox.DropDownStyle = ComboBoxStyle.DropDown;
@@ -288,7 +296,7 @@ namespace ChryslerCCDSCIScanner
 
                     Timeout = false;
                     TimeoutTimer.Enabled = true; // start counting to the set timeout value
-                    while ((SerialRxBuffer.ReadLength > 0) && !Timeout) ; // Wait for ringbuffer to get empty
+                    while ((SerialRxBuffer.ReadLength > 0) && !Timeout) ; // Wait for ringbuffer to be empty
                     TimeoutTimer.Enabled = false; // disable timer
 
                     SerialRxBuffer.Reset();
@@ -296,6 +304,7 @@ namespace ChryslerCCDSCIScanner
                     USBSendComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
                     USBCommunicationGroupBox.Enabled = false;
                     USBCommunicationGroupBox.Text = "USB communication";
+                    UpdateScannerFirmwareToolStripMenuItem.Enabled = false;
                 }
             }
         }
@@ -440,6 +449,7 @@ namespace ChryslerCCDSCIScanner
                                                                        "       Hardware date: " + HardwareDateString + Environment.NewLine + 
                                                                        "       Assembly date: " + AssemblyDateString + Environment.NewLine + 
                                                                        "       Firmware date: " + FirmwareDateString, null);
+                                        OldUNIXTime = payload[18] << 56 | payload[19] << 48 | payload[20] << 40 | payload[21] << 32 | payload[22] << 24 | payload[23] << 16 | payload[24] << 8 | payload[25];
                                         break;
                                     case (byte)Response.Timestamp:
                                         TimeSpan ElapsedTime = TimeSpan.FromMilliseconds(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]);
@@ -644,10 +654,10 @@ namespace ChryslerCCDSCIScanner
             }
             catch
             {
-                //if (!USBTextBox.IsDisposed)
-                //{
-                //    Util.UpdateTextBox(USBTextBox, "[INFO] Can't listen to " + Serial.PortName, null);
-                //}
+                if (!USBTextBox.IsDisposed && ScannerFound)
+                {
+                    Util.UpdateTextBox(USBTextBox, "[INFO] Can't listen to " + Serial.PortName, null);
+                }
             }
         }
 
@@ -1696,47 +1706,73 @@ namespace ChryslerCCDSCIScanner
 
         private void UpdateScannerFirmwareToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (false)
-            //if (UpdatePort != String.Empty && ScannerFound)
+            //if (true)
+            if ((UpdatePort != String.Empty) && (OldUNIXTime != 0) && ScannerFound)
             {
-                ConnectButton.PerformClick(); // disconnect
-                Thread.Sleep(500); // wait until UI updates its controls
-                this.Refresh();
+                Util.UpdateTextBox(USBTextBox, "[INFO] Searching for new scanner firmware" + Environment.NewLine + "       This may take a few seconds...", null);
 
-                // Initialize logfile
-                DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                UpdateScannerFirmwareLogFilename = @"Tools/firmware_update_log_" + DateTimeNow + ".txt";
+                // Download latest main.h file from GitHub
+                System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+                Downloader.DownloadFile(SourceFile, @"Tools/main.h");
+                
+                // Get new UNIX time value from the downloaded file
+                string line = String.Empty;
+                bool done = false;
+                using (Stream stream = File.Open(@"Tools/main.h", FileMode.Open))
+                {
+                    using (StreamReader reader = new StreamReader(stream))
+                    {
+                        while(!done)
+                        {
+                            line = reader.ReadLine();
+                            if (line.Contains("#define FW_DATE"))
+                            {
+                                done = true;
+                            }
+                        }
+                    }
+                }
 
-                Util.UpdateTextBox(USBTextBox, "[INFO] Scanner firmware update started", null);
+                string hexline = line.Substring(16, 18);
+                NewUNIXTime = Convert.ToInt64(hexline, 16);
 
-                // Create Process
-                Process process = new Process();
-                process.StartInfo.WorkingDirectory = "Tools";
-                //process.StartInfo.FileName = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Tools", "avrdude.exe");
-                process.StartInfo.FileName = "avrdude.exe";
-                process.StartInfo.Arguments = "-C avrdude.conf -v -p atmega2560 -c wiring -P " + UpdatePort + " -b 115200 -D -U flash:w:ChryslerCCDSCIScanner.ino.mega.hex:i";
-                //process.StartInfo.UseShellExecute = false;
-                //process.StartInfo.RedirectStandardOutput = true;
-                //process.StartInfo.RedirectStandardError = true;
-                // Set output and error (asynchronous) handlers
-                //process.OutputDataReceived += new DataReceivedEventHandler(OutputHandler);
-                //process.ErrorDataReceived += new DataReceivedEventHandler(OutputHandler);
-                // Start process and handlers
-                process.Start();
-                //process.BeginOutputReadLine();
-                //process.BeginErrorReadLine();
-                process.WaitForExit();
+                DateTime OldFirmwareDate = Util.UnixTimeStampToDateTime(OldUNIXTime);
+                DateTime NewFirmwareDate = Util.UnixTimeStampToDateTime(NewUNIXTime);
+                string OldFirmwareDateString = OldFirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
+                string NewFirmwareDateString = NewFirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
 
-                Thread.Sleep(500);
-                Util.UpdateTextBox(USBTextBox, "[INFO] Scanner firmware update finished", null);
-                ConnectButton.PerformClick(); // connect again
-                this.Refresh();
+                Util.UpdateTextBox(USBTextBox, "[INFO] Old firmware date: " + OldFirmwareDateString, null);
+                Util.UpdateTextBox(USBTextBox, "[INFO] New firmware date: " + NewFirmwareDateString, null);
+
+                if (NewUNIXTime > OldUNIXTime)
+                {
+                    Util.UpdateTextBox(USBTextBox, "[INFO] Downloading new firmware", null);
+                    Downloader.DownloadFile(FlashFile, @"Tools/ChryslerCCDSCIScanner.ino.mega.hex");
+                    Util.UpdateTextBox(USBTextBox, "[INFO] Beginning firmware update", null);
+                    ConnectButton.PerformClick(); // disconnect
+                    Thread.Sleep(500); // wait until UI updates its controls
+                    this.Refresh();
+                    Process process = new Process();
+                    process.StartInfo.WorkingDirectory = "Tools";
+                    process.StartInfo.FileName = "avrdude.exe";
+                    process.StartInfo.Arguments = "-C avrdude.conf -v -p atmega2560 -c wiring -P " + UpdatePort + " -b 115200 -D -U flash:w:ChryslerCCDSCIScanner.ino.mega.hex:i";
+                    process.Start();
+                    process.WaitForExit();
+                    this.Refresh();
+                    Util.UpdateTextBox(USBTextBox, "[INFO] Scanner firmware update finished" + Environment.NewLine + "       Connect again manually", null);
+                    File.Delete(@"Tools/main.h");
+                    File.Delete(@"Tools/ChryslerCCDSCIScanner.ino.mega.hex");
+                }
+                else
+                {
+                    Util.UpdateTextBox(USBTextBox, "[INFO] No scanner firmware update available", null);
+                    File.Delete(@"Tools/main.h");
+                }
             }
-        }
-
-        static void OutputHandler(object sendingProcess, DataReceivedEventArgs outLine)
-        {
-            File.AppendAllText(UpdateScannerFirmwareLogFilename, outLine.Data + Environment.NewLine);
+            else
+            {
+                Util.UpdateTextBox(USBTextBox, "[INFO] Scanner firmware update error", null);
+            }
         }
     }
 }
