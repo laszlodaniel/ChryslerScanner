@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D5C5E05
+#define FW_DATE 0x000000005D5CEA05
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -1721,6 +1721,8 @@ void configure_sci_bus(uint8_t data)
                 digitalWrite(PA5, LOW);
                 //digitalWrite(PA6, LOW);
                 //digitalWrite(PA7, LOW);
+
+                pcm_enabled = false;
             }
             else // TCM
             {
@@ -1732,6 +1734,8 @@ void configure_sci_bus(uint8_t data)
                 //digitalWrite(PA5, LOW);
                 digitalWrite(PA6, LOW);
                 digitalWrite(PA7, LOW);
+
+                tcm_enabled = false;
             }
         }
     }

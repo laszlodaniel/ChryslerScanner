@@ -83,7 +83,6 @@ void setup()
     tcm_init(LOBAUD); // 7812.5 baud
     
     exteeprom_init();
-    
     lcd_init();
     
     analogReference(DEFAULT); // use default voltage reference applied to AVCC (+5V)
