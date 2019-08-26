@@ -315,160 +315,239 @@ namespace ChryslerCCDSCIScanner
         {
             if (e.PropertyName == "DataReceived")
             {
-                int PacketSize = 0;
-
-                // Find the first byte with value 0x3D
+                // Find the first byte with value 0x3D ("=") or 0x3E (">")
                 Here: // This is a goto label, never mind now, might want to get rid of it with another while-loop
-                while ((SerialRxBuffer.Array[SerialRxBuffer.Start] != 0x3D) && (SerialRxBuffer.ReadLength > 0))
+                while (((SerialRxBuffer.Array[SerialRxBuffer.Start] != 0x3D) && (SerialRxBuffer.Array[SerialRxBuffer.Start] != 0x3E)) && (SerialRxBuffer.ReadLength > 0))
                 {
                     SerialRxBuffer.Pop();
                 }
 
-                // Get the length of the packet
-                // This becomes unsafe when the ringbuffer reaches the last positions and overflows to the first one!
-                if (SerialRxBuffer.ReadLength > 2)
+                switch (SerialRxBuffer.Array[SerialRxBuffer.Start])
                 {
-                    PacketSize = ((SerialRxBuffer.Array[SerialRxBuffer.Start + 1] << 8) | SerialRxBuffer.Array[SerialRxBuffer.Start + 2]) + 4;
-                }
-                else { return; } // If there are clearly not enough bytes then don't do anything
+                    case 0x3D:
+                        int PacketSize = 0;
 
-                // If the size is bigger than 1018 bytes (payload only, + 6 bytes = 1024) then it's most likely garbage data 
-                if (PacketSize > 1018)
-                {
-                    SerialRxBuffer.Pop(); // Pop this byte that lead us here so we can search for another start sign
-                    goto Here; // Jump back to the while loop to repeat
-                }
-
-                Timeout = false;
-                TimeoutTimer.Enabled = true; // start counting to the set timeout value
-                while ((SerialRxBuffer.ReadLength < PacketSize) && !Timeout) ; // Wait for expected bytes to arrive
-                TimeoutTimer.Enabled = false; // disable timer
-                if (Timeout)
-                {
-                    SerialRxBuffer.Reset();
-                    return;
-                }
-
-                byte[] msg = new byte[PacketSize];
-                SerialRxBuffer.MoveTo(msg, 0, PacketSize);
-
-                // Extract information from the received bytes
-                byte sync = msg[0];
-                byte length_hb = msg[1];
-                byte length_lb = msg[2];
-                byte datacode = msg[3];
-                byte subdatacode = msg[4];
-                byte[] payload = new byte[PacketSize - 6];
-                Array.Copy(msg, 5, payload, 0, PacketSize - 6);
-                byte checksum = msg[PacketSize - 1]; // -1 because zero-indexing
-
-                byte source = (byte)((datacode >> 6) & 0x03);
-                byte target = (byte)((datacode >> 4) & 0x03);
-                byte command = (byte)(datacode & 0x0F);
-
-                switch (source)
-                {
-                    case (byte)Source.USB: // message is coming from the scanner directly, no need to analyze target, it has to be an external computer
-                        switch (command)
+                        // Get the length of the packet
+                        // This becomes unsafe when the ringbuffer reaches the last positions and overflows to the first one!
+                        if (SerialRxBuffer.ReadLength > 2)
                         {
-                            case (byte)Command.Reset:
-                                if (payload[0] == 0) Util.UpdateTextBox(USBTextBox, "[RX->] Scanner is resetting, please wait", msg);
-                                else if (payload[0] == 1) Util.UpdateTextBox(USBTextBox, "[RX->] Scanner is ready to accept instructions", msg);
-                                break;
-                            case (byte)Command.Handshake:
-                                if (Encoding.ASCII.GetString(payload) == "CHRYSLERCCDSCISCANNER")
+                            PacketSize = ((SerialRxBuffer.Array[SerialRxBuffer.Start + 1] << 8) | SerialRxBuffer.Array[SerialRxBuffer.Start + 2]) + 4;
+                        }
+                        else { return; } // If there are clearly not enough bytes then don't do anything
+
+                        // If the size is bigger than 1018 bytes (payload only, + 6 bytes = 1024) then it's most likely garbage data 
+                        if (PacketSize > 1018)
+                        {
+                            SerialRxBuffer.Pop(); // Pop this byte that lead us here so we can search for another start sign
+                            goto Here; // Jump back to the while loop to repeat
+                        }
+
+                        Timeout = false;
+                        TimeoutTimer.Enabled = true; // start counting to the set timeout value
+                        while ((SerialRxBuffer.ReadLength < PacketSize) && !Timeout) ; // Wait for expected bytes to arrive
+                        TimeoutTimer.Enabled = false; // disable timer
+                        if (Timeout)
+                        {
+                            SerialRxBuffer.Reset();
+                            return;
+                        }
+
+                        byte[] msg = new byte[PacketSize];
+                        SerialRxBuffer.MoveTo(msg, 0, PacketSize);
+
+                        // Extract information from the received bytes
+                        byte sync = msg[0];
+                        byte length_hb = msg[1];
+                        byte length_lb = msg[2];
+                        byte datacode = msg[3];
+                        byte subdatacode = msg[4];
+                        byte[] payload = new byte[PacketSize - 6];
+                        Array.Copy(msg, 5, payload, 0, PacketSize - 6);
+                        byte checksum = msg[PacketSize - 1]; // -1 because zero-indexing
+
+                        byte source = (byte)((datacode >> 6) & 0x03);
+                        byte target = (byte)((datacode >> 4) & 0x03);
+                        byte command = (byte)(datacode & 0x0F);
+
+                        switch (source)
+                        {
+                            case (byte)Source.USB: // message is coming from the scanner directly, no need to analyze target, it has to be an external computer
+                                switch (command)
                                 {
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Handshake response (" + Serial.PortName + ")", msg);
-                                    Util.UpdateTextBox(USBTextBox, "[INFO] Handshake OK: " + Encoding.ASCII.GetString(payload), null);
-                                    ScannerFound = true;
-                                }
-                                else
-                                {
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Handshake response (" + Serial.PortName + ")", msg);
-                                    Util.UpdateTextBox(USBTextBox, "[INFO] Handshake ERROR", null);
-                                    ScannerFound = false;
-                                }
-                                break;
-                            case (byte)Command.Settings:
-                                switch (subdatacode)
-                                {
-                                    case 0x00: // Heartbeat
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Heartbeat settings changed" , msg);
-                                        if ((payload[0] << 8 | payload[1]) > 0)
+                                    case (byte)Command.Reset:
+                                        if (payload[0] == 0) Util.UpdateTextBox(USBTextBox, "[RX->] Scanner is resetting, please wait", msg);
+                                        else if (payload[0] == 1) Util.UpdateTextBox(USBTextBox, "[RX->] Scanner is ready to accept instructions", msg);
+                                        break;
+                                    case (byte)Command.Handshake:
+                                        if (Encoding.ASCII.GetString(payload) == "CHRYSLERCCDSCISCANNER")
                                         {
-                                            string interval = (payload[0] << 8 | payload[1]).ToString() + " ms";
-                                            string duration = (payload[2] << 8 | payload[3]).ToString() + " ms";
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] Heartbeat enabled:" + Environment.NewLine + 
-                                                                           "       Interval: " + interval + Environment.NewLine + 
-                                                                           "       Duration: " + duration, null);
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Handshake response (" + Serial.PortName + ")", msg);
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Handshake OK: " + Encoding.ASCII.GetString(payload), null);
+                                            ScannerFound = true;
                                         }
                                         else
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] Heartbeat disabled", null);
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Handshake response (" + Serial.PortName + ")", msg);
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Handshake ERROR", null);
+                                            ScannerFound = false;
                                         }
                                         break;
-                                    case 0x01: // Set CCD-bus
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus settings changed", msg);
-                                        if (payload[0] == 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus chip disabled", null);
-                                        else if (payload[0] == 1) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus chip enabled @ 7812.5 baud", null);
-                                        break;
-                                    case 0x02: // Set SCI-bus
-                                        string configuration = String.Empty;
-
-                                        if (((payload[0] >> 2) & 0x01) == 0) configuration += "SCI-BUS_A";
-                                        else if (((payload[0] >> 2) & 0x01) == 1) configuration += "SCI-BUS_B";
-
-                                        if ((payload[0] & 0x01) == 0) configuration += "_PCM";
-                                        else if ((payload[0] & 0x01) == 1) configuration += "_TCM";
-
-                                        if (((payload[0] >> 1) & 0x01) == 0) configuration += " disabled";
-                                        else if (((payload[0] >> 1) & 0x01) == 1)
+                                    case (byte)Command.Settings:
+                                        switch (subdatacode)
                                         {
-                                            if (((payload[0] >> 3) & 0x01) == 0) configuration += " enabled @ 7812.5 baud";
-                                            else if (((payload[0] >> 3) & 0x01) == 1) configuration += " enabled @ 62500 baud";
+                                            case 0x00: // Heartbeat
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Heartbeat settings changed", msg);
+                                                if ((payload[0] << 8 | payload[1]) > 0)
+                                                {
+                                                    string interval = (payload[0] << 8 | payload[1]).ToString() + " ms";
+                                                    string duration = (payload[2] << 8 | payload[3]).ToString() + " ms";
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Heartbeat enabled:" + Environment.NewLine +
+                                                                                   "       Interval: " + interval + Environment.NewLine +
+                                                                                   "       Duration: " + duration, null);
+                                                }
+                                                else
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Heartbeat disabled", null);
+                                                }
+                                                break;
+                                            case 0x01: // Set CCD-bus
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus settings changed", msg);
+                                                if (payload[0] == 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus chip disabled", null);
+                                                else if (payload[0] == 1) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus chip enabled @ 7812.5 baud", null);
+                                                break;
+                                            case 0x02: // Set SCI-bus
+                                                string configuration = String.Empty;
+
+                                                if (((payload[0] >> 2) & 0x01) == 0) configuration += "SCI-BUS_A";
+                                                else if (((payload[0] >> 2) & 0x01) == 1) configuration += "SCI-BUS_B";
+
+                                                if ((payload[0] & 0x01) == 0) configuration += "_PCM";
+                                                else if ((payload[0] & 0x01) == 1) configuration += "_TCM";
+
+                                                if (((payload[0] >> 1) & 0x01) == 0) configuration += " disabled";
+                                                else if (((payload[0] >> 1) & 0x01) == 1)
+                                                {
+                                                    if (((payload[0] >> 3) & 0x01) == 0) configuration += " enabled @ 7812.5 baud";
+                                                    else if (((payload[0] >> 3) & 0x01) == 1) configuration += " enabled @ 62500 baud";
+                                                }
+
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus settings changed", msg);
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] " + configuration, null);
+                                                break;
                                         }
-
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus settings changed", msg);
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] " + configuration, null);
                                         break;
-                                }
-                                break;
-                            case (byte)Command.Response:
-                                switch (subdatacode)
-                                {
-                                    case (byte)Response.HwFwInfo:
-                                        string HardwareVersionString = "V" + ((payload[0] << 8 | payload[1]) / 100.00).ToString("0.00").Replace(",", ".");
-                                        DateTime HardwareDate = Util.UnixTimeStampToDateTime(payload[2] << 56 | payload[3] << 48 | payload[4] << 40 | payload[5] << 32 | payload[6] << 24 | payload[7] << 16 | payload[8] << 8 | payload[9]);
-                                        DateTime AssemblyDate = Util.UnixTimeStampToDateTime(payload[10] << 56 | payload[11] << 48 | payload[12] << 40 | payload[13] << 32 | payload[14] << 24 | payload[15] << 16 | payload[16] << 8 | payload[17]);
-                                        DateTime FirmwareDate = Util.UnixTimeStampToDateTime(payload[18] << 56 | payload[19] << 48 | payload[20] << 40 | payload[21] << 32 | payload[22] << 24 | payload[23] << 16 | payload[24] << 8 | payload[25]);
-                                        string HardwareDateString = HardwareDate.ToString("yyyy.MM.dd HH:mm:ss");
-                                        string AssemblyDateString = AssemblyDate.ToString("yyyy.MM.dd HH:mm:ss");
-                                        string FirmwareDateString = FirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Hardware/Firmware information response", msg);
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Hardware ver.: " + HardwareVersionString + Environment.NewLine + 
-                                                                       "       Hardware date: " + HardwareDateString + Environment.NewLine + 
-                                                                       "       Assembly date: " + AssemblyDateString + Environment.NewLine + 
-                                                                       "       Firmware date: " + FirmwareDateString, null);
-                                        OldUNIXTime = payload[18] << 56 | payload[19] << 48 | payload[20] << 40 | payload[21] << 32 | payload[22] << 24 | payload[23] << 16 | payload[24] << 8 | payload[25];
-                                        break;
-                                    case (byte)Response.Timestamp:
-                                        TimeSpan ElapsedTime = TimeSpan.FromMilliseconds(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]);
-                                        DateTime Timestamp = DateTime.Today.Add(ElapsedTime);
-                                        string TimestampString = Timestamp.ToString("HH:mm:ss.fff");
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Timestamp response", msg);
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Timestamp: " + TimestampString, null);
-                                        break;
-                                    case (byte)Response.BatteryVoltage:
-                                        string BatteryVoltageString = ((payload[0] << 8 | payload[1]) / 100.00).ToString("0.00").Replace(",", ".") + " V";
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Battery voltage response", msg);
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + BatteryVoltageString, null);
-                                        break;
-                                    case (byte)Response.ExternalEEPROMChecksum:
-                                        if (payload[0] == 0x00) // OK
+                                    case (byte)Command.Response:
+                                        switch (subdatacode)
                                         {
-                                            string ExternalEEPROMChecksumString = Util.ByteToHexString(payload, 1, payload.Length);
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM checksum response", msg);
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum OK: " + ExternalEEPROMChecksumString, null);
+                                            case (byte)Response.HwFwInfo:
+                                                string HardwareVersionString = "V" + ((payload[0] << 8 | payload[1]) / 100.00).ToString("0.00").Replace(",", ".");
+                                                DateTime HardwareDate = Util.UnixTimeStampToDateTime(payload[2] << 56 | payload[3] << 48 | payload[4] << 40 | payload[5] << 32 | payload[6] << 24 | payload[7] << 16 | payload[8] << 8 | payload[9]);
+                                                DateTime AssemblyDate = Util.UnixTimeStampToDateTime(payload[10] << 56 | payload[11] << 48 | payload[12] << 40 | payload[13] << 32 | payload[14] << 24 | payload[15] << 16 | payload[16] << 8 | payload[17]);
+                                                DateTime FirmwareDate = Util.UnixTimeStampToDateTime(payload[18] << 56 | payload[19] << 48 | payload[20] << 40 | payload[21] << 32 | payload[22] << 24 | payload[23] << 16 | payload[24] << 8 | payload[25]);
+                                                string HardwareDateString = HardwareDate.ToString("yyyy.MM.dd HH:mm:ss");
+                                                string AssemblyDateString = AssemblyDate.ToString("yyyy.MM.dd HH:mm:ss");
+                                                string FirmwareDateString = FirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Hardware/Firmware information response", msg);
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Hardware ver.: " + HardwareVersionString + Environment.NewLine +
+                                                                               "       Hardware date: " + HardwareDateString + Environment.NewLine +
+                                                                               "       Assembly date: " + AssemblyDateString + Environment.NewLine +
+                                                                               "       Firmware date: " + FirmwareDateString, null);
+                                                OldUNIXTime = payload[18] << 56 | payload[19] << 48 | payload[20] << 40 | payload[21] << 32 | payload[22] << 24 | payload[23] << 16 | payload[24] << 8 | payload[25];
+                                                break;
+                                            case (byte)Response.Timestamp:
+                                                TimeSpan ElapsedTime = TimeSpan.FromMilliseconds(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]);
+                                                DateTime Timestamp = DateTime.Today.Add(ElapsedTime);
+                                                string TimestampString = Timestamp.ToString("HH:mm:ss.fff");
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Timestamp response", msg);
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Timestamp: " + TimestampString, null);
+                                                break;
+                                            case (byte)Response.BatteryVoltage:
+                                                string BatteryVoltageString = ((payload[0] << 8 | payload[1]) / 100.00).ToString("0.00").Replace(",", ".") + " V";
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Battery voltage response", msg);
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + BatteryVoltageString, null);
+                                                break;
+                                            case (byte)Response.ExternalEEPROMChecksum:
+                                                if (payload[0] == 0x00) // OK
+                                                {
+                                                    string ExternalEEPROMChecksumString = Util.ByteToHexString(payload, 1, payload.Length);
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM checksum response", msg);
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum OK: " + ExternalEEPROMChecksumString, null);
+                                                }
+                                                break;
+                                            default:
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Data received", msg);
+                                                break;
+                                        }
+                                        break;
+                                    case (byte)Command.SendMessage:
+                                        switch (subdatacode)
+                                        {
+                                            case 0x00:
+                                                if (payload[0] == 0x01) Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message TX stopped", msg);
+                                                else if (payload[0] == 0x02) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message TX stopped", msg);
+                                                else if (payload[0] == 0x03) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message TX stopped", msg);
+                                                break;
+                                            case 0x01:
+                                                if (payload[0] == 0x01) Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message prepared for TX", msg);
+                                                else if (payload[0] == 0x02) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message prepared for TX", msg);
+                                                else if (payload[0] == 0x03) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message prepared for TX", msg);
+                                                break;
+                                            case 0x02:
+                                                if (payload[0] == 0x01) Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message TX started", msg);
+                                                else if (payload[0] == 0x02) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message TX started", msg);
+                                                else if (payload[0] == 0x03) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message TX started", msg);
+                                                break;
+                                            default:
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Data received", msg);
+                                                break;
+                                        }
+                                        break;
+                                    case (byte)Command.OkError:
+                                        switch (subdatacode)
+                                        {
+                                            case 0x00:
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] OK", msg);
+                                                break;
+                                            case 0x01:
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: invalid length", msg);
+                                                break;
+                                            case 0x02:
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: invalid dc command", msg);
+                                                break;
+                                            case 0x03:
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: invalid sub-data code", msg);
+                                                break;
+                                            case 0x04:
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: invalid payload value(s)", msg);
+                                                break;
+                                            case 0x05:
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: invalid checksum", msg);
+                                                break;
+                                            case 0x06:
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: packet timeout occured", msg);
+                                                break;
+                                            case 0x07:
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: buffer overflow", msg);
+                                                break;
+                                            case 0xFA:
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM not found", msg);
+                                                break;
+                                            case 0xFB:
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM checksum wrong", msg);
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum: " + Environment.NewLine + "       - calculated: " + Util.ByteToHexString(payload, 1, 2) + Environment.NewLine + "       - reads as: " + Util.ByteToHexString(payload, 0, 1), null);
+                                                break;
+                                            case 0xFC:
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM read not possible", msg);
+                                                break;
+                                            case 0xFD:
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM write not possible", msg);
+                                                break;
+                                            case 0xFE:
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: internal error", msg);
+                                                break;
+                                            case 0xFF:
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: fatal error", msg);
+                                                break;
                                         }
                                         break;
                                     default:
@@ -476,106 +555,50 @@ namespace ChryslerCCDSCIScanner
                                         break;
                                 }
                                 break;
-                            case (byte)Command.SendMessage:
-                                switch (subdatacode)
-                                {
-                                    case 0x00:
-                                        if (payload[0] == 0x01) Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message TX stopped", msg);
-                                        else if (payload[0] == 0x02) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message TX stopped", msg);
-                                        else if (payload[0] == 0x03) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message TX stopped", msg);
-                                        break;
-                                    case 0x01:
-                                        if (payload[0] == 0x01) Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message prepared for TX", msg);
-                                        else if (payload[0] == 0x02) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message prepared for TX", msg);
-                                        else if (payload[0] == 0x03) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message prepared for TX", msg);
-                                        break;
-                                    case 0x02:
-                                        if (payload[0] == 0x01) Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message TX started", msg);
-                                        else if (payload[0] == 0x02) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message TX started", msg);
-                                        else if (payload[0] == 0x03) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message TX started", msg);
-                                        break;
-                                    default:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Data received", msg);
-                                        break;
-                                }
+                            case (byte)Source.CCDBus:
+                                Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message", msg);
+                                TT.UpdateTextTable(source, payload, 4, payload.Length);
+                                if (IncludeTimestap) File.AppendAllText(CCDLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
+                                else File.AppendAllText(CCDLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
                                 break;
-                            case (byte)Command.OkError:
-                                switch (subdatacode)
-                                {
-                                    case 0x00:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] OK", msg);
-                                        break;
-                                    case 0x01:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error: invalid length", msg);
-                                        break;
-                                    case 0x02:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error: invalid dc command", msg);
-                                        break;
-                                    case 0x03:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error: invalid sub-data code", msg);
-                                        break;
-                                    case 0x04:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error: invalid payload value(s)", msg);
-                                        break;
-                                    case 0x05:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error: invalid checksum", msg);
-                                        break;
-                                    case 0x06:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error: packet timeout occured", msg);
-                                        break;
-                                    case 0x07:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error: buffer overflow", msg);
-                                        break;
-                                    case 0xFA:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM not found", msg);
-                                        break;
-                                    case 0xFB:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM checksum wrong", msg);
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum: " + Environment.NewLine + "       - calculated: " + Util.ByteToHexString(payload, 1, 2) + Environment.NewLine + "       - reads as: " + Util.ByteToHexString(payload, 0, 1), null);
-                                        break;
-                                    case 0xFC:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM read not possible", msg);
-                                        break;
-                                    case 0xFD:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM write not possible", msg);
-                                        break;
-                                    case 0xFE:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error: internal error", msg);
-                                        break;
-                                    case 0xFF:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error: fatal error", msg);
-                                        break;
-                                }
+                            case (byte)Source.SCIBusPCM:
+                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (PCM)", msg);
+                                TT.UpdateTextTable(source, payload, 4, payload.Length);
+                                if (IncludeTimestap) File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
+                                else File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
+                                break;
+                            case (byte)Source.SCIBusTCM:
+                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (TCM)", msg);
+                                TT.UpdateTextTable(source, payload, 4, payload.Length);
+                                if (IncludeTimestap) File.AppendAllText(TCMLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
+                                else File.AppendAllText(TCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
                                 break;
                             default:
                                 Util.UpdateTextBox(USBTextBox, "[RX->] Data received", msg);
                                 break;
                         }
+                        if (SerialRxBuffer.ReadLength > 0) goto Here;
+                        else SerialRxBuffer.Reset(); // said unsafety is handled by resetting the ringbuffer whenever it's empty so the head and tail variable points to zero
                         break;
-                    case (byte)Source.CCDBus:
-                        Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message", msg);
-                        TT.UpdateTextTable(source, payload, 4, payload.Length);
-                        if (IncludeTimestap) File.AppendAllText(CCDLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
-                        else File.AppendAllText(CCDLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
-                        break;
-                    case (byte)Source.SCIBusPCM:
-                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (PCM)", msg);
-                        TT.UpdateTextTable(source, payload, 4, payload.Length);
-                        if (IncludeTimestap) File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
-                        else File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
-                        break;
-                    case (byte)Source.SCIBusTCM:
-                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (TCM)", msg);
-                        TT.UpdateTextTable(source, payload, 4, payload.Length);
-                        if (IncludeTimestap) File.AppendAllText(TCMLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
-                        else File.AppendAllText(TCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
+                    case 0x3E: // ">"
+                        if (SerialRxBuffer.ReadLength > 1) // wait for characters to arrive
+                        {
+                            List<byte> raw_bytes = new List<byte>();
+                            while (SerialRxBuffer.Array[SerialRxBuffer.Start] != 0x0A)
+                            {
+                                raw_bytes.Add(SerialRxBuffer.Pop());
+                            }
+                            SerialRxBuffer.Pop(); // remove newline character from the buffer
+                            string line = Encoding.ASCII.GetString(raw_bytes.ToArray());
+                            Util.UpdateTextBox(USBTextBox, line, null);
+
+                            if (SerialRxBuffer.ReadLength > 0) goto Here;
+                            else SerialRxBuffer.Reset();
+                        }
                         break;
                     default:
-                        Util.UpdateTextBox(USBTextBox, "[RX->] Data received", msg);
                         break;
                 }
-                if (SerialRxBuffer.ReadLength > 0) goto Here;
-                else SerialRxBuffer.Reset(); // said unsafety is handled by resetting the ringbuffer whenever it's empty so the head and tail variable points to zero
             }
         }
 
@@ -612,7 +635,19 @@ namespace ChryslerCCDSCIScanner
                     }
                     else if (AsciiCommMethodRadioButton.Checked)
                     {
-                        Util.UpdateTextBox(USBTextBox, USBSendComboBox.Text, null);
+                        List<byte> raw_bytes = new List<byte>();
+                        raw_bytes.AddRange(Encoding.ASCII.GetBytes(USBSendComboBox.Text));
+                        raw_bytes.Add(0x0A); // add newline character at the end manually
+                        byte[] bytes = raw_bytes.ToArray();
+                        if ((bytes.Length > 1) && (bytes != null))
+                        {
+                            //Util.UpdateTextBox(USBTextBox, USBSendComboBox.Text, null);
+                            SerialDataWriteAsync(bytes);
+                            if (!USBSendComboBox.Items.Contains(USBSendComboBox.Text)) // only add unique items (no repeat!)
+                            {
+                                USBSendComboBox.Items.Add(USBSendComboBox.Text); // add command to the list so it can be selected later
+                            }
+                        }
                     }
                 }
             }

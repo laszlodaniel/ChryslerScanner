@@ -88,6 +88,7 @@ void setup()
     analogReference(DEFAULT); // use default voltage reference applied to AVCC (+5V)
     check_battery_volts(); // calculate battery voltage from OBD16 pin
     ccd_clock_generator(START); // start listening to the CCD-bus; the transceiver chip only works if it receives this continuos clock signal; clever way to turn it on/off
+    randomSeed(analogRead(1));
 
     for (uint8_t i = 0; i < 21; i++) // copy handshake bytes from flash to ram
     {
@@ -105,7 +106,7 @@ void setup()
 
     delay(2000);
     print_display_layout_1_metric();
-    
+
     uint8_t scanner_ready[1];
     scanner_ready[0] = 0x01;
     send_usb_packet(from_usb, to_usb, reset, ok, scanner_ready, 1); // Scanner ready

@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D5CEA05
+#define FW_DATE 0x000000005D6382DC
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -128,8 +128,8 @@ extern LiquidCrystal_I2C lcd;
 #define START 0x01
 
 // Packet related stuff
-#define PACKET_SYNC_BYTE    0x3D // = symbol
-#define ASCII_SYNC_BYTE     0x3E // > symbol
+#define PACKET_SYNC_BYTE    0x3D // "=" symbol
+#define ASCII_SYNC_BYTE     0x3E // ">" symbol
 #define MAX_PAYLOAD_LENGTH  USB_RX0_BUFFER_SIZE - 6  // 1024-6 bytes
 #define EMPTY_PAYLOAD       0xFE  // Random byte, could be anything
 
@@ -218,6 +218,10 @@ extern LiquidCrystal_I2C lcd;
 #define error_internal_error                    0xFE
 #define error_fatal                             0xFF
 
+#define CLI_BUF_SIZE      128  // Maximum input string length
+#define CLI_ARG_BUF_SIZE  64   // Maximum argument string length
+#define CLI_MAX_NUM_ARGS  8    // Maximum number of arguments
+
 // Variables
 volatile uint8_t  USB_RxBuf[USB_RX0_BUFFER_SIZE];
 volatile uint8_t  USB_TxBuf[USB_TX0_BUFFER_SIZE];
@@ -260,6 +264,7 @@ volatile uint8_t ccd_bytes_count = 0;
 bool ccd_msg_pending = false; // flag for custom ccd-bus message transmission
 uint8_t ccd_msg_to_send[BUFFER_SIZE]; // custom ccd-bus message is copied here
 uint8_t ccd_msg_to_send_ptr = 0; // custom ccd-bus message length
+bool generate_random_ccd_msgs = false;
 
 // SCI-bus
 bool sci_enabled = true;
@@ -314,6 +319,9 @@ uint8_t handshake_array[21];
 uint32_t rx_led_ontime = 0;
 uint32_t tx_led_ontime = 0;
 uint32_t act_led_ontime = 0;
+uint32_t current_millis = 0;
+uint32_t previous_random_ccd_msg_millis = 0;
+uint16_t random_ccd_msg_interval = 0;
 uint32_t current_millis_blink = 0;
 uint32_t previous_act_blink = 0;
 uint16_t led_blink_duration = 50; // milliseconds
@@ -321,7 +329,7 @@ uint16_t heartbeat_interval = 5000; // milliseconds
 bool heartbeat_enabled = true;
 
 uint8_t current_timestamp[4]; // current time is stored here when "update_timestamp" is called
-const char ascii_autoreply[] = "I GOT YOUR MESSAGE!\n";
+const char ascii_autoreply[] = ">I GOT YOUR MESSAGE!\n";
 
 bool eep_present = false;
 uint8_t eep_status = 0; // extEEPROM connection status is stored here
@@ -333,6 +341,52 @@ bool    eep_checksum_ok = false;
 uint8_t hw_version[2];
 uint8_t hw_date[8];
 uint8_t assembly_date[8];
+
+// CLI (Command Line Interface) related variables
+bool cli_error = false;
+char line[CLI_BUF_SIZE];
+char args[CLI_MAX_NUM_ARGS][CLI_ARG_BUF_SIZE];
+
+// Function declarations
+int cmd_help();
+//int cmd_reset();
+//int cmd_handshake();
+//int cmd_status();
+//int cmd_settings();
+//int cmd_request();
+//int cmd_debug();
+
+int (*commands_func[])() // list of functions pointers corresponding to each command
+{
+    &cmd_help
+//    &cmd_reset,
+//    &cmd_handshake,
+//    &cmd_status,
+//    &cmd_settings,
+//    &cmd_request,
+//    &cmd_debug,
+};
+
+const char *cli_commands_str[] = // list of command names
+{
+    "help"
+//    "reset",
+//    "handshake",
+//    "status",
+//    "settings",
+//    "request",
+//    "debug"
+};
+
+const char *request_args[] = // list of request sub command names
+{
+    "info",
+    "timestamp",
+    "battery_voltage",
+    "exteeprom_checksum"
+};
+
+int num_commands = sizeof(cli_commands_str) / sizeof(char *);
 
 // LCD related variables
 // Custom LCD-characters
@@ -1767,7 +1821,7 @@ Note:     this is only turning the chosen LED on, other function turns it off wh
 void blink_led(uint8_t led)
 {
     digitalWrite(led, LOW); // turn on LED
-    switch (led)
+    switch (led) // save time when LED was turned on
     {
         case RX_LED:
         {
@@ -1862,12 +1916,13 @@ Purpose:  initialize LCD
 **************************************************************************/
 void exteeprom_init(void)
 {
+    uint8_t err[1];
+    
     // Initialize external EEPROM, read hardware version/date, assembly date, firmware date and a checksum byte for all of this
     eep_status = eep.begin(extEEPROM::twiClock400kHz); // go fast!
     if (eep_status) // non-zero = bad
     { 
         eep_present = false;
-        uint8_t err[1];
         err[0] = 0xFF;
         send_usb_packet(from_usb, to_usb, ok_error, error_eep_not_found, err, 1);
 
@@ -1898,7 +1953,6 @@ void exteeprom_init(void)
         eep_result = eep.read(0, hw_version, 2); // read first 2 bytes and store it in the hw_version array
         if (eep_result)
         {
-            uint8_t err[1];
             err[0] = eep_result;
             send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
 
@@ -1908,7 +1962,6 @@ void exteeprom_init(void)
         eep_result = eep.read(2, hw_date, 8); // read following 8 bytes in the hw_date array
         if (eep_result)
         {
-            uint8_t err[1];
             err[0] = eep_result;
             send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
 
@@ -1925,7 +1978,6 @@ void exteeprom_init(void)
         eep_result = eep.read(10, assembly_date, 8); // read following 8 bytes in the assembly_date array
         if (eep_result)
         {
-            uint8_t err[1];
             err[0] = eep_result;
             send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
 
@@ -1941,7 +1993,6 @@ void exteeprom_init(void)
         eep_result = eep.read(255, eep_checksum, 1); // read 255th byte for the checksum byte (total of 256 bytes are reserved for hardware description)
         if (eep_result)
         {
-            uint8_t err[1];
             err[0] = eep_result;
             send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
 
@@ -2059,6 +2110,94 @@ void check_battery_volts(void)
 
 
 /*************************************************************************
+Function: cli_parse()
+Purpose:  copy space delimited words into the argument array
+Note:     first argument is the command, the rest are its parameters
+**************************************************************************/
+void cli_parse(void)
+{
+    char *argument;
+    int counter = 0;
+    
+    argument = strtok(line, " ");
+    
+    while (argument != NULL)
+    {
+        if (counter < CLI_MAX_NUM_ARGS)
+        {
+            if (strlen(argument) < CLI_ARG_BUF_SIZE)
+            {
+                strcpy(args[counter], argument);
+                argument = strtok(NULL, " ");
+                counter++;
+            }
+            else
+            {
+                cli_error = true;
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
+
+/*************************************************************************
+Function: cli_execute()
+Purpose:  run command based on first argument in the array
+**************************************************************************/
+int cli_execute(void)
+{  
+    for (int i = 0; i < num_commands; i++)
+    {
+        if (strcmp(args[0], cli_commands_str[i]) == 0)
+        {
+            return (*commands_func[i])();
+        }
+    }
+    return 0;
+}
+
+
+/*************************************************************************
+Function: cmd_help()
+Purpose:  CLI helper function, prints useful info about requested command
+Note:     only second argument is checked ("help command")
+**************************************************************************/
+int cmd_help(void)
+{
+    if (args[1] == NULL) // no second argument
+    {
+        //help_help();
+        usb_puts(ascii_autoreply);
+    }
+    else if (strcmp(args[1], cli_commands_str[0]) == 0)
+    {
+        //help_help();
+        usb_puts(ascii_autoreply);
+    }
+    else if (strcmp(args[1], cli_commands_str[1]) == 0)
+    {
+        //help_led();
+        usb_puts(ascii_autoreply);
+    }
+    else if (strcmp(args[1], cli_commands_str[2]) == 0)
+    {
+        //help_exit();
+        usb_puts(ascii_autoreply);
+    }
+    else
+    {
+        //help_help();
+        usb_puts(ascii_autoreply);
+    }
+}
+
+
+/*************************************************************************
 Function: handle_usb_data()
 Purpose:  handle USB commands coming from an external computer
 Note:     refer to ChryslerCCDSCIScanner_UART_Protocol.pdf to find out 
@@ -2067,505 +2206,555 @@ Note:     refer to ChryslerCCDSCIScanner_UART_Protocol.pdf to find out
 **************************************************************************/
 void handle_usb_data(void)
 {
-    // Proceed only if the receive buffer contains at least 3 bytes (ideally 1 sync byte + 2 length bytes).
-    if (usb_rx_available() > 2)
+    if (usb_rx_available() > 0) // proceed only if the receive buffer contains at least 1 byte
     {
-        // Make some local variables, they will disappear after the function ends
-        uint8_t sync, length_hb, length_lb, datacode, subdatacode, checksum;
-        bool payload_bytes = false;
-        uint16_t bytes_to_read = 0;
-        uint16_t payload_length = 0;
-        uint8_t calculated_checksum = 0;
-
-        uint8_t ack[1] = { 0x00 }; // acknowledge payload array
-        uint8_t err[1] = { 0xFF }; // error payload array
-        uint8_t ret[1];
-
+        blink_led(RX_LED); // blink RX-LED
+        uint8_t sync = usb_getc(); // read the next available byte in the USB receive buffer, it's supposed to be the first byte of a message
         uint32_t command_timeout_start = 0;
         bool command_timeout_reached = false;
-
-        blink_led(RX_LED);
-
-        // Find the first SYNC byte (0x3D or 0x3E)
-        command_timeout_start = millis(); // save current time
-        while ((usb_rx_available() > 0) && !command_timeout_reached)
-        {
-            if ((usb_peek() & 0xFF) == PACKET_SYNC_BYTE) break; // the 0xFF mask gets rid of the high byte containing flags
-            if ((usb_peek() & 0xFF) == ASCII_SYNC_BYTE) break;
-            
-            usb_getc(); // if it's not the SYNC byte then get rid of it (read into oblivion)
-
-            // Determine if timeout has been reached
-            if (millis() - command_timeout_start > command_purge_timeout) command_timeout_reached = true;
-        }
-        if (command_timeout_reached)
-        {
-            send_usb_packet(from_usb, to_usb, ok_error, error_packet_timeout_occured, err, 1);
-            return; // exit, let the loop call this function again
-        }
-
-        if (usb_rx_available() == 0) return; // exit if there's no data left, don't send error packet back to the laptop
         
-        sync = usb_getc() & 0xFF; // read one sync byte
-        
-        if (sync == PACKET_SYNC_BYTE) // byte based communication
+        switch (sync)
         {
-            length_hb = usb_getc() & 0xFF; // read first length byte
-            length_lb = usb_getc() & 0xFF; // read second length byte
-    
-            // Calculate how much more bytes should we read by combining the two length bytes into a word.
-            bytes_to_read = (length_hb << 8) + length_lb + 1; // +1 CHECKSUM byte
-    
-            // Maximum packet length is 1024 bytes.
-            // Can't accept larger packets so if that's the case the function needs to exit after sending an error packet back to the laptop.
-            // Also can't accept packet with less than 2 bytes length (datacode and subdatacode is always needed).
-            if (((bytes_to_read - 3) > MAX_PAYLOAD_LENGTH) || ((bytes_to_read - 1) < 2))
+            case PACKET_SYNC_BYTE: // 0x3D, "=" symbol
             {
-                send_usb_packet(from_usb, to_usb, ok_error, error_length_invalid_value, err, 1);
-                return; // exit, let the loop call this function again
-            }
-    
-            // Calculate the exact size of the payload.
-            payload_length = bytes_to_read - 3; // in this case we have to be careful not to count data code byte, sub-data code byte and checksum byte
-    
-            // Do not let this variable sink below zero.
-            if (payload_length < 0) payload_length = 0; // !!!
-    
-            // Wait here until all of the expected bytes are received or timeout occurs.
-            // Data reception is controlled by ISRs (Interrupt Service Routine) so it's okay to block the code here for a while.
-            command_timeout_start = millis();
-            while ((usb_rx_available() < bytes_to_read) && !command_timeout_reached) 
-            {
-                if (millis() - command_timeout_start > command_timeout) command_timeout_reached = true;
-            }
-    
-            // Check if timeout has been reached, if not then continue processing stuff!
-            if (command_timeout_reached)
-            {
-                send_usb_packet(from_usb, to_usb, ok_error, error_packet_timeout_occured, err, 1);
-                return; // exit, let the loop call this function again
-            }
-    
-            // There's at least one full command in the buffer now.
-            // Go ahead and read one DATA CODE byte (next in the row).
-            datacode = usb_getc() & 0xFF;
-    
-            // Read one SUB-DATA CODE byte that's following.
-            subdatacode = usb_getc() & 0xFF;
-    
-            // Make some space for the payload bytes (even if there is none).
-            uint8_t cmd_payload[payload_length];
-    
-            // If the payload length is greater than zero then read those bytes too.
-            if (payload_length > 0)
-            {
-                // Read all the PAYLOAD bytes
-                for (uint16_t i = 0; i < payload_length; i++)
+                uint8_t length_hb, length_lb, datacode, subdatacode, checksum;
+                bool payload_bytes = false;
+                uint16_t bytes_to_read = 0;
+                uint16_t payload_length = 0;
+                uint8_t calculated_checksum = 0;
+        
+                uint8_t ack[1] = { 0x00 }; // acknowledge payload array
+                uint8_t err[1] = { 0xFF }; // error payload array
+                uint8_t ret[1]; // general array to store arbitrary bytes
+
+                // Wait for the length bytes to arrive (2 bytes)
+                command_timeout_start = millis(); // save current time
+                while ((usb_rx_available() < 2) && !command_timeout_reached)
                 {
-                    cmd_payload[i] = usb_getc() & 0xFF;
+                    if (millis() - command_timeout_start > command_purge_timeout) command_timeout_reached = true;
                 }
-                // And set flag so the rest of the code knows.
-                payload_bytes = true;
-            }
-            // Set flag if there are no PAYLOAD bytes available.
-            else payload_bytes = false;
-    
-            // Read last CHECKSUM byte.
-            checksum = usb_getc() & 0xFF;
-    
-            // Verify the received packet by calculating what the checksum byte should be.
-            calculated_checksum = length_hb + length_lb + datacode + subdatacode; // add the first few bytes together manually
-    
-            // Add payload bytes here together if present
-            if (payload_bytes)
-            {
-                for (uint16_t j = 0; j < payload_length; j++)
+                if (command_timeout_reached)
                 {
-                    calculated_checksum += cmd_payload[j];
+                    send_usb_packet(from_usb, to_usb, ok_error, error_packet_timeout_occured, err, 1);
+                    return;
                 }
-            }
 
-            // Compare calculated checksum to the received CHECKSUM byte
-            if (calculated_checksum != checksum) // if they are not the same
-            {
-                send_usb_packet(from_usb, to_usb, ok_error, error_checksum_invalid_value, err, 1);
-                return; // exit, let the loop call this function again
-            }
-            
-            // If everything is good then continue processing the packet...
-            // Find out the source and the target of the packet by examining the DATA CODE byte's high nibble (upper 4 bits).
-            uint8_t source = (datacode >> 6) & 0x03; // keep the upper two bits
-            uint8_t target = (datacode >> 4) & 0x03; // keep the lower two bits
+                length_hb = usb_getc() & 0xFF; // read first length byte
+                length_lb = usb_getc() & 0xFF; // read second length byte
         
-            // Extract command value from the low nibble (lower 4 bits).
-            uint8_t command = datacode & 0x0F;
+                // Calculate how much more bytes should we read by combining the two length bytes into a word.
+                bytes_to_read = (length_hb << 8) + length_lb + 1; // +1 CHECKSUM byte
+                
+                // Calculate the exact size of the payload.
+                payload_length = bytes_to_read - 3; // in this case we have to be careful not to count data code byte, sub-data code byte and checksum byte
         
-            // Source isn't really checked here, the packet must come from an external computer...
-            switch (target) // evaluate target value
-            {
-                case to_usb: // 0x00 - scanner is the target
+                // Do not let this variable sink below zero.
+                if (payload_length < 0) payload_length = 0; // !!!
+        
+                // Maximum packet length is 1024 bytes; can't accept larger packets 
+                // and can't accept packet without datacode and subdatacode.
+                if ((payload_length > MAX_PAYLOAD_LENGTH) || ((bytes_to_read - 1) < 2))
                 {
-                    switch (command) // evaluate command
+                    send_usb_packet(from_usb, to_usb, ok_error, error_length_invalid_value, err, 1);
+                    return; // exit, let the loop call this function again
+                }
+
+                // Wait here until all of the expected bytes are received or timeout occurs.
+                command_timeout_start = millis();
+                while ((usb_rx_available() < bytes_to_read) && !command_timeout_reached) 
+                {
+                    if (millis() - command_timeout_start > command_timeout) command_timeout_reached = true;
+                }
+                if (command_timeout_reached)
+                {
+                    send_usb_packet(from_usb, to_usb, ok_error, error_packet_timeout_occured, err, 1);
+                    return; // exit, let the loop call this function again
+                }
+        
+                // There's at least one full command in the buffer now.
+                // Go ahead and read one DATA CODE byte (next in the row).
+                datacode = usb_getc() & 0xFF;
+        
+                // Read one SUB-DATA CODE byte that's following.
+                subdatacode = usb_getc() & 0xFF;
+        
+                // Make some space for the payload bytes (even if there is none).
+                uint8_t cmd_payload[payload_length];
+        
+                // If the payload length is greater than zero then read those bytes too.
+                if (payload_length > 0)
+                {
+                    // Read all the PAYLOAD bytes
+                    for (uint16_t i = 0; i < payload_length; i++)
                     {
-                        case reset: // 0x00 - reset scanner request
-                        {
-                            // Send acknowledge packet back to the laptop.
-                            send_usb_packet(from_usb, to_usb, reset, ok, ack, 1); // RX LED is on by now and this function lights up TX LED
-                            digitalWrite(ACT_LED, LOW); // blink all LEDs including this, good way to test if LEDs are working or not
-                            while(true); // Enter into an infinite loop. Watchdog timer doesn't get reset this way so it restarts the program eventually.
-                            break; // not necessary but every case needs a break
-                        }
-                        case handshake: // 0x01 - handshake request coming from an external computer
-                        {
-                            send_usb_packet(from_usb, to_usb, handshake, ok, handshake_array, 21);
-                            if (subdatacode == 0x01)
-                            {
-                                evaluate_eep_checksum();
-                                send_hwfw_info();
-                            }
-                            break;
-                        }
-                        case status: // 0x02 - status report request
-                        {
-                            // TODO: gather status data and send it back to the laptop
-                            send_usb_packet(from_usb, to_usb, status, ok, ack, 1); // the payload should contain all information but now it's just an ACK byte (0x00)
-                            break;
-                        }
-                        case settings: // 0x03 - change scanner settings
-                        {
-                            switch (subdatacode) // evaluate SUB-DATA CODE byte
-                            {
-                                case heartbeat: // 0x00 - ACT_LED flashing interval is stored in payload as 4 bytes
-                                {
-                                    if (!payload_bytes || (payload_length < 4)) // at least 4 bytes are necessary to change this setting
-                                    {
-                                        send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
-                                        break;
-                                    }
-                                    
-                                    uint16_t flashing_interval = (cmd_payload[0] << 8) + cmd_payload[1]; // 0-65535 milliseconds
-                                    if (flashing_interval == 0) heartbeat_enabled = false; // zero value is allowed, meaning no heartbeat
-                                    else
-                                    {
-                                        heartbeat_interval = flashing_interval;
-                                        heartbeat_enabled = true;
-                                    }
-                                    
-                                    uint16_t blink_duration = (cmd_payload[2] << 8) + cmd_payload[3]; // 0-65535 milliseconds
-                                    if (blink_duration > 0) led_blink_duration = blink_duration; // zero value is not allowed, this applies to all 3 status leds! (rx, tx, act)
-                                    
-                                    send_usb_packet(from_usb, to_usb, settings, heartbeat, cmd_payload, 4); // acknowledge
-                                    break;
-                                }
-                                case set_ccd_bus: // 0x01 - ON-OFF state is stored in payload
-                                {
-                                    if (!payload_bytes)
-                                    {
-                                        send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
-                                        break;
-                                    }
-                                    switch (cmd_payload[0])
-                                    {
-                                        case 0x00: // disable ccd-bus transceiver
-                                        {
-                                            ccd_enabled = false;
-                                            ccd_clock_generator(STOP);
-                                            send_usb_packet(from_usb, to_usb, settings, set_ccd_bus, cmd_payload, 1); // acknowledge
-                                            break;
-                                        }
-                                        case 0x01: // enable ccd-bus transceiver
-                                        {
-                                            ccd_enabled = true;
-                                            ccd_clock_generator(START);
-                                            send_usb_packet(from_usb, to_usb, settings, set_ccd_bus, cmd_payload, 1); // acknowledge
-                                            break;
-                                        }
-                                        default: // other values are not valid
-                                        {
-                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, already enabled
-                                            break;
-                                        }
-                                    }
-                                    break;
-                                }
-                                case set_sci_bus: // 0x02 - ON-OFF state, A/B configuration and speed are stored in payload
-                                {
-                                    if (!payload_bytes) // if no payload byte is present
-                                    {
-                                        send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
-                                        break;
-                                    }
-                                    
-                                    configure_sci_bus(cmd_payload[0]); // pass settings to this function
+                        cmd_payload[i] = usb_getc() & 0xFF;
+                    }
+                    // And set flag so the rest of the code knows.
+                    payload_bytes = true;
+                }
+                // Set flag if there are no PAYLOAD bytes available.
+                else payload_bytes = false;
+        
+                // Read last CHECKSUM byte.
+                checksum = usb_getc() & 0xFF;
+        
+                // Verify the received packet by calculating what the checksum byte should be.
+                calculated_checksum = length_hb + length_lb + datacode + subdatacode; // add the first few bytes together manually
+        
+                // Add payload bytes here together if present
+                if (payload_bytes)
+                {
+                    for (uint16_t j = 0; j < payload_length; j++)
+                    {
+                        calculated_checksum += cmd_payload[j];
+                    }
+                }
+    
+                // Compare calculated checksum to the received CHECKSUM byte
+                if (calculated_checksum != checksum) // if they are not the same
+                {
+                    send_usb_packet(from_usb, to_usb, ok_error, error_checksum_invalid_value, err, 1);
+                    return; // exit, let the loop call this function again
+                }
 
-                                    send_usb_packet(from_usb, to_usb, settings, set_sci_bus, cmd_payload, 1); // acknowledge
-                                    break;
-                                }
-                                default: // other values are not used
-                                {
-                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                        case request: // 0x04 - request from the scanner
+                // If everything is good then continue processing the packet...
+                // Find out the source and the target of the packet by examining the DATA CODE byte's high nibble (upper 4 bits).
+                uint8_t source = (datacode >> 6) & 0x03; // keep the upper two bits
+                uint8_t target = (datacode >> 4) & 0x03; // keep the lower two bits
+            
+                // Extract command value from the low nibble (lower 4 bits).
+                uint8_t command = datacode & 0x0F;
+            
+                // Source is ignored, the packet must come from an external computer through USB
+                switch (target) // evaluate target value
+                {
+                    case to_usb: // 0x00 - scanner is the target
+                    {
+                        switch (command) // evaluate command
                         {
-                            switch (subdatacode) // evaluate SUB-DATA CODE byte
+                            case reset: // 0x00 - reset scanner request
                             {
-                                case hwfw_info: // 0x00 - hardware version/date and firmware date in this particular order (dates are in 64-bit UNIX time format)
-                                {
-                                    send_hwfw_info();
-                                    break;
-                                }
-                                case timestamp: // 0x01 - timestamp / MCU counter value (milliseconds elapsed)
-                                {
-                                    update_timestamp(current_timestamp); // this function updates the global byte array "current_timestamp" with the current time
-                                    send_usb_packet(from_usb, to_usb, response, timestamp, current_timestamp, 4);
-                                    break;
-                                }
-                                case battery_voltage:
-                                {
-                                    check_battery_volts();
-                                    send_usb_packet(from_usb, to_usb, response, battery_voltage, battery_volts_array, 2);
-                                    break;
-                                }
-                                case exteeprom_checksum:
+                                // Send acknowledge packet back to the laptop.
+                                send_usb_packet(from_usb, to_usb, reset, ok, ack, 1); // RX LED is on by now and this function lights up TX LED
+                                digitalWrite(ACT_LED, LOW); // blink all LEDs including this, good way to test if LEDs are working or not
+                                while(true); // Enter into an infinite loop. Watchdog timer doesn't get reset this way so it restarts the program eventually.
+                                break; // not necessary but every case needs a break
+                            }
+                            case handshake: // 0x01 - handshake request coming from an external computer
+                            {
+                                send_usb_packet(from_usb, to_usb, handshake, ok, handshake_array, 21);
+                                if (subdatacode == 0x01)
                                 {
                                     evaluate_eep_checksum();
-                                    break;
+                                    send_hwfw_info();
                                 }
-                                default: // other values are not used
-                                {
-                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
-                                    break;
-                                }
+                                break;
                             }
-                            break;
-                        }
-                        case debug: // 0x0E - debug
-                        {
-                            switch (subdatacode)
+                            case status: // 0x02 - status report request
                             {
-                                // TODO
-                                
-                                default:
-                                {
-                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
-                                    break;
-                                }
+                                // TODO: gather status data and send it back to the laptop
+                                send_usb_packet(from_usb, to_usb, status, ok, ack, 1); // the payload should contain all information but now it's just an ACK byte (0x00)
+                                break;
                             }
-                            break;
-                        }
-                        case ok_error: // 0x0F - OK/ERROR message
-                        {
-                            // TODO, although it's rare that the laptop sends an error message out of the blue
-                            send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
-                            break;
-                        }
-                        default: // other values are not used
-                        {
-                            send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_command, err, 1);
-                            break;
-                        }
-                    }
-                    break;
-                } // case to_usb:
-                case to_ccd: // 0x01 - CCD-bus is the target
-                {
-                    switch (command) // evaluate command
-                    {
-                        case msg_tx: // 0x06 - send message to the CCD-bus
-                        {
-                            switch (subdatacode) // evaluate  SUB-DATA CODE byte
+                            case settings: // 0x03 - change scanner settings
                             {
-                                case stop_msg_flow: // 0x00 - stop message transmission (single and repeated as well)
+                                switch (subdatacode) // evaluate SUB-DATA CODE byte
                                 {
-                                    // TODO
-                                    ret[0] = to_ccd; // improvised payload array with only 1 element which is the target bus
-                                    send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 1);
-                                    break;
-                                }
-                                case single_msg: // 0x01 - send message to the CCD-bus, message is stored in payload 
-                                {
-                                    if ((payload_length > 0) && (payload_length <= BUFFER_SIZE)) 
+                                    case heartbeat: // 0x00 - ACT_LED flashing interval is stored in payload as 4 bytes
                                     {
-                                        // Fill the pending buffer with the message to be sent
-                                        for (uint8_t i = 0; i < payload_length; i++)
+                                        if (!payload_bytes || (payload_length < 4)) // at least 4 bytes are necessary to change this setting
                                         {
-                                            ccd_msg_to_send[i] = cmd_payload[i];
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            break;
                                         }
-                                        ccd_msg_to_send_ptr = payload_length;
-                
-                                        // Check if the checksum byte in the message is correct
-                                        uint8_t tmp = calculate_checksum(ccd_msg_to_send, 0, ccd_msg_to_send_ptr - 1);
-
-                                        // Correct the last checksum byte if wrong
-                                        if (ccd_msg_to_send[ccd_msg_to_send_ptr - 1] != tmp)
+                                        
+                                        uint16_t flashing_interval = (cmd_payload[0] << 8) + cmd_payload[1]; // 0-65535 milliseconds
+                                        if (flashing_interval == 0) heartbeat_enabled = false; // zero value is allowed, meaning no heartbeat
+                                        else
                                         {
-                                            ccd_msg_to_send[ccd_msg_to_send_ptr - 1] = tmp;
+                                            heartbeat_interval = flashing_interval;
+                                            heartbeat_enabled = true;
                                         }
+                                        
+                                        uint16_t blink_duration = (cmd_payload[2] << 8) + cmd_payload[3]; // 0-65535 milliseconds
+                                        if (blink_duration > 0) led_blink_duration = blink_duration; // zero value is not allowed, this applies to all 3 status leds! (rx, tx, act)
+                                        
+                                        send_usb_packet(from_usb, to_usb, settings, heartbeat, cmd_payload, 4); // acknowledge
+                                        break;
+                                    }
+                                    case set_ccd_bus: // 0x01 - ON-OFF state is stored in payload
+                                    {
+                                        if (!payload_bytes)
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            break;
+                                        }
+                                        switch (cmd_payload[0])
+                                        {
+                                            case 0x00: // disable ccd-bus transceiver
+                                            {
+                                                ccd_enabled = false;
+                                                ccd_clock_generator(STOP);
+                                                send_usb_packet(from_usb, to_usb, settings, set_ccd_bus, cmd_payload, 1); // acknowledge
+                                                break;
+                                            }
+                                            case 0x01: // enable ccd-bus transceiver
+                                            {
+                                                ccd_enabled = true;
+                                                ccd_clock_generator(START);
+                                                send_usb_packet(from_usb, to_usb, settings, set_ccd_bus, cmd_payload, 1); // acknowledge
+                                                break;
+                                            }
+                                            default: // other values are not valid
+                                            {
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, already enabled
+                                                break;
+                                            }
+                                        }
+                                        break;
+                                    }
+                                    case set_sci_bus: // 0x02 - ON-OFF state, A/B configuration and speed are stored in payload
+                                    {
+                                        if (!payload_bytes) // if no payload byte is present
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            break;
+                                        }
+                                        
+                                        configure_sci_bus(cmd_payload[0]); // pass settings to this function
     
-                                        ccd_msg_pending = true; // set flag so the main loop knows there's something to do
-                                        //ret[0] = to_ccd;
-                                        //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
+                                        send_usb_packet(from_usb, to_usb, settings, set_sci_bus, cmd_payload, 1); // acknowledge
+                                        break;
                                     }
-                                    else
+                                    default: // other values are not used
                                     {
-                                        send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, no message included
+                                        send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
+                                        break;
                                     }
-                                    break;
                                 }
-                                case repeated_msg: // 0x02 - send message(s) to the CCD-bus, number of messages, repeat interval(s) are stored in payload
+                                break;
+                            }
+                            case request: // 0x04 - request from the scanner
+                            {
+                                switch (subdatacode) // evaluate SUB-DATA CODE byte
+                                {
+                                    case hwfw_info: // 0x00 - hardware version/date and firmware date in this particular order (dates are in 64-bit UNIX time format)
+                                    {
+                                        send_hwfw_info();
+                                        break;
+                                    }
+                                    case timestamp: // 0x01 - timestamp / MCU counter value (milliseconds elapsed)
+                                    {
+                                        update_timestamp(current_timestamp); // this function updates the global byte array "current_timestamp" with the current time
+                                        send_usb_packet(from_usb, to_usb, response, timestamp, current_timestamp, 4);
+                                        break;
+                                    }
+                                    case battery_voltage:
+                                    {
+                                        check_battery_volts();
+                                        send_usb_packet(from_usb, to_usb, response, battery_voltage, battery_volts_array, 2);
+                                        break;
+                                    }
+                                    case exteeprom_checksum:
+                                    {
+                                        evaluate_eep_checksum();
+                                        break;
+                                    }
+                                    default: // other values are not used
+                                    {
+                                        send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            case debug: // 0x0E - debug
+                            {
+                                switch (subdatacode)
                                 {
                                     // TODO
-                                    ret[0] = to_ccd;
-                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
-                                    break;
+                                    case 0x01: // broadcast random ccd-bus messages
+                                    {
+                                        if (cmd_payload[0] == 0x01)
+                                        {
+                                            generate_random_ccd_msgs = true;
+                                            random_ccd_msg_interval = random(300, 1500);
+                                        }
+                                        else
+                                        {
+                                            generate_random_ccd_msgs = false;
+                                            random_ccd_msg_interval = 0;
+                                        }
+                                        break;
+                                    }
+                                    
+                                    default:
+                                    {
+                                        send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
+                                        break;
+                                    }
                                 }
-                                default:
-                                {
-                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
-                                    break;
-                                }
+                                break;
                             }
-                            break;
+                            case ok_error: // 0x0F - OK/ERROR message
+                            {
+                                // TODO, although it's rare that the laptop sends an error message out of the blue
+                                send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
+                                break;
+                            }
+                            default: // other values are not used
+                            {
+                                send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_command, err, 1);
+                                break;
+                            }
                         }
+                        break;
+                    } // case to_usb:
+                    case to_ccd: // 0x01 - CCD-bus is the target
+                    {
+                        switch (command) // evaluate command
+                        {
+                            case msg_tx: // 0x06 - send message to the CCD-bus
+                            {
+                                switch (subdatacode) // evaluate  SUB-DATA CODE byte
+                                {
+                                    case stop_msg_flow: // 0x00 - stop message transmission (single and repeated as well)
+                                    {
+                                        // TODO
+                                        ret[0] = to_ccd; // improvised payload array with only 1 element which is the target bus
+                                        send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 1);
+                                        break;
+                                    }
+                                    case single_msg: // 0x01 - send message to the CCD-bus, message is stored in payload 
+                                    {
+                                        if ((payload_length > 0) && (payload_length <= BUFFER_SIZE)) 
+                                        {
+                                            // Fill the pending buffer with the message to be sent
+                                            for (uint8_t i = 0; i < payload_length; i++)
+                                            {
+                                                ccd_msg_to_send[i] = cmd_payload[i];
+                                            }
+                                            ccd_msg_to_send_ptr = payload_length;
+                    
+                                            // Check if the checksum byte in the message is correct
+                                            uint8_t tmp = calculate_checksum(ccd_msg_to_send, 0, ccd_msg_to_send_ptr - 1);
+    
+                                            // Correct the last checksum byte if wrong
+                                            if (ccd_msg_to_send[ccd_msg_to_send_ptr - 1] != tmp)
+                                            {
+                                                ccd_msg_to_send[ccd_msg_to_send_ptr - 1] = tmp;
+                                            }
+        
+                                            ccd_msg_pending = true; // set flag so the main loop knows there's something to do
+                                            //ret[0] = to_ccd;
+                                            //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
+                                        }
+                                        else
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, no message included
+                                        }
+                                        break;
+                                    }
+                                    case repeated_msg: // 0x02 - send message(s) to the CCD-bus, number of messages, repeat interval(s) are stored in payload
+                                    {
+                                        // TODO
+                                        ret[0] = to_ccd;
+                                        send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
+                                        break;
+                                    }
+                                    default:
+                                    {
+                                        send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+    
+                            default: // other values are not used
+                            {
+                                send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_command, err, 1);
+                                break;
+                            }
+                        }
+                        break;
+                    } // case to_ccd:
+                    case to_pcm: // 0x02 - SCI-bus (PCM) is the target
+                    {
+                        switch (command) // evaluate command
+                        {
+                            case msg_tx: // 0x06 - send message to the SCI-bus (PCM)
+                            {
+                                switch (subdatacode) // evaluate SUB-DATA CODE byte
+                                {
+                                    case stop_msg_flow: // 0x00 - stop message transmission (single and repeated as well)
+                                    {
+                                        // TODO
+                                        ret[0] = to_pcm;
+                                        send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 1);
+                                        break;
+                                    }
+                                    case single_msg: // 0x01 - send message to the SCI-bus, message is stored in payload 
+                                    {
+                                        if ((payload_length > 0) && (payload_length <= BUFFER_SIZE))
+                                        {
+                                            for (uint8_t i = 0; i < payload_length; i++) // fill the pending buffer with the message to be sent
+                                            {
+                                                pcm_msg_to_send[i] = cmd_payload[i];
+                                            }
+                                            // Checksum isn't used on SCI-bus transmissions, except when receiving fault codes.
+                                            pcm_msg_to_send_ptr = payload_length;
+                                            pcm_msg_pending = true; // set flag so the main loop knows there's something to do
+                                            //ret[0] = to_pcm;
+                                            //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
+                                        }
+                                        else
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, no message included
+                                        }
+                                        break;
+                                    }
+                                    case repeated_msg: // 0x02 - send message(s) to the SCI-bus, number of messages, repeat interval(s) are stored in payload
+                                    {
+                                        // TODO
+                                        ret[0] = to_pcm;
+                                        send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
+                                        break;
+                                    }
+                                    default:
+                                    {
+                                        send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            default: // other values are not used.
+                            {
+                                send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_command, err, 1);
+                                break;
+                            }
+                        }
+                        break;
+                    } // case to_pcm:
+                    case to_tcm: // 0x03 - SCI-bus (TCM) is the target
+                    {
+                        switch (command) // evaluate command
+                        {
+                            case msg_tx: // 0x06 - send message to the SCI-bus (TCM)
+                            {
+                                switch (subdatacode) // evaluate SUB-DATA CODE byte
+                                {
+                                    case stop_msg_flow: // 0x00 - stop message transmission (single and repeated as well)
+                                    {
+                                        // TODO
+                                        ret[0] = to_tcm;
+                                        send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 1);
+                                        break;
+                                    }
+                                    case single_msg: // 0x01 - send message to the SCI-bus, message is stored in payload 
+                                    {
+                                        if ((payload_length > 0) && (payload_length <= BUFFER_SIZE))
+                                        {
+                                            for (uint8_t i = 0; i < payload_length; i++) // fill the pending buffer with the message to be sent
+                                            {
+                                                tcm_msg_to_send[i] = cmd_payload[i];
+                                            }
+                                            // Checksum isn't used on SCI-bus transmissions, except when receiving fault codes.
+                                            tcm_msg_to_send_ptr = payload_length;
+                                            tcm_msg_pending = true; // set flag so the main loop knows there's something to do
+                                            //ret[0] = to_tcm;
+                                            //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
+                                        }
+                                        else
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, no message included
+                                        }
+                                        break;
+                                    }
+                                    case repeated_msg: // 0x02 - send message(s) to the SCI-bus, number of messages, repeat interval(s) are stored in payload
+                                    {
+                                        // TODO
+                                        ret[0] = to_tcm;
+                                        send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
+                                        break;
+                                    }
+                                    default:
+                                    {
+                                        send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            default: // other values are not used.
+                            {
+                                send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_command, err, 1);
+                                break;
+                            }
+                        }
+                        break;
+                    } // case to_tcm:
+                } // switch (target)   
+                break;
+            }
+            case ASCII_SYNC_BYTE: // 0x3E, ">" symbol
+            {
+                String line_string;
+                bool eol = false;
+                uint8_t raw_byte = 0;
 
-                        default: // other values are not used
-                        {
-                            send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_command, err, 1);
-                            break;
-                        }
-                    }
-                    break;
-                } // case to_ccd:
-                case to_pcm: // 0x02 - SCI-bus (PCM) is the target
+                // Read command line
+                while (!eol) 
                 {
-                    switch (command) // evaluate command
+                    while (usb_rx_available() == 0); // wait for character to be available to read
+                    raw_byte = usb_getc() & 0xFF;
+                    if ((raw_byte == 0x0A) || (raw_byte == 0x0D)) // new-line or carriage return character
                     {
-                        case msg_tx: // 0x06 - send message to the SCI-bus (PCM)
-                        {
-                            switch (subdatacode) // evaluate SUB-DATA CODE byte
-                            {
-                                case stop_msg_flow: // 0x00 - stop message transmission (single and repeated as well)
-                                {
-                                    // TODO
-                                    ret[0] = to_pcm;
-                                    send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 1);
-                                    break;
-                                }
-                                case single_msg: // 0x01 - send message to the SCI-bus, message is stored in payload 
-                                {
-                                    if ((payload_length > 0) && (payload_length <= BUFFER_SIZE))
-                                    {
-                                        for (uint8_t i = 0; i < payload_length; i++) // fill the pending buffer with the message to be sent
-                                        {
-                                            pcm_msg_to_send[i] = cmd_payload[i];
-                                        }
-                                        // Checksum isn't used on SCI-bus transmissions, except when receiving fault codes.
-                                        pcm_msg_to_send_ptr = payload_length;
-                                        pcm_msg_pending = true; // set flag so the main loop knows there's something to do
-                                        //ret[0] = to_pcm;
-                                        //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
-                                    }
-                                    else
-                                    {
-                                        send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, no message included
-                                    }
-                                    break;
-                                }
-                                case repeated_msg: // 0x02 - send message(s) to the SCI-bus, number of messages, repeat interval(s) are stored in payload
-                                {
-                                    // TODO
-                                    ret[0] = to_pcm;
-                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
-                                    break;
-                                }
-                                default:
-                                {
-                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                        default: // other values are not used.
-                        {
-                            send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_command, err, 1);
-                            break;
-                        }
+                        eol = true; // stop reading, it's the end of line (EOL)
                     }
-                    break;
-                } // case to_pcm:
-                case to_tcm: // 0x03 - SCI-bus (TCM) is the target
+                    else
+                    {
+                        line_string += char(raw_byte); // add this byte to the string as an ascii character
+                        eol = false;
+                    }
+                }
+                if ((usb_peek() == 0x0A) || (usb_peek() == 0x0D)) usb_getc(); // remove additional terminating character if any
+
+                if (line_string.length() < CLI_BUF_SIZE)
                 {
-                    switch (command) // evaluate command
-                    {
-                        case msg_tx: // 0x06 - send message to the SCI-bus (TCM)
-                        {
-                            switch (subdatacode) // evaluate SUB-DATA CODE byte
-                            {
-                                case stop_msg_flow: // 0x00 - stop message transmission (single and repeated as well)
-                                {
-                                    // TODO
-                                    ret[0] = to_tcm;
-                                    send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 1);
-                                    break;
-                                }
-                                case single_msg: // 0x01 - send message to the SCI-bus, message is stored in payload 
-                                {
-                                    if ((payload_length > 0) && (payload_length <= BUFFER_SIZE))
-                                    {
-                                        for (uint8_t i = 0; i < payload_length; i++) // fill the pending buffer with the message to be sent
-                                        {
-                                            tcm_msg_to_send[i] = cmd_payload[i];
-                                        }
-                                        // Checksum isn't used on SCI-bus transmissions, except when receiving fault codes.
-                                        tcm_msg_to_send_ptr = payload_length;
-                                        tcm_msg_pending = true; // set flag so the main loop knows there's something to do
-                                        //ret[0] = to_tcm;
-                                        //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
-                                    }
-                                    else
-                                    {
-                                        send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, no message included
-                                    }
-                                    break;
-                                }
-                                case repeated_msg: // 0x02 - send message(s) to the SCI-bus, number of messages, repeat interval(s) are stored in payload
-                                {
-                                    // TODO
-                                    ret[0] = to_tcm;
-                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
-                                    break;
-                                }
-                                default:
-                                {
-                                    send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                        default: // other values are not used.
-                        {
-                            send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_command, err, 1);
-                            break;
-                        }
-                    }
-                    break;
-                } // case to_tcm:
-            } // switch (target)   
-        }
-        else if (sync == ASCII_SYNC_BYTE) // text based communication
-        {
-            usb_puts(ascii_autoreply); // TODO
+                    line_string.toCharArray(line, CLI_BUF_SIZE); // convert "lin_string" string to "line" character array
+                    blink_led(TX_LED);
+                    //usb_puts(line); // while debugging echo the original command back
+                    //usb_putc(0x0A); // and add a new line at the end
+                }
+                else
+                {
+                    cli_error = true;
+                }
+
+                // Parse command
+                if (!cli_error) cli_parse();
+
+                // Execute command
+                if (!cli_error) cli_execute();
+                
+                // Reset CLI buffers
+                memset(line, 0, CLI_BUF_SIZE);
+                memset(args, 0, sizeof(args[0][0]) * CLI_MAX_NUM_ARGS * CLI_ARG_BUF_SIZE);
+                cli_error = false; // re-arm flag
+                break;
+            }
+            default:
+            {
+                // TODO, the main loop itself will get rid of garbage data here, until a valid sync byte is found
+                break;
+            }
         }
     }
     else
     {
-      // TODO: check here if the 1 or 2 bytes received stayed long enough to consider getting rid of them
+      // TODO
     }
      
 } // end of handle_usb_data
@@ -2596,6 +2785,24 @@ void handle_ccd_data(void)
                 // TODO: check here if echo is expected from a pending message, otherwise good to know if a custom message is heard by the other modules
                 send_usb_packet(from_ccd, to_usb, msg_rx, single_msg, usb_msg, 4+ccd_bytes_count); // send CCD-bus message back to the laptop
                 ccd_bytes_count = 0; // force ISR to update this value again so we don't end up here in the next program loop
+            }
+
+            if (generate_random_ccd_msgs && (random_ccd_msg_interval > 0))
+            {
+                current_millis = millis(); // check current time
+                if ((current_millis - previous_random_ccd_msg_millis) > random_ccd_msg_interval)
+                {
+                    previous_random_ccd_msg_millis = current_millis;
+                    ccd_msg_to_send_ptr = random(3, 6); // random message length between 3 and 6 bytes
+                    for (uint8_t i = 0; i < ccd_msg_to_send_ptr - 2; i++)
+                    {
+                        ccd_msg_to_send[i] = random(0x01, 0xFE); // generate random bytes
+                    }
+                    ccd_msg_to_send[ccd_msg_to_send_ptr - 1] = calculate_checksum(ccd_msg_to_send, 0, ccd_msg_to_send_ptr - 1);
+                    ccd_msg_pending = true;
+                    random_ccd_msg_interval = random(300, 1500); // generate new delay value between fake messages
+                    send_usb_packet(from_usb, to_usb, debug, 0x01, ccd_msg_to_send_ptr, 1); // acknowledge command by responding with the length of the CCD-bus message
+                }
             }
 
             if (ccd_msg_pending) // received over usb connection, checksum corrected there (if wrong)
@@ -2838,6 +3045,7 @@ void handle_sci_data(void)
 /*************************************************************************
 Function: handle_leds()
 Purpose:  turn off indicator LEDs when blink duration expires
+Note:     ACT heartbeat is handled here too
 **************************************************************************/
 void handle_leds(void)
 {
@@ -2864,26 +3072,6 @@ void handle_leds(void)
     }
     
 } // end of handle_leds
-
-
-/*************************************************************************
-Function: get_bus_config()
-Purpose:  figure out how to talk to the vehicle
-Note:     1. Check if CCD-bus is present by sniffing bytes being broadcasted on the bus.
-          2. If no traffic for a short time then try to wake up the bus by sending a 0xFF byte.
-          3. If no answer within short time then conclude that CCD-bus is bad or unavailable.
-          4. Check if SCI-bus is present by sending a 0x10 byte to request engine fault codes (PCM).
-          5. Do the same for A and B configurations and note which configuration is active.
-          5. If this byte gets echod back then wait for a little more for reply (TX:0x10 RX:0x10 {-wait-} 0xFE 0x0E).
-          6. If the bytes (echo too) add up to the last byte (checksum OK) then considere this a valid reply from the PCM.
-          7. Repeat from 4. for TCM (request transmission fault codes).
-          8. Gather and save results in a byte array and send back to the laptop.
-**************************************************************************/
-void get_bus_config(void)
-{
-    // TODO
-    
-} // end of get_bus_config
 
 
 /*************************************************************************

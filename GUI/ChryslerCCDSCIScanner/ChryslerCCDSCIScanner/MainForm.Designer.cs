@@ -131,7 +131,6 @@
             // AsciiCommMethodRadioButton
             // 
             this.AsciiCommMethodRadioButton.AutoSize = true;
-            this.AsciiCommMethodRadioButton.Enabled = false;
             this.AsciiCommMethodRadioButton.Location = new System.Drawing.Point(103, 486);
             this.AsciiCommMethodRadioButton.Name = "AsciiCommMethodRadioButton";
             this.AsciiCommMethodRadioButton.Size = new System.Drawing.Size(46, 17);
