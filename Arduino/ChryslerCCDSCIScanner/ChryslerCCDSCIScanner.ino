@@ -52,14 +52,14 @@ void setup()
     // Define digital pin states
     pinMode(INT4, INPUT_PULLUP); // D2 (INT4), CCD-bus idle detector
     pinMode(INT5, INPUT_PULLUP); // D3 (INT5), CCD-bus active byte detector
-    pinMode(RX_LED, OUTPUT);     // This LED flashes whenever data is received by the scanner
-    pinMode(TX_LED, OUTPUT);     // This LED flashes whenever data is transmitted from the scanner
+    pinMode(RX_LED, OUTPUT);     // Data received LED
+    pinMode(TX_LED, OUTPUT);     // Data transmitted LED
     // PWR LED is tied to +5V directly, stays on when the scanner has power, draws about 2mA current
-    pinMode(ACT_LED, OUTPUT);    // This LED flashes when some "action" takes place in the scanner
+    pinMode(ACT_LED, OUTPUT);    // Activity (heartbeat) LED
     pinMode(BATT, INPUT);        // This analog input pin measures battery voltage through a resistor divider (it tolerates 24V batteries!)
-    blink_led(RX_LED);
-    blink_led(TX_LED);
-    blink_led(ACT_LED);
+    blink_led(RX_LED);           // 
+    blink_led(TX_LED);           // 
+    blink_led(ACT_LED);          // 
 
     // SCI-bus A/B-configuration selector outputs
     pinMode(PA0, OUTPUT);
@@ -71,8 +71,6 @@ void setup()
     pinMode(PA6, OUTPUT);
     pinMode(PA7, OUTPUT);
 
-    configure_sci_bus(0x02); // SCI-bus "A" configuration, 7812.5 baud, PCM only
-
     attachInterrupt(digitalPinToInterrupt(INT4), ccd_eom, FALLING); // execute "ccd_eom" function if the CCD-transceiver pulls D2 pin low indicating an "End of Message" condition
     attachInterrupt(digitalPinToInterrupt(INT5), ccd_active_byte, FALLING); // execute "ccd_active_byte" function if the CCD-transceiver pulls D3 pin low indicating a byte being transmitted on the CCD-bus
     
@@ -82,13 +80,13 @@ void setup()
     pcm_init(LOBAUD); // 7812.5 baud
     tcm_init(LOBAUD); // 7812.5 baud
     
-    exteeprom_init();
-    lcd_init();
-    
-    analogReference(DEFAULT); // use default voltage reference applied to AVCC (+5V)
-    check_battery_volts(); // calculate battery voltage from OBD16 pin
+    exteeprom_init(); // initialize external EEPROM chip (24LC32A)
+    lcd_init();       // initialize external LCD (optional)
+
+    analogReference(DEFAULT);   // use default voltage reference applied to AVCC (+5V)
+    check_battery_volts();      // calculate battery voltage from OBD16 pin
     ccd_clock_generator(START); // start listening to the CCD-bus; the transceiver chip only works if it receives this continuos clock signal; clever way to turn it on/off
-    randomSeed(analogRead(1));
+    randomSeed(analogRead(1));  // use A1 analog input pin's floatling noise to generate random numbers
 
     for (uint8_t i = 0; i < 21; i++) // copy handshake bytes from flash to ram
     {
@@ -105,22 +103,22 @@ void setup()
     tcm_tx_flush();
 
     delay(2000);
-    print_display_layout_1_metric();
+    //print_display_layout_1_metric();
 
     uint8_t scanner_ready[1];
     scanner_ready[0] = 0x01;
     send_usb_packet(from_usb, to_usb, reset, ok, scanner_ready, 1); // Scanner ready
-
+    
+    configure_sci_bus(current_sci_bus_settings[0]);
+    
     wdt_enable(WDTO_2S); // enable watchdog timer that resets program if its timer reaches 2 seconds (useful if the prorgam hangs for some reason and needs auto-reset)
 }
 
 void loop()
 {
     wdt_reset(); // reset watchdog timer to 0 seconds so no accidental restart occurs
-    check_battery_volts(); // calculate battery voltage from OBD16 pin
     handle_usb_data(); // look for commands over USB connection
     handle_ccd_data(); // do CCD-bus stuff
     handle_sci_data(); // do SCI-bus stuff
     handle_leds(); // do LED stuff
-    handle_lcd();  // do LCD stuff
 }

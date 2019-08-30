@@ -418,21 +418,62 @@ namespace ChryslerCCDSCIScanner
                                             case 0x02: // Set SCI-bus
                                                 string configuration = String.Empty;
 
-                                                if (((payload[0] >> 2) & 0x01) == 0) configuration += "SCI-BUS_A";
-                                                else if (((payload[0] >> 2) & 0x01) == 1) configuration += "SCI-BUS_B";
+                                                configuration += "[INFO] PCM settings:" + Environment.NewLine;
 
-                                                if ((payload[0] & 0x01) == 0) configuration += "_PCM";
-                                                else if ((payload[0] & 0x01) == 1) configuration += "_TCM";
+                                                if (((payload[0] >> 6) & 0x01) == 0) configuration += "       - state: disabled" + Environment.NewLine;
+                                                else configuration += "       - state: enabled" + Environment.NewLine;
 
-                                                if (((payload[0] >> 1) & 0x01) == 0) configuration += " disabled";
-                                                else if (((payload[0] >> 1) & 0x01) == 1)
+                                                if (((payload[0] >> 5) & 0x01) == 0)
                                                 {
-                                                    if (((payload[0] >> 3) & 0x01) == 0) configuration += " enabled @ 7812.5 baud";
-                                                    else if (((payload[0] >> 3) & 0x01) == 1) configuration += " enabled @ 62500 baud";
+                                                    if (((payload[0] >> 6) & 0x01) == 0) configuration += "       - configuration: -" + Environment.NewLine;
+                                                    else configuration += "       - configuration: \"A\"" + Environment.NewLine;
+                                                }
+                                                else
+                                                {
+                                                    if (((payload[0] >> 6) & 0x01) == 0) configuration += "       - configuration: -" + Environment.NewLine;
+                                                    else configuration += "       - configuration: \"B\"" + Environment.NewLine;
+                                                }
+
+                                                if (((payload[0] >> 4) & 0x01) == 0)
+                                                {
+                                                    if (((payload[0] >> 6) & 0x01) == 0) configuration += "       - speed: -" + Environment.NewLine;
+                                                    else configuration += "       - speed: 7812.5 baud" + Environment.NewLine;
+                                                }
+                                                else
+                                                {
+                                                    if (((payload[0] >> 6) & 0x01) == 0) configuration += "       - speed: -" + Environment.NewLine;
+                                                    else configuration += "       - speed: 62500 baud" + Environment.NewLine;
+                                                }
+
+                                                configuration += "       TCM settings:" + Environment.NewLine;
+
+                                                if (((payload[0] >> 2) & 0x01) == 0) configuration += "       - state: disabled" + Environment.NewLine;
+                                                else configuration += "       - state: enabled" + Environment.NewLine;
+
+                                                if (((payload[0] >> 1) & 0x01) == 0)
+                                                {
+                                                    if (((payload[0] >> 2) & 0x01) == 0) configuration += "       - configuration: -" + Environment.NewLine;
+                                                    else configuration += "       - configuration: \"A\"" + Environment.NewLine;
+                                                }
+                                                else
+                                                {
+                                                    if (((payload[0] >> 2) & 0x01) == 0) configuration += "       - configuration: -" + Environment.NewLine;
+                                                    else configuration += "       - configuration: \"B\"" + Environment.NewLine;
+                                                }
+
+                                                if ((payload[0] & 0x01) == 0)
+                                                {
+                                                    if (((payload[0] >> 2) & 0x01) == 0) configuration += "       - speed: -";
+                                                    else configuration += "       - speed: 7812.5 baud";
+                                                }
+                                                else
+                                                {
+                                                    if (((payload[0] >> 2) & 0x01) == 0) configuration += "       - speed: -";
+                                                    else configuration += "       - speed: 62500 baud";
                                                 }
 
                                                 Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus settings changed", msg);
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] " + configuration, null);
+                                                Util.UpdateTextBox(USBTextBox, configuration, null);
                                                 break;
                                         }
                                         break;
@@ -1605,34 +1646,72 @@ namespace ChryslerCCDSCIScanner
                                 case 2: // Set SCI-bus
                                     try
                                     {
-                                        byte pcm_tcm = 0;
-                                        byte enable = 0;
-                                        byte bus_config = 0;
-                                        byte bus_speed = 0;
+                                        byte pcm_change = 0;
+                                        byte pcm_state = 0;
+                                        byte pcm_config = 0;
+                                        byte pcm_speed = 0;
+                                        byte tcm_change = 0;
+                                        byte tcm_state = 0;
+                                        byte tcm_config = 0;
+                                        byte tcm_speed = 0;
 
-                                        if (Param1ComboBox.SelectedIndex == 0) pcm_tcm = 0; // PCM
-                                        else if (Param1ComboBox.SelectedIndex == 1) pcm_tcm = 1; // TCM
-
-                                        if (Param2ComboBox.SelectedIndex == 0)
+                                        if (Param1ComboBox.SelectedIndex == 0) // PCM
                                         {
-                                            enable = 0;
-                                            bus_speed = 0; // low speed but it's ignored
+                                            pcm_change = 1;
+                                            tcm_change = 0;
+
+                                            if (Param2ComboBox.SelectedIndex == 0) // State: disabled
+                                            {
+                                                pcm_state = 0; // disabled
+                                            }
+                                            else if (Param2ComboBox.SelectedIndex == 1) // State: enabled & 7812.5 baud
+                                            {
+                                                pcm_state = 1; // enabled
+                                                pcm_speed = 0; // 7812.5 baud
+                                            }
+                                            else if (Param2ComboBox.SelectedIndex == 2) // State: enabled & 62500 baud
+                                            {
+                                                pcm_state = 1; // enabled
+                                                pcm_speed = 1; // 62500 baud
+                                            }
+
+                                            if (Param3ComboBox.SelectedIndex == 0) pcm_config = 0; // "A" configuration
+                                            else if (Param3ComboBox.SelectedIndex == 1) pcm_config = 1; // "B" configuration
                                         }
-                                        else if (Param2ComboBox.SelectedIndex == 1)
+                                        else
                                         {
-                                            enable = 1;
-                                            bus_speed = 0; // low speed
-                                        }
-                                        else if (Param2ComboBox.SelectedIndex == 2)
-                                        {
-                                            enable = 1;
-                                            bus_speed = 1; // high speed
+                                            pcm_change = 0;
+                                            tcm_change = 1;
+
+                                            if (Param2ComboBox.SelectedIndex == 0) // State: disabled
+                                            {
+                                                tcm_state = 0; // disabled
+                                            }
+                                            else if (Param2ComboBox.SelectedIndex == 1) // State: enabled & 7812.5 baud
+                                            {
+                                                tcm_state = 1; // enabled
+                                                tcm_speed = 0; // 7812.5 baud
+                                            }
+                                            else if (Param2ComboBox.SelectedIndex == 2) // State: enabled & 62500 baud
+                                            {
+                                                tcm_state = 1; // enabled
+                                                tcm_speed = 1; // 62500 baud
+                                            }
+
+                                            if (Param3ComboBox.SelectedIndex == 0) tcm_config = 0; // "A" configuration
+                                            else if (Param3ComboBox.SelectedIndex == 1) tcm_config = 1; // "B" configuration
                                         }
 
-                                        if (Param3ComboBox.SelectedIndex == 0) bus_config = 0; // "A" configuration
-                                        else if (Param3ComboBox.SelectedIndex == 1) bus_config = 1; // "B" configuration
-
-                                        SetSCIBus = (byte)((bus_speed << 3) | (bus_config << 2) | (enable << 1) | pcm_tcm);
+                                        if (pcm_change == 1)
+                                        {
+                                            SetSCIBus = (byte)((pcm_change << 7) | (pcm_state << 6) | (pcm_config << 5) | pcm_speed << 4);
+                                            SetSCIBus &= 0xF0;
+                                        }
+                                        if (tcm_change == 1)
+                                        {
+                                            SetSCIBus = (byte)((tcm_change << 3) | (tcm_state << 2) | (tcm_config << 1) | tcm_speed);
+                                            SetSCIBus &= 0x0F;
+                                        }
                                     }
                                     catch
                                     {

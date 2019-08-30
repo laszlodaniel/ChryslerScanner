@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D6382DC
+#define FW_DATE 0x000000005D6920F6
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -175,6 +175,7 @@ extern LiquidCrystal_I2C lcd;
 #define heartbeat           0x00 // ACT_LED flashing interval is stored in payload
 #define set_ccd_bus         0x01 // ON-OFF state is stored in payload
 #define set_sci_bus         0x02 // ON-OFF state, A/B configuration and speed are stored in payload
+#define set_lcd             0x03 // ON-OFF state
 // 0x03-0xFF reserved 
 
 // SUB-DATA CODE byte
@@ -269,13 +270,14 @@ bool generate_random_ccd_msgs = false;
 // SCI-bus
 bool sci_enabled = true;
 bool pcm_enabled = true;
-bool tcm_enabled = true;
+bool tcm_enabled = false;
 volatile bool pcm_idle = false;
 volatile bool tcm_idle = false;
 bool pcm_high_speed_enabled = false;
 bool tcm_high_speed_enabled = false;
 bool pcm_echo_accepted = false;
 bool tcm_echo_accepted = false;
+uint8_t current_sci_bus_settings[1] = { 0xC8 }; // SCI-bus PCM "A" configuration, 7812.5 baud, TCM disabled
 
 uint8_t pcm_bytes_buffer[BUFFER_SIZE]; // max. SCI-bus message length to the PCM limited to 32 bytes, should be enough
 uint8_t pcm_bytes_buffer_ptr = 0; // pointer in the previous array
@@ -314,6 +316,8 @@ uint16_t battery_volts = 0; // converted to battery voltage and multiplied by 10
 uint8_t battery_volts_array[2]; // battery_volts is separated to byte components here
 
 bool connected_to_vehicle = false;
+char vin_characters[17] = "-----------------";
+String vin_string;
 uint8_t handshake_array[21];
 
 uint32_t rx_led_ontime = 0;
@@ -397,6 +401,8 @@ uint8_t left_symbol[8]   = { 0x00, 0x04, 0x08, 0x1F, 0x08, 0x04, 0x00, 0x00 }; /
 uint8_t right_symbol[8]  = { 0x00, 0x04, 0x02, 0x1F, 0x02, 0x04, 0x00, 0x00 }; // →
 uint8_t enter_symbol[8]  = { 0x00, 0x01, 0x05, 0x09, 0x1F, 0x08, 0x04, 0x00 }; // 
 uint8_t degree_symbol[8] = { 0x06, 0x09, 0x09, 0x06, 0x00, 0x00, 0x00, 0x00 }; // °
+
+bool lcd_enabled = false;
 
 
 // Interrupt Service Routines
@@ -1656,148 +1662,6 @@ void ccd_clock_generator(uint8_t command)
 
 
 /*************************************************************************
-Function: configure_sci_bus()
-Purpose:  as the name says
-**************************************************************************/
-void configure_sci_bus(uint8_t data)
-{
-    // Lower half of the input byte (4-bits) encode configuration as follows (lowest to highest bit)
-    bool pcm_tcm    = data & 0x01; // PCM (0) or TCM (1)
-    bool enable     = data & 0x02; // disable (0) or enable (1)
-    bool bus_config = data & 0x04; // bus configuration: A (0) or B (1)
-    bool bus_speed  = data & 0x08; // speed: low speed/7812.5 baud (0) or high speed/62500 baud (1)
-    
-    if (enable)
-    {
-        if (!bus_config) // "A" configuration, routes to PCM and TCM cannot be active simultaneously 
-        {
-            if (!pcm_tcm) // PCM
-            {
-                pcm_enabled = true;
-                tcm_enabled = false;
-                
-                // PA0..PA3 controls "A" configuration, PA4..PA7 controls "B" configuration
-                digitalWrite(PA0, HIGH); // SCI-BUS_A_PCM_RX enabled
-                digitalWrite(PA1, HIGH); // SCI-BUS_A_PCM_TX enabled
-                digitalWrite(PA2, LOW);  // SCI-BUS_A_TCM_RX disabled
-                digitalWrite(PA3, LOW);  // SCI-BUS_A_TCM_TX disabled
-                digitalWrite(PA4, LOW);  // SCI-BUS_B_PCM_RX disabled
-                digitalWrite(PA5, LOW);  // SCI-BUS_B_PCM_TX disabled
-                digitalWrite(PA6, LOW);  // SCI-BUS_B_TCM_RX disabled
-                digitalWrite(PA7, LOW);  // SCI-BUS_B_TCM_TX disabled
-            }
-            else // TCM
-            {
-                pcm_enabled = false;
-                tcm_enabled = true;
-                
-                digitalWrite(PA0, LOW);
-                digitalWrite(PA1, LOW);
-                digitalWrite(PA2, HIGH);
-                digitalWrite(PA3, HIGH);
-                digitalWrite(PA4, LOW);
-                digitalWrite(PA5, LOW);
-                digitalWrite(PA6, LOW);
-                digitalWrite(PA7, LOW);
-            }
-        }
-        else // "B" configuration, routes to PCM and TCM can be active simultaneously 
-        {
-            if (!pcm_tcm) pcm_enabled = true;
-            else tcm_enabled = true;
-            
-            digitalWrite(PA0, LOW);
-            digitalWrite(PA1, LOW);
-            digitalWrite(PA2, LOW);
-            digitalWrite(PA3, LOW);
-            digitalWrite(PA4, HIGH);
-            digitalWrite(PA5, HIGH);
-            digitalWrite(PA6, HIGH);
-            digitalWrite(PA7, HIGH);
-        }
-    
-        if (pcm_enabled || tcm_enabled) sci_enabled = true;
-        if (!pcm_enabled && !tcm_enabled) sci_enabled = false;
-    
-        if (!pcm_tcm) // PCM
-        {
-            if (!bus_speed) // low speed
-            {
-                pcm_init(LOBAUD); // 7812.5 baud
-                pcm_high_speed_enabled = false;
-            }
-            else // high speed
-            {
-                pcm_init(HIBAUD); // 62500 baud
-                pcm_high_speed_enabled = true;
-            }
-        }
-        else // TCM
-        {
-            if (!bus_speed) // low speed
-            {
-                tcm_init(LOBAUD); // 7812.5 baud
-                tcm_high_speed_enabled = false;
-            }
-            else // high speed
-            {
-                tcm_init(HIBAUD); // 62500 baud
-                tcm_high_speed_enabled = true;
-            }
-        }
-    }
-    else // disable
-    {
-        if (!bus_config) // "A"
-        {
-            digitalWrite(PA0, LOW);
-            digitalWrite(PA1, LOW);
-            digitalWrite(PA2, LOW);
-            digitalWrite(PA3, LOW);
-            digitalWrite(PA4, LOW);
-            digitalWrite(PA5, LOW);
-            digitalWrite(PA6, LOW);
-            digitalWrite(PA7, LOW);
-    
-            pcm_enabled = false;
-            tcm_enabled = false;
-            sci_enabled = false;
-        }
-        else // "B"
-        {
-            if (!pcm_tcm) // PCM
-            {
-                digitalWrite(PA0, LOW);
-                digitalWrite(PA1, LOW);
-                digitalWrite(PA2, LOW);
-                digitalWrite(PA3, LOW);
-                digitalWrite(PA4, LOW);
-                digitalWrite(PA5, LOW);
-                //digitalWrite(PA6, LOW);
-                //digitalWrite(PA7, LOW);
-
-                pcm_enabled = false;
-            }
-            else // TCM
-            {
-                digitalWrite(PA0, LOW);
-                digitalWrite(PA1, LOW);
-                digitalWrite(PA2, LOW);
-                digitalWrite(PA3, LOW);
-                //digitalWrite(PA4, LOW);
-                //digitalWrite(PA5, LOW);
-                digitalWrite(PA6, LOW);
-                digitalWrite(PA7, LOW);
-
-                tcm_enabled = false;
-            }
-        }
-    }
-
-} // end of configure_sci_bus
-
-
-/*************************************************************************
 Function: update_timestamp()
 Purpose:  get elapsed milliseconds since power up/reset from microcontroller and convert it to an array containing 4 bytes
 Note:     this function updates a global byte array which can be read from anywhere in the code
@@ -1911,6 +1775,203 @@ void send_usb_packet(uint8_t source, uint8_t target, uint8_t command, uint8_t su
 
 
 /*************************************************************************
+Function: configure_sci_bus()
+Purpose:  as the name says
+Note:     Input data bits description:
+          PCM: B7:B4
+            B7: settings bit
+              0: leave settings
+              1: change settings
+            B6: enable bit
+              0: disable SCI-bus
+              1: enable SCI-bus
+            B5: configuration bit
+              0: SCI-bus A-configuration
+              1: SCI-bus B-configuration
+            B4: speed bit
+              0: 7812.5 baud (low speed)
+              1: 62500 baud (high speed)
+          
+          TCM: B3:B0
+            B3: settings bit
+              0: leave settings
+              1: change settings
+            B2: enable bit
+              0: disable SCI-bus
+              1: enable SCI-bus
+            B1: configuration bit
+              0: SCI-bus A-configuration
+              1: SCI-bus B-configuration
+            B0: speed bit
+              0: 7812.5 baud (low speed)
+              1: 62500 baud (high speed)
+**************************************************************************/
+void configure_sci_bus(uint8_t data)
+{
+    // Check SCI-bus (PCM) settings bit
+    if (data & 0x80) // if change bit is true
+    {
+        current_sci_bus_settings[0] |= (1 << 7); // set change bit
+        
+        if (data & 0x40) // if enable bit is true
+        {
+            current_sci_bus_settings[0] |= (1 << 6); // set enable bit
+            
+            if (data & 0x20) // if configuration bit is true
+            {
+                // SCI-bus (PCM) B-configuration is selected
+                // Disable all A-configuration pins first
+                digitalWrite(PA0, LOW);  // SCI-BUS_A_PCM_RX disabled
+                digitalWrite(PA1, LOW);  // SCI-BUS_A_PCM_TX disabled
+                digitalWrite(PA2, LOW);  // SCI-BUS_A_TCM_RX disabled
+                digitalWrite(PA3, LOW);  // SCI-BUS_A_TCM_TX disabled
+                // Enable B-configuration pins for PCM (TCM pins don't interfere here)
+                digitalWrite(PA4, HIGH); // SCI-BUS_B_PCM_RX enabled
+                digitalWrite(PA5, HIGH); // SCI-BUS_B_PCM_TX enabled
+                pcm_enabled = true;
+                
+                current_sci_bus_settings[0] |= (1 << 5); // set configuration bit ("B")
+            }
+            else
+            {
+                // SCI-bus (PCM) A-configuration is selected
+                // Disable all B-configuration pins first
+                digitalWrite(PA4, LOW);  // SCI-BUS_B_PCM_RX disabled
+                digitalWrite(PA5, LOW);  // SCI-BUS_B_PCM_TX disabled
+                digitalWrite(PA6, LOW);  // SCI-BUS_B_TCM_RX disabled
+                digitalWrite(PA7, LOW);  // SCI-BUS_B_TCM_TX disabled
+                // Disable A-configuration pins for TCM first, they interfere
+                digitalWrite(PA2, LOW);  // SCI-BUS_A_TCM_RX disabled
+                digitalWrite(PA3, LOW);  // SCI-BUS_A_TCM_TX disabled
+                // Enable A-configuration pins for PCM
+                digitalWrite(PA0, HIGH); // SCI-BUS_A_PCM_RX enabled
+                digitalWrite(PA1, HIGH); // SCI-BUS_A_PCM_TX enabled
+                pcm_enabled = true;
+                tcm_enabled = false;
+                
+                current_sci_bus_settings[0] &= ~(1 << 5); // clear configuration bit ("A")
+
+                if (current_sci_bus_settings[0] & 0x04)
+                {
+                    current_sci_bus_settings[0] &= ~(1 << 2); // clear enable bit (TCM)
+                }
+            }
+            if (data & 0x10) // if speed bit is true
+            {
+                if (!pcm_high_speed_enabled)
+                {
+                    pcm_init(HIBAUD); // 62500 baud
+                    pcm_high_speed_enabled = true;
+                    current_sci_bus_settings[0] |= (1 << 4); // set speed bit (62500 baud)
+                }
+            }
+            else
+            {
+                if (pcm_high_speed_enabled)
+                {
+                    pcm_init(LOBAUD); // 7812.5 baud
+                    pcm_high_speed_enabled = false;
+                    current_sci_bus_settings[0] &= ~(1 << 4); // clear speed bit (7812.5 baud)
+                }
+            }
+        }
+        else
+        {
+            current_sci_bus_settings[0] &= ~(1 << 6); // clear enable bit
+            pcm_enabled = false;
+            digitalWrite(PA0, LOW); // SCI-BUS_A_PCM_RX disabled
+            digitalWrite(PA1, LOW); // SCI-BUS_A_PCM_TX disabled
+            digitalWrite(PA4, LOW); // SCI-BUS_B_PCM_RX disabled
+            digitalWrite(PA5, LOW); // SCI-BUS_B_PCM_TX disabled
+        }
+    }
+
+    // Check if SCI-bus (TCM) needs changing
+    if (data & 0x08)
+    {
+        current_sci_bus_settings[0] |= (1 << 3); // set change bit
+        
+        if (data & 0x04) // if enable bit is true
+        {
+            current_sci_bus_settings[0] |= (1 << 2); // set enable bit
+            
+            if (data & 0x02) // if configuration bit is true
+            {
+                // SCI-bus (TCM) B-configuration is selected
+                // Disable all A-configuration pins first
+                digitalWrite(PA0, LOW);  // SCI-BUS_A_PCM_RX disabled
+                digitalWrite(PA1, LOW);  // SCI-BUS_A_PCM_TX disabled
+                digitalWrite(PA2, LOW);  // SCI-BUS_A_TCM_RX disabled
+                digitalWrite(PA3, LOW);  // SCI-BUS_A_TCM_TX disabled
+                // Enable B-configuration pins for TCM (PCM pins don't interfere here)
+                digitalWrite(PA6, HIGH); // SCI-BUS_B_TCM_RX enabled
+                digitalWrite(PA7, HIGH); // SCI-BUS_B_TCM_TX enabled
+                tcm_enabled = true;
+
+                current_sci_bus_settings[0] |= (1 << 1); // set configuration bit ("B")
+            }
+            else
+            {
+                // SCI-bus (TCM) A-configuration is selected
+                // Disable all B-configuration pins first
+                digitalWrite(PA4, LOW);  // SCI-BUS_B_PCM_RX disabled
+                digitalWrite(PA5, LOW);  // SCI-BUS_B_PCM_TX disabled
+                digitalWrite(PA6, LOW);  // SCI-BUS_B_TCM_RX disabled
+                digitalWrite(PA7, LOW);  // SCI-BUS_B_TCM_TX disabled
+                // Disable A-configuration pins for PCM first, they interfere
+                digitalWrite(PA0, LOW);  // SCI-BUS_A_PCM_RX disabled
+                digitalWrite(PA1, LOW);  // SCI-BUS_A_PCM_TX disabled
+                // Enable A-configuration pins for TCM
+                digitalWrite(PA2, HIGH); // SCI-BUS_A_TCM_RX enabled
+                digitalWrite(PA3, HIGH); // SCI-BUS_A_TCM_TX enabled
+                tcm_enabled = true;
+                pcm_enabled = false;
+
+                current_sci_bus_settings[0] &= ~(1 << 1); // clear configuration bit ("A")
+
+                if (current_sci_bus_settings[0] & 0x40)
+                {
+                    current_sci_bus_settings[0] &= ~(1 << 6); // clear enable bit (TCM)
+                }
+            }
+            if (data & 0x01) // if speed bit is true
+            {
+                if (!tcm_high_speed_enabled)
+                {
+                    tcm_init(HIBAUD); // 62500 baud
+                    tcm_high_speed_enabled = true;
+                    current_sci_bus_settings[0] |= 1; // set speed bit (62500 baud)
+                }
+            }
+            else
+            {
+                if (tcm_high_speed_enabled)
+                {
+                    tcm_init(LOBAUD); // 7812.5 baud
+                    tcm_high_speed_enabled = false;
+                    current_sci_bus_settings[0] &= ~(1); // clear speed bit (7812.5 baud)
+                }
+            }
+        }
+        else
+        {
+            current_sci_bus_settings[0] &= ~(1 << 3); // clear enable bit
+            tcm_enabled = false;
+            digitalWrite(PA2, LOW); // SCI-BUS_A_TCM_RX disabled
+            digitalWrite(PA3, LOW); // SCI-BUS_A_TCM_TX disabled
+            digitalWrite(PA6, LOW); // SCI-BUS_B_TCM_RX disabled
+            digitalWrite(PA7, LOW); // SCI-BUS_B_TCM_TX disabled
+        }
+    }
+        
+    if (pcm_enabled || tcm_enabled) sci_enabled = true;
+    if (!pcm_enabled && !tcm_enabled) sci_enabled = false;
+    send_usb_packet(from_usb, to_usb, settings, set_sci_bus, current_sci_bus_settings, 1); // acknowledge
+
+} // end of configure_sci_bus
+
+
+/*************************************************************************
 Function: exteeprom_init()
 Purpose:  initialize LCD
 **************************************************************************/
@@ -2016,39 +2077,39 @@ Purpose:  gather hardware version/date, assembly date and firmware date
 **************************************************************************/
 void send_hwfw_info(void)
 {
-    uint8_t hwfw_value[26];
+    uint8_t ret[26];
                                     
-    hwfw_value[0] = hw_version[0];
-    hwfw_value[1] = hw_version[1];
+    ret[0] = hw_version[0];
+    ret[1] = hw_version[1];
     
-    hwfw_value[2] = hw_date[0];
-    hwfw_value[3] = hw_date[1];
-    hwfw_value[4] = hw_date[2];
-    hwfw_value[5] = hw_date[3];
-    hwfw_value[6] = hw_date[4];
-    hwfw_value[7] = hw_date[5];
-    hwfw_value[8] = hw_date[6];
-    hwfw_value[9] = hw_date[7];
+    ret[2] = hw_date[0];
+    ret[3] = hw_date[1];
+    ret[4] = hw_date[2];
+    ret[5] = hw_date[3];
+    ret[6] = hw_date[4];
+    ret[7] = hw_date[5];
+    ret[8] = hw_date[6];
+    ret[9] = hw_date[7];
 
-    hwfw_value[10] = assembly_date[0];
-    hwfw_value[11] = assembly_date[1];
-    hwfw_value[12] = assembly_date[2];
-    hwfw_value[13] = assembly_date[3];
-    hwfw_value[14] = assembly_date[4];
-    hwfw_value[15] = assembly_date[5];
-    hwfw_value[16] = assembly_date[6];
-    hwfw_value[17] = assembly_date[7];
+    ret[10] = assembly_date[0];
+    ret[11] = assembly_date[1];
+    ret[12] = assembly_date[2];
+    ret[13] = assembly_date[3];
+    ret[14] = assembly_date[4];
+    ret[15] = assembly_date[5];
+    ret[16] = assembly_date[6];
+    ret[17] = assembly_date[7];
     
-    hwfw_value[18] = (FW_DATE >> 56) & 0xFF;
-    hwfw_value[19] = (FW_DATE >> 48) & 0xFF;
-    hwfw_value[20] = (FW_DATE >> 40) & 0xFF;
-    hwfw_value[21] = (FW_DATE >> 32) & 0xFF;
-    hwfw_value[22] = (FW_DATE >> 24) & 0xFF;
-    hwfw_value[23] = (FW_DATE >> 16) & 0xFF;
-    hwfw_value[24] = (FW_DATE >> 8) & 0xFF;
-    hwfw_value[25] = FW_DATE & 0xFF;
+    ret[18] = (FW_DATE >> 56) & 0xFF;
+    ret[19] = (FW_DATE >> 48) & 0xFF;
+    ret[20] = (FW_DATE >> 40) & 0xFF;
+    ret[21] = (FW_DATE >> 32) & 0xFF;
+    ret[22] = (FW_DATE >> 24) & 0xFF;
+    ret[23] = (FW_DATE >> 16) & 0xFF;
+    ret[24] = (FW_DATE >> 8) & 0xFF;
+    ret[25] = FW_DATE & 0xFF;
 
-    send_usb_packet(from_usb, to_usb, response, hwfw_info, hwfw_value, 26);
+    send_usb_packet(from_usb, to_usb, response, hwfw_info, ret, 26);
     
 } /* send_hwfw_info */
 
@@ -2169,6 +2230,7 @@ Note:     only second argument is checked ("help command")
 **************************************************************************/
 int cmd_help(void)
 {
+    blink_led(TX_LED);
     if (args[1] == NULL) // no second argument
     {
         //help_help();
@@ -2198,11 +2260,1341 @@ int cmd_help(void)
 
 
 /*************************************************************************
+Function: handle_lcd()
+Purpose:  write stuff to LCD
+Note:     uncomment cases when necessary
+**************************************************************************/
+void handle_lcd(uint8_t bus, uint8_t *data, uint8_t startindex, uint8_t datalength)
+{  
+    if (lcd_enabled)
+    {
+        uint8_t message[datalength-startindex];
+    
+        for (uint8_t i = startindex; i < datalength; i++)
+        {
+            message[i-startindex] = data[i]; // make a local copy of the source array
+        }
+        
+        switch (bus)
+        {
+            case from_ccd: // 0x01 - CCD-bus
+            {
+                switch (message[0]) // check ID-byte
+                {
+//                    case 0x00: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x01: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x02: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x03: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x04: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x05: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x06: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x07: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x08: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x09: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x0A: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x0B: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x0C: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0x0D: // ???
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0x0E: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x0F: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x10: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0x11: // ???
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0x12: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x13: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x14: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x15: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x16: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x17: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x18: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x19: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x1A: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x1B: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x1C: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x1D: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x1E: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x1F: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x20: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x21: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x22: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x23: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0x24: // VEHICLE SPEED
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0x25: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x26: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x27: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x28: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0x29: // LAST ENGINE SHUTDOWN
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0x2A: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x2B: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x2C: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x2D: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x2E: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x2F: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x30: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x31: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x32: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x33: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x34: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x35: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0x36: // ???
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0x37: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x38: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x39: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0x3A: // INSTRUMENT PANEL LAMP STATES (AIRBAG LAMP)
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0x3B: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x3C: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x3D: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x3E: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x3F: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x40: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x41: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0x42: // THROTTLE POSITION SENSOR | CRUISE CONTROL
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0x43: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x44: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x45: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x46: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x47: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x48: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x49: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x4A: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x4B: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x4C: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0x4D: // ???
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0x4E: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x4F: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0x50: // AIRBAG LAMP STATE
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0x51: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x52: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x53: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0x54: // ???
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0x55: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x56: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x57: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x58: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x59: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x5A: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x5B: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x5C: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x5D: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x5E: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x5F: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x60: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x61: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x62: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x63: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x64: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x65: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x66: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x67: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x68: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x69: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x6A: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x6B: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x6C: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0x6D: // VEHICLE IDENTIFICATION NUMBER (VIN)
+                    {
+                        vin_characters[message[1]-1] = char(message[2]); // store current character
+                        vin_string = String(vin_characters); // convert available characters to a string
+                        break;
+                    }
+//                    case 0x6E: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x6F: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x70: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x71: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x72: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x73: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x74: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0x75: // A/C HIGH SIDE PRESSURE
+                    {
+                        // TODO
+                        break;
+                    }
+                    case 0x76: // ???
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0x77: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x78: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x79: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x7A: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x7B: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x7C: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x7D: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0x7E: // ???
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0x7F: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x80: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x81: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x82: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x83: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0x84: // INCREMENT ODOMETER AND TRIPMETER
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0x85: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x86: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x87: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x88: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x89: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x8A: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x8B: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0x8C: // ENGINE COOLANT TEMPERATURE | AMBIENT TEMP.
+                    {
+                        // TODO
+                        break;
+                    }
+                    case 0x8D: // ???
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0x8E: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x8F: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x90: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x91: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x92: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x93: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0x94: // INSTRUMENT PANEL GAUGE VALUE
+                    {
+                        // TODO
+                        break;
+                    }
+                    case 0x95: // ???
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0x96: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x97: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x98: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x99: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x9A: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x9B: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x9C: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x9D: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x9E: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0x9F: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xA0: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xA1: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xA2: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xA3: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0xA4: // INSTRUMENT PANEL LAMP STATES
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0xA5: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xA6: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xA7: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xA8: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0xA9: // LAST ENGINE SHUTDOWN
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0xAA: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xAB: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0xAC: // VEHICLE INFORMATION / BODY TYPE
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0xAD: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xAE: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xAF: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xB0: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xB1: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0xB2: // DIAGNOSTIC REQUEST MESSAGE
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0xB3: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0xB4: // ???
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0xB5: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0xB6: // ???
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0xB7: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xB8: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xB9: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xBA: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xBB: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xBC: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xBD: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0xBE: // IGNITION SWITCH POSITION
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0xBF: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xC0: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xC1: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xC2: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xC3: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xC4: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xC5: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xC6: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xC7: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xC8: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xC9: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xCA: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xCB: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0xCC: // ACCUMULATED MILEAGE
+                    {
+                        // TODO
+                        break;
+                    }
+                    case 0xCD: // ???
+                    {
+                        // TODO
+                        break;
+                    }
+                    case 0xCE: // VEHICLE DISTANCE / ODOMETER VALUE
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0xCF: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xD0: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xD1: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xD2: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xD3: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0xD4: // BATTERY VOLTAGE | CALCULATED CHARGING VOLTAGE
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0xD5: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xD6: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xD7: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xD8: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xD9: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0xDA: // INSTRUMENT PANEL LAMP STATES (CHECK ENGINE)
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0xDB: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xDC: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xDD: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xDE: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xDF: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xE0: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xE1: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xE2: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xE3: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0xE4: // ENGINE SPEED | INTAKE MANIFOLD ABS. PRESSURE
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0xE5: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xE6: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xE7: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xE8: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xE9: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xEA: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xEB: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0xEC: // VEHICLE INFORMATION / LIMP STATES / FUEL TYPE
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0xED: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0xEE: // TRIP DISTANCE / TRIPMETER VALUE
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0xEF: // ???
+//                    {
+//                      // TODO
+//                      break;
+//                    }
+//                    case 0xF0: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xF1: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0xF2: // DIAGNOSTIC RESPONSE MESSAGE
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0xF3: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xF4: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xF5: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0xF6: // ???
+                    {
+                        // TODO
+                        break;
+                    }
+//                    case 0xF7: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xF8: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xF9: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xFA: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xFB: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xFC: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+//                    case 0xFD: // ???
+//                    {
+//                        // TODO
+//                        break;
+//                    }
+                    case 0xFE: // INTERIOR LAMP DIMMING
+                    {
+                        // TODO
+                        break;
+                    }
+                    case 0xFF: // CCD-BUS WAKING UP
+                    {
+                        // TODO
+                        break;
+                    }
+                }
+                break;
+            }
+            case from_pcm: // 0x02 - SCI-bus (PCM)
+            {
+                // TODO
+                break;
+            }
+            case from_tcm: // 0x03 - SCI-bus (TCM)
+            {
+                // TODO
+                break;
+            }
+            default:
+            {
+                // TODO
+                break;
+            }
+        }
+    }
+    
+} // end of handle_lcd
+
+
+/*************************************************************************
 Function: handle_usb_data()
 Purpose:  handle USB commands coming from an external computer
-Note:     refer to ChryslerCCDSCIScanner_UART_Protocol.pdf to find out 
-          more about the message format:
+Note:     PACKET_SYNC_BYTE:
           [ SYNC | LENGTH_HB | LENGTH_LB | DATACODE | SUBDATACODE | <?PAYLOAD?> | CHECKSUM ]
+          More on this in ChryslerCCDSCIScanner_UART_Protocol.pdf
+          
+          ASCII_SYNC_BYTE:
+          >COMMAND PARAMETER_1 PARAMETER_2 ... PARAMETER_N
 **************************************************************************/
 void handle_usb_data(void)
 {
@@ -2337,7 +3729,7 @@ void handle_usb_data(void)
                                 // Send acknowledge packet back to the laptop.
                                 send_usb_packet(from_usb, to_usb, reset, ok, ack, 1); // RX LED is on by now and this function lights up TX LED
                                 digitalWrite(ACT_LED, LOW); // blink all LEDs including this, good way to test if LEDs are working or not
-                                while(true); // Enter into an infinite loop. Watchdog timer doesn't get reset this way so it restarts the program eventually.
+                                while(true); // enter into an infinite loop; watchdog timer doesn't get reset this way so it restarts the program eventually
                                 break; // not necessary but every case needs a break
                             }
                             case handshake: // 0x01 - handshake request coming from an external computer
@@ -2420,11 +3812,19 @@ void handle_usb_data(void)
                                             send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
                                             break;
                                         }
-                                        
                                         configure_sci_bus(cmd_payload[0]); // pass settings to this function
-    
-                                        send_usb_packet(from_usb, to_usb, settings, set_sci_bus, cmd_payload, 1); // acknowledge
                                         break;
+                                    }
+                                    case set_lcd: // 0x03 - LCD ON/OFF
+                                    {
+                                        if (!payload_bytes)
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            break;
+                                        }
+                                        if (cmd_payload[0] == 0x00) lcd_enabled = false;
+                                        else lcd_enabled = true;
+                                
                                     }
                                     default: // other values are not used
                                     {
@@ -2723,8 +4123,8 @@ void handle_usb_data(void)
 
                 if (line_string.length() < CLI_BUF_SIZE)
                 {
-                    line_string.toCharArray(line, CLI_BUF_SIZE); // convert "lin_string" string to "line" character array
-                    blink_led(TX_LED);
+                    line_string.toCharArray(line, CLI_BUF_SIZE); // convert "line_string" string to "line" character array
+                    //blink_led(TX_LED);
                     //usb_puts(line); // while debugging echo the original command back
                     //usb_putc(0x0A); // and add a new line at the end
                 }
@@ -2784,6 +4184,7 @@ void handle_ccd_data(void)
                 }
                 // TODO: check here if echo is expected from a pending message, otherwise good to know if a custom message is heard by the other modules
                 send_usb_packet(from_ccd, to_usb, msg_rx, single_msg, usb_msg, 4+ccd_bytes_count); // send CCD-bus message back to the laptop
+                handle_lcd(from_ccd, usb_msg, 4, 4+ccd_bytes_count); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
                 ccd_bytes_count = 0; // force ISR to update this value again so we don't end up here in the next program loop
             }
 
@@ -2859,44 +4260,55 @@ void handle_sci_data(void)
             bool timeout_reached = false;
             
             // Collect bytes from the receive buffer
-            uint8_t datalength = pcm_rx_available(); // how many bytes are readily available? (only read this much bytes, don't let them accumulate in the for-loop)
+            uint8_t datalength = pcm_rx_available(); // get current number of bytes available to read
             if (datalength > 0)
             {
                 for (uint8_t i = 0; i < datalength; i++)
                 {
+                    pcm_last_msgbyte_received = millis();
                     pcm_bytes_buffer[pcm_bytes_buffer_ptr] = pcm_getc() & 0xFF;
                     pcm_bytes_buffer_ptr++; // increase pointer value by one so it points to the next empty slot in the buffer
                     if (pcm_bytes_buffer_ptr >= BUFFER_SIZE) // don't let buffer pointer overflow
                     {
+                        pcm_bytes_buffer_ptr = BUFFER_SIZE;
                         break; // exit for-loop if buffer is about to overflow
                     }
                 }
-                pcm_last_msgbyte_received = millis();
             }
 
             // Decide if a message is complete using a timeout (delay) condition or send the whole buffer if it can't hold more bytes
             if ((((millis() - pcm_last_msgbyte_received) > SCI_INTERFRAME_RESPONSE_DELAY) && (pcm_bytes_buffer_ptr > 0)) || pcm_bytes_buffer_ptr == BUFFER_SIZE)
             {
                 uint8_t usb_msg[4+pcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
-                update_timestamp(current_timestamp); // get current time for the timestamp, ironically the timestamp will indicate when the last byte was received but it's good enough
+                update_timestamp(current_timestamp); // get current time for the timestamp
                 for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
                 {
                     usb_msg[i] = current_timestamp[i];
                 }
-                for (uint8_t i = 0; i < pcm_bytes_buffer_ptr; i++)
+                for (uint8_t i = 0; i < pcm_bytes_buffer_ptr; i++) // put every byte in the SCI-bus message after the timestamp
                 {
-                    usb_msg[4+i] = pcm_bytes_buffer[i]; // put every byte in the SCI-bus message after the timestamp
+                    usb_msg[4+i] = pcm_bytes_buffer[i];
                 }
                 send_usb_packet(from_pcm, to_usb, msg_rx, ok, usb_msg, 4+pcm_bytes_buffer_ptr);
+                handle_lcd(from_pcm, usb_msg, 4, 4+pcm_bytes_buffer_ptr); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
 
                 // Take action if special bytes are received
                 if (!pcm_high_speed_enabled) // low speed mode
                 {
-                    //if (pcm_bytes_buffer[0] == 0x12) configure_sci_bus(); // TODO: enter high speed mode automatically
+                    if (pcm_bytes_buffer[0] == 0x12)
+                    {
+                        current_sci_bus_settings[0] |= 0xD0; // set change bit, set enable bit, set speed bit
+                        configure_sci_bus(current_sci_bus_settings[0]);
+                    }
                 }
                 else
                 {
-                    //if (pcm_bytes_buffer[0] == 0xFE) configure_sci_bus(); // TODO: enter low speed mode automatically
+                    if (pcm_bytes_buffer[0] == 0xFE)
+                    {
+                        current_sci_bus_settings[0] |= 0xC0; // set change bit, set enable bit
+                        current_sci_bus_settings[0] &= ~(1 << 4); // clear speed bit
+                        configure_sci_bus(current_sci_bus_settings[0]);
+                    }
                 }
                 
                 pcm_bytes_buffer_ptr = 0;
@@ -2952,19 +4364,20 @@ void handle_sci_data(void)
             uint32_t timeout_start = 0;
             bool timeout_reached = false;
             
-            uint8_t datalength = tcm_rx_available(); // how many bytes are readily available? (only read this much bytes, don't let them accumulate in the for-loop)
+            uint8_t datalength = tcm_rx_available(); // get current number of bytes available to read
             if (datalength > 0)
             {
                 for (uint8_t i = 0; i < datalength; i++)
                 {
+                    tcm_last_msgbyte_received = millis();
                     tcm_bytes_buffer[tcm_bytes_buffer_ptr] = tcm_getc() & 0xFF;
                     tcm_bytes_buffer_ptr++; // increase pointer value by one so it points to the next empty slot in the buffer
                     if (tcm_bytes_buffer_ptr >= BUFFER_SIZE) // don't let buffer pointer overflow
                     {
+                        tcm_bytes_buffer_ptr = BUFFER_SIZE;
                         break;
                     }
                 }
-                tcm_last_msgbyte_received = millis();
             }
     
             if ((((millis() - tcm_last_msgbyte_received) > SCI_INTERFRAME_RESPONSE_DELAY) && (tcm_bytes_buffer_ptr > 0)) || tcm_bytes_buffer_ptr == BUFFER_SIZE)
@@ -2975,20 +4388,30 @@ void handle_sci_data(void)
                 {
                     usb_msg[i] = current_timestamp[i];
                 }
-                for (uint8_t i = 0; i < tcm_bytes_buffer_ptr; i++)
+                for (uint8_t i = 0; i < tcm_bytes_buffer_ptr; i++) // put every byte in the SCI-bus message after the timestamp
                 {
-                    usb_msg[4+i] = tcm_bytes_buffer[i]; // put every byte in the SCI-bus message after the timestamp
+                    usb_msg[4+i] = tcm_bytes_buffer[i];
                 }
                 send_usb_packet(from_tcm, to_usb, msg_rx, ok, usb_msg, 4+tcm_bytes_buffer_ptr);
+                handle_lcd(from_tcm, usb_msg, 4, 4+tcm_bytes_buffer_ptr); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
 
                 // Take action if special bytes are received
                 if (!tcm_high_speed_enabled) // low speed mode
                 {
-                    //if (tcm_bytes_buffer[0] == 0x12) configure_sci_bus(); // TODO: enter high speed mode automatically
+                    if (tcm_bytes_buffer[0] == 0x12)
+                    {
+                        current_sci_bus_settings[0] |= 0x0D; // set change bit, set enable bit, set speed bit
+                        configure_sci_bus(current_sci_bus_settings[0]);
+                    }
                 }
                 else
                 {
-                    //if (tcm_bytes_buffer[0] == 0xFE) configure_sci_bus(); // TODO: enter low speed mode automatically
+                    if (tcm_bytes_buffer[0] == 0xFE)
+                    {
+                        current_sci_bus_settings[0] |= 0x0C; // set change bit, set enable bit
+                        current_sci_bus_settings[0] &= ~(1); // clear speed bit
+                        configure_sci_bus(current_sci_bus_settings[0]);
+                    }
                 }
                 
                 tcm_bytes_buffer_ptr = 0;
@@ -3099,17 +4522,6 @@ void lcd_init(void)
     lcd.createChar(5, degree_symbol);
     
 } // end of lcd_init
-
-
-/*************************************************************************
-Function: handle_lcd()
-Purpose:  write stuff to LCD
-**************************************************************************/
-void handle_lcd(void)
-{
-    // TODO
-    
-} // end of handle_lcd
 
 
 /*************************************************************************
