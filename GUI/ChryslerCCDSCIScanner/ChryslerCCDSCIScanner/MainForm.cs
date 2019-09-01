@@ -447,6 +447,7 @@ namespace ChryslerCCDSCIScanner
                                         DateTime HardwareDate = Util.UnixTimeStampToDateTime(payload[5] << 56 | payload[6] << 48 | payload[7] << 40 | payload[8] << 32 | payload[9] << 24 | payload[10] << 16 | payload[11] << 8 | payload[12]);
                                         DateTime AssemblyDate = Util.UnixTimeStampToDateTime(payload[13] << 56 | payload[14] << 48 | payload[15] << 40 | payload[16] << 32 | payload[17] << 24 | payload[18] << 16 | payload[19] << 8 | payload[20]);
                                         DateTime FirmwareDate = Util.UnixTimeStampToDateTime(payload[21] << 56 | payload[22] << 48 | payload[23] << 40 | payload[24] << 32 | payload[25] << 24 | payload[26] << 16 | payload[27] << 8 | payload[28]);
+                                        OldUNIXTime = payload[21] << 56 | payload[22] << 48 | payload[23] << 40 | payload[24] << 32 | payload[25] << 24 | payload[26] << 16 | payload[27] << 8 | payload[28];
                                         string HardwareDateString = HardwareDate.ToString("yyyy.MM.dd HH:mm:ss");
                                         string AssemblyDateString = AssemblyDate.ToString("yyyy.MM.dd HH:mm:ss");
                                         string FirmwareDateString = FirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
