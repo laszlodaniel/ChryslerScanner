@@ -121,6 +121,47 @@ namespace ChryslerCCDSCIScanner
             InitializeComponent();
         }
 
+        private async Task SerialDataReadAsyncTask()
+        {
+            while (ScannerFound)
+            {
+                Task<int> readByteTask = Serial.BaseStream.ReadAsync(buffer, 0, buffer.Length);
+                int bytesRead = await readByteTask;
+                SerialRxBuffer.Append(buffer, 0, bytesRead);
+                PM.DataReceived = true; // fire datareceived event and analyze received data
+            }
+        }
+
+        private async void SerialDataReadAsync()
+        {
+            try
+            {
+                await Task.Run(() => SerialDataReadAsyncTask());
+            }
+            catch
+            {
+                if (!USBTextBox.IsDisposed && ScannerFound)
+                {
+                    Util.UpdateTextBox(USBTextBox, "[INFO] Can't listen to " + Serial.PortName, null);
+                }
+            }
+        }
+
+        private async void SerialDataWriteAsync(byte[] message)
+        {
+            try
+            {
+                await Serial.BaseStream.WriteAsync(message, 0, message.Length);
+            }
+            catch
+            {
+                if (!USBTextBox.IsDisposed)
+                {
+                    Util.UpdateTextBox(USBTextBox, "[INFO] Can't write to " + Serial.PortName, null);
+                }
+            }
+        }
+
         private void MainForm_Load(object sender, EventArgs e)
         {
             DiagnosticsGroupBox.Visible = false; // hide the expanded view components all at once
@@ -170,13 +211,18 @@ namespace ChryslerCCDSCIScanner
             }
             catch
             {
-                Util.UpdateTextBox(USBTextBox, "[INFO] Application config file is missing (ChryslerCCDSCIScanner.exe.config)", null);
+                Util.UpdateTextBox(USBTextBox, "[INFO] Application config file is missing", null);
                 Units = 0; // Metric units by default
             }
 
             if (!File.Exists("VehicleProfiles.xml"))
             {
-                Util.UpdateTextBox(USBTextBox, "[INFO] Vehicle profiles file is missing (VehicleProfiles.xml)", null);
+                Util.UpdateTextBox(USBTextBox, "[INFO] Vehicle profiles file is missing", null);
+            }
+
+            if (!Directory.Exists("Tools"))
+            {
+                Util.UpdateTextBox(USBTextBox, "[INFO] AVRDUDE is missing", null);
             }
 
             ActiveControl = ConnectButton; // put focus on the connect button
@@ -198,7 +244,8 @@ namespace ChryslerCCDSCIScanner
             if (!ScannerFound) // only let connect once when there's no scanner found yet
             {
                 ConnectButton.Enabled = false; // no double-click
-                byte[] HandshakeHwFwRequest = new byte[] { 0x3D, 0x00, 0x02, 0x01, 0x01, 0x04 };
+                byte[] HandshakeRequest = new byte[] { 0x3D, 0x00, 0x02, 0x01, 0x00, 0x03 };
+                byte[] StatusRequest = new byte[] { 0x3D, 0x00, 0x02, 0x02, 0x00, 0x04 };
                 string[] ports = SerialPort.GetPortNames(); // get all available portnames
                 if (ports.Length == 0) // if there's none, do nothing
                 {
@@ -232,8 +279,8 @@ namespace ChryslerCCDSCIScanner
                     Serial.DiscardInBuffer();
                     Serial.DiscardOutBuffer();
                     Serial.BaseStream.Flush();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Handshake + HW/FW info request (" + Serial.PortName + ")", HandshakeHwFwRequest);
-                    SerialDataWriteAsync(HandshakeHwFwRequest);
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Handshake request (" + Serial.PortName + ")", HandshakeRequest);
+                    SerialDataWriteAsync(HandshakeRequest);
 
                     Timeout = false; // for the connection procedure we have to manually read response bytes here
                     TimeoutTimer.Enabled = true; // start counting to the set timeout value
@@ -274,6 +321,8 @@ namespace ChryslerCCDSCIScanner
                         }
                         USBCommunicationGroupBox.Text = "USB communication (" + Serial.PortName + ")";
                         UpdatePort = Serial.PortName;
+                        Util.UpdateTextBox(USBTextBox, "[<-TX] Status request", StatusRequest);
+                        SerialDataWriteAsync(StatusRequest);
                         return;
                     }
                     else
@@ -392,6 +441,105 @@ namespace ChryslerCCDSCIScanner
                                             ScannerFound = false;
                                         }
                                         break;
+                                    case (byte)Command.Status:
+                                        string AVRSignature = Util.ByteToHexString(payload, 0, 3) + " (ATmega2560)";
+                                        string HardwareVersion = "V" + ((payload[3] << 8 | payload[4]) / 100.00).ToString("0.00").Replace(",", ".");
+                                        DateTime HardwareDate = Util.UnixTimeStampToDateTime(payload[5] << 56 | payload[6] << 48 | payload[7] << 40 | payload[8] << 32 | payload[9] << 24 | payload[10] << 16 | payload[11] << 8 | payload[12]);
+                                        DateTime AssemblyDate = Util.UnixTimeStampToDateTime(payload[13] << 56 | payload[14] << 48 | payload[15] << 40 | payload[16] << 32 | payload[17] << 24 | payload[18] << 16 | payload[19] << 8 | payload[20]);
+                                        DateTime FirmwareDate = Util.UnixTimeStampToDateTime(payload[21] << 56 | payload[22] << 48 | payload[23] << 40 | payload[24] << 32 | payload[25] << 24 | payload[26] << 16 | payload[27] << 8 | payload[28]);
+                                        string HardwareDateString = HardwareDate.ToString("yyyy.MM.dd HH:mm:ss");
+                                        string AssemblyDateString = AssemblyDate.ToString("yyyy.MM.dd HH:mm:ss");
+                                        string FirmwareDateString = FirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
+                                        string extEEPROMChecksum = Util.ByteToHexString(payload, 29, 30);
+                                        if (payload[29] == payload[30]) extEEPROMChecksum += " (OK)";
+                                        else extEEPROMChecksum += " (ERROR [" + Util.ByteToHexString(payload, 30, 31) + "])";
+                                        TimeSpan ElapsedMillis = TimeSpan.FromMilliseconds(payload[31] << 24 | payload[32] << 16 | payload[33] << 8 | payload[34]);
+                                        DateTime MicrocontrollerTimestamp = DateTime.Today.Add(ElapsedMillis);
+                                        string MicrocontrollerTimestampString = MicrocontrollerTimestamp.ToString("HH:mm:ss.fff");
+                                        string FreeRAMString = ((payload[35] << 8) | payload[36]).ToString() + " free of 8192 bytes";
+                                        string ConnectedToVehicle = String.Empty;
+                                        if (payload[37] == 0x01) ConnectedToVehicle = "yes";
+                                        else ConnectedToVehicle = "no";
+                                        string BatteryVoltageString = ((payload[38] << 8 | payload[39]) / 100.00).ToString("0.00").Replace(",", ".") + " V";
+                                        string CCDBusStateString = String.Empty;
+                                        if (payload[40] == 0x01) CCDBusStateString = "enabled";
+                                        else CCDBusStateString = "disabled";
+                                        string CCDBusRxMessagesString = ((payload[41] << 24) | (payload[42] << 16) | (payload[43] << 8 | payload[44])).ToString();
+                                        string CCDBusTxMessagesString = ((payload[45] << 24) | (payload[46] << 16) | (payload[47] << 8 | payload[48])).ToString();
+                                        string SCIBusPCMStateString = String.Empty;
+                                        string SCIBusPCMConfigurationString = String.Empty;
+                                        string SCIBusPCMSpeedString = String.Empty;
+                                        string SCIBusTCMStateString = String.Empty;
+                                        string SCIBusTCMConfigurationString = String.Empty;
+                                        string SCIBusTCMSpeedString = String.Empty;
+                                        if ((payload[49] & 0x40) != 0)
+                                        {
+                                            SCIBusPCMStateString = "enabled";
+                                            if ((payload[49] & 0x20) != 0) SCIBusPCMConfigurationString = "\"B\"";
+                                            else SCIBusPCMConfigurationString = "\"A\"";
+                                            if ((payload[49] & 0x10) != 0) SCIBusPCMSpeedString = "62500 baud";
+                                            else SCIBusPCMSpeedString = "7812.5 baud";
+                                        }
+                                        else
+                                        {
+                                            SCIBusPCMStateString = "disabled";
+                                            if ((payload[49] & 0x20) != 0) SCIBusPCMConfigurationString = "-";
+                                            else SCIBusPCMConfigurationString = "-";
+                                            if ((payload[49] & 0x10) != 0) SCIBusPCMSpeedString = "-";
+                                            else SCIBusPCMSpeedString = "-";
+                                        }
+                                        if ((payload[49] & 0x04) != 0)
+                                        {
+                                            SCIBusTCMStateString = "enabled";
+                                            if ((payload[49] & 0x02) != 0) SCIBusTCMConfigurationString = "\"B\"";
+                                            else SCIBusTCMConfigurationString = "\"A\"";
+                                            if ((payload[49] & 0x01) != 0) SCIBusTCMSpeedString = "62500 baud";
+                                            else SCIBusTCMSpeedString = "7812.5 baud";
+                                        }
+                                        else
+                                        {
+                                            SCIBusTCMStateString = "disabled";
+                                            if ((payload[49] & 0x02) != 0) SCIBusTCMConfigurationString = "-";
+                                            else SCIBusTCMConfigurationString = "-";
+                                            if ((payload[49] & 0x01) != 0) SCIBusTCMSpeedString = "-";
+                                            else SCIBusTCMSpeedString = "-";
+                                        }
+                                        string SCIBusPCMRxMessagesString = ((payload[50] << 24) | (payload[51] << 16) | (payload[52] << 8 | payload[53])).ToString();
+                                        string SCIBusPCMTxMessagesString = ((payload[54] << 24) | (payload[55] << 16) | (payload[56] << 8 | payload[57])).ToString();
+                                        string SCIBusTCMRxMessagesString = ((payload[58] << 24) | (payload[59] << 16) | (payload[60] << 8 | payload[61])).ToString();
+                                        string SCIBusTCMTxMessagesString = ((payload[62] << 24) | (payload[63] << 16) | (payload[64] << 8 | payload[65])).ToString();
+
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Status response", msg);
+                                        Util.UpdateTextBox(USBTextBox, "[INFO] Scanner status:" + Environment.NewLine +
+                                                                       "       - AVR signature: " + AVRSignature + Environment.NewLine +
+                                                                       "       - hardware ver.: " + HardwareVersion + Environment.NewLine +
+                                                                       "       - hardware date: " + HardwareDateString + Environment.NewLine +
+                                                                       "       - assembly date: " + AssemblyDateString + Environment.NewLine +
+                                                                       "       - firmware date: " + FirmwareDateString + Environment.NewLine +
+                                                                       "       - extEEPROM checksum: " + extEEPROMChecksum + Environment.NewLine +
+                                                                       "       - timestamp: " + MicrocontrollerTimestampString + Environment.NewLine +
+                                                                       "       - RAM usage: " + FreeRAMString + Environment.NewLine +
+                                                                       "       - connected to vehicle: " + ConnectedToVehicle + Environment.NewLine +
+                                                                       "       - battery voltage: " + BatteryVoltageString + Environment.NewLine +
+                                                                       "       CCD-bus status:" + Environment.NewLine +
+                                                                       "       - state: " + CCDBusStateString + Environment.NewLine +
+                                                                       "       - speed: 7812.5 baud" + Environment.NewLine +
+                                                                       "       - messages received: " + CCDBusRxMessagesString + Environment.NewLine +
+                                                                       "       - messages transmitted: " + CCDBusTxMessagesString + Environment.NewLine +
+                                                                       "       SCI-bus status:" + Environment.NewLine +
+                                                                       "       - PCM:" + Environment.NewLine +
+                                                                       "         - state: " + SCIBusPCMStateString + Environment.NewLine +
+                                                                       "         - configuration: " + SCIBusPCMConfigurationString + Environment.NewLine +
+                                                                       "         - speed: " + SCIBusPCMSpeedString + Environment.NewLine +
+                                                                       "         - messages received: " + SCIBusPCMRxMessagesString + Environment.NewLine +
+                                                                       "         - messages transmitted: " + SCIBusPCMTxMessagesString + Environment.NewLine +
+                                                                       "       - TCM:" + Environment.NewLine +
+                                                                       "         - state: " + SCIBusTCMStateString + Environment.NewLine +
+                                                                       "         - configuration: " + SCIBusTCMConfigurationString + Environment.NewLine +
+                                                                       "         - speed: " + SCIBusTCMSpeedString + Environment.NewLine +
+                                                                       "         - messages received: " + SCIBusTCMRxMessagesString + Environment.NewLine +
+                                                                       "         - messages transmitted: " + SCIBusTCMTxMessagesString, null);
+                                        break;
                                     case (byte)Command.Settings:
                                         switch (subdatacode)
                                         {
@@ -480,41 +628,41 @@ namespace ChryslerCCDSCIScanner
                                     case (byte)Command.Response:
                                         switch (subdatacode)
                                         {
-                                            case (byte)Response.HwFwInfo:
-                                                string HardwareVersionString = "V" + ((payload[0] << 8 | payload[1]) / 100.00).ToString("0.00").Replace(",", ".");
-                                                DateTime HardwareDate = Util.UnixTimeStampToDateTime(payload[2] << 56 | payload[3] << 48 | payload[4] << 40 | payload[5] << 32 | payload[6] << 24 | payload[7] << 16 | payload[8] << 8 | payload[9]);
-                                                DateTime AssemblyDate = Util.UnixTimeStampToDateTime(payload[10] << 56 | payload[11] << 48 | payload[12] << 40 | payload[13] << 32 | payload[14] << 24 | payload[15] << 16 | payload[16] << 8 | payload[17]);
-                                                DateTime FirmwareDate = Util.UnixTimeStampToDateTime(payload[18] << 56 | payload[19] << 48 | payload[20] << 40 | payload[21] << 32 | payload[22] << 24 | payload[23] << 16 | payload[24] << 8 | payload[25]);
-                                                string HardwareDateString = HardwareDate.ToString("yyyy.MM.dd HH:mm:ss");
-                                                string AssemblyDateString = AssemblyDate.ToString("yyyy.MM.dd HH:mm:ss");
-                                                string FirmwareDateString = FirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] Hardware/Firmware information response", msg);
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Hardware ver.: " + HardwareVersionString + Environment.NewLine +
-                                                                               "       Hardware date: " + HardwareDateString + Environment.NewLine +
-                                                                               "       Assembly date: " + AssemblyDateString + Environment.NewLine +
-                                                                               "       Firmware date: " + FirmwareDateString, null);
-                                                OldUNIXTime = payload[18] << 56 | payload[19] << 48 | payload[20] << 40 | payload[21] << 32 | payload[22] << 24 | payload[23] << 16 | payload[24] << 8 | payload[25];
-                                                break;
-                                            case (byte)Response.Timestamp:
-                                                TimeSpan ElapsedTime = TimeSpan.FromMilliseconds(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]);
-                                                DateTime Timestamp = DateTime.Today.Add(ElapsedTime);
-                                                string TimestampString = Timestamp.ToString("HH:mm:ss.fff");
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] Timestamp response", msg);
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Timestamp: " + TimestampString, null);
-                                                break;
-                                            case (byte)Response.BatteryVoltage:
-                                                string BatteryVoltageString = ((payload[0] << 8 | payload[1]) / 100.00).ToString("0.00").Replace(",", ".") + " V";
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] Battery voltage response", msg);
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + BatteryVoltageString, null);
-                                                break;
-                                            case (byte)Response.ExternalEEPROMChecksum:
-                                                if (payload[0] == 0x00) // OK
-                                                {
-                                                    string ExternalEEPROMChecksumString = Util.ByteToHexString(payload, 1, payload.Length);
-                                                    Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM checksum response", msg);
-                                                    Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum OK: " + ExternalEEPROMChecksumString, null);
-                                                }
-                                                break;
+                                            //case (byte)Response.HwFwInfo:
+                                            //    string HardwareVersionString = "V" + ((payload[0] << 8 | payload[1]) / 100.00).ToString("0.00").Replace(",", ".");
+                                            //    DateTime HardwareDate = Util.UnixTimeStampToDateTime(payload[2] << 56 | payload[3] << 48 | payload[4] << 40 | payload[5] << 32 | payload[6] << 24 | payload[7] << 16 | payload[8] << 8 | payload[9]);
+                                            //    DateTime AssemblyDate = Util.UnixTimeStampToDateTime(payload[10] << 56 | payload[11] << 48 | payload[12] << 40 | payload[13] << 32 | payload[14] << 24 | payload[15] << 16 | payload[16] << 8 | payload[17]);
+                                            //    DateTime FirmwareDate = Util.UnixTimeStampToDateTime(payload[18] << 56 | payload[19] << 48 | payload[20] << 40 | payload[21] << 32 | payload[22] << 24 | payload[23] << 16 | payload[24] << 8 | payload[25]);
+                                            //    string HardwareDateString = HardwareDate.ToString("yyyy.MM.dd HH:mm:ss");
+                                            //    string AssemblyDateString = AssemblyDate.ToString("yyyy.MM.dd HH:mm:ss");
+                                            //    string FirmwareDateString = FirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
+                                            //    Util.UpdateTextBox(USBTextBox, "[RX->] Hardware/Firmware information response", msg);
+                                            //    Util.UpdateTextBox(USBTextBox, "[INFO] Hardware ver.: " + HardwareVersionString + Environment.NewLine +
+                                            //                                   "       Hardware date: " + HardwareDateString + Environment.NewLine +
+                                            //                                   "       Assembly date: " + AssemblyDateString + Environment.NewLine +
+                                            //                                   "       Firmware date: " + FirmwareDateString, null);
+                                            //    OldUNIXTime = payload[18] << 56 | payload[19] << 48 | payload[20] << 40 | payload[21] << 32 | payload[22] << 24 | payload[23] << 16 | payload[24] << 8 | payload[25];
+                                            //    break;
+                                            //case (byte)Response.Timestamp:
+                                            //    TimeSpan ElapsedTime = TimeSpan.FromMilliseconds(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]);
+                                            //    DateTime Timestamp = DateTime.Today.Add(ElapsedTime);
+                                            //    string TimestampString = Timestamp.ToString("HH:mm:ss.fff");
+                                            //    Util.UpdateTextBox(USBTextBox, "[RX->] Timestamp response", msg);
+                                            //    Util.UpdateTextBox(USBTextBox, "[INFO] Timestamp: " + TimestampString, null);
+                                            //    break;
+                                            //case (byte)Response.BatteryVoltage:
+                                            //    string BatteryVoltageString = ((payload[0] << 8 | payload[1]) / 100.00).ToString("0.00").Replace(",", ".") + " V";
+                                            //    Util.UpdateTextBox(USBTextBox, "[RX->] Battery voltage response", msg);
+                                            //    Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + BatteryVoltageString, null);
+                                            //    break;
+                                            //case (byte)Response.ExternalEEPROMChecksum:
+                                            //    if (payload[0] == 0x00) // OK
+                                            //    {
+                                            //        string ExternalEEPROMChecksumString = Util.ByteToHexString(payload, 1, payload.Length);
+                                            //        Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM checksum response", msg);
+                                            //        Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum OK: " + ExternalEEPROMChecksumString, null);
+                                            //    }
+                                            //    break;
                                             default:
                                                 Util.UpdateTextBox(USBTextBox, "[RX->] Data received", msg);
                                                 break;
@@ -575,7 +723,9 @@ namespace ChryslerCCDSCIScanner
                                                 break;
                                             case 0xFB:
                                                 Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM checksum wrong", msg);
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum: " + Environment.NewLine + "       - calculated: " + Util.ByteToHexString(payload, 1, 2) + Environment.NewLine + "       - reads as: " + Util.ByteToHexString(payload, 0, 1), null);
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum: " + Environment.NewLine + 
+                                                                               "       - calculated: " + Util.ByteToHexString(payload, 1, 2) + Environment.NewLine + 
+                                                                               "       - reads as: " + Util.ByteToHexString(payload, 0, 1), null);
                                                 break;
                                             case 0xFC:
                                                 Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM read not possible", msg);
@@ -598,19 +748,19 @@ namespace ChryslerCCDSCIScanner
                                 break;
                             case (byte)Source.CCDBus:
                                 Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message", msg);
-                                TT.UpdateTextTable(source, payload, 4, payload.Length);
+                                TT.UpdateTextTable(source, subdatacode, payload);
                                 if (IncludeTimestap) File.AppendAllText(CCDLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
                                 else File.AppendAllText(CCDLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
                                 break;
                             case (byte)Source.SCIBusPCM:
                                 Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (PCM)", msg);
-                                TT.UpdateTextTable(source, payload, 4, payload.Length);
+                                TT.UpdateTextTable(source, subdatacode, payload);
                                 if (IncludeTimestap) File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
                                 else File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
                                 break;
                             case (byte)Source.SCIBusTCM:
                                 Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (TCM)", msg);
-                                TT.UpdateTextTable(source, payload, 4, payload.Length);
+                                TT.UpdateTextTable(source, subdatacode, payload);
                                 if (IncludeTimestap) File.AppendAllText(TCMLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
                                 else File.AppendAllText(TCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
                                 break;
@@ -619,7 +769,7 @@ namespace ChryslerCCDSCIScanner
                                 break;
                         }
                         if (SerialRxBuffer.ReadLength > 0) goto Here;
-                        else SerialRxBuffer.Reset(); // said unsafety is handled by resetting the ringbuffer whenever it's empty so the head and tail variable points to zero
+                        else SerialRxBuffer.Reset();
                         break;
                     case 0x3E: // ">"
                         if (SerialRxBuffer.ReadLength > 1) // wait for characters to arrive
@@ -676,6 +826,7 @@ namespace ChryslerCCDSCIScanner
                     }
                     else if (AsciiCommMethodRadioButton.Checked)
                     {
+                        Util.UpdateTextBox(USBTextBox, USBSendComboBox.Text, null);
                         List<byte> raw_bytes = new List<byte>();
                         raw_bytes.AddRange(Encoding.ASCII.GetBytes(USBSendComboBox.Text));
                         raw_bytes.Add(0x0A); // add newline character at the end manually
@@ -711,47 +862,6 @@ namespace ChryslerCCDSCIScanner
             }
         }
 
-        private async Task SerialDataReadAsyncTask()
-        {
-            while (ScannerFound)
-            {
-                Task<int> readByteTask = Serial.BaseStream.ReadAsync(buffer, 0, buffer.Length);
-                int bytesRead = await readByteTask;
-                SerialRxBuffer.Append(buffer, 0, bytesRead);
-                PM.DataReceived = true; // fire datareceived event and analyze received data
-            }
-        }
-
-        private async void SerialDataReadAsync()
-        {
-            try
-            {
-                await Task.Run(() => SerialDataReadAsyncTask());
-            }
-            catch
-            {
-                if (!USBTextBox.IsDisposed && ScannerFound)
-                {
-                    Util.UpdateTextBox(USBTextBox, "[INFO] Can't listen to " + Serial.PortName, null);
-                }
-            }
-        }
-
-        private async void SerialDataWriteAsync(byte[] message)
-        {
-            try
-            {
-                await Serial.BaseStream.WriteAsync(message, 0, message.Length);
-            }
-            catch
-            {
-                if (!USBTextBox.IsDisposed)
-                {
-                    Util.UpdateTextBox(USBTextBox, "[INFO] Can't write to " + Serial.PortName, null);
-                }
-            }
-        }
-
         private void ExpandButton_Click(object sender, EventArgs e)
         {
             if (ExpandButton.Text == "Expand >>")
@@ -781,7 +891,9 @@ namespace ChryslerCCDSCIScanner
                 ModeLabel.Visible = true;
                 CommandComboBox.Visible = true;
                 HintTextBox.Visible = true;
-                USBSendComboBox.Text = String.Empty;
+                TargetComboBox_SelectedIndexChanged(this, EventArgs.Empty);
+                CommandComboBox_SelectedIndexChanged(this, EventArgs.Empty);
+                ModeComboBox_SelectedIndexChanged(this, EventArgs.Empty); // Workaround
                 USBTextBox.Size = new Size(359, 220);
                 TM = (byte)TransmissionMethod.Hex;
                 USBTextBox.ScrollToCaret();
@@ -804,6 +916,15 @@ namespace ChryslerCCDSCIScanner
                 ModeLabel.Visible = false;
                 CommandComboBox.Visible = false;
                 HintTextBox.Visible = false;
+                Param1Label1.Visible = false;
+                Param1ComboBox.Visible = false;
+                Param1Label2.Visible = false;
+                Param2Label1.Visible = false;
+                Param2ComboBox.Visible = false;
+                Param2Label2.Visible = false;
+                Param3Label1.Visible = false;
+                Param3ComboBox.Visible = false;
+                Param3Label2.Visible = false;
                 USBSendComboBox.Text = ">";
                 USBTextBox.Size = new Size(359, 430);
                 TM = (byte)TransmissionMethod.Ascii;

@@ -27,9 +27,10 @@
 // - EF: 0xFD
 // - Lock: 0xFF
 
-#include <avr/interrupt.h>
 #include <avr/io.h>
+#include <avr/boot.h>
 #include <avr/pgmspace.h>
+#include <avr/interrupt.h>
 #include <avr/wdt.h>
 #include <util/atomic.h>
 #include <extEEPROM.h>         // https://github.com/JChristensen/extEEPROM
@@ -92,6 +93,8 @@ void setup()
     {
         handshake_array[i] = pgm_read_byte(&handshake_progmem[i]);
     }
+
+    read_avr_signature(avr_signature); // read AVR signature bytes that identifies the microcontroller
 
     usb_rx_flush(); // flush all uart buffers
     usb_tx_flush();
