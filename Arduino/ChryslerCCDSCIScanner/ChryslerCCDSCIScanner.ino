@@ -113,6 +113,8 @@ void setup()
     send_usb_packet(from_usb, to_usb, reset, ok, scanner_ready, 1); // Scanner ready
     
     configure_sci_bus(current_sci_bus_settings[0]);
+
+    cmd_status();
     
     wdt_enable(WDTO_2S); // enable watchdog timer that resets program if its timer reaches 2 seconds (useful if the prorgam hangs for some reason and needs auto-reset)
 }
