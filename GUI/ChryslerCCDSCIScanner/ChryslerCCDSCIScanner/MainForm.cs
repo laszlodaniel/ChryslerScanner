@@ -898,6 +898,7 @@ namespace ChryslerCCDSCIScanner
                 ModeLabel.Visible = true;
                 CommandComboBox.Visible = true;
                 HintTextBox.Visible = true;
+                PreviewLabel.Text = "Preview:";
                 TargetComboBox_SelectedIndexChanged(this, EventArgs.Empty);
                 CommandComboBox_SelectedIndexChanged(this, EventArgs.Empty);
                 ModeComboBox_SelectedIndexChanged(this, EventArgs.Empty); // Workaround
@@ -932,6 +933,7 @@ namespace ChryslerCCDSCIScanner
                 Param3Label1.Visible = false;
                 Param3ComboBox.Visible = false;
                 Param3Label2.Visible = false;
+                PreviewLabel.Text = "Message:";
                 USBSendComboBox.Text = ">";
                 USBTextBox.Size = new Size(359, 430);
                 TM = (byte)TransmissionMethod.Ascii;

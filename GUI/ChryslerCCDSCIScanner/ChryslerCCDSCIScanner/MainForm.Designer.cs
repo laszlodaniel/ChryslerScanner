@@ -45,7 +45,6 @@
             this.Param2Label1 = new System.Windows.Forms.Label();
             this.Param1ComboBox = new System.Windows.Forms.ComboBox();
             this.Param1Label1 = new System.Windows.Forms.Label();
-            this.PreviewLabel = new System.Windows.Forms.Label();
             this.CommandLabel = new System.Windows.Forms.Label();
             this.ModeComboBox = new System.Windows.Forms.ComboBox();
             this.CommandComboBox = new System.Windows.Forms.ComboBox();
@@ -65,6 +64,7 @@
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UpdateScannerFirmwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.PreviewLabel = new System.Windows.Forms.Label();
             this.USBCommunicationGroupBox.SuspendLayout();
             this.DiagnosticsGroupBox.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -96,6 +96,7 @@
             // 
             // USBCommunicationGroupBox
             // 
+            this.USBCommunicationGroupBox.Controls.Add(this.PreviewLabel);
             this.USBCommunicationGroupBox.Controls.Add(this.AsciiCommMethodRadioButton);
             this.USBCommunicationGroupBox.Controls.Add(this.HintTextBox);
             this.USBCommunicationGroupBox.Controls.Add(this.HexCommMethodRadioButton);
@@ -110,7 +111,6 @@
             this.USBCommunicationGroupBox.Controls.Add(this.Param2Label1);
             this.USBCommunicationGroupBox.Controls.Add(this.Param1ComboBox);
             this.USBCommunicationGroupBox.Controls.Add(this.Param1Label1);
-            this.USBCommunicationGroupBox.Controls.Add(this.PreviewLabel);
             this.USBCommunicationGroupBox.Controls.Add(this.CommandLabel);
             this.USBCommunicationGroupBox.Controls.Add(this.ModeComboBox);
             this.USBCommunicationGroupBox.Controls.Add(this.CommandComboBox);
@@ -281,15 +281,6 @@
             this.Param1Label1.Text = "Param#1:";
             this.Param1Label1.TextAlign = System.Drawing.ContentAlignment.TopRight;
             this.Param1Label1.Visible = false;
-            // 
-            // PreviewLabel
-            // 
-            this.PreviewLabel.AutoSize = true;
-            this.PreviewLabel.Location = new System.Drawing.Point(9, 457);
-            this.PreviewLabel.Name = "PreviewLabel";
-            this.PreviewLabel.Size = new System.Drawing.Size(48, 13);
-            this.PreviewLabel.TabIndex = 105;
-            this.PreviewLabel.Text = "Preview:";
             // 
             // CommandLabel
             // 
@@ -495,6 +486,15 @@
             this.UpdateScannerFirmwareToolStripMenuItem.Text = "Update scanner firmware";
             this.UpdateScannerFirmwareToolStripMenuItem.Click += new System.EventHandler(this.UpdateScannerFirmwareToolStripMenuItem_Click);
             // 
+            // PreviewLabel
+            // 
+            this.PreviewLabel.Location = new System.Drawing.Point(4, 457);
+            this.PreviewLabel.Name = "PreviewLabel";
+            this.PreviewLabel.Size = new System.Drawing.Size(53, 13);
+            this.PreviewLabel.TabIndex = 116;
+            this.PreviewLabel.Text = "Preview:";
+            this.PreviewLabel.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -546,7 +546,6 @@
         private System.Windows.Forms.Label ModeLabel;
         private System.Windows.Forms.Label CommandLabel;
         private System.Windows.Forms.ComboBox ModeComboBox;
-        private System.Windows.Forms.Label PreviewLabel;
         private System.Windows.Forms.ComboBox Param1ComboBox;
         private System.Windows.Forms.Label Param1Label1;
         private System.Windows.Forms.ComboBox Param3ComboBox;
@@ -563,6 +562,7 @@
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem UpdateScannerFirmwareToolStripMenuItem;
+        private System.Windows.Forms.Label PreviewLabel;
     }
 }
 
