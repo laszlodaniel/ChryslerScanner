@@ -762,14 +762,20 @@ namespace ChryslerCCDSCIScanner
                             case (byte)Source.SCIBusPCM:
                                 Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (PCM)", msg);
                                 TT.UpdateTextTable(source, subdatacode, payload);
-                                if (IncludeTimestap) File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
-                                else File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
+                                if (subdatacode == 0x00) // low-speed mode messages are saved here, high-speed mode messages are dealt with in TextTable
+                                {
+                                    if (IncludeTimestap) File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
+                                    else File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
+                                }
                                 break;
                             case (byte)Source.SCIBusTCM:
                                 Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (TCM)", msg);
                                 TT.UpdateTextTable(source, subdatacode, payload);
-                                if (IncludeTimestap) File.AppendAllText(TCMLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
-                                else File.AppendAllText(TCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
+                                if (subdatacode == 0x00) // low-speed mode messages are saved here, high-speed mode messages are dealt with in TextTable
+                                {
+                                    if (IncludeTimestap) File.AppendAllText(TCMLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
+                                    else File.AppendAllText(TCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
+                                }
                                 break;
                             default:
                                 Util.UpdateTextBox(USBTextBox, "[RX->] Data received", msg);

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Text;
 using System.Xml;
 
@@ -461,6 +462,7 @@ namespace ChryslerCCDSCIScanner
                         }
 
                         pcmmessagemix = temp.ToArray();
+                        File.AppendAllText(MainForm.PCMLogFilename, Util.ByteToHexString(pcmmessagemix, 0, pcmmessagemix.Length) + Environment.NewLine);
 
                         if (pcmmessagemix.Length < 9) // max 8 byte fits the message column
                         {
@@ -582,6 +584,7 @@ namespace ChryslerCCDSCIScanner
                         }
 
                         tcmmessagemix = temp.ToArray();
+                        File.AppendAllText(MainForm.TCMLogFilename, Util.ByteToHexString(tcmmessagemix, 0, tcmmessagemix.Length) + Environment.NewLine);
 
                         if (tcmmessagemix.Length < 9) // max 8 byte fits the message column
                         {
