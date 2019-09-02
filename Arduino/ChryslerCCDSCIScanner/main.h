@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D6C2DEC
+#define FW_DATE 0x000000005D6CCDFF
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -327,7 +327,7 @@ uint8_t ret[1]; // general array to store arbitrary bytes
 const uint8_t handshake_progmem[] PROGMEM = { 0x43, 0x48, 0x52, 0x59, 0x53, 0x4C, 0x45, 0x52, 0x43, 0x43, 0x44, 0x53, 0x43, 0x49, 0x53, 0x43, 0x41, 0x4E, 0x4E, 0x45, 0x52 };
                              //               "C     H     R     Y     S     L     E     R     C     C     D     S     C     I     S     C     A     N     N     E     R"
 
-uint8_t scanner_status[66];
+uint8_t scanner_status[67];
 
 uint8_t avr_signature[3];
 uint16_t free_ram_available = 0;
@@ -2057,8 +2057,6 @@ Purpose:  initialize LCD
 **************************************************************************/
 void exteeprom_init(void)
 {
-    uint8_t err[1];
-    
     // Initialize external EEPROM, read hardware version/date, assembly date, firmware date and a checksum byte for all of this
     eep_status = eep.begin(extEEPROM::twiClock400kHz); // go fast!
     if (eep_status) // non-zero = bad
@@ -2344,7 +2342,6 @@ Purpose:  puts the scanner in an infinite loop and forces watchdog-reset
 **************************************************************************/
 int cmd_reset(void)
 {
-    uint8_t ack[1] = { 0x00 }; // acknowledge payload array
     send_usb_packet(from_usb, to_usb, reset, ok, ack, 1); // RX LED is on by now and this function lights up TX LED
     digitalWrite(ACT_LED, LOW); // blink all LEDs including this, good way to test if LEDs are working or not
     while(true); // enter into an infinite loop; watchdog timer doesn't get reset this way so it restarts the program eventually
@@ -2403,61 +2400,63 @@ int cmd_status(void)
     scanner_status[27] = (FW_DATE >> 8) & 0xFF;
     scanner_status[28] = FW_DATE & 0xFF;
 
-    scanner_status[29] = eep_checksum[0];
-    scanner_status[30] = eep_calculated_checksum;
+    if (eep_present) scanner_status[29] = 0x01;
+    else scanner_status[29] = 0x00;
+    scanner_status[30] = eep_checksum[0];
+    scanner_status[31] = eep_calculated_checksum;
 
     update_timestamp(current_timestamp);
-    scanner_status[31] = current_timestamp[0];
-    scanner_status[32] = current_timestamp[1];
-    scanner_status[33] = current_timestamp[2];
-    scanner_status[34] = current_timestamp[3];
+    scanner_status[32] = current_timestamp[0];
+    scanner_status[33] = current_timestamp[1];
+    scanner_status[34] = current_timestamp[2];
+    scanner_status[35] = current_timestamp[3];
 
     free_ram_available = free_ram();
-    scanner_status[35] = (free_ram_available >> 8) & 0xFF;
-    scanner_status[36] = free_ram_available & 0xFF;
+    scanner_status[36] = (free_ram_available >> 8) & 0xFF;
+    scanner_status[37] = free_ram_available & 0xFF;
 
     check_battery_volts();
-    if (connected_to_vehicle) scanner_status[37] = 0x01;
-    else scanner_status[37] = 0x00;
-    scanner_status[38] = battery_volts_array[0];
-    scanner_status[39] = battery_volts_array[1];
+    if (connected_to_vehicle) scanner_status[38] = 0x01;
+    else scanner_status[38] = 0x00;
+    scanner_status[39] = battery_volts_array[0];
+    scanner_status[40] = battery_volts_array[1];
 
-    if (ccd_enabled) scanner_status[40] = 0x01;
-    else scanner_status[40] = 0x00;
+    if (ccd_enabled) scanner_status[41] = 0x01;
+    else scanner_status[41] = 0x00;
 
-    scanner_status[41] = (ccd_msg_rx_count >> 24) & 0xFF;
-    scanner_status[42] = (ccd_msg_rx_count >> 16) & 0xFF;
-    scanner_status[43] = (ccd_msg_rx_count >> 8) & 0xFF;
-    scanner_status[44] = ccd_msg_rx_count & 0xFF;
+    scanner_status[42] = (ccd_msg_rx_count >> 24) & 0xFF;
+    scanner_status[43] = (ccd_msg_rx_count >> 16) & 0xFF;
+    scanner_status[44] = (ccd_msg_rx_count >> 8) & 0xFF;
+    scanner_status[45] = ccd_msg_rx_count & 0xFF;
 
-    scanner_status[45] = (ccd_msg_tx_count >> 24) & 0xFF;
-    scanner_status[46] = (ccd_msg_tx_count >> 16) & 0xFF;
-    scanner_status[47] = (ccd_msg_tx_count >> 8) & 0xFF;
-    scanner_status[48] = ccd_msg_tx_count & 0xFF;
+    scanner_status[46] = (ccd_msg_tx_count >> 24) & 0xFF;
+    scanner_status[47] = (ccd_msg_tx_count >> 16) & 0xFF;
+    scanner_status[48] = (ccd_msg_tx_count >> 8) & 0xFF;
+    scanner_status[49] = ccd_msg_tx_count & 0xFF;
 
-    scanner_status[49] = current_sci_bus_settings[0];
+    scanner_status[50] = current_sci_bus_settings[0];
 
-    scanner_status[50] = (pcm_msg_rx_count >> 24) & 0xFF;
-    scanner_status[51] = (pcm_msg_rx_count >> 16) & 0xFF;
-    scanner_status[52] = (pcm_msg_rx_count >> 8) & 0xFF;
-    scanner_status[53] = pcm_msg_rx_count & 0xFF;
+    scanner_status[51] = (pcm_msg_rx_count >> 24) & 0xFF;
+    scanner_status[52] = (pcm_msg_rx_count >> 16) & 0xFF;
+    scanner_status[53] = (pcm_msg_rx_count >> 8) & 0xFF;
+    scanner_status[54] = pcm_msg_rx_count & 0xFF;
 
-    scanner_status[54] = (pcm_msg_tx_count >> 24) & 0xFF;
-    scanner_status[55] = (pcm_msg_tx_count >> 16) & 0xFF;
-    scanner_status[56] = (pcm_msg_tx_count >> 8) & 0xFF;
-    scanner_status[57] = pcm_msg_tx_count & 0xFF;
+    scanner_status[55] = (pcm_msg_tx_count >> 24) & 0xFF;
+    scanner_status[56] = (pcm_msg_tx_count >> 16) & 0xFF;
+    scanner_status[57] = (pcm_msg_tx_count >> 8) & 0xFF;
+    scanner_status[58] = pcm_msg_tx_count & 0xFF;
 
-    scanner_status[58] = (tcm_msg_rx_count >> 24) & 0xFF;
-    scanner_status[59] = (tcm_msg_rx_count >> 16) & 0xFF;
-    scanner_status[60] = (tcm_msg_rx_count >> 8) & 0xFF;
-    scanner_status[61] = tcm_msg_rx_count & 0xFF;
+    scanner_status[59] = (tcm_msg_rx_count >> 24) & 0xFF;
+    scanner_status[60] = (tcm_msg_rx_count >> 16) & 0xFF;
+    scanner_status[61] = (tcm_msg_rx_count >> 8) & 0xFF;
+    scanner_status[62] = tcm_msg_rx_count & 0xFF;
 
-    scanner_status[62] = (tcm_msg_tx_count >> 24) & 0xFF;
-    scanner_status[63] = (tcm_msg_tx_count >> 16) & 0xFF;
-    scanner_status[64] = (tcm_msg_tx_count >> 8) & 0xFF;
-    scanner_status[65] = tcm_msg_tx_count & 0xFF;
+    scanner_status[63] = (tcm_msg_tx_count >> 24) & 0xFF;
+    scanner_status[64] = (tcm_msg_tx_count >> 16) & 0xFF;
+    scanner_status[65] = (tcm_msg_tx_count >> 8) & 0xFF;
+    scanner_status[66] = tcm_msg_tx_count & 0xFF;
 
-    send_usb_packet(from_usb, to_usb, status, ok, scanner_status, 66);
+    send_usb_packet(from_usb, to_usb, status, ok, scanner_status, 67);
     
 } // end of cmd_status
 

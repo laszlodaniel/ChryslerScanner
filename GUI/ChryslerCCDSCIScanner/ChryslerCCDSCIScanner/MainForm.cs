@@ -442,7 +442,9 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         break;
                                     case (byte)Command.Status:
-                                        string AVRSignature = Util.ByteToHexString(payload, 0, 3) + " (ATmega2560)";
+                                        string AVRSignature = Util.ByteToHexString(payload, 0, 3);
+                                        if ((payload[0] == 0x1E) && (payload[1] == 0x98) && (payload[2] == 0x01)) AVRSignature += " (ATmega2560)";
+                                        else AVRSignature += " (unknown)";
                                         string HardwareVersion = "V" + ((payload[3] << 8 | payload[4]) / 100.00).ToString("0.00").Replace(",", ".");
                                         DateTime HardwareDate = Util.UnixTimeStampToDateTime(payload[5] << 56 | payload[6] << 48 | payload[7] << 40 | payload[8] << 32 | payload[9] << 24 | payload[10] << 16 | payload[11] << 8 | payload[12]);
                                         DateTime AssemblyDate = Util.UnixTimeStampToDateTime(payload[13] << 56 | payload[14] << 48 | payload[15] << 40 | payload[16] << 32 | payload[17] << 24 | payload[18] << 16 | payload[19] << 8 | payload[20]);
@@ -451,64 +453,67 @@ namespace ChryslerCCDSCIScanner
                                         string HardwareDateString = HardwareDate.ToString("yyyy.MM.dd HH:mm:ss");
                                         string AssemblyDateString = AssemblyDate.ToString("yyyy.MM.dd HH:mm:ss");
                                         string FirmwareDateString = FirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
-                                        string extEEPROMChecksum = Util.ByteToHexString(payload, 29, 30);
-                                        if (payload[29] == payload[30]) extEEPROMChecksum += " (OK)";
-                                        else extEEPROMChecksum += " (ERROR [" + Util.ByteToHexString(payload, 30, 31) + "])";
-                                        TimeSpan ElapsedMillis = TimeSpan.FromMilliseconds(payload[31] << 24 | payload[32] << 16 | payload[33] << 8 | payload[34]);
+                                        string extEEPROMPresent = String.Empty;
+                                        if (payload[29] == 0x01) extEEPROMPresent += "yes";
+                                        else extEEPROMPresent += "no";
+                                        string extEEPROMChecksum = Util.ByteToHexString(payload, 30, 31);
+                                        if (payload[30] == payload[31]) extEEPROMChecksum += " (OK)";
+                                        else extEEPROMChecksum += " (ERROR [" + Util.ByteToHexString(payload, 31, 32) + "])";
+                                        TimeSpan ElapsedMillis = TimeSpan.FromMilliseconds(payload[32] << 24 | payload[33] << 16 | payload[34] << 8 | payload[35]);
                                         DateTime MicrocontrollerTimestamp = DateTime.Today.Add(ElapsedMillis);
                                         string MicrocontrollerTimestampString = MicrocontrollerTimestamp.ToString("HH:mm:ss.fff");
-                                        string FreeRAMString = ((payload[35] << 8) | payload[36]).ToString() + " free of 8192 bytes";
+                                        string FreeRAMString = ((payload[36] << 8) | payload[37]).ToString() + " free of 8192 bytes";
                                         string ConnectedToVehicle = String.Empty;
-                                        if (payload[37] == 0x01) ConnectedToVehicle = "yes";
+                                        if (payload[38] == 0x01) ConnectedToVehicle = "yes";
                                         else ConnectedToVehicle = "no";
-                                        string BatteryVoltageString = ((payload[38] << 8 | payload[39]) / 100.00).ToString("0.00").Replace(",", ".") + " V";
+                                        string BatteryVoltageString = ((payload[39] << 8 | payload[40]) / 100.00).ToString("0.00").Replace(",", ".") + " V";
                                         string CCDBusStateString = String.Empty;
-                                        if (payload[40] == 0x01) CCDBusStateString = "enabled";
+                                        if (payload[41] == 0x01) CCDBusStateString = "enabled";
                                         else CCDBusStateString = "disabled";
-                                        string CCDBusRxMessagesString = ((payload[41] << 24) | (payload[42] << 16) | (payload[43] << 8 | payload[44])).ToString();
-                                        string CCDBusTxMessagesString = ((payload[45] << 24) | (payload[46] << 16) | (payload[47] << 8 | payload[48])).ToString();
+                                        string CCDBusRxMessagesString = ((payload[42] << 24) | (payload[43] << 16) | (payload[44] << 8 | payload[45])).ToString();
+                                        string CCDBusTxMessagesString = ((payload[46] << 24) | (payload[47] << 16) | (payload[48] << 8 | payload[49])).ToString();
                                         string SCIBusPCMStateString = String.Empty;
                                         string SCIBusPCMConfigurationString = String.Empty;
                                         string SCIBusPCMSpeedString = String.Empty;
                                         string SCIBusTCMStateString = String.Empty;
                                         string SCIBusTCMConfigurationString = String.Empty;
                                         string SCIBusTCMSpeedString = String.Empty;
-                                        if ((payload[49] & 0x40) != 0)
+                                        if ((payload[50] & 0x40) != 0)
                                         {
                                             SCIBusPCMStateString = "enabled";
-                                            if ((payload[49] & 0x20) != 0) SCIBusPCMConfigurationString = "\"B\"";
+                                            if ((payload[50] & 0x20) != 0) SCIBusPCMConfigurationString = "\"B\"";
                                             else SCIBusPCMConfigurationString = "\"A\"";
-                                            if ((payload[49] & 0x10) != 0) SCIBusPCMSpeedString = "62500 baud";
+                                            if ((payload[50] & 0x10) != 0) SCIBusPCMSpeedString = "62500 baud";
                                             else SCIBusPCMSpeedString = "7812.5 baud";
                                         }
                                         else
                                         {
                                             SCIBusPCMStateString = "disabled";
-                                            if ((payload[49] & 0x20) != 0) SCIBusPCMConfigurationString = "-";
+                                            if ((payload[50] & 0x20) != 0) SCIBusPCMConfigurationString = "-";
                                             else SCIBusPCMConfigurationString = "-";
-                                            if ((payload[49] & 0x10) != 0) SCIBusPCMSpeedString = "-";
+                                            if ((payload[50] & 0x10) != 0) SCIBusPCMSpeedString = "-";
                                             else SCIBusPCMSpeedString = "-";
                                         }
-                                        if ((payload[49] & 0x04) != 0)
+                                        if ((payload[50] & 0x04) != 0)
                                         {
                                             SCIBusTCMStateString = "enabled";
-                                            if ((payload[49] & 0x02) != 0) SCIBusTCMConfigurationString = "\"B\"";
+                                            if ((payload[50] & 0x02) != 0) SCIBusTCMConfigurationString = "\"B\"";
                                             else SCIBusTCMConfigurationString = "\"A\"";
-                                            if ((payload[49] & 0x01) != 0) SCIBusTCMSpeedString = "62500 baud";
+                                            if ((payload[50] & 0x01) != 0) SCIBusTCMSpeedString = "62500 baud";
                                             else SCIBusTCMSpeedString = "7812.5 baud";
                                         }
                                         else
                                         {
                                             SCIBusTCMStateString = "disabled";
-                                            if ((payload[49] & 0x02) != 0) SCIBusTCMConfigurationString = "-";
+                                            if ((payload[50] & 0x02) != 0) SCIBusTCMConfigurationString = "-";
                                             else SCIBusTCMConfigurationString = "-";
-                                            if ((payload[49] & 0x01) != 0) SCIBusTCMSpeedString = "-";
+                                            if ((payload[50] & 0x01) != 0) SCIBusTCMSpeedString = "-";
                                             else SCIBusTCMSpeedString = "-";
                                         }
-                                        string SCIBusPCMRxMessagesString = ((payload[50] << 24) | (payload[51] << 16) | (payload[52] << 8 | payload[53])).ToString();
-                                        string SCIBusPCMTxMessagesString = ((payload[54] << 24) | (payload[55] << 16) | (payload[56] << 8 | payload[57])).ToString();
-                                        string SCIBusTCMRxMessagesString = ((payload[58] << 24) | (payload[59] << 16) | (payload[60] << 8 | payload[61])).ToString();
-                                        string SCIBusTCMTxMessagesString = ((payload[62] << 24) | (payload[63] << 16) | (payload[64] << 8 | payload[65])).ToString();
+                                        string SCIBusPCMRxMessagesString = ((payload[51] << 24) | (payload[52] << 16) | (payload[53] << 8 | payload[54])).ToString();
+                                        string SCIBusPCMTxMessagesString = ((payload[55] << 24) | (payload[56] << 16) | (payload[57] << 8 | payload[58])).ToString();
+                                        string SCIBusTCMRxMessagesString = ((payload[59] << 24) | (payload[60] << 16) | (payload[61] << 8 | payload[62])).ToString();
+                                        string SCIBusTCMTxMessagesString = ((payload[63] << 24) | (payload[64] << 16) | (payload[65] << 8 | payload[66])).ToString();
 
                                         Util.UpdateTextBox(USBTextBox, "[RX->] Status response", msg);
                                         Util.UpdateTextBox(USBTextBox, "[INFO] Scanner status:" + Environment.NewLine +
@@ -517,6 +522,7 @@ namespace ChryslerCCDSCIScanner
                                                                        "       - hardware date: " + HardwareDateString + Environment.NewLine +
                                                                        "       - assembly date: " + AssemblyDateString + Environment.NewLine +
                                                                        "       - firmware date: " + FirmwareDateString + Environment.NewLine +
+                                                                       "       - extEEPROM present: " + extEEPROMPresent + Environment.NewLine +
                                                                        "       - extEEPROM checksum: " + extEEPROMChecksum + Environment.NewLine +
                                                                        "       - timestamp: " + MicrocontrollerTimestampString + Environment.NewLine +
                                                                        "       - RAM usage: " + FreeRAMString + Environment.NewLine +
