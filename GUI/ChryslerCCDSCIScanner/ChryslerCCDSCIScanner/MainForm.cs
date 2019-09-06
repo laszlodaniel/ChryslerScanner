@@ -245,7 +245,8 @@ namespace ChryslerCCDSCIScanner
             {
                 ConnectButton.Enabled = false; // no double-click
                 byte[] HandshakeRequest = new byte[] { 0x3D, 0x00, 0x02, 0x01, 0x00, 0x03 };
-                byte[] StatusRequest = new byte[] { 0x3D, 0x00, 0x02, 0x02, 0x00, 0x04 };
+                byte[] HwFwInfoRequest = new byte[] { 0x3D, 0x00, 0x02, 0x04, 0x00, 0x06 };
+                //byte[] StatusRequest = new byte[] { 0x3D, 0x00, 0x02, 0x02, 0x00, 0x04 };
                 string[] ports = SerialPort.GetPortNames(); // get all available portnames
                 if (ports.Length == 0) // if there's none, do nothing
                 {
@@ -321,8 +322,8 @@ namespace ChryslerCCDSCIScanner
                         }
                         USBCommunicationGroupBox.Text = "USB communication (" + Serial.PortName + ")";
                         UpdatePort = Serial.PortName;
-                        Util.UpdateTextBox(USBTextBox, "[<-TX] Status request", StatusRequest);
-                        SerialDataWriteAsync(StatusRequest);
+                        Util.UpdateTextBox(USBTextBox, "[<-TX] Hardware/Firmware information request", HwFwInfoRequest);
+                        SerialDataWriteAsync(HwFwInfoRequest);
                         return;
                     }
                     else
@@ -635,41 +636,41 @@ namespace ChryslerCCDSCIScanner
                                     case (byte)Command.Response:
                                         switch (subdatacode)
                                         {
-                                            //case (byte)Response.HwFwInfo:
-                                            //    string HardwareVersionString = "V" + ((payload[0] << 8 | payload[1]) / 100.00).ToString("0.00").Replace(",", ".");
-                                            //    DateTime HardwareDate = Util.UnixTimeStampToDateTime(payload[2] << 56 | payload[3] << 48 | payload[4] << 40 | payload[5] << 32 | payload[6] << 24 | payload[7] << 16 | payload[8] << 8 | payload[9]);
-                                            //    DateTime AssemblyDate = Util.UnixTimeStampToDateTime(payload[10] << 56 | payload[11] << 48 | payload[12] << 40 | payload[13] << 32 | payload[14] << 24 | payload[15] << 16 | payload[16] << 8 | payload[17]);
-                                            //    DateTime FirmwareDate = Util.UnixTimeStampToDateTime(payload[18] << 56 | payload[19] << 48 | payload[20] << 40 | payload[21] << 32 | payload[22] << 24 | payload[23] << 16 | payload[24] << 8 | payload[25]);
-                                            //    string HardwareDateString = HardwareDate.ToString("yyyy.MM.dd HH:mm:ss");
-                                            //    string AssemblyDateString = AssemblyDate.ToString("yyyy.MM.dd HH:mm:ss");
-                                            //    string FirmwareDateString = FirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
-                                            //    Util.UpdateTextBox(USBTextBox, "[RX->] Hardware/Firmware information response", msg);
-                                            //    Util.UpdateTextBox(USBTextBox, "[INFO] Hardware ver.: " + HardwareVersionString + Environment.NewLine +
-                                            //                                   "       Hardware date: " + HardwareDateString + Environment.NewLine +
-                                            //                                   "       Assembly date: " + AssemblyDateString + Environment.NewLine +
-                                            //                                   "       Firmware date: " + FirmwareDateString, null);
-                                            //    OldUNIXTime = payload[18] << 56 | payload[19] << 48 | payload[20] << 40 | payload[21] << 32 | payload[22] << 24 | payload[23] << 16 | payload[24] << 8 | payload[25];
-                                            //    break;
-                                            //case (byte)Response.Timestamp:
-                                            //    TimeSpan ElapsedTime = TimeSpan.FromMilliseconds(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]);
-                                            //    DateTime Timestamp = DateTime.Today.Add(ElapsedTime);
-                                            //    string TimestampString = Timestamp.ToString("HH:mm:ss.fff");
-                                            //    Util.UpdateTextBox(USBTextBox, "[RX->] Timestamp response", msg);
-                                            //    Util.UpdateTextBox(USBTextBox, "[INFO] Timestamp: " + TimestampString, null);
-                                            //    break;
-                                            //case (byte)Response.BatteryVoltage:
-                                            //    string BatteryVoltageString = ((payload[0] << 8 | payload[1]) / 100.00).ToString("0.00").Replace(",", ".") + " V";
-                                            //    Util.UpdateTextBox(USBTextBox, "[RX->] Battery voltage response", msg);
-                                            //    Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + BatteryVoltageString, null);
-                                            //    break;
-                                            //case (byte)Response.ExternalEEPROMChecksum:
-                                            //    if (payload[0] == 0x00) // OK
-                                            //    {
-                                            //        string ExternalEEPROMChecksumString = Util.ByteToHexString(payload, 1, payload.Length);
-                                            //        Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM checksum response", msg);
-                                            //        Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum OK: " + ExternalEEPROMChecksumString, null);
-                                            //    }
-                                            //    break;
+                                            case (byte)Response.HwFwInfo:
+                                                string HardwareVersionString = "V" + ((payload[0] << 8 | payload[1]) / 100.00).ToString("0.00").Replace(",", ".");
+                                                DateTime _HardwareDate = Util.UnixTimeStampToDateTime(payload[2] << 56 | payload[3] << 48 | payload[4] << 40 | payload[5] << 32 | payload[6] << 24 | payload[7] << 16 | payload[8] << 8 | payload[9]);
+                                                DateTime _AssemblyDate = Util.UnixTimeStampToDateTime(payload[10] << 56 | payload[11] << 48 | payload[12] << 40 | payload[13] << 32 | payload[14] << 24 | payload[15] << 16 | payload[16] << 8 | payload[17]);
+                                                DateTime _FirmwareDate = Util.UnixTimeStampToDateTime(payload[18] << 56 | payload[19] << 48 | payload[20] << 40 | payload[21] << 32 | payload[22] << 24 | payload[23] << 16 | payload[24] << 8 | payload[25]);
+                                                string _HardwareDateString = _HardwareDate.ToString("yyyy.MM.dd HH:mm:ss");
+                                                string _AssemblyDateString = _AssemblyDate.ToString("yyyy.MM.dd HH:mm:ss");
+                                                string _FirmwareDateString = _FirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Hardware/Firmware information response", msg);
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Hardware ver.: " + HardwareVersionString + Environment.NewLine +
+                                                                               "       Hardware date: " + _HardwareDateString + Environment.NewLine +
+                                                                               "       Assembly date: " + _AssemblyDateString + Environment.NewLine +
+                                                                               "       Firmware date: " + _FirmwareDateString, null);
+                                                OldUNIXTime = payload[18] << 56 | payload[19] << 48 | payload[20] << 40 | payload[21] << 32 | payload[22] << 24 | payload[23] << 16 | payload[24] << 8 | payload[25];
+                                                break;
+                                            case (byte)Response.Timestamp:
+                                                TimeSpan ElapsedTime = TimeSpan.FromMilliseconds(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]);
+                                                DateTime Timestamp = DateTime.Today.Add(ElapsedTime);
+                                                string TimestampString = Timestamp.ToString("HH:mm:ss.fff");
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Timestamp response", msg);
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Timestamp: " + TimestampString, null);
+                                                break;
+                                            case (byte)Response.BatteryVoltage:
+                                                string _BatteryVoltageString = ((payload[0] << 8 | payload[1]) / 100.00).ToString("0.00").Replace(",", ".") + " V";
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Battery voltage response", msg);
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + _BatteryVoltageString, null);
+                                                break;
+                                            case (byte)Response.ExternalEEPROMChecksum:
+                                                if (payload[0] == 0x00) // OK
+                                                {
+                                                    string ExternalEEPROMChecksumString = Util.ByteToHexString(payload, 1, payload.Length);
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM checksum response", msg);
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum OK: " + ExternalEEPROMChecksumString, null);
+                                                }
+                                                break;
                                             default:
                                                 Util.UpdateTextBox(USBTextBox, "[RX->] Data received", msg);
                                                 break;
