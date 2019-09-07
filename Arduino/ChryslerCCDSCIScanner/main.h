@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D6CCDFF
+#define FW_DATE 0x000000005D739CA2
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -4475,7 +4475,7 @@ Note:     taken from SAE J2610:
               data transmission from the tester.
               
           T2: TESTER INTER-FRAME REQUEST DELAY;      0        100        0           1
-              Defins the request delay from the 
+              Defines the request delay from the 
               tester after receiving a valid
               data acknowledgement from the ECU.
 
