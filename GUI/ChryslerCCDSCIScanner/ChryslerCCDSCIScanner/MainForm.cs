@@ -244,8 +244,8 @@ namespace ChryslerCCDSCIScanner
             if (!ScannerFound) // only let connect once when there's no scanner found yet
             {
                 ConnectButton.Enabled = false; // no double-click
-                byte[] HandshakeRequest = new byte[] { 0x3D, 0x00, 0x02, 0x01, 0x00, 0x03 };
-                byte[] HwFwInfoRequest = new byte[] { 0x3D, 0x00, 0x02, 0x04, 0x00, 0x06 };
+                byte[] HandshakeRequest = new byte[] { 0x3D, 0x00, 0x02, 0x01, 0x01, 0x04 }; // with hardware/firmware request
+                //byte[] HwFwInfoRequest = new byte[] { 0x3D, 0x00, 0x02, 0x04, 0x00, 0x06 };
                 //byte[] StatusRequest = new byte[] { 0x3D, 0x00, 0x02, 0x02, 0x00, 0x04 };
                 string[] ports = SerialPort.GetPortNames(); // get all available portnames
                 if (ports.Length == 0) // if there's none, do nothing
@@ -322,8 +322,6 @@ namespace ChryslerCCDSCIScanner
                         }
                         USBCommunicationGroupBox.Text = "USB communication (" + Serial.PortName + ")";
                         UpdatePort = Serial.PortName;
-                        Util.UpdateTextBox(USBTextBox, "[<-TX] Hardware/Firmware information request", HwFwInfoRequest);
-                        SerialDataWriteAsync(HwFwInfoRequest);
                         return;
                     }
                     else

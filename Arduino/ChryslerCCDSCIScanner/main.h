@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D739CA2
+#define FW_DATE 0x000000005D739E06
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -3930,18 +3930,12 @@ void handle_usb_data(void)
                             case handshake: // 0x01 - handshake request coming from an external computer
                             {
                                 cmd_handshake();
-                                //send_usb_packet(from_usb, to_usb, handshake, ok, handshake_array, 21);
-                                //if (subdatacode == 0x01)
-                                //{
-                                //    evaluate_eep_checksum();
-                                //    send_hwfw_info();
-                                //}
+                                if (subdatacode == 0x01) send_hwfw_info();
                                 break;
                             }
                             case status: // 0x02 - status report request
                             {
                                 cmd_status();
-                                //send_usb_packet(from_usb, to_usb, status, ok, ack, 1); // the payload should contain all information but now it's just an ACK byte (0x00)
                                 break;
                             }
                             case settings: // 0x03 - change scanner settings
