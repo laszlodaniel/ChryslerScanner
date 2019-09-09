@@ -662,11 +662,25 @@ namespace ChryslerCCDSCIScanner
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + _BatteryVoltageString, null);
                                                 break;
                                             case (byte)Response.ExternalEEPROMChecksum:
-                                                if (payload[0] == 0x00) // OK
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM checksum response", msg);
+                                                if (payload[0] == 0x01) // External EEPROM present
                                                 {
-                                                    string ExternalEEPROMChecksumString = Util.ByteToHexString(payload, 1, payload.Length);
-                                                    Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM checksum response", msg);
-                                                    Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum OK: " + ExternalEEPROMChecksumString, null);
+                                                    string ExternalEEPROMChecksumReading = Util.ByteToHexString(payload, 1, payload.Length - 1);
+                                                    string ExternalEEPROMChecksumCalculated = Util.ByteToHexString(payload, 2, payload.Length);
+                                                    if (payload[1] == payload[2]) // if checksum reading and checksum calculation is the same
+                                                    {
+                                                        Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum: " + ExternalEEPROMChecksumReading + " (OK)", null);
+                                                    }
+                                                    else
+                                                    {
+                                                        Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum ERROR: " + Environment.NewLine +
+                                                                                       "       - reads as: " + ExternalEEPROMChecksumReading + Environment.NewLine +
+                                                                                       "       - calculated: " + ExternalEEPROMChecksumCalculated, null);
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] No external EEPROM found", null);
                                                 }
                                                 break;
                                             default:
@@ -724,20 +738,14 @@ namespace ChryslerCCDSCIScanner
                                             case 0x07:
                                                 Util.UpdateTextBox(USBTextBox, "[RX->] Error: buffer overflow", msg);
                                                 break;
-                                            case 0xFA:
+                                            case 0xFB:
                                                 Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM not found", msg);
                                                 break;
-                                            case 0xFB:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM checksum wrong", msg);
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum: " + Environment.NewLine + 
-                                                                               "       - calculated: " + Util.ByteToHexString(payload, 1, 2) + Environment.NewLine + 
-                                                                               "       - reads as: " + Util.ByteToHexString(payload, 0, 1), null);
-                                                break;
                                             case 0xFC:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM read not possible", msg);
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM reading not possible", msg);
                                                 break;
                                             case 0xFD:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM write not possible", msg);
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM writing not possible", msg);
                                                 break;
                                             case 0xFE:
                                                 Util.UpdateTextBox(USBTextBox, "[RX->] Error: internal error", msg);

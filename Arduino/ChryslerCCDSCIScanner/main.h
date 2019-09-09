@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D739E06
+#define FW_DATE 0x000000005D764F3D
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -220,9 +220,8 @@ extern LiquidCrystal_I2C lcd;
 #define error_checksum_invalid_value            0x05
 #define error_packet_timeout_occured            0x06
 #define error_buffer_overflow                   0x07
-// 0x08-0xFB reserved
-#define error_eep_not_found                     0xFA
-#define error_eep_checksum_invalid_value        0xFB
+// 0x08-0xFA reserved
+#define error_eep_not_found                     0xFB
 #define error_eep_read                          0xFC
 #define error_eep_write                         0xFD
 #define error_internal_error                    0xFE
@@ -1626,13 +1625,13 @@ void ccd_active_byte(void) { ccd_ctrl = true; /* set flag */ } // end of ccd_ctr
 /*************************************************************************
 Function: calculate_checksum()
 Purpose:  calculate checksum in a given buffer with specified length
-Note:     index = starting index in buffer
-          len = buffer full length
+Note:     startindex = first byte in the array to include in calculation
+          length = buffer full length
 **************************************************************************/
-uint8_t calculate_checksum(uint8_t *buff, uint16_t startindex, uint16_t len)
+uint8_t calculate_checksum(uint8_t *buff, uint16_t startindex, uint16_t length)
 {
     uint8_t a = 0;
-    for (uint16_t i = startindex ; i < len; i++)
+    for (uint16_t i = startindex ; i < length; i++)
     {
         a += buff[i]; // add bytes together
     }
@@ -1706,6 +1705,7 @@ void update_timestamp(uint8_t *target)
 /*************************************************************************
 Function: array_contains()
 Purpose:  checks if a value is present in an array
+Note:     only checks first occurence
 **************************************************************************/
 bool array_contains(uint8_t *src_array, uint8_t src_array_length, uint8_t value)
 {
@@ -1850,7 +1850,7 @@ Note:     Input data bits description:
 void configure_sci_bus(uint8_t data)
 {
     // Check SCI-bus (PCM) change settings bit
-    if (data & 0x80) // if change bit is set
+    if (data & 0x80) // if change settings bit is set
     {
         cbi(current_sci_bus_settings[0], 7); // clear change settings bit
         
@@ -1927,8 +1927,8 @@ void configure_sci_bus(uint8_t data)
         }
     }
 
-    // Check if SCI-bus (TCM) needs changing
-    if (data & 0x08)
+    // Check SCI-bus (TCM) change settings bit
+    if (data & 0x08) // if change settings bit is set
     {
         cbi(current_sci_bus_settings[0], 3); // clear change settings bit
         
@@ -2062,9 +2062,6 @@ void exteeprom_init(void)
     if (eep_status) // non-zero = bad
     { 
         eep_present = false;
-        err[0] = 0xFF;
-        send_usb_packet(from_usb, to_usb, ok_error, error_eep_not_found, err, 1);
-
         hw_version[0] = 0; // zero out values
         hw_version[1] = 0;
         hw_date[0] = 0; // zero out values
@@ -2085,25 +2082,21 @@ void exteeprom_init(void)
         assembly_date[7] = 0;
         eep_checksum[0] = 0; // zero out value
         eep_calculated_checksum = 0;
+        send_usb_packet(from_usb, to_usb, ok_error, error_eep_not_found, err, 1);
     }
     else // zero = good
     {
         eep_present = true;
         eep_result = eep.read(0, hw_version, 2); // read first 2 bytes and store it in the hw_version array
-        if (eep_result)
+        if (eep_result) // error
         {
-            err[0] = eep_result;
-            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
-
             hw_version[0] = 0; // zero out values
             hw_version[1] = 0;
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
         }
         eep_result = eep.read(2, hw_date, 8); // read following 8 bytes in the hw_date array
-        if (eep_result)
+        if (eep_result) // error
         {
-            err[0] = eep_result;
-            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
-
             hw_date[0] = 0; // zero out values
             hw_date[1] = 0;
             hw_date[2] = 0;
@@ -2112,14 +2105,11 @@ void exteeprom_init(void)
             hw_date[5] = 0;
             hw_date[6] = 0;
             hw_date[7] = 0;
-            
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
         }
         eep_result = eep.read(10, assembly_date, 8); // read following 8 bytes in the assembly_date array
-        if (eep_result)
+        if (eep_result) // error
         {
-            err[0] = eep_result;
-            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
-
             assembly_date[0] = 0; // zero out values
             assembly_date[1] = 0;
             assembly_date[2] = 0;
@@ -2128,24 +2118,51 @@ void exteeprom_init(void)
             assembly_date[5] = 0;
             assembly_date[6] = 0;
             assembly_date[7] = 0;
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
         }
         eep_result = eep.read(255, eep_checksum, 1); // read 255th byte for the checksum byte (total of 256 bytes are reserved for hardware description)
-        if (eep_result)
+        if (eep_result) // error
         {
-            err[0] = eep_result;
-            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
-
             eep_checksum[0] = 0; // zero out value
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
         }
 
         eep_calculated_checksum = 0;
         for (uint8_t i = 0; i < 255; i++) // add all 255 bytes together and skip last byte (where checksum byte is located) by setting the second parameter to 255 instead of 256
         {
-            eep_calculated_checksum += eep.read(i); // checksum variable will roll over several times but it's okay, this is its purpose
+            eep_calculated_checksum += eep.read(i);
         }
     }
     
 } // end of exteeprom_init
+
+
+/*************************************************************************
+Function: evaluate_eep_checksum()
+Purpose:  compare external eeprom checksum value to the calculated one
+          and send results to laptop
+Note:     compared values are read during setup() automatically
+**************************************************************************/
+void evaluate_eep_checksum(void)
+{
+    if (eep_present)
+    {
+        if (eep_calculated_checksum == eep_checksum[0]) eep_checksum_ok = true;
+        else eep_checksum_ok = false;
+
+        uint8_t eep_checksum_response[3];
+        if (eep_present) eep_checksum_response[0] = 0x01;
+        else eep_checksum_response[0] = 0x00;
+        eep_checksum_response[1] = eep_checksum[0]; // checksum reading
+        eep_checksum_response[2] = eep_calculated_checksum; // calculated checksum
+        send_usb_packet(from_usb, to_usb, response, exteeprom_checksum, eep_checksum_response, 3);
+    }
+    else
+    {
+        send_usb_packet(from_usb, to_usb, ok_error, error_eep_not_found, err, 1);
+    }
+    
+} // end of evaluate_eep_checksum
 
 
 /*************************************************************************
@@ -2188,34 +2205,6 @@ void send_hwfw_info(void)
     ret[25] = FW_DATE & 0xFF;
 
     send_usb_packet(from_usb, to_usb, response, hwfw_info, ret, 26);
-    
-} // end of evaluate_eep_checksum
-
-
-/*************************************************************************
-Function: evaluate_eep_checksum()
-Purpose:  compare external eeprom checksum value to the calculated one
-          and send results to laptop
-Note:     compared values are read during setup() automatically
-**************************************************************************/
-void evaluate_eep_checksum(void)
-{
-    if (eep_calculated_checksum == eep_checksum[0])
-    {
-        eep_checksum_ok = true;
-        uint8_t eep_checksum_response[2];
-        eep_checksum_response[0] = 0x00; // OK
-        eep_checksum_response[1] = eep_checksum[0]; // checksum byte
-        send_usb_packet(from_usb, to_usb, response, exteeprom_checksum, eep_checksum_response, 2);
-    }
-    else
-    {
-        eep_checksum_ok = false;
-        uint8_t eep_checksum_response[2];
-        eep_checksum_response[0] = eep_checksum[0]; // wrong checksum byte
-        eep_checksum_response[1] = eep_calculated_checksum; // correct checksum byte
-        send_usb_packet(from_usb, to_usb, ok_error, error_eep_checksum_invalid_value, eep_checksum_response, 2);
-    }
     
 } // end of evaluate_eep_checksum
 
