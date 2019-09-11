@@ -27,20 +27,24 @@ namespace ChryslerCCDSCIScanner
             CCDBusMessageDescription.Add(0x29, "LAST ENGINE SHUTDOWN");
             CCDBusMessageDescription.Add(0x3A, "INSTRUMENT CLUSTER LAMP STATES (AIRBAG LAMP)");
             CCDBusMessageDescription.Add(0x42, "THROTTLE POSITION SENSOR | CRUISE CONTROL");
+            CCDBusMessageDescription.Add(0x44, "FUEL USED");
             CCDBusMessageDescription.Add(0x50, "AIRBAG LAMP STATE");
             CCDBusMessageDescription.Add(0x6D, "VEHICLE IDENTIFICATION NUMBER (VIN)");
             CCDBusMessageDescription.Add(0x75, "A/C HIGH SIDE PRESSURE");
+            CCDBusMessageDescription.Add(0x7B, "OUTSIDE AIR TEMPERATURE");
             CCDBusMessageDescription.Add(0x84, "INCREMENT ODOMETER AND TRIPMETER");
-            CCDBusMessageDescription.Add(0x8C, "ENGINE COOLANT TEMPERATURE | AMBIENT TEMPERATURE");
+            CCDBusMessageDescription.Add(0x8C, "ENGINE COOLANT TEMPERATURE | INTAKE AIR TEMP.");
             CCDBusMessageDescription.Add(0x94, "INSTRUMENT CLUSTER GAUGE VALUE");
             CCDBusMessageDescription.Add(0xA4, "INSTRUMENT CLUSTER LAMP STATES");
             CCDBusMessageDescription.Add(0xA9, "LAST ENGINE SHUTDOWN");
+            CCDBusMessageDescription.Add(0xAA, "VTS STATUS");
+            CCDBusMessageDescription.Add(0xAC, "BODY TYPE BROADCAST");
             CCDBusMessageDescription.Add(0xB2, "DRB REQUEST");
             CCDBusMessageDescription.Add(0xBE, "IGNITION SWITCH POSITION");
             CCDBusMessageDescription.Add(0xCC, "ACCUMULATED MILEAGE");
             CCDBusMessageDescription.Add(0xCE, "VEHICLE DISTANCE / ODOMETER");
             CCDBusMessageDescription.Add(0xD4, "BATTERY VOLTAGE | CALCULATED CHARGING VOLTAGE");
-            CCDBusMessageDescription.Add(0xDA, "INSTRUMENT CLUSTER LAMP STATES (CHECK ENGINE)");
+            CCDBusMessageDescription.Add(0xDA, "INSTRUMENT CLUSTER LAMP STATES");
             CCDBusMessageDescription.Add(0xE4, "ENGINE SPEED | INTAKE MANIFOLD ABS. PRESSURE");
             CCDBusMessageDescription.Add(0xEC, "VEHICLE INFORMATION / LIMP STATES / FUEL TYPE");
             CCDBusMessageDescription.Add(0xEE, "TRIP DISTANCE / TRIPMETER");
@@ -52,14 +56,18 @@ namespace ChryslerCCDSCIScanner
             CCDBusMessageSlope.Add(0x29, new double[] { 1D });
             CCDBusMessageSlope.Add(0x3A, new double[] { 0 });
             CCDBusMessageSlope.Add(0x42, new double[] { 0.65D, 0 });
+            CCDBusMessageSlope.Add(0x44, new double[] { 1D });
             CCDBusMessageSlope.Add(0x50, new double[] { 0 });
             CCDBusMessageSlope.Add(0x6D, new double[] { 1F });
             CCDBusMessageSlope.Add(0x75, new double[] { 1.961D }); // psi
+            CCDBusMessageSlope.Add(0x7B, new double[] { 1D }); // F
             CCDBusMessageSlope.Add(0x84, new double[] { 0.000125D });
             CCDBusMessageSlope.Add(0x8C, new double[] { 1.8D, 1.8D }); // F
             CCDBusMessageSlope.Add(0x94, new double[] { 0 });
             CCDBusMessageSlope.Add(0xA4, new double[] { 0 });
             CCDBusMessageSlope.Add(0xA9, new double[] { 1D });
+            CCDBusMessageSlope.Add(0xAA, new double[] { 0 });
+            CCDBusMessageSlope.Add(0xAC, new double[] { 0 });
             CCDBusMessageSlope.Add(0xB2, new double[] { 0 });
             CCDBusMessageSlope.Add(0xBE, new double[] { 0 });
             CCDBusMessageSlope.Add(0xCC, new double[] { 1D });
@@ -77,14 +85,18 @@ namespace ChryslerCCDSCIScanner
             CCDBusMessageOffset.Add(0x29, new double[] { 0 });
             CCDBusMessageOffset.Add(0x3A, new double[] { 0 });
             CCDBusMessageOffset.Add(0x42, new double[] { 0 });
+            CCDBusMessageOffset.Add(0x44, new double[] { 0 });
             CCDBusMessageOffset.Add(0x50, new double[] { 0 });
             CCDBusMessageOffset.Add(0x6D, new double[] { 0 });
             CCDBusMessageOffset.Add(0x75, new double[] { 0 }); // psi
+            CCDBusMessageOffset.Add(0x7B, new double[] { -70.0D }); // F
             CCDBusMessageOffset.Add(0x84, new double[] { 0 });
-            CCDBusMessageOffset.Add(0x8C, new double[] { -83.2D, -83.2D }); // F
+            CCDBusMessageOffset.Add(0x8C, new double[] { -198.4D, -198.4D }); // F
             CCDBusMessageOffset.Add(0x94, new double[] { 0 });
             CCDBusMessageOffset.Add(0xA4, new double[] { 0 });
             CCDBusMessageOffset.Add(0xA9, new double[] { 0 });
+            CCDBusMessageOffset.Add(0xAA, new double[] { 0 });
+            CCDBusMessageOffset.Add(0xAC, new double[] { 0 });
             CCDBusMessageOffset.Add(0xB2, new double[] { 0 });
             CCDBusMessageOffset.Add(0xBE, new double[] { 0 });
             CCDBusMessageOffset.Add(0xCC, new double[] { 0 });
@@ -102,14 +114,18 @@ namespace ChryslerCCDSCIScanner
             CCDBusMessageSlConv.Add(0x29, new double[] { 1D });
             CCDBusMessageSlConv.Add(0x3A, new double[] { 0 });
             CCDBusMessageSlConv.Add(0x42, new double[] { 0.65D, 0 });
+            CCDBusMessageSlConv.Add(0x44, new double[] { 1D });
             CCDBusMessageSlConv.Add(0x50, new double[] { 0 });
             CCDBusMessageSlConv.Add(0x6D, new double[] { 1D });
             CCDBusMessageSlConv.Add(0x75, new double[] { 6.894757D }); // kPa
+            CCDBusMessageSlConv.Add(0x7B, new double[] { 1D }); // °C !!!TODO!!!
             CCDBusMessageSlConv.Add(0x84, new double[] { 0.000125D });
             CCDBusMessageSlConv.Add(0x8C, new double[] { 0.555556D, 0.555556D }); // °C
             CCDBusMessageSlConv.Add(0x94, new double[] { 0 });
             CCDBusMessageSlConv.Add(0xA4, new double[] { 0 });
             CCDBusMessageSlConv.Add(0xA9, new double[] { 1D });
+            CCDBusMessageSlConv.Add(0xAA, new double[] { 0 });
+            CCDBusMessageSlConv.Add(0xAC, new double[] { 0 });
             CCDBusMessageSlConv.Add(0xB2, new double[] { 0 });
             CCDBusMessageSlConv.Add(0xBE, new double[] { 0 });
             CCDBusMessageSlConv.Add(0xCC, new double[] { 1D });
@@ -127,14 +143,18 @@ namespace ChryslerCCDSCIScanner
             CCDBusMessageOfConv.Add(0x29, new double[] { 0 });
             CCDBusMessageOfConv.Add(0x3A, new double[] { 0 });
             CCDBusMessageOfConv.Add(0x42, new double[] { 0 });
+            CCDBusMessageOfConv.Add(0x44, new double[] { 0 });
             CCDBusMessageOfConv.Add(0x50, new double[] { 0 });
             CCDBusMessageOfConv.Add(0x6D, new double[] { 0 });
             CCDBusMessageOfConv.Add(0x75, new double[] { 0 }); // kPa
+            CCDBusMessageOfConv.Add(0x7B, new double[] { 0 }); // °C !!!TODO!!!
             CCDBusMessageOfConv.Add(0x84, new double[] { 0 });
             CCDBusMessageOfConv.Add(0x8C, new double[] { -17.77778D, -17.77778D }); // °C
             CCDBusMessageOfConv.Add(0x94, new double[] { 0 });
             CCDBusMessageOfConv.Add(0xA4, new double[] { 0 });
             CCDBusMessageOfConv.Add(0xA9, new double[] { 0 });
+            CCDBusMessageOfConv.Add(0xAA, new double[] { 0 });
+            CCDBusMessageOfConv.Add(0xAC, new double[] { 0 });
             CCDBusMessageOfConv.Add(0xB2, new double[] { 0 });
             CCDBusMessageOfConv.Add(0xBE, new double[] { 0 });
             CCDBusMessageOfConv.Add(0xCC, new double[] { 0 });
@@ -149,17 +169,21 @@ namespace ChryslerCCDSCIScanner
             CCDBusMessageOfConv.Add(0xFF, new double[] { 0 });
 
             CCDBusMessageUnitImperial.Add(0x24, new string[] { "MPH", "KM/H" });
-            CCDBusMessageUnitImperial.Add(0x29, new string[] { "MINUTE" });
+            CCDBusMessageUnitImperial.Add(0x29, new string[] { "HOUR:MINUTE" });
             CCDBusMessageUnitImperial.Add(0x3A, new string[] { String.Empty });
             CCDBusMessageUnitImperial.Add(0x42, new string[] { "%", String.Empty });
+            CCDBusMessageUnitImperial.Add(0x44, new string[] { String.Empty });
             CCDBusMessageUnitImperial.Add(0x50, new string[] { String.Empty });
             CCDBusMessageUnitImperial.Add(0x6D, new string[] { String.Empty });
             CCDBusMessageUnitImperial.Add(0x75, new string[] { "PSI" });
+            CCDBusMessageUnitImperial.Add(0x7B, new string[] { "F" });
             CCDBusMessageUnitImperial.Add(0x84, new string[] { "MILE" });
-            CCDBusMessageUnitImperial.Add(0x8C, new string[] { "°F", "°F" });
+            CCDBusMessageUnitImperial.Add(0x8C, new string[] { "F", "F" });
             CCDBusMessageUnitImperial.Add(0x94, new string[] { String.Empty });
             CCDBusMessageUnitImperial.Add(0xA4, new string[] { String.Empty });
             CCDBusMessageUnitImperial.Add(0xA9, new string[] { "MINUTE" });
+            CCDBusMessageUnitImperial.Add(0xAA, new string[] { String.Empty });
+            CCDBusMessageUnitImperial.Add(0xAC, new string[] { String.Empty });
             CCDBusMessageUnitImperial.Add(0xB2, new string[] { String.Empty });
             CCDBusMessageUnitImperial.Add(0xBE, new string[] { String.Empty });
             CCDBusMessageUnitImperial.Add(0xCC, new string[] { String.Empty });
@@ -174,17 +198,21 @@ namespace ChryslerCCDSCIScanner
             CCDBusMessageUnitImperial.Add(0xFF, new string[] { String.Empty });
 
             CCDBusMessageUnitMetric.Add(0x24, new string[] { "MPH", "KM/H" });
-            CCDBusMessageUnitMetric.Add(0x29, new string[] { "MINUTE" });
+            CCDBusMessageUnitMetric.Add(0x29, new string[] { "HOUR:MINUTE" });
             CCDBusMessageUnitMetric.Add(0x3A, new string[] { String.Empty });
             CCDBusMessageUnitMetric.Add(0x42, new string[] { "%", String.Empty });
+            CCDBusMessageUnitMetric.Add(0x44, new string[] { String.Empty });
             CCDBusMessageUnitMetric.Add(0x50, new string[] { String.Empty });
             CCDBusMessageUnitMetric.Add(0x6D, new string[] { String.Empty });
             CCDBusMessageUnitMetric.Add(0x75, new string[] { "KPA" });
+            CCDBusMessageUnitMetric.Add(0x7B, new string[] { "°C" });
             CCDBusMessageUnitMetric.Add(0x84, new string[] { "KILOMETER" });
             CCDBusMessageUnitMetric.Add(0x8C, new string[] { "°C", "°C" });
             CCDBusMessageUnitMetric.Add(0x94, new string[] { String.Empty });
             CCDBusMessageUnitMetric.Add(0xA4, new string[] { String.Empty });
             CCDBusMessageUnitMetric.Add(0xA9, new string[] { "MINUTE" });
+            CCDBusMessageUnitMetric.Add(0xAA, new string[] { String.Empty });
+            CCDBusMessageUnitMetric.Add(0xAC, new string[] { String.Empty });
             CCDBusMessageUnitMetric.Add(0xB2, new string[] { String.Empty });
             CCDBusMessageUnitMetric.Add(0xBE, new string[] { String.Empty });
             CCDBusMessageUnitMetric.Add(0xCC, new string[] { String.Empty });
