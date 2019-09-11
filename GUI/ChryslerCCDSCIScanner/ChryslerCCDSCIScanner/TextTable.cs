@@ -231,25 +231,25 @@ namespace ChryslerCCDSCIScanner
                         case 0x24:
                             if (MainForm.Units == 1) // Imperial
                             {
-                                ccdvaluetoinsert = ccdmessage[1].ToString();
+                                ccdvaluetoinsert = ccdmessage[1].ToString("0");
                             }
                             if (MainForm.Units == 0) // Metric
                             {
-                                ccdvaluetoinsert = ccdmessage[2].ToString();
+                                ccdvaluetoinsert = ccdmessage[2].ToString("0");
                             }
                             break;
                         case 0x29:
                             if (ccdmessage[1] < 10) ccdvaluetoinsert = "0";
-                            ccdvaluetoinsert = ccdmessage[1].ToString() + ":";
+                            ccdvaluetoinsert = ccdmessage[1].ToString("0") + ":";
                             if (ccdmessage[2] < 10) ccdvaluetoinsert += "0";
-                            ccdvaluetoinsert += ccdmessage[2].ToString();
+                            ccdvaluetoinsert += ccdmessage[2].ToString("0");
                             break;
                         case 0x42:
                             ImperialSlope = LT.GetCCDBusMessageSlope(0x42)[0];
-                            ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString();
+                            ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0");
                             break;
                         case 0x44:
-                            ccdvaluetoinsert = ccdmessage[1].ToString();
+                            ccdvaluetoinsert = ccdmessage[1].ToString("0");
                             break;
                         case 0x50:
                             if ((ccdmessage[1] & 0x01) == 0x01) ccdvaluetoinsert = "AIRBAG LAMP ON";
@@ -296,7 +296,7 @@ namespace ChryslerCCDSCIScanner
                             }
                             break;
                         case 0xA9:
-                            ccdvaluetoinsert = ccdmessage[1].ToString();
+                            ccdvaluetoinsert = ccdmessage[1].ToString("0");
                             break;
                         case 0xCE:
                             if (MainForm.Units == 1) // Imperial
@@ -317,13 +317,12 @@ namespace ChryslerCCDSCIScanner
                         case 0xDA:
                             if ((ccdmessage[1] & 0x40) == 0x40) ccdvaluetoinsert = "MIL LAMP ON";
                             else ccdvaluetoinsert = "MIL LAMP OFF";
-                            ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0.0") + " | " + (ccdmessage[2] * ImperialSlope).ToString("0.0");
                             break;
                         case 0xE4:
                             if (MainForm.Units == 1) // Imperial
                             {
                                 ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[0]; // RPM
-                                ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString() + " | ";
+                                ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0") + " | ";
 
                                 ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[1]; // PSI
                                 ccdvaluetoinsert += (ccdmessage[2] * ImperialSlope).ToString("0.0").Replace(",", ".");
@@ -331,7 +330,7 @@ namespace ChryslerCCDSCIScanner
                             if (MainForm.Units == 0) // Metric
                             {
                                 ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[0]; // RPM
-                                ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString() + " | ";
+                                ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0") + " | ";
 
                                 ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[1]; // KPA
                                 MetricSlope = LT.GetCCDBusMessageSlConv(0xE4)[1];
@@ -565,7 +564,10 @@ namespace ChryslerCCDSCIScanner
                         switch (IDByte)
                         {
                             case 0x10:
-                                scipcmdescriptiontoinsert = "FAULT CODE LIST";
+                                scipcmdescriptiontoinsert = "ENGINE FAULT CODE LIST";
+                                break;
+                            case 0x11:
+                                scipcmdescriptiontoinsert = "ENGINE FAULT BIT LIST";
                                 break;
                             case 0x12:
                                 scipcmdescriptiontoinsert = "ENTER HIGH-SPEED MODE";
@@ -603,6 +605,60 @@ namespace ChryslerCCDSCIScanner
                                     scipcmdescriptiontoinsert = "REQUEST DIAGNOSTIC DATA";
                                 }
                                 break;
+                            case 0x15:
+                                scipcmdescriptiontoinsert = "REQUEST MEMORY DATA";
+                                break;
+                            case 0x16:
+                                scipcmdescriptiontoinsert = "REQUEST ECU ID";
+                                break;
+                            case 0x17:
+                                if (pcmmessage.Length > 1)
+                                {
+                                    switch (pcmmessage[1])
+                                    {
+                                        case 0xE0: // coolant temperature
+                                            scipcmdescriptiontoinsert = "ENGINE FAULT CODES ERASED SUCCESSFULLY";
+                                            break;
+                                        default:
+                                            scipcmdescriptiontoinsert = "ENGINE FAULT CODE ERASE ERROR";
+                                            break;
+                                    }
+                                }
+                                else
+                                {
+                                    scipcmdescriptiontoinsert = "ERASE ENGINE FAULT CODES";
+                                }
+                                break;
+                            case 0x18:
+                                if (pcmmessage.Length > 1)
+                                {
+                                    switch (pcmmessage[1])
+                                    {
+                                        default:
+                                            scipcmdescriptiontoinsert = "CONTROL ASD RELAY";
+                                            break;
+                                    }
+                                }
+                                else
+                                {
+                                    scipcmdescriptiontoinsert = "CONTROL ASD RELAY";
+                                }
+                                break;
+                            case 0x19:
+                                if (pcmmessage.Length > 1)
+                                {
+                                    switch (pcmmessage[1])
+                                    {
+                                        default:
+                                            scipcmdescriptiontoinsert = "SET MINIMUM IDLE SPEED";
+                                            break;
+                                    }
+                                }
+                                else
+                                {
+                                    scipcmdescriptiontoinsert = "SET MINIMUM IDLE SPEED";
+                                }
+                                break;
                             case 0xFE:
                                 scipcmdescriptiontoinsert = " ";
                                 break;
@@ -630,6 +686,16 @@ namespace ChryslerCCDSCIScanner
                                     }
                                 }
                                 break;
+                            case 0x19: // Set minimum idle speed
+                                if (pcmmessage.Length > 1)
+                                {
+                                    scipcmvaluetoinsert = (pcmmessage[1] * 7.85D).ToString("0");
+                                }
+                                else
+                                {
+                                    scipcmvaluetoinsert = "-";
+                                }
+                                break;
                         }
                         if (scipcmvaluetoinsert != String.Empty)
                         {
@@ -642,6 +708,9 @@ namespace ChryslerCCDSCIScanner
                         {
                             case 0x10: // Fault code list
                                 scipcmunittoinsert = String.Empty;
+                                break;
+                            case 0x19: // Fault code list
+                                scipcmunittoinsert = "RPM";
                                 break;
                         }
                         if (scipcmunittoinsert != String.Empty)
