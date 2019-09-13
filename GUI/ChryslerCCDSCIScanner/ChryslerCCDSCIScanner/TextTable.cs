@@ -240,7 +240,7 @@ namespace ChryslerCCDSCIScanner
                             break;
                         case 0x29:
                             if (ccdmessage[1] < 10) ccdvaluetoinsert = "0";
-                            ccdvaluetoinsert = ccdmessage[1].ToString("0") + ":";
+                            ccdvaluetoinsert += ccdmessage[1].ToString("0") + ":";
                             if (ccdmessage[2] < 10) ccdvaluetoinsert += "0";
                             ccdvaluetoinsert += ccdmessage[2].ToString("0");
                             break;

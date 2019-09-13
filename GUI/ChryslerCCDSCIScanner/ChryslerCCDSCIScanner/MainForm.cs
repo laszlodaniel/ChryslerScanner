@@ -289,7 +289,13 @@ namespace ChryslerCCDSCIScanner
                     TimeoutTimer.Enabled = false; // disable timer
                     if (Timeout)
                     {
-                        if (Serial.BytesToRead > 0) Util.UpdateTextBox(USBTextBox, "[INFO] " + Serial.PortName + " answer is invalid (" + Serial.BytesToRead + " bytes)", null);
+                        if (Serial.BytesToRead > 0)
+                        {
+                            Util.UpdateTextBox(USBTextBox, "[INFO] " + Serial.PortName + " answer is invalid (" + Serial.BytesToRead + " bytes)", null);
+                            Serial.DiscardInBuffer();
+                            Serial.DiscardOutBuffer();
+                            Serial.BaseStream.Flush();
+                        }
                         else Util.UpdateTextBox(USBTextBox, "[INFO] " + Serial.PortName + " is not answering", null);
                         continue; // skip current iteration and jump to next comport (if any)
                     }
@@ -329,6 +335,9 @@ namespace ChryslerCCDSCIScanner
                         Util.UpdateTextBox(USBTextBox, "[RX->] Handshake response (" + Serial.PortName + ")", msg);
                         Util.UpdateTextBox(USBTextBox, "[INFO] Handshake ERROR: " + Encoding.ASCII.GetString(msg, 5, 21), null);
                         ScannerFound = false;
+                        Serial.DiscardInBuffer();
+                        Serial.DiscardOutBuffer();
+                        Serial.BaseStream.Flush();
                     }
                 }
                 Util.UpdateTextBox(USBTextBox, "[INFO] No scanner available", null);
@@ -338,6 +347,9 @@ namespace ChryslerCCDSCIScanner
             {
                 if (Serial.IsOpen && ScannerFound)
                 {
+                    Serial.DiscardInBuffer();
+                    Serial.DiscardOutBuffer();
+                    Serial.BaseStream.Flush();
                     Serial.Close();
                     ScannerFound = false;
                     ConnectButton.Text = "Connect";
@@ -761,27 +773,48 @@ namespace ChryslerCCDSCIScanner
                                 }
                                 break;
                             case (byte)Source.CCDBus:
-                                Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message", msg);
-                                TT.UpdateTextTable(source, subdatacode, payload);
-                                if (IncludeTimestap) File.AppendAllText(CCDLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
-                                else File.AppendAllText(CCDLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
+                                try
+                                {
+                                    Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message", msg);
+                                    TT.UpdateTextTable(source, subdatacode, payload);
+                                    if (IncludeTimestap) File.AppendAllText(CCDLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
+                                    else File.AppendAllText(CCDLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
+                                }
+                                catch
+                                {
+                                    Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus error", msg);
+                                }
                                 break;
                             case (byte)Source.SCIBusPCM:
-                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (PCM)", msg);
-                                TT.UpdateTextTable(source, subdatacode, payload);
-                                if (subdatacode == 0x00) // low-speed mode messages are saved here, high-speed mode messages are dealt with in TextTable
+                                try
                                 {
-                                    if (IncludeTimestap) File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
-                                    else File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
+                                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (PCM)", msg);
+                                    TT.UpdateTextTable(source, subdatacode, payload);
+                                    if (subdatacode == 0x00) // low-speed mode messages are saved here, high-speed mode messages are dealt with in TextTable
+                                    {
+                                        if (IncludeTimestap) File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
+                                        else File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
+                                    }
+                                }
+                                catch
+                                {
+                                    Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) error", msg);
                                 }
                                 break;
                             case (byte)Source.SCIBusTCM:
-                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (TCM)", msg);
-                                TT.UpdateTextTable(source, subdatacode, payload);
-                                if (subdatacode == 0x00) // low-speed mode messages are saved here, high-speed mode messages are dealt with in TextTable
+                                try
                                 {
-                                    if (IncludeTimestap) File.AppendAllText(TCMLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
-                                    else File.AppendAllText(TCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
+                                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (TCM)", msg);
+                                    TT.UpdateTextTable(source, subdatacode, payload);
+                                    if (subdatacode == 0x00) // low-speed mode messages are saved here, high-speed mode messages are dealt with in TextTable
+                                    {
+                                        if (IncludeTimestap) File.AppendAllText(TCMLogFilename, Util.ByteToHexString(payload, 0, payload.Length) + Environment.NewLine);
+                                        else File.AppendAllText(TCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
+                                    }
+                                }
+                                catch
+                                {
+                                    Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) error", msg);
                                 }
                                 break;
                             default:
