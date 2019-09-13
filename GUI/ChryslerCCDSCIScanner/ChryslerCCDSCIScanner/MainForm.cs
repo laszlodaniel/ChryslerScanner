@@ -143,6 +143,9 @@ namespace ChryslerCCDSCIScanner
                 if (!USBTextBox.IsDisposed && ScannerFound)
                 {
                     Util.UpdateTextBox(USBTextBox, "[INFO] Can't listen to " + Serial.PortName, null);
+                    Serial.DiscardInBuffer();
+                    Serial.DiscardOutBuffer();
+                    Serial.BaseStream.Flush();
                 }
             }
         }
@@ -158,6 +161,9 @@ namespace ChryslerCCDSCIScanner
                 if (!USBTextBox.IsDisposed)
                 {
                     Util.UpdateTextBox(USBTextBox, "[INFO] Can't write to " + Serial.PortName, null);
+                    Serial.DiscardInBuffer();
+                    Serial.DiscardOutBuffer();
+                    Serial.BaseStream.Flush();
                 }
             }
         }
