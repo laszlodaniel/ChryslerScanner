@@ -229,124 +229,172 @@ namespace ChryslerCCDSCIScanner
                     switch (IDByte)
                     {
                         case 0x24:
-                            if (MainForm.Units == 1) // Imperial
+                            if (ccdmessage.Length > 3)
                             {
-                                ccdvaluetoinsert = ccdmessage[1].ToString("0");
-                            }
-                            if (MainForm.Units == 0) // Metric
-                            {
-                                ccdvaluetoinsert = ccdmessage[2].ToString("0");
+                                if (MainForm.Units == 1) // Imperial
+                                {
+                                    ccdvaluetoinsert = ccdmessage[1].ToString("0");
+                                }
+                                if (MainForm.Units == 0) // Metric
+                                {
+                                    ccdvaluetoinsert = ccdmessage[2].ToString("0");
+                                }
                             }
                             break;
                         case 0x29:
-                            if (ccdmessage[1] < 10) ccdvaluetoinsert = "0";
-                            ccdvaluetoinsert += ccdmessage[1].ToString("0") + ":";
-                            if (ccdmessage[2] < 10) ccdvaluetoinsert += "0";
-                            ccdvaluetoinsert += ccdmessage[2].ToString("0");
+                            if (ccdmessage.Length > 3)
+                            {
+                                if (ccdmessage[1] < 10) ccdvaluetoinsert = "0";
+                                ccdvaluetoinsert += ccdmessage[1].ToString("0") + ":";
+                                if (ccdmessage[2] < 10) ccdvaluetoinsert += "0";
+                                ccdvaluetoinsert += ccdmessage[2].ToString("0");
+                            }
                             break;
                         case 0x42:
-                            ImperialSlope = LT.GetCCDBusMessageSlope(0x42)[0];
-                            ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0");
+                            if (ccdmessage.Length > 3)
+                            {
+                                ImperialSlope = LT.GetCCDBusMessageSlope(0x42)[0];
+                                ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0");
+                            }
                             break;
                         case 0x44:
-                            ccdvaluetoinsert = ccdmessage[1].ToString("0");
+                            if (ccdmessage.Length > 2)
+                            {
+                                ccdvaluetoinsert = ccdmessage[1].ToString("0");
+                            }
                             break;
                         case 0x50:
-                            if ((ccdmessage[1] & 0x01) == 0x01) ccdvaluetoinsert = "AIRBAG LAMP ON";
-                            else ccdvaluetoinsert = "AIRBAG LAMP OFF";
+                            if (ccdmessage.Length > 2)
+                            {
+                                if ((ccdmessage[1] & 0x01) == 0x01) ccdvaluetoinsert = "AIRBAG LAMP ON";
+                                else ccdvaluetoinsert = "AIRBAG LAMP OFF";
+                            }
                             break;
                         case 0x6D:
-                            // Replace characters in the VIN string (one by one)
-                            VIN = VIN.Remove(ccdmessage[1] - 1, 1).Insert(ccdmessage[1] - 1, ((char)(ccdmessage[2])).ToString());
+                            if (ccdmessage.Length > 3)
+                            {
+                                if ((ccdmessage[1] > 0) && (ccdmessage[1] < 18))
+                                {
+                                    // Replace characters in the VIN string (one by one)
+                                    VIN = VIN.Remove(ccdmessage[1] - 1, 1).Insert(ccdmessage[1] - 1, ((char)(ccdmessage[2])).ToString());
+                                }
+                            }
                             ccdvaluetoinsert = VIN;
                             break;
                         case 0x75:
-                            if (MainForm.Units == 1) // Imperial
+                            if (ccdmessage.Length > 3)
                             {
-                                ImperialSlope = LT.GetCCDBusMessageSlope(0x75)[0];
-                                ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0.0").Replace(",", ".");
-                            }
-                            if (MainForm.Units == 0) // Metric
-                            {
-                                MetricSlope = (LT.GetCCDBusMessageSlope(0x75)[0] * LT.GetCCDBusMessageSlConv(0x75)[0]);
-                                ccdvaluetoinsert = (ccdmessage[1] * MetricSlope).ToString("0.0").Replace(",", ".");
+                                if (MainForm.Units == 1) // Imperial
+                                {
+                                    ImperialSlope = LT.GetCCDBusMessageSlope(0x75)[0];
+                                    ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0.0").Replace(",", ".");
+                                }
+                                if (MainForm.Units == 0) // Metric
+                                {
+                                    MetricSlope = (LT.GetCCDBusMessageSlope(0x75)[0] * LT.GetCCDBusMessageSlConv(0x75)[0]);
+                                    ccdvaluetoinsert = (ccdmessage[1] * MetricSlope).ToString("0.0").Replace(",", ".");
+                                }
                             }
                             break;
                         case 0x7B:
-                            ImperialSlope = LT.GetCCDBusMessageSlope(0x7B)[0];
-                            ImperialOffset = LT.GetCCDBusMessageOffset(0x7B)[0];
-                            ccdvaluetoinsert = ((ccdmessage[1] * ImperialSlope) + ImperialOffset).ToString("0.0");
+                            if (ccdmessage.Length > 2)
+                            {
+                                ImperialSlope = LT.GetCCDBusMessageSlope(0x7B)[0];
+                                ImperialOffset = LT.GetCCDBusMessageOffset(0x7B)[0];
+                                ccdvaluetoinsert = ((ccdmessage[1] * ImperialSlope) + ImperialOffset).ToString("0.0").Replace(",", ".");
+                            }
                             break;
                         case 0x8C:
-                            if (MainForm.Units == 1) // Imperial
+                            if (ccdmessage.Length > 3)
                             {
-                                ImperialSlope = LT.GetCCDBusMessageSlope(0x8C)[0];
-                                ImperialOffset = LT.GetCCDBusMessageOffset(0x8C)[0];
-                                ccdvaluetoinsert = ((ccdmessage[1] * ImperialSlope) + ImperialOffset).ToString("0.0").Replace(",", ".") + " | ";
-                                ccdvaluetoinsert += ((ccdmessage[2] * ImperialSlope) + ImperialOffset).ToString("0.0").Replace(",", ".");
-                            }
-                            if (MainForm.Units == 0) // Metric
-                            {
-                                ImperialSlope = LT.GetCCDBusMessageSlope(0x8C)[0];
-                                ImperialOffset = LT.GetCCDBusMessageOffset(0x8C)[0];
-                                MetricSlope = LT.GetCCDBusMessageSlConv(0x8C)[0];
-                                MetricOffset = LT.GetCCDBusMessageOfConv(0x8C)[0];
-                                ccdvaluetoinsert = ((((ccdmessage[1] * ImperialSlope) + ImperialOffset) * MetricSlope) + MetricOffset).ToString("0.0").Replace(",", ".") + " | ";
-                                ccdvaluetoinsert += ((((ccdmessage[2] * ImperialSlope) + ImperialOffset) * MetricSlope) + MetricOffset).ToString("0.0").Replace(",", ".");
+                                if (MainForm.Units == 1) // Imperial
+                                {
+                                    ImperialSlope = LT.GetCCDBusMessageSlope(0x8C)[0];
+                                    ImperialOffset = LT.GetCCDBusMessageOffset(0x8C)[0];
+                                    ccdvaluetoinsert = ((ccdmessage[1] * ImperialSlope) + ImperialOffset).ToString("0.0").Replace(",", ".") + " | ";
+                                    ccdvaluetoinsert += ((ccdmessage[2] * ImperialSlope) + ImperialOffset).ToString("0.0").Replace(",", ".");
+                                }
+                                if (MainForm.Units == 0) // Metric
+                                {
+                                    ImperialSlope = LT.GetCCDBusMessageSlope(0x8C)[0];
+                                    ImperialOffset = LT.GetCCDBusMessageOffset(0x8C)[0];
+                                    MetricSlope = LT.GetCCDBusMessageSlConv(0x8C)[0];
+                                    MetricOffset = LT.GetCCDBusMessageOfConv(0x8C)[0];
+                                    ccdvaluetoinsert = ((((ccdmessage[1] * ImperialSlope) + ImperialOffset) * MetricSlope) + MetricOffset).ToString("0.0").Replace(",", ".") + " | ";
+                                    ccdvaluetoinsert += ((((ccdmessage[2] * ImperialSlope) + ImperialOffset) * MetricSlope) + MetricOffset).ToString("0.0").Replace(",", ".");
+                                }
                             }
                             break;
                         case 0xA9:
-                            ccdvaluetoinsert = ccdmessage[1].ToString("0");
+                            if (ccdmessage.Length > 2)
+                            {
+                                ccdvaluetoinsert = ccdmessage[1].ToString("0");
+                            }
                             break;
                         case 0xCE:
-                            if (MainForm.Units == 1) // Imperial
+                            if (ccdmessage.Length > 5)
                             {
-                                ImperialSlope = LT.GetCCDBusMessageSlope(0xCE)[0];
-                                ccdvaluetoinsert = ((ccdmessage[1] << 24 | ccdmessage[2] << 16 | ccdmessage[3] << 8 | ccdmessage[4]) * ImperialSlope).ToString("0.000").Replace(",", ".");
-                            }
-                            if (MainForm.Units == 0) // Metric
-                            {
-                                MetricSlope = (LT.GetCCDBusMessageSlope(0xCE)[0] * LT.GetCCDBusMessageSlConv(0xCE)[0]);
-                                ccdvaluetoinsert = ((ccdmessage[1] << 24 | ccdmessage[2] << 16 | ccdmessage[3] << 8 | ccdmessage[4]) * MetricSlope).ToString("0.000").Replace(",", ".");
+                                if (MainForm.Units == 1) // Imperial
+                                {
+                                    ImperialSlope = LT.GetCCDBusMessageSlope(0xCE)[0];
+                                    ccdvaluetoinsert = ((ccdmessage[1] << 24 | ccdmessage[2] << 16 | ccdmessage[3] << 8 | ccdmessage[4]) * ImperialSlope).ToString("0.000").Replace(",", ".");
+                                }
+                                if (MainForm.Units == 0) // Metric
+                                {
+                                    MetricSlope = (LT.GetCCDBusMessageSlope(0xCE)[0] * LT.GetCCDBusMessageSlConv(0xCE)[0]);
+                                    ccdvaluetoinsert = ((ccdmessage[1] << 24 | ccdmessage[2] << 16 | ccdmessage[3] << 8 | ccdmessage[4]) * MetricSlope).ToString("0.000").Replace(",", ".");
+                                }
                             }
                             break;
                         case 0xD4:
-                            ImperialSlope = LT.GetCCDBusMessageSlope(0xD4)[0];
-                            ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0.0") + " | " + (ccdmessage[2] * ImperialSlope).ToString("0.0");
+                            if (ccdmessage.Length > 3)
+                            {
+                                ImperialSlope = LT.GetCCDBusMessageSlope(0xD4)[0];
+                                ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0.0").Replace(",", ".") + " | " + (ccdmessage[2] * ImperialSlope).ToString("0.0").Replace(",", ".");
+                            }
                             break;
                         case 0xDA:
-                            if ((ccdmessage[1] & 0x40) == 0x40) ccdvaluetoinsert = "MIL LAMP ON";
-                            else ccdvaluetoinsert = "MIL LAMP OFF";
+                            if (ccdmessage.Length > 2)
+                            {
+                                if ((ccdmessage[1] & 0x40) == 0x40) ccdvaluetoinsert = "MIL LAMP ON";
+                                else ccdvaluetoinsert = "MIL LAMP OFF";
+                            }
                             break;
                         case 0xE4:
-                            if (MainForm.Units == 1) // Imperial
+                            if (ccdmessage.Length > 3)
                             {
-                                ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[0]; // RPM
-                                ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0") + " | ";
+                                if (MainForm.Units == 1) // Imperial
+                                {
+                                    ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[0]; // RPM
+                                    ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0") + " | ";
 
-                                ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[1]; // PSI
-                                ccdvaluetoinsert += (ccdmessage[2] * ImperialSlope).ToString("0.0").Replace(",", ".");
-                            }
-                            if (MainForm.Units == 0) // Metric
-                            {
-                                ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[0]; // RPM
-                                ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0") + " | ";
+                                    ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[1]; // PSI
+                                    ccdvaluetoinsert += (ccdmessage[2] * ImperialSlope).ToString("0.0").Replace(",", ".");
+                                }
+                                if (MainForm.Units == 0) // Metric
+                                {
+                                    ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[0]; // RPM
+                                    ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0") + " | ";
 
-                                ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[1]; // KPA
-                                MetricSlope = LT.GetCCDBusMessageSlConv(0xE4)[1];
-                                ccdvaluetoinsert += ((ccdmessage[2] * ImperialSlope) * MetricSlope).ToString("0.0").Replace(",", ".");
+                                    ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[1]; // KPA
+                                    MetricSlope = LT.GetCCDBusMessageSlConv(0xE4)[1];
+                                    ccdvaluetoinsert += ((ccdmessage[2] * ImperialSlope) * MetricSlope).ToString("0.0").Replace(",", ".");
+                                }
                             }
                             break;
                         case 0xEE:
-                            if (MainForm.Units == 1) // Imperial
+                            if (ccdmessage.Length > 4)
                             {
-                                ImperialSlope = LT.GetCCDBusMessageSlope(0xEE)[0];
-                                ccdvaluetoinsert = ((ccdmessage[1] << 16 | ccdmessage[2] << 8 | ccdmessage[3]) * ImperialSlope).ToString("0.000").Replace(",", ".");
-                            }
-                            if (MainForm.Units == 0) // Metric
-                            {
-                                MetricSlope = (LT.GetCCDBusMessageSlope(0xEE)[0] * LT.GetCCDBusMessageSlConv(0xEE)[0]);
-                                ccdvaluetoinsert = ((ccdmessage[1] << 16 | ccdmessage[2] << 8 | ccdmessage[3]) * MetricSlope).ToString("0.000").Replace(",", ".");
+                                if (MainForm.Units == 1) // Imperial
+                                {
+                                    ImperialSlope = LT.GetCCDBusMessageSlope(0xEE)[0];
+                                    ccdvaluetoinsert = ((ccdmessage[1] << 16 | ccdmessage[2] << 8 | ccdmessage[3]) * ImperialSlope).ToString("0.000").Replace(",", ".");
+                                }
+                                if (MainForm.Units == 0) // Metric
+                                {
+                                    MetricSlope = (LT.GetCCDBusMessageSlope(0xEE)[0] * LT.GetCCDBusMessageSlConv(0xEE)[0]);
+                                    ccdvaluetoinsert = ((ccdmessage[1] << 16 | ccdmessage[2] << 8 | ccdmessage[3]) * MetricSlope).ToString("0.000").Replace(",", ".");
+                                }
                             }
                             break;
                     }
