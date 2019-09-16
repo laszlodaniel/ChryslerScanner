@@ -143,9 +143,16 @@ namespace ChryslerCCDSCIScanner
                 if (!USBTextBox.IsDisposed && ScannerFound)
                 {
                     Util.UpdateTextBox(USBTextBox, "[INFO] Can't listen to " + Serial.PortName, null);
-                    Serial.DiscardInBuffer();
-                    Serial.DiscardOutBuffer();
-                    Serial.BaseStream.Flush();
+                    try
+                    {
+                        Serial.DiscardInBuffer();
+                        Serial.DiscardOutBuffer();
+                        Serial.BaseStream.Flush();
+                    }
+                    catch
+                    {
+                        Util.UpdateTextBox(USBTextBox, "[INFO] USB disconnected", null);
+                    }
                 }
             }
         }
@@ -161,9 +168,16 @@ namespace ChryslerCCDSCIScanner
                 if (!USBTextBox.IsDisposed)
                 {
                     Util.UpdateTextBox(USBTextBox, "[INFO] Can't write to " + Serial.PortName, null);
-                    Serial.DiscardInBuffer();
-                    Serial.DiscardOutBuffer();
-                    Serial.BaseStream.Flush();
+                    try
+                    {
+                        Serial.DiscardInBuffer();
+                        Serial.DiscardOutBuffer();
+                        Serial.BaseStream.Flush();
+                    }
+                    catch
+                    {
+                        Util.UpdateTextBox(USBTextBox, "[INFO] USB disconnected", null);
+                    }
                 }
             }
         }
@@ -910,12 +924,13 @@ namespace ChryslerCCDSCIScanner
             {
                 DiagnosticsTextBox.BeginInvoke((MethodInvoker)delegate
                 {
-                    DiagnosticsTextBox.SuspendLayout();
+                    
                     int savedVpos = GetScrollPos(DiagnosticsTextBox.Handle, SB_VERT);
                     DiagnosticsTextBox.Text = String.Join(Environment.NewLine, TT.Table);
+                    Application.DoEvents();
+                    DiagnosticsTextBox.SuspendLayout();
                     SetScrollPos(DiagnosticsTextBox.Handle, SB_VERT, savedVpos, true);
                     PostMessageA(DiagnosticsTextBox.Handle, WM_VSCROLL, SB_THUMBPOSITION + 0x10000 * savedVpos, 0);
-                    Application.DoEvents();
                     DiagnosticsTextBox.ResumeLayout();
                 });
             }
