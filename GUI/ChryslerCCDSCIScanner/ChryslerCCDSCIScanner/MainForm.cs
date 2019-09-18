@@ -121,6 +121,78 @@ namespace ChryslerCCDSCIScanner
             InitializeComponent();
         }
 
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            DiagnosticsGroupBox.Visible = false; // hide the expanded view components all at once
+            this.Size = new Size(405, 650); // resize form to collapsed view
+            this.CenterToScreen(); // put window at the center of the screen
+
+            Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); // set application icon
+            if (!Directory.Exists("LOG")) Directory.CreateDirectory("LOG"); // create LOG directory if it doesn't exist
+
+            // Set logfile names inside the LOG directory
+            DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            USBLogFilename = @"LOG/usblog_" + DateTimeNow + ".txt";
+            USBBinaryLogFilename = @"LOG/usblog_" + DateTimeNow + ".bin";
+            CCDLogFilename = @"LOG/ccdlog_" + DateTimeNow + ".txt";
+            PCMLogFilename = @"LOG/pcmlog_" + DateTimeNow + ".txt";
+            TCMLogFilename = @"LOG/tcmlog_" + DateTimeNow + ".txt";
+
+            // Setup timeout timer
+            TimeoutTimer.Elapsed += new ElapsedEventHandler(TimeoutHandler);
+            TimeoutTimer.Interval = 2000; // ms
+            TimeoutTimer.Enabled = false;
+
+            // Associate event handler methods to specific events
+            PM.PropertyChanged += new PropertyChangedEventHandler(DataReceived); // packet manager
+            TT.PropertyChanged += new PropertyChangedEventHandler(TableUpdated); // text table
+
+            DiagnosticsTextBox.Text = String.Join(Environment.NewLine, TT.Table);
+            USBCommunicationGroupBox.Enabled = false; // disable by default
+            TargetComboBox.SelectedIndex = 0; // set combobox positions
+            CommandComboBox.SelectedIndex = 2;
+            ModeComboBox.SelectedIndex = 0;
+
+            try // loading saved settings
+            {
+                if ((string)Properties.Settings.Default["Units"] == "metric")
+                {
+                    MetricUnitRadioButton.Checked = true;
+                    Units = 0;
+                }
+                else if ((string)Properties.Settings.Default["Units"] == "imperial")
+                {
+                    ImperialUnitRadioButton.Checked = true;
+                    Units = 1;
+                }
+                if ((string)Properties.Settings.Default["TransmissionMethod"] == "hex") HexCommMethodRadioButton.Checked = true;
+                else if ((string)Properties.Settings.Default["TransmissionMethod"] == "ascii") AsciiCommMethodRadioButton.Checked = true;
+            }
+            catch
+            {
+                Util.UpdateTextBox(USBTextBox, "[INFO] Application config file is missing", null);
+                Units = 0; // Metric units by default
+            }
+
+            if (!File.Exists("VehicleProfiles.xml"))
+            {
+                Util.UpdateTextBox(USBTextBox, "[INFO] Vehicle profiles file is missing", null);
+            }
+
+            if (!Directory.Exists("Tools"))
+            {
+                Util.UpdateTextBox(USBTextBox, "[INFO] AVRDUDE is missing", null);
+            }
+
+            ActiveControl = ConnectButton; // put focus on the connect button
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            ScannerFound = false;
+            if (Serial.IsOpen) Serial.Close();
+        }
+
         private async Task SerialDataReadAsyncTask()
         {
             while (ScannerFound)
@@ -182,78 +254,6 @@ namespace ChryslerCCDSCIScanner
             }
         }
 
-        private void MainForm_Load(object sender, EventArgs e)
-        {
-            DiagnosticsGroupBox.Visible = false; // hide the expanded view components all at once
-            this.Size = new Size(405, 650); // resize form to collapsed view
-            this.CenterToScreen(); // put window at the center of the screen
-
-            Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); // set application icon
-            if (!Directory.Exists("LOG")) Directory.CreateDirectory("LOG"); // create LOG directory if it doesn't exist
-
-            // Set logfile names inside the LOG directory
-            DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            USBLogFilename = @"LOG/usblog_" + DateTimeNow + ".txt";
-            USBBinaryLogFilename = @"LOG/usblog_" + DateTimeNow + ".bin";
-            CCDLogFilename = @"LOG/ccdlog_" + DateTimeNow + ".txt";
-            PCMLogFilename = @"LOG/pcmlog_" + DateTimeNow + ".txt";
-            TCMLogFilename = @"LOG/tcmlog_" + DateTimeNow + ".txt";
-
-            // Setup timeout timer
-            TimeoutTimer.Elapsed += new ElapsedEventHandler(TimeoutHandler);
-            TimeoutTimer.Interval = 500; // ms
-            TimeoutTimer.Enabled = false;
-
-            // Associate event handler methods to specific events
-            PM.PropertyChanged += new PropertyChangedEventHandler(DataReceived); // packet manager
-            TT.PropertyChanged += new PropertyChangedEventHandler(TableUpdated); // text table
-
-            DiagnosticsTextBox.Text = String.Join(Environment.NewLine, TT.Table);
-            USBCommunicationGroupBox.Enabled = false; // disable by default
-            TargetComboBox.SelectedIndex = 0; // set combobox positions
-            CommandComboBox.SelectedIndex = 2;
-            ModeComboBox.SelectedIndex = 0;
-
-            try // loading saved settings
-            {
-                if ((string)Properties.Settings.Default["Units"] == "metric")
-                {
-                    MetricUnitRadioButton.Checked = true;
-                    Units = 0;
-                }
-                else if ((string)Properties.Settings.Default["Units"] == "imperial")
-                {
-                    ImperialUnitRadioButton.Checked = true;
-                    Units = 1;
-                }
-                if ((string)Properties.Settings.Default["TransmissionMethod"] == "hex") HexCommMethodRadioButton.Checked = true;
-                else if ((string)Properties.Settings.Default["TransmissionMethod"] == "ascii") AsciiCommMethodRadioButton.Checked = true;
-            }
-            catch
-            {
-                Util.UpdateTextBox(USBTextBox, "[INFO] Application config file is missing", null);
-                Units = 0; // Metric units by default
-            }
-
-            if (!File.Exists("VehicleProfiles.xml"))
-            {
-                Util.UpdateTextBox(USBTextBox, "[INFO] Vehicle profiles file is missing", null);
-            }
-
-            if (!Directory.Exists("Tools"))
-            {
-                Util.UpdateTextBox(USBTextBox, "[INFO] AVRDUDE is missing", null);
-            }
-
-            ActiveControl = ConnectButton; // put focus on the connect button
-        }
-
-        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            ScannerFound = false;
-            if (Serial.IsOpen) Serial.Close();
-        }
-
         private void TimeoutHandler(object source, ElapsedEventArgs e)
         {
             Timeout = true;
@@ -265,8 +265,7 @@ namespace ChryslerCCDSCIScanner
             {
                 ConnectButton.Enabled = false; // no double-click
                 byte[] HandshakeRequest = new byte[] { 0x3D, 0x00, 0x02, 0x01, 0x01, 0x04 }; // with hardware/firmware request
-                //byte[] HwFwInfoRequest = new byte[] { 0x3D, 0x00, 0x02, 0x04, 0x00, 0x06 };
-                //byte[] StatusRequest = new byte[] { 0x3D, 0x00, 0x02, 0x02, 0x00, 0x04 };
+                bool HandshakeFound = false;
                 string[] ports = SerialPort.GetPortNames(); // get all available portnames
                 if (ports.Length == 0) // if there's none, do nothing
                 {
@@ -305,59 +304,88 @@ namespace ChryslerCCDSCIScanner
 
                     Timeout = false; // for the connection procedure we have to manually read response bytes here
                     TimeoutTimer.Enabled = true; // start counting to the set timeout value
-                    while ((Serial.BytesToRead < 27) && !Timeout) ; // wait for expected bytes to arrive
+
+                    while (!HandshakeFound)
+                    {
+                        if (Serial.BytesToRead > 0)
+                        {
+                            byte Byte01 = (byte)Serial.ReadByte();
+                            
+                            if (Byte01 == 0x3D) // look for packet sync byte
+                            {
+                                byte Byte02 = (byte)Serial.ReadByte();
+                                byte Byte03 = (byte)Serial.ReadByte();
+                                byte Byte04 = (byte)Serial.ReadByte();
+
+                                if ((Byte02 == 0x00) && (Byte03 == 0x17) && (Byte04 == 0x01)) // look for handshake packet identifiers (length, datacode)
+                                {
+                                    HandshakeFound = true;
+                                    Serial.ReadByte(); // read the subdatacode into oblivion
+                                }
+                            }
+                        }
+                    }
+
                     TimeoutTimer.Enabled = false; // disable timer
                     if (Timeout)
                     {
                         if (Serial.BytesToRead > 0)
                         {
-                            Util.UpdateTextBox(USBTextBox, "[INFO] " + Serial.PortName + " answer is invalid (" + Serial.BytesToRead + " bytes)", null);
+                            Util.UpdateTextBox(USBTextBox, "[INFO] " + Serial.PortName + " answer is invalid", null);
+                        }
+                        else Util.UpdateTextBox(USBTextBox, "[INFO] " + Serial.PortName + " is not answering", null);
+                        Serial.DiscardInBuffer();
+                        Serial.DiscardOutBuffer();
+                        Serial.BaseStream.Flush();
+                        continue; // skip current iteration and jump to next comport (if any)
+                    }
+
+                    if (HandshakeFound)
+                    {
+                        byte[] msg = new byte[27];
+                        msg[0] = 0x3D;
+                        msg[1] = 0x00;
+                        msg[2] = 0x17;
+                        msg[3] = 0x01;
+                        msg[4] = 0x00;
+                        Serial.Read(msg, 5, 22);
+
+                        if (Encoding.ASCII.GetString(msg, 5, 21) == "CHRYSLERCCDSCISCANNER") // compare payload to the expected handshake response (ascii text)
+                        {
+                            Util.UpdateTextBox(USBTextBox, "[RX->] Handshake response (" + Serial.PortName + ")", msg);
+                            Util.UpdateTextBox(USBTextBox, "[INFO] Handshake OK: " + Encoding.ASCII.GetString(msg, 5, 21), null);
+                            Util.UpdateTextBox(USBTextBox, "[INFO] Scanner connected (" + Serial.PortName + ")", null);
+                            ScannerFound = true; // set flag
+                            SerialDataReadAsync(); // start listening to the last opened serial port for incoming data
+
+                            ConnectButton.Text = "Disconnect";
+                            ConnectButton.Enabled = true;
+                            USBCommunicationGroupBox.Enabled = true;
+                            UpdateScannerFirmwareToolStripMenuItem.Enabled = true;
+
+                            if (HexCommMethodRadioButton.Checked)
+                            {
+                                USBSendComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                CommandComboBox_SelectedIndexChanged(CommandComboBox, EventArgs.Empty); // raise event manually
+                            }
+                            else if (AsciiCommMethodRadioButton.Checked)
+                            {
+                                USBSendComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                USBSendComboBox.Text = ">";
+                            }
+                            USBCommunicationGroupBox.Text = "USB communication (" + Serial.PortName + ")";
+                            UpdatePort = Serial.PortName;
+                            return;
+                        }
+                        else
+                        {
+                            Util.UpdateTextBox(USBTextBox, "[RX->] Handshake response (" + Serial.PortName + ")", msg);
+                            Util.UpdateTextBox(USBTextBox, "[INFO] Handshake ERROR: " + Encoding.ASCII.GetString(msg, 5, 21), null);
+                            ScannerFound = false;
                             Serial.DiscardInBuffer();
                             Serial.DiscardOutBuffer();
                             Serial.BaseStream.Flush();
                         }
-                        else Util.UpdateTextBox(USBTextBox, "[INFO] " + Serial.PortName + " is not answering", null);
-                        continue; // skip current iteration and jump to next comport (if any)
-                    }
-
-                    byte[] msg = new byte[27]; // handshake response must be 27 bytes long
-                    Serial.Read(msg, 0, 27); // read exactly that much bytes from the serial input buffer
-
-                    if (Encoding.ASCII.GetString(msg, 5, 21) == "CHRYSLERCCDSCISCANNER") // compare payload to the expected handshake response (ascii text)
-                    {
-                        Util.UpdateTextBox(USBTextBox, "[RX->] Handshake response (" + Serial.PortName + ")", msg);
-                        Util.UpdateTextBox(USBTextBox, "[INFO] Handshake OK: " + Encoding.ASCII.GetString(msg, 5, 21), null);
-                        Util.UpdateTextBox(USBTextBox, "[INFO] Scanner connected (" + Serial.PortName + ")", null);
-                        ScannerFound = true; // set flag
-                        SerialDataReadAsync(); // start listening to the last opened serial port for incoming data
-
-                        ConnectButton.Text = "Disconnect";
-                        ConnectButton.Enabled = true;
-                        USBCommunicationGroupBox.Enabled = true;
-                        UpdateScannerFirmwareToolStripMenuItem.Enabled = true;
-
-                        if (HexCommMethodRadioButton.Checked)
-                        {
-                            USBSendComboBox.DropDownStyle = ComboBoxStyle.DropDown;
-                            CommandComboBox_SelectedIndexChanged(CommandComboBox, EventArgs.Empty); // raise event manually
-                        }
-                        else if (AsciiCommMethodRadioButton.Checked)
-                        {
-                            USBSendComboBox.DropDownStyle = ComboBoxStyle.DropDown;
-                            USBSendComboBox.Text = ">";
-                        }
-                        USBCommunicationGroupBox.Text = "USB communication (" + Serial.PortName + ")";
-                        UpdatePort = Serial.PortName;
-                        return;
-                    }
-                    else
-                    {
-                        Util.UpdateTextBox(USBTextBox, "[RX->] Handshake response (" + Serial.PortName + ")", msg);
-                        Util.UpdateTextBox(USBTextBox, "[INFO] Handshake ERROR: " + Encoding.ASCII.GetString(msg, 5, 21), null);
-                        ScannerFound = false;
-                        Serial.DiscardInBuffer();
-                        Serial.DiscardOutBuffer();
-                        Serial.BaseStream.Flush();
                     }
                 }
                 Util.UpdateTextBox(USBTextBox, "[INFO] No scanner available", null);
