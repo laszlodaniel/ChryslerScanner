@@ -305,7 +305,7 @@ namespace ChryslerCCDSCIScanner
                     Timeout = false; // for the connection procedure we have to manually read response bytes here
                     TimeoutTimer.Enabled = true; // start counting to the set timeout value
 
-                    while (!HandshakeFound)
+                    while (!HandshakeFound && !Timeout)
                     {
                         if (Serial.BytesToRead > 0)
                         {
