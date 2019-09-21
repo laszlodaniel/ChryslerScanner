@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D8607CA
+#define FW_DATE 0x000000005D862C14
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -4399,10 +4399,10 @@ void handle_ccd_data(void)
                 if ((current_millis - previous_random_ccd_msg_millis) > random_ccd_msg_interval)
                 {
                     previous_random_ccd_msg_millis = current_millis;
-                    ccd_msg_to_send_ptr = random(3, 6); // random message length between 3 and 6 bytes
+                    ccd_msg_to_send_ptr = random(3, 7); // random message length between 3 and 6 bytes
                     for (uint8_t i = 0; i < ccd_msg_to_send_ptr - 2; i++)
                     {
-                        ccd_msg_to_send[i] = random(0x00, 0xFF); // generate random bytes
+                        ccd_msg_to_send[i] = random(0xFF); // generate random bytes
                     }
                     ccd_msg_to_send[ccd_msg_to_send_ptr - 1] = calculate_checksum(ccd_msg_to_send, 0, ccd_msg_to_send_ptr - 1);
                     ccd_msg_pending = true;
