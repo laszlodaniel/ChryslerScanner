@@ -1,11 +1,11 @@
 # ChryslerCCDSCIScanner
 Hardware and software to receive and transmit messages from and to Chrysler's legacy CCD/SCI-bus.
 
-Arduino folder contains the source code and compiled binaries for the scanner written in Arduino IDE 1.8.7.
+**Arduino** folder contains the source code and compiled binaries for the scanner written in Arduino IDE 1.8.7.
 
-GUI folder contains the C# source code and compiled binary for an external computer written in Visual Studio 2017.
+**GUI** folder contains the C# source code and compiled binary for an external computer written in Visual Studio 2017.
 
-PCB folder contains everything to manufacture and assemble the hardware.
+**PCB** folder contains everything to manufacture and assemble the hardware.
 
 ![V1.41 PCB](https://chryslerccdsci.files.wordpress.com/2019/08/img_20190824_114650_02.jpg)
 
