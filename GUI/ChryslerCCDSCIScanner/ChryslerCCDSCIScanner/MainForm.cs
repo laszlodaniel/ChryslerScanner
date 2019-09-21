@@ -33,6 +33,8 @@ namespace ChryslerCCDSCIScanner
         public byte[] buffer = new byte[2048];
         public int HeartbeatInterval = 5000;
         public int HeartbeatDuration = 50;
+        public int RandomCCDMessageIntervalMin = 20;
+        public int RandomCCDMessageIntervalMax = 100;
         public bool SetCCDBus = true;
         public byte SetSCIBus = 2;
         public byte[] CCDBusMessageToSend = new byte[] { 0xB2, 0x20, 0x22, 0x00, 0x00, 0xF4 };
@@ -1186,7 +1188,34 @@ namespace ChryslerCCDSCIScanner
                             }
                             break;
                         case 5: // Debug
-                            USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x0E, 0x00, 0x10 };
+                            switch (ModeComboBox.SelectedIndex)
+                            {
+                                case 0: // Generate random CCD-bus messages
+                                    PacketBytes.Clear();
+                                    PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x07, 0x0E, 0x01 });
+
+                                    if (Param3ComboBox.SelectedIndex == 0) PacketBytes.AddRange(new byte[] { 0x00 }); // false
+                                    else PacketBytes.AddRange(new byte[] { 0x01 }); // true
+
+                                    byte MinIntervalHB = (byte)((RandomCCDMessageIntervalMin >> 8) & 0xFF);
+                                    byte MinIntervalLB = (byte)(RandomCCDMessageIntervalMin & 0xFF);
+                                    byte MaxIntervalHB = (byte)((RandomCCDMessageIntervalMax >> 8) & 0xFF);
+                                    byte MaxIntervalLB = (byte)(RandomCCDMessageIntervalMax & 0xFF);
+
+                                    PacketBytes.AddRange(new byte[] { MinIntervalHB, MinIntervalLB, MaxIntervalHB, MaxIntervalLB });
+
+                                    PacketBytesChecksum = 0;
+                                    for (byte i = 1; i < 10; i++)
+                                    {
+                                        PacketBytesChecksum += PacketBytes[i];
+                                    }
+                                    PacketBytes.Add(PacketBytesChecksum);
+                                    USBSendComboBoxValue = PacketBytes.ToArray();
+                                    break;
+                                default:
+                                    USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x0E, 0x00, 0x10 };
+                                    break;
+                            }   
                             break;
                         default:
                             break;
@@ -1489,17 +1518,20 @@ namespace ChryslerCCDSCIScanner
                             break;
                         case 5: // Debug
                             ModeComboBox.Items.Clear();
-                            ModeComboBox.Items.AddRange(new string[] { "None" });
-                            ModeComboBox.SelectedIndex = 0; // None
-                            Param1Label1.Visible = false;
-                            Param1Label2.Visible = false;
-                            Param1ComboBox.Visible = false;
-                            Param2Label1.Visible = false;
-                            Param2Label2.Visible = false;
-                            Param2ComboBox.Visible = false;
-                            Param3Label1.Visible = false;
-                            Param3Label2.Visible = false;
-                            Param3ComboBox.Visible = false;
+                            ModeComboBox.Items.AddRange(new string[] { "Generate random CCD-bus messages" });
+                            ModeComboBox.SelectedIndex = 0; // Generate random CCD-bus messages
+                            Param1Label1.Visible = true;
+                            Param1Label2.Visible = true;
+                            Param1ComboBox.Visible = true;
+                            Param1ComboBox.Text = RandomCCDMessageIntervalMin.ToString();
+                            Param2Label1.Visible = true;
+                            Param2Label2.Visible = true;
+                            Param2ComboBox.Visible = true;
+                            Param2ComboBox.Text = RandomCCDMessageIntervalMax.ToString();
+                            Param3Label1.Visible = true;
+                            Param3Label2.Visible = true;
+                            Param3ComboBox.Visible = true;
+
                             break;
                         default:
                             break;
@@ -1581,7 +1613,7 @@ namespace ChryslerCCDSCIScanner
                                     Param2Label2.Visible = true;
                                     Param2Label2.Text = "millisecond";
                                     Param2ComboBox.Visible = true;
-                                    Param1ComboBox.Font = new Font("Courier New", 9F);
+                                    Param2ComboBox.Font = new Font("Courier New", 9F);
                                     Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param2ComboBox.Items.Clear();
                                     Param3Label1.Visible = false;
@@ -1724,10 +1756,50 @@ namespace ChryslerCCDSCIScanner
                             }
                             break;
                         case 5: // Debug
-                            HintTextBox.Text = Environment.NewLine
-                                             + Environment.NewLine
-                                             + "Experimental commands are first tested here" + Environment.NewLine
-                                             + "before they are moved to their right place.";
+                            switch (ModeComboBox.SelectedIndex)
+                            {
+                                case 0: // Generate random CCD-bus messages
+                                    Param1Label1.Visible = true;
+                                    Param1Label1.Text = "Min:";
+                                    Param1Label2.Visible = true;
+                                    Param1Label2.Text = "millisecond";
+                                    Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Font = new Font("Courier New", 9F);
+                                    Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param1ComboBox.Items.Clear();
+                                    Param1ComboBox.Text = RandomCCDMessageIntervalMin.ToString();
+                                    Param2Label1.Visible = true;
+                                    Param2Label1.Text = "Max:";
+                                    Param2Label2.Visible = true;
+                                    Param2Label2.Text = "millisecond";
+                                    Param2ComboBox.Visible = true;
+                                    Param2ComboBox.Font = new Font("Courier New", 9F);
+                                    Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param2ComboBox.Items.Clear();
+                                    Param2ComboBox.Text = RandomCCDMessageIntervalMax.ToString();
+                                    Param3Label1.Visible = true;
+                                    Param3Label1.Text = "Enable:";
+                                    Param3Label2.Visible = false;
+                                    Param3Label2.Text = "";
+                                    Param3ComboBox.Visible = true;
+                                    Param3ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
+                                    Param3ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+                                    Param3ComboBox.Items.Clear();
+                                    Param3ComboBox.Items.AddRange(new string[] { "false", "true" });
+                                    Param3ComboBox.SelectedIndex = 1;
+                                    //Param1ComboBox.Text = "20";
+                                    //Param2ComboBox.Text = "100";
+                                    HintTextBox.Text = "Broadcast random CCD-bus messages" + Environment.NewLine
+                                                     + "at random times defined by min / max intervals." + Environment.NewLine
+                                                     + "Do this only when the scanner is not connected" + Environment.NewLine
+                                                     + "to the car and connect both standalone bias jumpers!";
+                                    break;
+                            }
+
+                            //HintTextBox.Text = Environment.NewLine
+                            //            + Environment.NewLine
+                            //            + "Experimental commands are first tested here" + Environment.NewLine
+                            //            + "before they are moved to their right place.";
                             break;
                         default:
                             break;
@@ -1947,6 +2019,22 @@ namespace ChryslerCCDSCIScanner
                                     break;
                             }
                             
+                            break;
+                        case 5: // Debug
+                            switch (ModeComboBox.SelectedIndex)
+                            {
+                                case 0: // Generate random CCD-bus messages
+                                    try
+                                    {
+                                        RandomCCDMessageIntervalMin = int.Parse(Param1ComboBox.Text);
+                                        RandomCCDMessageIntervalMax = int.Parse(Param2ComboBox.Text);
+                                    }
+                                    catch
+                                    {
+
+                                    }
+                                    break;
+                            }
                             break;
                         default:
                             break;

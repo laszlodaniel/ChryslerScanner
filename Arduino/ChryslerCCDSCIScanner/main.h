@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D764F3D
+#define FW_DATE 0x000000005D8607CA
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -272,7 +272,7 @@ volatile uint8_t  TCM_LastRxError;
 
 // CCD-bus
 bool ccd_enabled = true;
-volatile bool ccd_idle = false;
+volatile bool ccd_idle = true;
 volatile bool ccd_ctrl = false; // not used at the moment
 volatile uint32_t ccd_msg_rx_count = 0; // for statistical purposes
 volatile uint32_t ccd_msg_tx_count = 0; // for statistical purposes
@@ -281,6 +281,10 @@ bool ccd_msg_pending = false; // flag for custom ccd-bus message transmission
 uint8_t ccd_msg_to_send[64]; // custom ccd-bus message is copied here
 uint8_t ccd_msg_to_send_ptr = 0; // custom ccd-bus message length
 bool generate_random_ccd_msgs = false;
+uint16_t random_ccd_msg_interval = 0; // ms
+uint16_t random_ccd_msg_interval_min = 0;
+uint16_t random_ccd_msg_interval_max = 0;
+
 
 // SCI-bus
 bool sci_enabled = true;
@@ -350,7 +354,6 @@ uint32_t tx_led_ontime = 0;
 uint32_t act_led_ontime = 0;
 uint32_t current_millis = 0;
 uint32_t previous_random_ccd_msg_millis = 0;
-uint16_t random_ccd_msg_interval = 0;
 uint32_t current_millis_blink = 0;
 uint32_t previous_act_blink = 0;
 uint16_t led_blink_duration = 50; // milliseconds
@@ -1619,7 +1622,12 @@ void ccd_eom(void)
 Function: ccd_ctrl()
 Purpose:  called when the CCD-chip's CTRL pin is going low
 **************************************************************************/
-void ccd_active_byte(void) { ccd_ctrl = true; /* set flag */ } // end of ccd_ctrl
+void ccd_active_byte(void)
+{
+    ccd_ctrl = true; /* set flag */
+    ccd_idle = false;
+    
+} // end of ccd_ctrl
 
 
 /*************************************************************************
@@ -4056,13 +4064,30 @@ void handle_usb_data(void)
                                     {
                                         if (cmd_payload[0] == 0x01)
                                         {
-                                            generate_random_ccd_msgs = true;
-                                            random_ccd_msg_interval = random(300, 1500);
+                                            if (!payload_bytes || (payload_length < 5))
+                                            {
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            }
+                                            else
+                                            {
+                                                generate_random_ccd_msgs = true;
+                                                random_ccd_msg_interval_min = (cmd_payload[1] << 8) | cmd_payload[2];
+                                                random_ccd_msg_interval_max = (cmd_payload[3] << 8) | cmd_payload[4];
+                                                random_ccd_msg_interval = random(random_ccd_msg_interval_min, random_ccd_msg_interval_max);
+                                                send_usb_packet(from_usb, to_usb, debug, 0x01, ack, 1); // acknowledge
+                                            }
+                                        }
+                                        else if (cmd_payload[0] == 0x00)
+                                        {
+                                            generate_random_ccd_msgs = false;
+                                            random_ccd_msg_interval_min = 0;
+                                            random_ccd_msg_interval_max = 0;
+                                            random_ccd_msg_interval = 0;
+                                            send_usb_packet(from_usb, to_usb, debug, 0x01, ack, 1); // acknowledge
                                         }
                                         else
                                         {
-                                            generate_random_ccd_msgs = false;
-                                            random_ccd_msg_interval = 0;
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
                                         }
                                         break;
                                     }
@@ -4377,12 +4402,11 @@ void handle_ccd_data(void)
                     ccd_msg_to_send_ptr = random(3, 6); // random message length between 3 and 6 bytes
                     for (uint8_t i = 0; i < ccd_msg_to_send_ptr - 2; i++)
                     {
-                        ccd_msg_to_send[i] = random(0x01, 0xFE); // generate random bytes
+                        ccd_msg_to_send[i] = random(0x00, 0xFF); // generate random bytes
                     }
                     ccd_msg_to_send[ccd_msg_to_send_ptr - 1] = calculate_checksum(ccd_msg_to_send, 0, ccd_msg_to_send_ptr - 1);
                     ccd_msg_pending = true;
-                    random_ccd_msg_interval = random(300, 1500); // generate new delay value between fake messages
-                    send_usb_packet(from_usb, to_usb, debug, 0x01, ccd_msg_to_send_ptr, 1); // acknowledge command by responding with the length of the CCD-bus message
+                    random_ccd_msg_interval = random(random_ccd_msg_interval_min, random_ccd_msg_interval_max); // generate new delay value between fake messages
                 }
             }
 
@@ -4396,7 +4420,7 @@ void handle_ccd_data(void)
                 ccd_msg_pending = false; // re-arm, make it possible to send a message again, TODO: same as above
                 ccd_msg_tx_count++;
             }
-            ccd_idle = false; // re-arm so the next program loop doesn't enter here again unless the ISR changes this variable to true
+            //ccd_idle = false; // re-arm so the next program loop doesn't enter here again unless the ISR changes this variable to true
         }
     }
     else // monitor ccd-bus receive buffer for garbage bytes when clock signal is suspended and purge if necessary
