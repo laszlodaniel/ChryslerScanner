@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D862C14
+#define FW_DATE 0x000000005D872372
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -277,6 +277,7 @@ volatile bool ccd_ctrl = false; // not used at the moment
 volatile uint32_t ccd_msg_rx_count = 0; // for statistical purposes
 volatile uint32_t ccd_msg_tx_count = 0; // for statistical purposes
 volatile uint8_t ccd_bytes_count = 0; // how long is the current CCD-bus message
+volatile uint8_t ccd_msg_in_buffer = 0;
 bool ccd_msg_pending = false; // flag for custom ccd-bus message transmission
 uint8_t ccd_msg_to_send[64]; // custom ccd-bus message is copied here
 uint8_t ccd_msg_to_send_ptr = 0; // custom ccd-bus message length
@@ -338,9 +339,9 @@ uint16_t free_ram_available = 0;
 // Battery voltage detector
 const uint16_t adc_supply_voltage = 500; // supply voltage multiplied by 100: 5.00V -> 500
 const uint16_t battery_rd1 = 270; // high resistor value in the divider (R19), multiplied by 10: 27 kOhm = 270
-const uint16_t battery_rd2 = 50;  // low resistor value in the divider (R20), multiplied by 10: 5 kOhm = 50
+const uint16_t battery_rd2 = 51;  // low resistor value in the divider (R20), multiplied by 10: 5 kOhm = 50
 uint16_t adc_max_value = 1023; // 1023 for 10-bit resolution
-uint16_t battery_adc = 0;   // raw analog reading is stored here
+uint32_t battery_adc = 0;   // raw analog reading is stored here
 uint16_t battery_volts = 0; // converted to battery voltage and multiplied by 100: 12.85V -> 1285
 uint8_t battery_volts_array[2]; // battery_volts is separated to byte components here
 
@@ -1614,6 +1615,7 @@ void ccd_eom(void)
 {
     ccd_idle = true; // set flag
     ccd_bytes_count = ccd_rx_available();
+    ccd_msg_in_buffer++;
     
 } // end of ccd_eom
 
@@ -2220,14 +2222,15 @@ void send_hwfw_info(void)
 /*************************************************************************
 Function: check_battery_volts()
 Purpose:  measure battery voltage through the OBD16 pin
-Note:     be aware that this voltage isn't precise like a multimeter reading, 
-          it is produced by a resistor divider circuit with imperfect
-          resistors (1% tolreance, but still lots of headroom in it);
-          the circuit tolerates +24V batteries too
 **************************************************************************/
 void check_battery_volts(void)
 {
-    battery_adc = analogRead(BATT);
+    for (uint16_t i = 0; i < 1000; i++) // get 1000 samples in quick succession
+    {
+        battery_adc += analogRead(BATT);
+    }
+    battery_adc /= 1000; // divide the sum by 1000 to get average value
+    
     battery_volts = (uint16_t)(battery_adc*(adc_supply_voltage/100.0)/adc_max_value*((battery_rd1/10.0)+(battery_rd2/10.0))/(battery_rd2/10.0)*100.0); // resistor divider equation
     if (battery_volts < 600) // battery_volts < 6V
     {
@@ -4374,7 +4377,7 @@ void handle_ccd_data(void)
     {
         if (ccd_idle) // CCD-bus is idling, find out if there's a message in the circular buffer
         {
-            if (ccd_bytes_count > 0) // the exact message length is recorded in the CCD-bus idle ISR so it's pretty accurate
+            if ((ccd_bytes_count > 0) && (ccd_msg_in_buffer == 1)) // the exact message length is recorded in the CCD-bus idle ISR so it's pretty accurate
             {
                 uint8_t usb_msg[4+ccd_bytes_count]; // create local array which will hold the timestamp and the CCD-bus message
                 update_timestamp(current_timestamp); // get current time for the timestamp
@@ -4390,7 +4393,16 @@ void handle_ccd_data(void)
                 send_usb_packet(from_ccd, to_usb, msg_rx, single_msg, usb_msg, 4+ccd_bytes_count); // send CCD-bus message back to the laptop
                 handle_lcd(from_ccd, usb_msg, 4, 4+ccd_bytes_count); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
                 ccd_bytes_count = 0; // force ISR to update this value again so we don't end up here in the next program loop
+                ccd_msg_in_buffer = 0;
                 ccd_msg_rx_count++;
+            }
+            else // there are multiple ccd-bus messages in the buffer
+            {
+                // TODO
+                // For now just trash the whole buffer and wait for another message
+                ccd_rx_flush();
+                ccd_bytes_count = 0;
+                ccd_msg_in_buffer = 0;
             }
 
             if (generate_random_ccd_msgs && (random_ccd_msg_interval > 0))
@@ -4402,7 +4414,7 @@ void handle_ccd_data(void)
                     ccd_msg_to_send_ptr = random(3, 7); // random message length between 3 and 6 bytes
                     for (uint8_t i = 0; i < ccd_msg_to_send_ptr - 2; i++)
                     {
-                        ccd_msg_to_send[i] = random(0xFF); // generate random bytes
+                        ccd_msg_to_send[i] = random(256); // generate random bytes
                     }
                     ccd_msg_to_send[ccd_msg_to_send_ptr - 1] = calculate_checksum(ccd_msg_to_send, 0, ccd_msg_to_send_ptr - 1);
                     ccd_msg_pending = true;
