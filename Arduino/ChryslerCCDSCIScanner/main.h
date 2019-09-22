@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D872372
+#define FW_DATE 0x000000005D872597
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -338,9 +338,9 @@ uint16_t free_ram_available = 0;
 
 // Battery voltage detector
 const uint16_t adc_supply_voltage = 500; // supply voltage multiplied by 100: 5.00V -> 500
-const uint16_t battery_rd1 = 270; // high resistor value in the divider (R19), multiplied by 10: 27 kOhm = 270
-const uint16_t battery_rd2 = 51;  // low resistor value in the divider (R20), multiplied by 10: 5 kOhm = 50
-uint16_t adc_max_value = 1023; // 1023 for 10-bit resolution
+const uint16_t battery_rd1 = 2707; // high resistor value in the divider (R19), multiplied by 100: 27 kOhm = 2700
+const uint16_t battery_rd2 = 508;  // low resistor value in the divider (R20), multiplied by 100: 5 kOhm = 500
+uint16_t adc_max_value = 1024; // 1023 for 10-bit resolution
 uint32_t battery_adc = 0;   // raw analog reading is stored here
 uint16_t battery_volts = 0; // converted to battery voltage and multiplied by 100: 12.85V -> 1285
 uint8_t battery_volts_array[2]; // battery_volts is separated to byte components here
@@ -2229,9 +2229,10 @@ void check_battery_volts(void)
     {
         battery_adc += analogRead(BATT);
     }
-    battery_adc /= 1000; // divide the sum by 1000 to get average value
     
-    battery_volts = (uint16_t)(battery_adc*(adc_supply_voltage/100.0)/adc_max_value*((battery_rd1/10.0)+(battery_rd2/10.0))/(battery_rd2/10.0)*100.0); // resistor divider equation
+    battery_adc /= 1000; // divide the sum by 1000 to get average value
+    battery_volts = (uint16_t)(battery_adc*(adc_supply_voltage/100.0)/adc_max_value*((battery_rd1/100.0)+(battery_rd2/100.0))/(battery_rd2/100.0)*100.0); // resistor divider equation
+    
     if (battery_volts < 600) // battery_volts < 6V
     {
         battery_volts_array[0] = 0; // workaround if scanner's power switch is at OFF position and analog pin is floating
