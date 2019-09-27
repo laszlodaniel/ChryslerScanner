@@ -27,18 +27,18 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D872597
+#define FW_DATE 0x000000005D8DDBC5
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
-#define CCD_RX1_BUFFER_SIZE 64
-#define PCM_RX2_BUFFER_SIZE 256
-#define TCM_RX3_BUFFER_SIZE 256
+#define CCD_RX1_BUFFER_SIZE 32
+#define PCM_RX2_BUFFER_SIZE 128
+#define TCM_RX3_BUFFER_SIZE 128
 
 #define USB_TX0_BUFFER_SIZE 1024
-#define CCD_TX1_BUFFER_SIZE 64
-#define PCM_TX2_BUFFER_SIZE 256
-#define TCM_TX3_BUFFER_SIZE 256
+#define CCD_TX1_BUFFER_SIZE 32
+#define PCM_TX2_BUFFER_SIZE 128
+#define TCM_TX3_BUFFER_SIZE 128
 
 #define USB_RX0_BUFFER_MASK (USB_RX0_BUFFER_SIZE - 1)
 #define CCD_RX1_BUFFER_MASK (CCD_RX1_BUFFER_SIZE - 1)
@@ -90,13 +90,6 @@ extern LiquidCrystal_I2C lcd;
 #define UART_BUFFER_OVERFLOW    0x0400  /**< Receive ringbuffer overflow    00000100 00000000 - ARBITRARY */
 #define UART_RX_NO_DATA         0x0200  /**< Receive buffer is empty        00000010 00000000 - ARBITRARY */
 //                                                                          FLAGS    DATA
-
-// Fixed bytes
-//#define CCD_DIAG_REQ    0xB2  // Diagnostic request ID-byte for CCD-bus
-//#define CCD_DIAG_RESP   0xF2  // Diagnostic response ID-byte for CCD-bus
-//#define SCI_FAULT_CODES 0x10  // Command to request fault codes on SCI-bus
-//#define SCI_HI_SPEED    0x12  // Command to switch SCI-bus to high speed mode (62500 baud)
-//#define SCI_LO_SPEED    0xFE  // Command to switch SCI-bus to low speed mode (7812.5 baud)
 
 // Baudrate prescaler calculation: UBRR = (F_CPU / (16 * BAUDRATE)) - 1
 #define LOBAUD  127  // prescaler for 7812.5 baud speed (CCD-SCI / default low-speed diagnostic mode)
@@ -279,7 +272,7 @@ volatile uint32_t ccd_msg_tx_count = 0; // for statistical purposes
 volatile uint8_t ccd_bytes_count = 0; // how long is the current CCD-bus message
 volatile uint8_t ccd_msg_in_buffer = 0;
 bool ccd_msg_pending = false; // flag for custom ccd-bus message transmission
-uint8_t ccd_msg_to_send[64]; // custom ccd-bus message is copied here
+uint8_t ccd_msg_to_send[32]; // custom ccd-bus message is copied here
 uint8_t ccd_msg_to_send_ptr = 0; // custom ccd-bus message length
 bool generate_random_ccd_msgs = false;
 uint16_t random_ccd_msg_interval = 0; // ms
@@ -299,20 +292,25 @@ bool pcm_echo_accepted = false;
 bool tcm_echo_accepted = false;
 uint8_t current_sci_bus_settings[1] = { 0xC8 }; // default settings: SCI-bus PCM "A" configuration, 7812.5 baud, TCM disabled
 
-uint8_t pcm_bytes_buffer[256]; // received SCI-bus message from the PCM is temporary stored here
+uint8_t pcm_bytes_buffer[128]; // received SCI-bus message from the PCM is temporary stored here
 uint8_t pcm_bytes_buffer_ptr = 0; // pointer in the previous array
 bool pcm_msg_pending = false; // flag for custom sci-bus message
-uint8_t pcm_msg_to_send[256]; // custom sci-bus message is copied here
-uint16_t pcm_msg_to_send_ptr = 0;  // custom sci-bus message length
+uint8_t pcm_msg_to_send[128]; // custom sci-bus message is copied here
+uint8_t pcm_msg_to_send_ptr = 0;  // custom sci-bus message length
 uint32_t pcm_last_msgbyte_received = 0; // time in milliseconds
+uint8_t pcm_repeated_msg_count = 0; // how many messages are stacked after each other
+uint8_t pcm_repeated_msg_ptr = 0; // which message is being sent
+uint8_t pcm_repeated_msg_bytes[128]; // buffer to store all repeated message bytes
+uint8_t pcm_repeated_msg_bytes_ptr = 0; // where are we right now in this buffer
+bool pcm_repeated_messages = false;
 uint32_t pcm_msg_rx_count = 0;
 uint32_t pcm_msg_tx_count = 0;
 
-uint8_t tcm_bytes_buffer[256]; // received SCI-bus message from the TCM is temporary stored here
+uint8_t tcm_bytes_buffer[128]; // received SCI-bus message from the TCM is temporary stored here
 uint8_t tcm_bytes_buffer_ptr = 0; // pointer in the previous array
 bool tcm_msg_pending = false; // flag for custom sci-bus message
-uint8_t tcm_msg_to_send[256]; // custom sci-bus message is copied here
-uint16_t tcm_msg_to_send_ptr = 0; // custom sci-bus message length
+uint8_t tcm_msg_to_send[128]; // custom sci-bus message is copied here
+uint8_t tcm_msg_to_send_ptr = 0; // custom sci-bus message length
 uint32_t tcm_last_msgbyte_received = 0; // time in milliseconds
 uint32_t tcm_msg_rx_count = 0;
 uint32_t tcm_msg_tx_count = 0;
@@ -3931,7 +3929,11 @@ void handle_usb_data(void)
                             case handshake: // 0x01 - handshake request coming from an external computer
                             {
                                 cmd_handshake();
-                                if (subdatacode == 0x01) send_hwfw_info();
+                                if (subdatacode == 0x01)
+                                {
+                                    send_hwfw_info();
+                                    cmd_status();
+                                }
                                 break;
                             }
                             case status: // 0x02 - status report request
@@ -4222,9 +4224,38 @@ void handle_usb_data(void)
                                         }
                                         break;
                                     }
-                                    case repeated_msg: // 0x02 - send message(s) to the SCI-bus, number of messages, repeat interval(s) are stored in payload
+                                    case repeated_msg: // 0x02 - send message(s) to the SCI-bus
                                     {
-                                        // TODO
+                                        // NOT TESTED
+                                        // !!!
+                                        // Payload structure example:
+                                        // 03 03 F4 0A 0B 03 F4 0C 0D 02 F4 11
+                                        // -----------------------------------
+                                        // 03: message count
+                                        // 03: first message length
+                                        // F4 0A 0B: first message
+                                        // 03: second message length
+                                        // F4 0C 0D: second message
+                                        // 02: third message length
+                                        // F4 11: third message
+
+                                        pcm_repeated_msg_count = cmd_payload[0]; // save total message count
+                                        pcm_repeated_msg_ptr = 0; // start with the first one
+
+                                        for (uint8_t i = 0; i < (payload_length - 1); i++)
+                                        {
+                                            pcm_repeated_msg_bytes[i] = cmd_payload[i]; // copy and save all the message bytes for this session
+                                        }
+
+                                        pcm_repeated_msg_bytes_ptr = 1; // skip the first message count byte and start with the current message's length
+                                        pcm_repeated_messages = true; // set flag
+
+                                        // The SCI-bus (PCM) message handler should copy the current message from this buffer to the transmit buffer, 
+                                        // wait for response and then copy the next message, wait for response, etc, then restart at the first message again,
+                                        // until "pcm_repeated_messages" is set to false.
+                                        // !!!
+                                        // NOT TESTED
+
                                         ret[0] = to_pcm;
                                         send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
                                         break;

@@ -31,6 +31,7 @@
             this.USBTextBox = new System.Windows.Forms.TextBox();
             this.ConnectButton = new System.Windows.Forms.Button();
             this.USBCommunicationGroupBox = new System.Windows.Forms.GroupBox();
+            this.PreviewLabel = new System.Windows.Forms.Label();
             this.AsciiCommMethodRadioButton = new System.Windows.Forms.RadioButton();
             this.HintTextBox = new System.Windows.Forms.TextBox();
             this.HexCommMethodRadioButton = new System.Windows.Forms.RadioButton();
@@ -55,7 +56,10 @@
             this.USBClearAllButton = new System.Windows.Forms.Button();
             this.USBClearButton = new System.Windows.Forms.Button();
             this.DiagnosticsGroupBox = new System.Windows.Forms.GroupBox();
-            this.DiagnosticsTextBox = new System.Windows.Forms.TextBox();
+            this.ResetViewButton = new System.Windows.Forms.Button();
+            this.SortIDBytesCheckBox = new System.Windows.Forms.CheckBox();
+            this.SnapshotButton = new System.Windows.Forms.Button();
+            this.DiagnosticsListBox = new System.Windows.Forms.ListBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.ExpandButton = new System.Windows.Forms.Button();
             this.ImperialUnitRadioButton = new System.Windows.Forms.RadioButton();
@@ -64,7 +68,7 @@
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UpdateScannerFirmwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.PreviewLabel = new System.Windows.Forms.Label();
+            this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.USBCommunicationGroupBox.SuspendLayout();
             this.DiagnosticsGroupBox.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -127,6 +131,15 @@
             this.USBCommunicationGroupBox.TabIndex = 2;
             this.USBCommunicationGroupBox.TabStop = false;
             this.USBCommunicationGroupBox.Text = "USB communication";
+            // 
+            // PreviewLabel
+            // 
+            this.PreviewLabel.Location = new System.Drawing.Point(4, 457);
+            this.PreviewLabel.Name = "PreviewLabel";
+            this.PreviewLabel.Size = new System.Drawing.Size(53, 13);
+            this.PreviewLabel.TabIndex = 116;
+            this.PreviewLabel.Text = "Preview:";
+            this.PreviewLabel.TextAlign = System.Drawing.ContentAlignment.TopRight;
             // 
             // AsciiCommMethodRadioButton
             // 
@@ -384,7 +397,10 @@
             // 
             // DiagnosticsGroupBox
             // 
-            this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsTextBox);
+            this.DiagnosticsGroupBox.Controls.Add(this.ResetViewButton);
+            this.DiagnosticsGroupBox.Controls.Add(this.SortIDBytesCheckBox);
+            this.DiagnosticsGroupBox.Controls.Add(this.SnapshotButton);
+            this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsListBox);
             this.DiagnosticsGroupBox.Location = new System.Drawing.Point(383, 27);
             this.DiagnosticsGroupBox.Name = "DiagnosticsGroupBox";
             this.DiagnosticsGroupBox.Size = new System.Drawing.Size(889, 573);
@@ -392,17 +408,50 @@
             this.DiagnosticsGroupBox.TabStop = false;
             this.DiagnosticsGroupBox.Text = "Diagnostics";
             // 
-            // DiagnosticsTextBox
+            // ResetViewButton
             // 
-            this.DiagnosticsTextBox.BackColor = System.Drawing.SystemColors.Window;
-            this.DiagnosticsTextBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.DiagnosticsTextBox.Location = new System.Drawing.Point(3, 16);
-            this.DiagnosticsTextBox.Multiline = true;
-            this.DiagnosticsTextBox.Name = "DiagnosticsTextBox";
-            this.DiagnosticsTextBox.ReadOnly = true;
-            this.DiagnosticsTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.DiagnosticsTextBox.Size = new System.Drawing.Size(883, 477);
-            this.DiagnosticsTextBox.TabIndex = 9;
+            this.ResetViewButton.Location = new System.Drawing.Point(83, 491);
+            this.ResetViewButton.Name = "ResetViewButton";
+            this.ResetViewButton.Size = new System.Drawing.Size(75, 23);
+            this.ResetViewButton.TabIndex = 3;
+            this.ResetViewButton.Text = "Reset View";
+            this.ResetViewButton.UseVisualStyleBackColor = true;
+            this.ResetViewButton.Click += new System.EventHandler(this.ResetViewButton_Click);
+            // 
+            // SortIDBytesCheckBox
+            // 
+            this.SortIDBytesCheckBox.AutoSize = true;
+            this.SortIDBytesCheckBox.Checked = true;
+            this.SortIDBytesCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.SortIDBytesCheckBox.Location = new System.Drawing.Point(3, 520);
+            this.SortIDBytesCheckBox.Name = "SortIDBytesCheckBox";
+            this.SortIDBytesCheckBox.Size = new System.Drawing.Size(87, 17);
+            this.SortIDBytesCheckBox.TabIndex = 2;
+            this.SortIDBytesCheckBox.Text = "Sort ID-bytes";
+            this.SortIDBytesCheckBox.UseVisualStyleBackColor = true;
+            this.SortIDBytesCheckBox.CheckedChanged += new System.EventHandler(this.SortIDBytesCheckBox_CheckedChanged);
+            // 
+            // SnapshotButton
+            // 
+            this.SnapshotButton.Location = new System.Drawing.Point(2, 491);
+            this.SnapshotButton.Name = "SnapshotButton";
+            this.SnapshotButton.Size = new System.Drawing.Size(75, 23);
+            this.SnapshotButton.TabIndex = 1;
+            this.SnapshotButton.Text = "Snapshot";
+            this.SnapshotButton.UseVisualStyleBackColor = true;
+            this.SnapshotButton.Click += new System.EventHandler(this.SnapshotButton_Click);
+            // 
+            // DiagnosticsListBox
+            // 
+            this.DiagnosticsListBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.DiagnosticsListBox.FormattingEnabled = true;
+            this.DiagnosticsListBox.ItemHeight = 15;
+            this.DiagnosticsListBox.Location = new System.Drawing.Point(3, 16);
+            this.DiagnosticsListBox.Name = "DiagnosticsListBox";
+            this.DiagnosticsListBox.ScrollAlwaysVisible = true;
+            this.DiagnosticsListBox.SelectionMode = System.Windows.Forms.SelectionMode.None;
+            this.DiagnosticsListBox.Size = new System.Drawing.Size(883, 469);
+            this.DiagnosticsListBox.TabIndex = 0;
             // 
             // groupBox3
             // 
@@ -463,7 +512,8 @@
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolsToolStripMenuItem});
+            this.toolsToolStripMenuItem,
+            this.aboutToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(1284, 24);
@@ -486,14 +536,12 @@
             this.UpdateScannerFirmwareToolStripMenuItem.Text = "Update scanner firmware";
             this.UpdateScannerFirmwareToolStripMenuItem.Click += new System.EventHandler(this.UpdateScannerFirmwareToolStripMenuItem_Click);
             // 
-            // PreviewLabel
+            // aboutToolStripMenuItem
             // 
-            this.PreviewLabel.Location = new System.Drawing.Point(4, 457);
-            this.PreviewLabel.Name = "PreviewLabel";
-            this.PreviewLabel.Size = new System.Drawing.Size(53, 13);
-            this.PreviewLabel.TabIndex = 116;
-            this.PreviewLabel.Text = "Preview:";
-            this.PreviewLabel.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(52, 20);
+            this.aboutToolStripMenuItem.Text = "About";
+            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.AboutToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -536,7 +584,6 @@
         private System.Windows.Forms.RadioButton ImperialUnitRadioButton;
         private System.Windows.Forms.RadioButton MetricUnitRadioButton;
         private System.Windows.Forms.Label UnitsLabel;
-        private System.Windows.Forms.TextBox DiagnosticsTextBox;
         private System.Windows.Forms.Button USBClearAllButton;
         private System.Windows.Forms.ComboBox USBSendComboBox;
         private System.Windows.Forms.Button ExpandButton;
@@ -563,6 +610,11 @@
         private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem UpdateScannerFirmwareToolStripMenuItem;
         private System.Windows.Forms.Label PreviewLabel;
+        private System.Windows.Forms.ListBox DiagnosticsListBox;
+        private System.Windows.Forms.Button SnapshotButton;
+        private System.Windows.Forms.CheckBox SortIDBytesCheckBox;
+        private System.Windows.Forms.Button ResetViewButton;
+        private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
     }
 }
 

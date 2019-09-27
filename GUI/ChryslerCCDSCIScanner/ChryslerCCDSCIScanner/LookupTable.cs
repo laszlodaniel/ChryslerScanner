@@ -33,7 +33,7 @@ namespace ChryslerCCDSCIScanner
             CCDBusMessageDescription.Add(0x75, "A/C HIGH SIDE PRESSURE");
             CCDBusMessageDescription.Add(0x7B, "OUTSIDE AIR TEMPERATURE");
             CCDBusMessageDescription.Add(0x84, "INCREMENT ODOMETER AND TRIPMETER");
-            CCDBusMessageDescription.Add(0x8C, "ENGINE COOLANT TEMPERATURE | INTAKE AIR TEMP.");
+            CCDBusMessageDescription.Add(0x8C, "ENGINE COOLANT TEMPERATURE | INTAKE AIR TEMPERATURE");
             CCDBusMessageDescription.Add(0x94, "INSTRUMENT CLUSTER GAUGE VALUE");
             CCDBusMessageDescription.Add(0xA4, "INSTRUMENT CLUSTER LAMP STATES");
             CCDBusMessageDescription.Add(0xA9, "LAST ENGINE SHUTDOWN");
