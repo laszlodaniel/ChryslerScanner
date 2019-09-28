@@ -47,14 +47,16 @@ namespace ChryslerCCDSCIScanner
         public byte PacketBytesChecksum = 0;
 
         public BindingList<string> DiagnosticsTable = new BindingList<string>();
-        public List<string> CCDMsgList = new List<string>(256);
-        public List<byte> CCDIDList = new List<byte>(256);
-        public List<string> SCIPCMMsgList = new List<string>(256);
-        public List<byte> SCIPCMReqMsgList = new List<byte>(256);
-        public List<byte> SCIPCMIDList = new List<byte>(256);
-        public List<string> SCITCMMsgList = new List<string>(256);
-        public List<byte> SCITCMReqMsgList = new List<byte>(256);
-        public List<byte> SCITCMIDList = new List<byte>(256);
+        public List<string> CCDbusMsgList = new List<string>(256);
+        public List<byte> CCDBusIDList = new List<byte>(256);
+        public List<string> SCIBusPCMMsgList = new List<string>(256);
+        public List<byte> SCIBusPCMReqMsgList = new List<byte>(256);
+        public List<byte> SCIBusPCMIDList = new List<byte>(256);
+        public List<byte> SCIBusPCMSecondaryIDList = new List<byte>(256);
+        public List<string> SCIBusTCMMsgList = new List<string>(256);
+        public List<byte> SCIBusTCMReqMsgList = new List<byte>(256);
+        public List<byte> SCIBusTCMIDList = new List<byte>(256);
+        public List<byte> SCIBusTCMSecondaryIDList = new List<byte>(256);
 
         public string EmptyLine =                   "│                         │                                                     │                         │              │";
         private string CCDBusStateLineNA =          "│ CCD-BUS MODULES         │ STATE: N/A                                                                                    ";
@@ -587,7 +589,9 @@ namespace ChryslerCCDSCIScanner
                     byte command = (byte)(datacode & 0x0F);
 
                     int location = 0;
+                    int secondary_location = 0;
                     byte IDByte = 0;
+                    byte SecondaryIDByte = 0;
 
                     switch (source)
                     {
@@ -1120,7 +1124,6 @@ namespace ChryslerCCDSCIScanner
                             UpdateDiagnosticsListBox();
                             break;
                         case (byte)Source.CCDBus:
-                            IDByte = payload[4]; // payload still contains the 4 timestamp bytes
                             StringBuilder ccdlistitem = new StringBuilder(EmptyLine); // start with a pre-defined empty line
                             string ccdmsgtoinsert = String.Empty;
                             string ccddescriptiontoinsert = String.Empty;
@@ -1130,6 +1133,8 @@ namespace ChryslerCCDSCIScanner
                             byte[] ccdmessage = new byte[payload.Length - 4];
                             Array.Copy(payload, 0, ccdtimestamp, 0, 4); // copy timestamp only
                             Array.Copy(payload, 4, ccdmessage, 0, payload.Length - 4); // copy message only
+
+                            IDByte = ccdmessage[0];
 
                             if (ccdmessage.Length < 9) // max 8 byte fits the message column
                             {
@@ -1144,102 +1149,129 @@ namespace ChryslerCCDSCIScanner
                             ccdlistitem.Remove(2, ccdmsgtoinsert.Length); // remove as much whitespaces as the length of the message
                             ccdlistitem.Insert(2, ccdmsgtoinsert); // insert message where whitespaces were
 
-                            // Insert description in the line
-                            ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(IDByte);
-                            if (ccddescriptiontoinsert != String.Empty)
-                            {
-                                ccdlistitem.Remove(28, ccddescriptiontoinsert.Length);
-                                ccdlistitem.Insert(28, ccddescriptiontoinsert);
-                            }
-
-                            // Insert calculated value in the line
+                            // Determine description, value and unit texts
                             switch (IDByte)
                             {
                                 case 0x24:
                                     if (ccdmessage.Length > 3)
                                     {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x24);
+
                                         if (Units == 1) // Imperial
                                         {
                                             ccdvaluetoinsert = ccdmessage[1].ToString("0");
+                                            ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x24)[0];
                                         }
                                         if (Units == 0) // Metric
                                         {
                                             ccdvaluetoinsert = ccdmessage[2].ToString("0");
+                                            ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x24)[1];
                                         }
                                     }
                                     break;
                                 case 0x29:
                                     if (ccdmessage.Length > 3)
                                     {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x29);
+
                                         if (ccdmessage[1] < 10) ccdvaluetoinsert = "0";
                                         ccdvaluetoinsert += ccdmessage[1].ToString("0") + ":";
                                         if (ccdmessage[2] < 10) ccdvaluetoinsert += "0";
                                         ccdvaluetoinsert += ccdmessage[2].ToString("0");
+
+                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x29)[0];
                                     }
                                     break;
                                 case 0x42:
                                     if (ccdmessage.Length > 3)
                                     {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x42);
+
                                         ImperialSlope = LT.GetCCDBusMessageSlope(0x42)[0];
                                         ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0");
+
+                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x42)[0];
                                     }
                                     break;
                                 case 0x44:
                                     if (ccdmessage.Length > 2)
                                     {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x44);
+
                                         ccdvaluetoinsert = ccdmessage[1].ToString("0");
+
+                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x44)[0];
                                     }
                                     break;
                                 case 0x50:
                                     if (ccdmessage.Length > 2)
                                     {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x50);
                                         if ((ccdmessage[1] & 0x01) == 0x01) ccdvaluetoinsert = "AIRBAG LAMP ON";
                                         else ccdvaluetoinsert = "AIRBAG LAMP OFF";
+
+                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x50)[0];
                                     }
                                     break;
                                 case 0x6D:
                                     if (ccdmessage.Length > 3)
                                     {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x6D);
                                         if ((ccdmessage[1] > 0) && (ccdmessage[1] < 18))
                                         {
                                             // Replace characters in the VIN string (one by one)
                                             VIN = VIN.Remove(ccdmessage[1] - 1, 1).Insert(ccdmessage[1] - 1, ((char)(ccdmessage[2])).ToString());
                                         }
+
+                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x6D)[0];
                                     }
                                     ccdvaluetoinsert = VIN;
                                     break;
                                 case 0x75:
                                     if (ccdmessage.Length > 3)
                                     {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x75);
+
                                         if (Units == 1) // Imperial
                                         {
                                             ImperialSlope = LT.GetCCDBusMessageSlope(0x75)[0];
                                             ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0.0").Replace(",", ".");
+
+                                            ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x75)[0];
                                         }
                                         if (Units == 0) // Metric
                                         {
                                             MetricSlope = (LT.GetCCDBusMessageSlope(0x75)[0] * LT.GetCCDBusMessageSlConv(0x75)[0]);
                                             ccdvaluetoinsert = (ccdmessage[1] * MetricSlope).ToString("0.0").Replace(",", ".");
+
+                                            ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x75)[0];
                                         }
                                     }
                                     break;
                                 case 0x7B:
                                     if (ccdmessage.Length > 2)
                                     {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x7B);
                                         ImperialSlope = LT.GetCCDBusMessageSlope(0x7B)[0];
                                         ImperialOffset = LT.GetCCDBusMessageOffset(0x7B)[0];
                                         ccdvaluetoinsert = ((ccdmessage[1] * ImperialSlope) + ImperialOffset).ToString("0.0").Replace(",", ".");
+
+                                        ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x7B)[0];
                                     }
                                     break;
                                 case 0x8C:
                                     if (ccdmessage.Length > 3)
                                     {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x8C);
+
                                         if (Units == 1) // Imperial
                                         {
                                             ImperialSlope = LT.GetCCDBusMessageSlope(0x8C)[0];
                                             ImperialOffset = LT.GetCCDBusMessageOffset(0x8C)[0];
                                             ccdvaluetoinsert = ((ccdmessage[1] * ImperialSlope) + ImperialOffset).ToString("0.0").Replace(",", ".") + " | ";
                                             ccdvaluetoinsert += ((ccdmessage[2] * ImperialSlope) + ImperialOffset).ToString("0.0").Replace(",", ".");
+
+                                            ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x8C)[0];
                                         }
                                         if (Units == 0) // Metric
                                         {
@@ -1249,47 +1281,80 @@ namespace ChryslerCCDSCIScanner
                                             MetricOffset = LT.GetCCDBusMessageOfConv(0x8C)[0];
                                             ccdvaluetoinsert = ((((ccdmessage[1] * ImperialSlope) + ImperialOffset) * MetricSlope) + MetricOffset).ToString("0.0").Replace(",", ".") + " | ";
                                             ccdvaluetoinsert += ((((ccdmessage[2] * ImperialSlope) + ImperialOffset) * MetricSlope) + MetricOffset).ToString("0.0").Replace(",", ".");
+
+                                            ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x8C)[0];
                                         }
                                     }
                                     break;
                                 case 0xA9:
                                     if (ccdmessage.Length > 2)
                                     {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xA9);
                                         ccdvaluetoinsert = ccdmessage[1].ToString("0");
+
+                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0xA9)[0];
+                                    }
+                                    break;
+                                case 0xB2:
+                                    if (ccdmessage.Length > 5)
+                                    {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xB2);
+                                        ccdvaluetoinsert = String.Empty;
+                                        ccdunittoinsert = String.Empty;
+                                    }
+                                    else
+                                    {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xB2);
+                                        ccdvaluetoinsert = "INVALID REQUEST";
+                                        ccdunittoinsert = String.Empty;
                                     }
                                     break;
                                 case 0xCE:
                                     if (ccdmessage.Length > 5)
                                     {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xCE);
+
                                         if (Units == 1) // Imperial
                                         {
                                             ImperialSlope = LT.GetCCDBusMessageSlope(0xCE)[0];
-                                            ccdvaluetoinsert = ((ccdmessage[1] << 24 | ccdmessage[2] << 16 | ccdmessage[3] << 8 | ccdmessage[4]) * ImperialSlope).ToString("0.000").Replace(",", ".");
+                                            ccdvaluetoinsert = ((UInt32)(ccdmessage[1] << 24 | ccdmessage[2] << 16 | ccdmessage[3] << 8 | ccdmessage[4]) * ImperialSlope).ToString("0.000").Replace(",", ".");
+
+                                            ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0xCE)[0];
                                         }
                                         if (Units == 0) // Metric
                                         {
                                             MetricSlope = (LT.GetCCDBusMessageSlope(0xCE)[0] * LT.GetCCDBusMessageSlConv(0xCE)[0]);
-                                            ccdvaluetoinsert = ((ccdmessage[1] << 24 | ccdmessage[2] << 16 | ccdmessage[3] << 8 | ccdmessage[4]) * MetricSlope).ToString("0.000").Replace(",", ".");
+                                            ccdvaluetoinsert = ((UInt32)(ccdmessage[1] << 24 | ccdmessage[2] << 16 | ccdmessage[3] << 8 | ccdmessage[4]) * MetricSlope).ToString("0.000").Replace(",", ".");
+
+                                            ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0xCE)[0];
                                         }
                                     }
                                     break;
                                 case 0xD4:
                                     if (ccdmessage.Length > 3)
                                     {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xD4);
                                         ImperialSlope = LT.GetCCDBusMessageSlope(0xD4)[0];
                                         ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0.0").Replace(",", ".") + " | " + (ccdmessage[2] * ImperialSlope).ToString("0.0").Replace(",", ".");
+
+                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0xD4)[0];
                                     }
                                     break;
                                 case 0xDA:
                                     if (ccdmessage.Length > 2)
                                     {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xDA);
                                         if ((ccdmessage[1] & 0x40) == 0x40) ccdvaluetoinsert = "MIL LAMP ON";
                                         else ccdvaluetoinsert = "MIL LAMP OFF";
+
+                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0xDA)[0];
                                     }
                                     break;
                                 case 0xE4:
                                     if (ccdmessage.Length > 3)
                                     {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xE4);
+
                                         if (Units == 1) // Imperial
                                         {
                                             ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[0]; // RPM
@@ -1297,6 +1362,8 @@ namespace ChryslerCCDSCIScanner
 
                                             ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[1]; // PSI
                                             ccdvaluetoinsert += (ccdmessage[2] * ImperialSlope).ToString("0.0").Replace(",", ".");
+
+                                            ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0xE4)[0];
                                         }
                                         if (Units == 0) // Metric
                                         {
@@ -1306,121 +1373,58 @@ namespace ChryslerCCDSCIScanner
                                             ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[1]; // KPA
                                             MetricSlope = LT.GetCCDBusMessageSlConv(0xE4)[1];
                                             ccdvaluetoinsert += ((ccdmessage[2] * ImperialSlope) * MetricSlope).ToString("0.0").Replace(",", ".");
+
+                                            ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0xE4)[0];
                                         }
                                     }
                                     break;
                                 case 0xEE:
                                     if (ccdmessage.Length > 4)
                                     {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xEE);
+
                                         if (Units == 1) // Imperial
                                         {
                                             ImperialSlope = LT.GetCCDBusMessageSlope(0xEE)[0];
-                                            ccdvaluetoinsert = ((ccdmessage[1] << 16 | ccdmessage[2] << 8 | ccdmessage[3]) * ImperialSlope).ToString("0.000").Replace(",", ".");
+                                            ccdvaluetoinsert = ((UInt32)(ccdmessage[1] << 16 | ccdmessage[2] << 8 | ccdmessage[3]) * ImperialSlope).ToString("0.000").Replace(",", ".");
+
+                                            ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0xEE)[0];
                                         }
                                         if (Units == 0) // Metric
                                         {
                                             MetricSlope = (LT.GetCCDBusMessageSlope(0xEE)[0] * LT.GetCCDBusMessageSlConv(0xEE)[0]);
-                                            ccdvaluetoinsert = ((ccdmessage[1] << 16 | ccdmessage[2] << 8 | ccdmessage[3]) * MetricSlope).ToString("0.000").Replace(",", ".");
+                                            ccdvaluetoinsert = ((UInt32)(ccdmessage[1] << 16 | ccdmessage[2] << 8 | ccdmessage[3]) * MetricSlope).ToString("0.000").Replace(",", ".");
+
+                                            ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0xEE)[0];
                                         }
                                     }
                                     break;
+                                case 0xF2:
+                                    if (ccdmessage.Length > 5)
+                                    {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xF2);
+                                        ccdvaluetoinsert = String.Empty;
+                                        ccdunittoinsert = String.Empty;
+                                    }
+                                    else
+                                    {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xF2);
+                                        ccdvaluetoinsert = "INVALID RESPONSE";
+                                        ccdunittoinsert = String.Empty;
+                                    }
+                                    break;
+                            }
+
+                            // Insert texts into the line
+                            if (ccddescriptiontoinsert != String.Empty)
+                            {
+                                ccdlistitem.Remove(28, ccddescriptiontoinsert.Length);
+                                ccdlistitem.Insert(28, ccddescriptiontoinsert);
                             }
                             if (ccdvaluetoinsert != String.Empty)
                             {
                                 ccdlistitem.Remove(82, ccdvaluetoinsert.Length);
                                 ccdlistitem.Insert(82, ccdvaluetoinsert);
-                            }
-
-                            // Insert unit in the line
-                            switch (IDByte)
-                            {
-                                case 0x24:
-                                    if (Units == 1) // Imperial
-                                    {
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x24)[0];
-                                    }
-                                    if (Units == 0) // Metric
-                                    {
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x24)[1];
-                                    }
-                                    break;
-                                case 0x29:
-                                    ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x29)[0];
-                                    break;
-                                case 0x42:
-                                    ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x42)[0];
-                                    break;
-                                case 0x44:
-                                    ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x44)[0];
-                                    break;
-                                case 0x50:
-                                    ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x50)[0];
-                                    break;
-                                case 0x6D:
-                                    ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x6D)[0];
-                                    break;
-                                case 0x75:
-                                    if (Units == 1) // Imperial
-                                    {
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x75)[0];
-                                    }
-                                    if (Units == 0) // Metric
-                                    {
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x75)[0];
-                                    }
-                                    break;
-                                case 0x7B:
-                                    ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x7B)[0];
-                                    break;
-                                case 0x8C:
-                                    if (Units == 1) // Imperial
-                                    {
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x8C)[0] + " | " + LT.GetCCDBusMessageUnitImperial(0x8C)[1];
-                                    }
-                                    if (Units == 0) // Metric
-                                    {
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x8C)[0] + " | " + LT.GetCCDBusMessageUnitMetric(0x8C)[1];
-                                    }
-                                    break;
-                                case 0xA9:
-                                    ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0xA9)[0];
-                                    break;
-                                case 0xCE:
-                                    if (Units == 1) // Imperial
-                                    {
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0xCE)[0];
-                                    }
-                                    if (Units == 0) // Metric
-                                    {
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0xCE)[0];
-                                    }
-                                    break;
-                                case 0xD4:
-                                    ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0xD4)[0] + " | " + LT.GetCCDBusMessageUnitImperial(0xD4)[1];
-                                    break;
-                                case 0xDA:
-                                    ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0xDA)[0];
-                                    break;
-                                case 0xE4:
-                                    if (Units == 1) // Imperial
-                                    {
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0xE4)[0] + " | " + LT.GetCCDBusMessageUnitImperial(0xE4)[1];
-                                    }
-                                    if (Units == 0) // Metric
-                                    {
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0xE4)[0] + " | " + LT.GetCCDBusMessageUnitMetric(0xE4)[1];
-                                    }
-                                    break;
-                                case 0xEE:
-                                    if (Units == 1) // Imperial
-                                    {
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0xEE)[0];
-                                    }
-                                    if (Units == 0) // Metric
-                                    {
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0xEE)[0];
-                                    }
-                                    break;
                             }
                             if (ccdunittoinsert != String.Empty)
                             {
@@ -1429,21 +1433,21 @@ namespace ChryslerCCDSCIScanner
                             }
 
                             // Now decide where to put this message in the table itself
-                            if (!CCDIDList.Contains(IDByte)) // if this ID-byte is not on the list insert it into a new line
+                            if (!CCDBusIDList.Contains(IDByte)) // if this ID-byte is not on the list insert it into a new line
                             {
                                 CCDBusIDByteNum++;
 
                                 // Put B2 and F2 messages at the bottom of the table
                                 if ((IDByte != 0xB2) && (IDByte != 0xF2)) // if it's not diagnostic request or response message
                                 {
-                                    CCDIDList.Add(IDByte); // add ID-byte to the list
+                                    CCDBusIDList.Add(IDByte); // add ID-byte to the list
                                     if (IDSorting)
                                     {
-                                        CCDIDList.Sort(); // sort ID-bytes by ascending order
+                                        CCDBusIDList.Sort(); // sort ID-bytes by ascending order
                                     }
-                                    location = CCDIDList.FindIndex(x => x == IDByte); // now see where this new ID-byte ends up after sorting
+                                    location = CCDBusIDList.FindIndex(x => x == IDByte); // now see where this new ID-byte ends up after sorting
 
-                                    if (CCDIDList.Count == 1)
+                                    if (CCDBusIDList.Count == 1)
                                     {
                                         DiagnosticsTable.RemoveAt(CCDBusListStart);
                                         DiagnosticsTable.Insert(CCDBusListStart, ccdlistitem.ToString());
@@ -1467,7 +1471,7 @@ namespace ChryslerCCDSCIScanner
                             {
                                 if ((IDByte != 0xB2) && (IDByte != 0xF2)) // if it's not diagnostic request or response message
                                 {
-                                    location = CCDIDList.FindIndex(x => x == IDByte);
+                                    location = CCDBusIDList.FindIndex(x => x == IDByte);
                                     DiagnosticsTable.RemoveAt(CCDBusListStart + location);
                                     DiagnosticsTable.Insert(CCDBusListStart + location, ccdlistitem.ToString());
                                 }
@@ -1515,7 +1519,6 @@ namespace ChryslerCCDSCIScanner
                             File.AppendAllText(CCDLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
                             break;
                         case (byte)Source.SCIBusPCM:
-                            IDByte = payload[4];
                             SCIBusPCMEnabled = true;
                             StringBuilder scipcmlistitem = new StringBuilder(EmptyLine); // start with a pre-defined empty line
                             string scipcmmsgtoinsert = String.Empty;
@@ -1526,6 +1529,8 @@ namespace ChryslerCCDSCIScanner
                             byte[] pcmmessage = new byte[payload.Length - 4];
                             Array.Copy(payload, 0, pcmtimestamp, 0, 4); // copy timestamp only
                             Array.Copy(payload, 4, pcmmessage, 0, payload.Length - 4); // copy message only
+
+                            IDByte = pcmmessage[0];
 
                             // In case of high speed mode the request and response bytes are sent in separate packets.
                             // First packet is always the request bytes list, save them here and do nothing else.
@@ -1549,180 +1554,7 @@ namespace ChryslerCCDSCIScanner
                                 {
                                     case 0x10:
                                         scipcmdescriptiontoinsert = "ENGINE FAULT CODE LIST";
-                                        break;
-                                    case 0x11:
-                                        scipcmdescriptiontoinsert = "ENGINE FAULT BIT LIST";
-                                        break;
-                                    case 0x12:
-                                        scipcmdescriptiontoinsert = "SELECT HIGH-SPEED MODE";
-                                        break;
-                                    case 0x13:
-                                        if (pcmmessage.Length > 1)
-                                        {
-                                            switch (pcmmessage[1])
-                                            {
-                                                case 0x00:
-                                                    scipcmdescriptiontoinsert = "ACTUATOR TEST STOPPED";
-                                                    break;
-                                                case 0x07:
-                                                    scipcmdescriptiontoinsert = "IAC STEPPER MOTOR TEST";
-                                                    break;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            scipcmdescriptiontoinsert = "ENGAGE ACTUATOR TEST";
-                                        }
-                                        break;
-                                    case 0x14:
-                                        if (pcmmessage.Length > 1)
-                                        {
-                                            switch (pcmmessage[1])
-                                            {
-                                                case 0x05: // coolant temperature
-                                                    scipcmdescriptiontoinsert = "ENGINE COOLANT TEMPERATURE";
-                                                    break;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            scipcmdescriptiontoinsert = "REQUEST DIAGNOSTIC DATA";
-                                        }
-                                        break;
-                                    case 0x15:
-                                        scipcmdescriptiontoinsert = "REQUEST MEMORY DATA";
-                                        break;
-                                    case 0x16:
-                                        scipcmdescriptiontoinsert = "REQUEST ECU ID";
-                                        break;
-                                    case 0x17:
-                                        if (pcmmessage.Length > 1)
-                                        {
-                                            switch (pcmmessage[1])
-                                            {
-                                                case 0xE0:
-                                                    scipcmdescriptiontoinsert = "ENGINE FAULT CODES ERASED SUCCESSFULLY";
-                                                    break;
-                                                default:
-                                                    scipcmdescriptiontoinsert = "ENGINE FAULT CODE ERASE ERROR";
-                                                    break;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            scipcmdescriptiontoinsert = "ERASE ENGINE FAULT CODES";
-                                        }
-                                        break;
-                                    case 0x18:
-                                        if (pcmmessage.Length > 1)
-                                        {
-                                            switch (pcmmessage[1])
-                                            {
-                                                default:
-                                                    scipcmdescriptiontoinsert = "CONTROL ASD RELAY";
-                                                    break;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            scipcmdescriptiontoinsert = "CONTROL ASD RELAY";
-                                        }
-                                        break;
-                                    case 0x19:
-                                        if (pcmmessage.Length > 1)
-                                        {
-                                            switch (pcmmessage[1])
-                                            {
-                                                default:
-                                                    scipcmdescriptiontoinsert = "SET MINIMUM IDLE SPEED";
-                                                    break;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            scipcmdescriptiontoinsert = "SET MINIMUM IDLE SPEED";
-                                        }
-                                        break;
-                                    case 0x1A:
-                                        if (pcmmessage.Length > 1)
-                                        {
-                                            switch (pcmmessage[1])
-                                            {
-                                                default:
-                                                    scipcmdescriptiontoinsert = "SWITCH TEST";
-                                                    break;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            scipcmdescriptiontoinsert = "SWITCH TEST";
-                                        }
-                                        break;
-                                    case 0x1B:
-                                        if (pcmmessage.Length > 1)
-                                        {
-                                            switch (pcmmessage[1])
-                                            {
-                                                default:
-                                                    scipcmdescriptiontoinsert = "INIT BYTE MODE DOWNLOAD";
-                                                    break;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            scipcmdescriptiontoinsert = "INIT BYTE MODE DOWNLOAD";
-                                        }
-                                        break;
-                                    case 0x1C:
-                                        if (pcmmessage.Length > 1)
-                                        {
-                                            scipcmdescriptiontoinsert = "RESET EMR";
-                                            break;
-                                        }
-                                        else
-                                        {
-                                            scipcmdescriptiontoinsert = "RESET EMR";
-                                        }
-                                        break;
-                                    case 0x26: // Read flash memory
-                                        if (pcmmessage.Length > 3)
-                                        {
-                                            scipcmdescriptiontoinsert = "READ FLASH MEMORY: ";
-                                            scipcmdescriptiontoinsert += Util.ByteToHexString(pcmmessage, 1, 4);
-                                            break;
-                                        }
-                                        else
-                                        {
-                                            scipcmdescriptiontoinsert = "READ FLASH MEMORY";
-                                        }
-                                        break;
-                                    case 0x28: // Read EEPROM
-                                        if (pcmmessage.Length > 2)
-                                        {
-                                            scipcmdescriptiontoinsert = "READ EEPROM: ";
-                                            scipcmdescriptiontoinsert += Util.ByteToHexString(pcmmessage, 1, 3);
-                                            break;
-                                        }
-                                        else
-                                        {
-                                            scipcmdescriptiontoinsert = "READ EEPROM";
-                                        }
-                                        break;
-                                    case 0xFE:
-                                        scipcmdescriptiontoinsert = " ";
-                                        break;
-                                }
 
-                                if (scipcmdescriptiontoinsert != String.Empty)
-                                {
-                                    scipcmlistitem.Remove(28, scipcmdescriptiontoinsert.Length);
-                                    scipcmlistitem.Insert(28, scipcmdescriptiontoinsert);
-                                }
-
-                                // Insert calculated value in the line
-                                switch (IDByte)
-                                {
-                                    case 0x10: // Fault code list
                                         if (pcmmessage.Length > 2) // minimum 3 bytes are required for a meaningful message
                                         {
                                             byte dtcchecksum = 0;
@@ -1770,59 +1602,216 @@ namespace ChryslerCCDSCIScanner
                                                 scipcmvaluetoinsert = "CHECKSUM ERROR";
                                             }
                                         }
+
+                                        scipcmunittoinsert = String.Empty;
                                         break;
-                                    case 0x19: // Set minimum idle speed
+                                    case 0x11:
+                                        scipcmdescriptiontoinsert = "ENGINE FAULT BIT LIST";
+                                        scipcmvaluetoinsert = String.Empty;
+                                        scipcmunittoinsert = String.Empty;
+                                        break;
+                                    case 0x12:
+                                        scipcmdescriptiontoinsert = "SELECT HIGH-SPEED MODE";
+                                        scipcmvaluetoinsert = String.Empty;
+                                        scipcmunittoinsert = String.Empty;
+                                        break;
+                                    case 0x13:
                                         if (pcmmessage.Length > 1)
                                         {
+                                            switch (pcmmessage[1])
+                                            {
+                                                case 0x00:
+                                                    scipcmdescriptiontoinsert = "ACTUATOR TEST STOPPED";
+                                                    scipcmvaluetoinsert = String.Empty;
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x07:
+                                                    scipcmdescriptiontoinsert = "IAC STEPPER MOTOR TEST";
+                                                    scipcmvaluetoinsert = "RUNNING";
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                            }
+
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        else
+                                        {
+                                            scipcmdescriptiontoinsert = "ENGAGE ACTUATOR TEST";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        break;
+                                    case 0x14:
+                                        if (pcmmessage.Length > 1)
+                                        {
+                                            switch (pcmmessage[1])
+                                            {
+                                                case 0x05: // coolant temperature
+                                                    scipcmdescriptiontoinsert = "ENGINE COOLANT TEMPERATURE";
+                                                    break;
+                                            }
+
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        else
+                                        {
+                                            scipcmdescriptiontoinsert = "REQUEST DIAGNOSTIC DATA";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        break;
+                                    case 0x15:
+                                        scipcmdescriptiontoinsert = "REQUEST MEMORY DATA";
+                                        scipcmvaluetoinsert = String.Empty;
+                                        scipcmunittoinsert = String.Empty;
+                                        break;
+                                    case 0x16:
+                                        scipcmdescriptiontoinsert = "REQUEST ECU ID";
+                                        scipcmvaluetoinsert = String.Empty;
+                                        scipcmunittoinsert = String.Empty;
+                                        break;
+                                    case 0x17:
+                                        if (pcmmessage.Length > 1)
+                                        {
+                                            switch (pcmmessage[1])
+                                            {
+                                                case 0xE0:
+                                                    scipcmdescriptiontoinsert = "ENGINE FAULT CODES ERASED SUCCESSFULLY";
+                                                    break;
+                                                default:
+                                                    scipcmdescriptiontoinsert = "ENGINE FAULT CODE ERASE ERROR";
+                                                    break;
+                                            }
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        else
+                                        {
+                                            scipcmdescriptiontoinsert = "ERASE ENGINE FAULT CODES";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        break;
+                                    case 0x18:
+                                        if (pcmmessage.Length > 1)
+                                        {
+                                            scipcmdescriptiontoinsert = "CONTROL ASD RELAY";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        else
+                                        {
+                                            scipcmdescriptiontoinsert = "CONTROL ASD RELAY";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        break;
+                                    case 0x19:
+                                        if (pcmmessage.Length > 1)
+                                        {
+                                            scipcmdescriptiontoinsert = "SET MINIMUM IDLE SPEED";
+
                                             scipcmvaluetoinsert = (pcmmessage[1] * 7.85D).ToString("0");
                                             if (pcmmessage[1] < 0x42)
                                             {
                                                 scipcmvaluetoinsert += " - TOO LOW!";
                                             }
+
+                                            scipcmunittoinsert = "RPM";
                                         }
                                         else
                                         {
+                                            scipcmdescriptiontoinsert = "SET MINIMUM IDLE SPEED";
                                             scipcmvaluetoinsert = "-";
+                                            scipcmunittoinsert = "RPM";
+                                        }
+                                        break;
+                                    case 0x1A:
+                                        if (pcmmessage.Length > 1)
+                                        {
+                                            scipcmdescriptiontoinsert = "SWITCH TEST";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        else
+                                        {
+                                            scipcmdescriptiontoinsert = "SWITCH TEST";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        break;
+                                    case 0x1B:
+                                        if (pcmmessage.Length > 1)
+                                        {
+                                            scipcmdescriptiontoinsert = "INIT BYTE MODE DOWNLOAD";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        else
+                                        {
+                                            scipcmdescriptiontoinsert = "INIT BYTE MODE DOWNLOAD";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        break;
+                                    case 0x1C:
+                                        if (pcmmessage.Length > 1)
+                                        {
+                                            scipcmdescriptiontoinsert = "RESET EMR";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        else
+                                        {
+                                            scipcmdescriptiontoinsert = "RESET EMR";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
                                         }
                                         break;
                                     case 0x26: // Read flash memory
                                         if (pcmmessage.Length > 4)
                                         {
+                                            scipcmdescriptiontoinsert = "READ FLASH MEMORY: ";
+                                            scipcmdescriptiontoinsert += Util.ByteToHexString(pcmmessage, 1, 4);
                                             scipcmvaluetoinsert = Util.ByteToHexString(pcmmessage, 4, 5);
-                                            break;
+                                            scipcmunittoinsert = String.Empty;
                                         }
                                         else
                                         {
+                                            scipcmdescriptiontoinsert = "READ FLASH MEMORY";
                                             scipcmvaluetoinsert = "3 ADDR. BYTES REQUIRED";
+                                            scipcmunittoinsert = String.Empty;
                                         }
                                         break;
-                                    case 0x28: // Read flash memory
+                                    case 0x28: // Read EEPROM
                                         if (pcmmessage.Length > 3)
                                         {
+                                            scipcmdescriptiontoinsert = "READ EEPROM: ";
+                                            scipcmdescriptiontoinsert += Util.ByteToHexString(pcmmessage, 1, 3);
                                             scipcmvaluetoinsert = Util.ByteToHexString(pcmmessage, 3, 4);
-                                            break;
+                                            scipcmunittoinsert = String.Empty;
                                         }
                                         else
                                         {
+                                            scipcmdescriptiontoinsert = "READ EEPROM";
                                             scipcmvaluetoinsert = "2 ADDR. BYTES REQUIRED";
+                                            scipcmunittoinsert = String.Empty;
                                         }
                                         break;
+                                    case 0xFE:
+                                        scipcmdescriptiontoinsert = " ";
+                                        break;
+                                }
+
+                                if (scipcmdescriptiontoinsert != String.Empty)
+                                {
+                                    scipcmlistitem.Remove(28, scipcmdescriptiontoinsert.Length);
+                                    scipcmlistitem.Insert(28, scipcmdescriptiontoinsert);
                                 }
                                 if (scipcmvaluetoinsert != String.Empty)
                                 {
                                     scipcmlistitem.Remove(82, scipcmvaluetoinsert.Length);
                                     scipcmlistitem.Insert(82, scipcmvaluetoinsert);
-                                }
-
-                                // Insert unit in the line
-                                switch (IDByte)
-                                {
-                                    case 0x10: // Fault code list
-                                        scipcmunittoinsert = String.Empty;
-                                        break;
-                                    case 0x19: // Fault code list
-                                        scipcmunittoinsert = "RPM";
-                                        break;
                                 }
                                 if (scipcmunittoinsert != String.Empty)
                                 {
@@ -1831,16 +1820,16 @@ namespace ChryslerCCDSCIScanner
                                 }
 
                                 // Now decide where to put this message in reality
-                                if (!SCIPCMIDList.Contains(IDByte)) // if this ID-byte is not on the list
+                                if (!SCIBusPCMIDList.Contains(IDByte)) // if this ID-byte is not on the list
                                 {
                                     SCIBusPCMIDByteNum++;
-                                    SCIPCMIDList.Add(IDByte); // add ID-byte to the list
+                                    SCIBusPCMIDList.Add(IDByte); // add ID-byte to the list
                                     if (IDSorting)
                                     {
-                                        SCIPCMIDList.Sort(); // sort ID-bytes by ascending order
+                                        SCIBusPCMIDList.Sort(); // sort ID-bytes by ascending order
                                     }
-                                    location = SCIPCMIDList.FindIndex(x => x == IDByte); // now see where this new ID-byte ends up after sorting
-                                    if (SCIPCMIDList.Count == 1)
+                                    location = SCIBusPCMIDList.FindIndex(x => x == IDByte); // now see where this new ID-byte ends up after sorting
+                                    if (SCIBusPCMIDList.Count == 1)
                                     {
                                         DiagnosticsTable.RemoveAt(SCIBusPCMListStart);
                                         DiagnosticsTable.Insert(SCIBusPCMListStart, scipcmlistitem.ToString());
@@ -1856,25 +1845,24 @@ namespace ChryslerCCDSCIScanner
                                 }
                                 else // if this ID-byte is already displayed
                                 {
-                                    location = SCIPCMIDList.FindIndex(x => x == IDByte);
+                                    location = SCIBusPCMIDList.FindIndex(x => x == IDByte);
                                     DiagnosticsTable.RemoveAt(SCIBusPCMListStart + location);
                                     DiagnosticsTable.Insert(SCIBusPCMListStart + location, scipcmlistitem.ToString());
                                 }
                                 SCIBusPCMMsgRxCount++;
                                 File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine); // save message to text file
-                                // TODO: update header
                             }
                             if (subdatacode == 0x01) // high speed request bytes, just save them
                             {
-                                SCIPCMReqMsgList.Clear(); // first clear previous bytes
+                                SCIBusPCMReqMsgList.Clear(); // first clear previous bytes
                                 for (int i = 0; i < pcmmessage.Length; i++)
                                 {
-                                    SCIPCMReqMsgList.Add(pcmmessage[i]);
+                                    SCIBusPCMReqMsgList.Add(pcmmessage[i]);
                                 }
                             }
                             else if (subdatacode == 0x02) // high speed response bytes, mix them with saved request bytes
                             {
-                                byte[] requestbytes = SCIPCMReqMsgList.ToArray();
+                                byte[] requestbytes = SCIBusPCMReqMsgList.ToArray();
                                 List<byte> temp = new List<byte>(512);
                                 byte[] pcmmessagemix;
                                 temp.Add(pcmmessage[0]); // first byte is always the memory area byte
@@ -1882,10 +1870,14 @@ namespace ChryslerCCDSCIScanner
                                 {
                                     temp.Add(requestbytes[i]); // Add request byte first
                                     temp.Add(pcmmessage[i]); // Add response byte next
-
                                 }
 
-                                pcmmessagemix = temp.ToArray();                                
+                                pcmmessagemix = temp.ToArray();
+
+                                if (pcmmessagemix.Length > 2)
+                                {
+                                    SecondaryIDByte = pcmmessagemix[2]; // Secondary ID byte applies to high speed mode only, it's actually the first RAM address that appears in the message
+                                }
 
                                 if (pcmmessagemix.Length < 9) // max 8 byte fits the message column
                                 {
@@ -1900,10 +1892,53 @@ namespace ChryslerCCDSCIScanner
                                 scipcmlistitem.Insert(2, scipcmmsgtoinsert); // insert message where whitespaces were
 
                                 // Insert description in the line
-                                switch (IDByte)
+                                switch (IDByte) // RAM table select byte
                                 {
+                                    case 0xF4:
+                                        switch (SecondaryIDByte) // the second byte acts now as a secondary ID-byte (RAM address)
+                                        {
+                                            case 0x0A:
+                                                scipcmdescriptiontoinsert = "ENGINE SPEED";
+
+                                                if ((pcmmessagemix.Length > 4) && (pcmmessagemix[3] == 0x0B)) // Engine speed
+                                                {
+                                                    scipcmvaluetoinsert = (((pcmmessagemix[2] << 8) | pcmmessagemix[4]) * 0.125).ToString("0.000").Replace(",", ".");
+                                                    scipcmunittoinsert = "RPM";
+                                                }
+                                                else
+                                                {
+                                                    scipcmvaluetoinsert = "ERROR";
+                                                    scipcmunittoinsert = String.Empty;
+                                                }
+                                                break;
+                                            case 0x0C:
+                                                scipcmdescriptiontoinsert = "VEHICLE SPEED";
+
+                                                if ((pcmmessagemix.Length > 4) && (pcmmessagemix[3] == 0x0D)) // Vehicle speed
+                                                {
+                                                    if (Units == 1) // Imperial
+                                                    {
+                                                        scipcmvaluetoinsert = (((pcmmessagemix[2] << 8) | pcmmessagemix[4]) * 0.0156).ToString("0.000").Replace(",", ".");
+                                                        scipcmunittoinsert = "MPH";
+                                                    }
+                                                    if (Units == 0) // Metric
+                                                    {
+                                                        scipcmvaluetoinsert = (((pcmmessagemix[2] << 8) | pcmmessagemix[4]) * 0.0156 * 1.609344).ToString("0.000").Replace(",", ".");
+                                                        scipcmunittoinsert = "KM/H";
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    scipcmvaluetoinsert = "ERROR";
+                                                    scipcmunittoinsert = String.Empty;
+                                                }
+                                                break;
+                                        }
+                                        break;
                                     case 0xFE: // Fault code list
                                         scipcmdescriptiontoinsert = "SELECT LOW-SPEED MODE";
+                                        scipcmvaluetoinsert = String.Empty;
+                                        scipcmunittoinsert = String.Empty;
                                         break;
                                 }
                                 if (scipcmdescriptiontoinsert != String.Empty)
@@ -1911,26 +1946,10 @@ namespace ChryslerCCDSCIScanner
                                     scipcmlistitem.Remove(28, scipcmdescriptiontoinsert.Length);
                                     scipcmlistitem.Insert(28, scipcmdescriptiontoinsert);
                                 }
-
-                                // Insert calculated value in the line
-                                switch (IDByte)
-                                {
-                                    case 0xFE:
-                                        scipcmvaluetoinsert = String.Empty;
-                                        break;
-                                }
                                 if (scipcmvaluetoinsert != String.Empty)
                                 {
                                     scipcmlistitem.Remove(82, scipcmvaluetoinsert.Length);
                                     scipcmlistitem.Insert(82, scipcmvaluetoinsert);
-                                }
-
-                                // Insert unit in the line
-                                switch (IDByte)
-                                {
-                                    case 0xFE:
-                                        scipcmunittoinsert = String.Empty;
-                                        break;
                                 }
                                 if (scipcmunittoinsert != String.Empty)
                                 {
@@ -1939,16 +1958,18 @@ namespace ChryslerCCDSCIScanner
                                 }
 
                                 // Now decide where to put this message in reality
-                                if (!SCIPCMIDList.Contains(IDByte)) // if this ID-byte is not on the list
+                                if (!SCIBusPCMIDList.Contains(IDByte)) // if this ID-byte is not on the list
                                 {
                                     SCIBusPCMIDByteNum++;
-                                    SCIPCMIDList.Add(IDByte); // add ID-byte to the list
+                                    SCIBusPCMIDList.Add(IDByte); // add ID-byte to the list
                                     if (IDSorting)
                                     {
-                                        SCIPCMIDList.Sort(); // sort ID-bytes by ascending order
+                                        SCIBusPCMIDList.Sort(); // sort ID-bytes by ascending order
                                     }
-                                    location = SCIPCMIDList.FindIndex(x => x == IDByte); // now see where this new ID-byte ends up after sorting
-                                    if (SCIPCMIDList.Count == 1)
+
+                                    location = SCIBusPCMIDList.FindIndex(x => x == IDByte); // now see where this new ID-byte ends up after sorting
+
+                                    if (SCIBusPCMIDList.Count == 1)
                                     {
                                         DiagnosticsTable.RemoveAt(SCIBusPCMListStart);
                                         DiagnosticsTable.Insert(SCIBusPCMListStart, scipcmlistitem.ToString());
@@ -1964,7 +1985,7 @@ namespace ChryslerCCDSCIScanner
                                 }
                                 else // if this ID-byte is already displayed
                                 {
-                                    location = SCIPCMIDList.FindIndex(x => x == IDByte);
+                                    location = SCIBusPCMIDList.FindIndex(x => x == IDByte);
                                     DiagnosticsTable.RemoveAt(SCIBusPCMListStart + location);
                                     DiagnosticsTable.Insert(SCIBusPCMListStart + location, scipcmlistitem.ToString());
                                 }
@@ -2011,16 +2032,16 @@ namespace ChryslerCCDSCIScanner
                                 scitcmlistitem.Insert(2, scitcmmsgtoinsert); // insert message where whitespaces were
 
                                 // Now decide where to put this message in reality
-                                if (!SCITCMIDList.Contains(IDByte)) // if this ID-byte is not on the list
+                                if (!SCIBusTCMIDList.Contains(IDByte)) // if this ID-byte is not on the list
                                 {
                                     SCIBusTCMIDByteNum++;
-                                    SCITCMIDList.Add(IDByte); // add ID-byte to the list
+                                    SCIBusTCMIDList.Add(IDByte); // add ID-byte to the list
                                     if (IDSorting)
                                     {
-                                        SCITCMIDList.Sort(); // sort ID-bytes by ascending order
+                                        SCIBusTCMIDList.Sort(); // sort ID-bytes by ascending order
                                     }
-                                    location = SCITCMIDList.FindIndex(x => x == IDByte); // now see where this new ID-byte ends up after sorting
-                                    if (SCITCMIDList.Count == 1)
+                                    location = SCIBusTCMIDList.FindIndex(x => x == IDByte); // now see where this new ID-byte ends up after sorting
+                                    if (SCIBusTCMIDList.Count == 1)
                                     {
                                         DiagnosticsTable.RemoveAt(SCIBusTCMListStart);
                                         DiagnosticsTable.Insert(SCIBusTCMListStart, scitcmlistitem.ToString());
@@ -2033,7 +2054,7 @@ namespace ChryslerCCDSCIScanner
                                 }
                                 else // if this ID-byte is already displayed
                                 {
-                                    location = SCITCMIDList.FindIndex(x => x == IDByte);
+                                    location = SCIBusTCMIDList.FindIndex(x => x == IDByte);
                                     DiagnosticsTable.RemoveAt(SCIBusTCMListStart + location);
                                     DiagnosticsTable.Insert(SCIBusTCMListStart + location, scitcmlistitem.ToString());
                                 }
@@ -2043,15 +2064,15 @@ namespace ChryslerCCDSCIScanner
                             }
                             if (subdatacode == 0x01) // high speed request bytes, just save them
                             {
-                                SCITCMReqMsgList.Clear(); // first clear previous bytes
+                                SCIBusTCMReqMsgList.Clear(); // first clear previous bytes
                                 for (int i = 0; i < tcmmessage.Length; i++)
                                 {
-                                    SCITCMReqMsgList.Add(tcmmessage[i]);
+                                    SCIBusTCMReqMsgList.Add(tcmmessage[i]);
                                 }
                             }
                             else if (subdatacode == 0x02) // high speed response bytes, mix them with saved request bytes
                             {
-                                byte[] requestbytes = SCITCMReqMsgList.ToArray();
+                                byte[] requestbytes = SCIBusTCMReqMsgList.ToArray();
                                 List<byte> temp = new List<byte>(512);
                                 byte[] tcmmessagemix;
                                 temp.Add(tcmmessage[0]); // first byte is always the memory area byte
@@ -2076,16 +2097,16 @@ namespace ChryslerCCDSCIScanner
                                 scitcmlistitem.Insert(2, scitcmmsgtoinsert); // insert message where whitespaces were
 
                                 // Now decide where to put this message in reality
-                                if (!SCITCMIDList.Contains(IDByte)) // if this ID-byte is not on the list
+                                if (!SCIBusTCMIDList.Contains(IDByte)) // if this ID-byte is not on the list
                                 {
                                     SCIBusTCMIDByteNum++;
-                                    SCITCMIDList.Add(IDByte); // add ID-byte to the list
+                                    SCIBusTCMIDList.Add(IDByte); // add ID-byte to the list
                                     if (IDSorting)
                                     {
-                                        SCITCMIDList.Sort(); // sort ID-bytes by ascending order
+                                        SCIBusTCMIDList.Sort(); // sort ID-bytes by ascending order
                                     }
-                                    location = SCITCMIDList.FindIndex(x => x == IDByte); // now see where this new ID-byte ends up after sorting
-                                    if (SCITCMIDList.Count == 1)
+                                    location = SCIBusTCMIDList.FindIndex(x => x == IDByte); // now see where this new ID-byte ends up after sorting
+                                    if (SCIBusTCMIDList.Count == 1)
                                     {
                                         DiagnosticsTable.RemoveAt(SCIBusTCMListStart);
                                         DiagnosticsTable.Insert(SCIBusTCMListStart, scitcmlistitem.ToString());
@@ -2098,7 +2119,7 @@ namespace ChryslerCCDSCIScanner
                                 }
                                 else // if this ID-byte is already displayed
                                 {
-                                    location = SCITCMIDList.FindIndex(x => x == IDByte);
+                                    location = SCIBusTCMIDList.FindIndex(x => x == IDByte);
                                     DiagnosticsTable.RemoveAt(SCIBusTCMListStart + location);
                                     DiagnosticsTable.Insert(SCIBusTCMListStart + location, scitcmlistitem.ToString());
                                 }
@@ -2233,14 +2254,14 @@ namespace ChryslerCCDSCIScanner
             SCIBusPCMIDByteNum = 0;
             SCIBusTCMIDByteNum = 0;
 
-            CCDMsgList.Clear();
-            SCIPCMMsgList.Clear();
-            SCIPCMReqMsgList.Clear();
-            SCITCMMsgList.Clear();
-            SCITCMReqMsgList.Clear();
-            CCDIDList.Clear();
-            SCIPCMIDList.Clear();
-            SCITCMIDList.Clear();
+            CCDbusMsgList.Clear();
+            SCIBusPCMMsgList.Clear();
+            SCIBusPCMReqMsgList.Clear();
+            SCIBusTCMMsgList.Clear();
+            SCIBusTCMReqMsgList.Clear();
+            CCDBusIDList.Clear();
+            SCIBusPCMIDList.Clear();
+            SCIBusTCMIDList.Clear();
         }
 
         private void USBClearAllButton_Click(object sender, EventArgs e)

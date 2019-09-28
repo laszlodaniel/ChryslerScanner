@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D8DDBC5
+#define FW_DATE 0x000000005D8F31DC
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -272,7 +272,7 @@ volatile uint32_t ccd_msg_tx_count = 0; // for statistical purposes
 volatile uint8_t ccd_bytes_count = 0; // how long is the current CCD-bus message
 volatile uint8_t ccd_msg_in_buffer = 0;
 bool ccd_msg_pending = false; // flag for custom ccd-bus message transmission
-uint8_t ccd_msg_to_send[32]; // custom ccd-bus message is copied here
+uint8_t ccd_msg_to_send[CCD_RX1_BUFFER_SIZE]; // custom ccd-bus message is copied here
 uint8_t ccd_msg_to_send_ptr = 0; // custom ccd-bus message length
 bool generate_random_ccd_msgs = false;
 uint16_t random_ccd_msg_interval = 0; // ms
@@ -292,26 +292,28 @@ bool pcm_echo_accepted = false;
 bool tcm_echo_accepted = false;
 uint8_t current_sci_bus_settings[1] = { 0xC8 }; // default settings: SCI-bus PCM "A" configuration, 7812.5 baud, TCM disabled
 
-uint8_t pcm_bytes_buffer[128]; // received SCI-bus message from the PCM is temporary stored here
+uint8_t pcm_bytes_buffer[PCM_RX2_BUFFER_SIZE]; // received SCI-bus message from the PCM is temporary stored here
 uint8_t pcm_bytes_buffer_ptr = 0; // pointer in the previous array
 bool pcm_msg_pending = false; // flag for custom sci-bus message
-uint8_t pcm_msg_to_send[128]; // custom sci-bus message is copied here
+uint8_t pcm_msg_to_send[PCM_RX2_BUFFER_SIZE]; // custom sci-bus message is copied here
 uint8_t pcm_msg_to_send_ptr = 0;  // custom sci-bus message length
 uint32_t pcm_last_msgbyte_received = 0; // time in milliseconds
 uint8_t pcm_repeated_msg_count = 0; // how many messages are stacked after each other
 uint8_t pcm_repeated_msg_ptr = 0; // which message is being sent
-uint8_t pcm_repeated_msg_bytes[128]; // buffer to store all repeated message bytes
+uint8_t pcm_repeated_msg_bytes[PCM_RX2_BUFFER_SIZE]; // buffer to store all repeated message bytes
 uint8_t pcm_repeated_msg_bytes_ptr = 0; // where are we right now in this buffer
 bool pcm_repeated_messages = false;
+bool pcm_actuator_test_running = false;
 uint32_t pcm_msg_rx_count = 0;
 uint32_t pcm_msg_tx_count = 0;
 
-uint8_t tcm_bytes_buffer[128]; // received SCI-bus message from the TCM is temporary stored here
+uint8_t tcm_bytes_buffer[TCM_RX3_BUFFER_SIZE]; // received SCI-bus message from the TCM is temporary stored here
 uint8_t tcm_bytes_buffer_ptr = 0; // pointer in the previous array
 bool tcm_msg_pending = false; // flag for custom sci-bus message
-uint8_t tcm_msg_to_send[128]; // custom sci-bus message is copied here
+uint8_t tcm_msg_to_send[TCM_RX3_BUFFER_SIZE]; // custom sci-bus message is copied here
 uint8_t tcm_msg_to_send_ptr = 0; // custom sci-bus message length
 uint32_t tcm_last_msgbyte_received = 0; // time in milliseconds
+bool tcm_actuator_test_running = false;
 uint32_t tcm_msg_rx_count = 0;
 uint32_t tcm_msg_tx_count = 0;
 
@@ -4413,6 +4415,7 @@ void handle_ccd_data(void)
             {
                 uint8_t usb_msg[4+ccd_bytes_count]; // create local array which will hold the timestamp and the CCD-bus message
                 update_timestamp(current_timestamp); // get current time for the timestamp
+                
                 for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
                 {
                     usb_msg[i] = current_timestamp[i];
@@ -4421,9 +4424,12 @@ void handle_ccd_data(void)
                 {
                     usb_msg[4+i] = ccd_getc() & 0xFF; // new message bytes may arrive in the circular buffer but this way only one message is removed
                 }
+                
                 // TODO: check here if echo is expected from a pending message, otherwise good to know if a custom message is heard by the other modules
                 send_usb_packet(from_ccd, to_usb, msg_rx, single_msg, usb_msg, 4+ccd_bytes_count); // send CCD-bus message back to the laptop
-                handle_lcd(from_ccd, usb_msg, 4, 4+ccd_bytes_count); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                
+                //handle_lcd(from_ccd, usb_msg, 4, 4+ccd_bytes_count); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                
                 ccd_bytes_count = 0; // force ISR to update this value again so we don't end up here in the next program loop
                 ccd_msg_in_buffer = 0;
                 ccd_msg_rx_count++;
@@ -4464,7 +4470,6 @@ void handle_ccd_data(void)
                 ccd_msg_pending = false; // re-arm, make it possible to send a message again, TODO: same as above
                 ccd_msg_tx_count++;
             }
-            //ccd_idle = false; // re-arm so the next program loop doesn't enter here again unless the ISR changes this variable to true
         }
     }
     else // monitor ccd-bus receive buffer for garbage bytes when clock signal is suspended and purge if necessary
@@ -4557,38 +4562,106 @@ void handle_sci_data(void)
 {
     if (sci_enabled)
     {
+        uint32_t timeout_start = 0;
+        bool timeout_reached = false;
+        
         if (pcm_enabled)
         {
-            uint32_t timeout_start = 0;
-            bool timeout_reached = false;
-            
             // Collect bytes from the receive buffer
             uint8_t datalength = pcm_rx_available(); // get current number of bytes available to read
             if (datalength > 0)
             {
                 for (uint8_t i = 0; i < datalength; i++)
                 {
-                    pcm_last_msgbyte_received = millis();
                     pcm_bytes_buffer[pcm_bytes_buffer_ptr] = pcm_getc() & 0xFF;
                     pcm_bytes_buffer_ptr++; // increase pointer value by one so it points to the next empty slot in the buffer
-                    if (pcm_bytes_buffer_ptr > 255) // don't let buffer pointer overflow
+                    if (pcm_bytes_buffer_ptr > PCM_RX2_BUFFER_SIZE) // don't let buffer pointer overflow
                     {
-                        pcm_bytes_buffer_ptr = 255;
+                        pcm_bytes_buffer_ptr = PCM_RX2_BUFFER_SIZE;
                         break; // exit for-loop if buffer is about to overflow
                     }
                 }
+                pcm_last_msgbyte_received = millis(); // save time
             }
 
             // Decide if a message is complete using a timeout (delay) condition or send the whole buffer if it can't hold more bytes
-            if ((((millis() - pcm_last_msgbyte_received) > SCI_LS_T3_DELAY) && (pcm_bytes_buffer_ptr > 0)) || (pcm_bytes_buffer_ptr == 255))
+            if ((((millis() - pcm_last_msgbyte_received) > SCI_LS_T3_DELAY) && (pcm_bytes_buffer_ptr > 0)) || (pcm_bytes_buffer_ptr == PCM_RX2_BUFFER_SIZE))
             {
-                uint8_t usb_msg[4+pcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
-                update_timestamp(current_timestamp); // get current time for the timestamp
-
-                // If high-speed mode is enabled then the original request bytes are not echoed back by the PCM
-                // Workaround: send the original request message with the same timestamp first, then the responses
-                if (pcm_high_speed_enabled)
+                if (!pcm_high_speed_enabled) // handle low-speed mode first
                 {
+                    if (!pcm_actuator_test_running)
+                    {
+                        uint8_t usb_msg[4+pcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
+                        update_timestamp(current_timestamp); // get current time for the timestamp
+                        
+                        for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+                        {
+                            usb_msg[i] = current_timestamp[i];
+                        }
+                        for (uint8_t i = 0; i < pcm_bytes_buffer_ptr; i++) // put every byte in the SCI-bus message after the timestamp
+                        {
+                            usb_msg[4+i] = pcm_bytes_buffer[i];
+                        }
+    
+                        if ((pcm_bytes_buffer[0] == 0x13) && (pcm_bytes_buffer[1] != 0x00))
+                        {
+                            pcm_actuator_test_running = true;
+                        }
+
+                        send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 4+pcm_bytes_buffer_ptr);
+                        
+                        if (pcm_bytes_buffer[0] == 0x12) // pay attention to special bytes (speed change)
+                        {
+                            sbi(current_sci_bus_settings[0], 7); // set change settings bit
+                            sbi(current_sci_bus_settings[0], 6); // set enable bit
+                            sbi(current_sci_bus_settings[0], 4); // set speed bit (62500 baud)
+                            configure_sci_bus(current_sci_bus_settings[0]);
+                        }
+                    }
+                    else
+                    {
+                        if ((pcm_bytes_buffer[0] == 0x13) && (pcm_bytes_buffer[1] == 0x00) && (pcm_bytes_buffer[2] == 0x00))
+                        {
+                            uint8_t usb_msg[4+pcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
+                            update_timestamp(current_timestamp); // get current time for the timestamp
+                            pcm_actuator_test_running = false;
+    
+                            for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+                            {
+                                usb_msg[i] = current_timestamp[i];
+                            }
+                            for (uint8_t i = 0; i < pcm_bytes_buffer_ptr; i++) // put every byte in the SCI-bus message after the timestamp
+                            {
+                                usb_msg[4+i] = pcm_bytes_buffer[i];
+                            }
+    
+                            send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 4+pcm_bytes_buffer_ptr);
+                        }
+                        else
+                        {
+                            uint8_t usb_msg[5+pcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
+                            update_timestamp(current_timestamp); // get current time for the timestamp
+                            
+                            for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+                            {
+                                usb_msg[i] = current_timestamp[i];
+                            }
+                            for (uint8_t i = 0; i < pcm_bytes_buffer_ptr; i++) // put every byte in the SCI-bus message after the timestamp
+                            {
+                                usb_msg[4] = 0x13;
+                                usb_msg[5+i] = pcm_bytes_buffer[i];
+                            }
+    
+                            send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 5+pcm_bytes_buffer_ptr);
+                        }
+                    }
+                }
+                else // handle high-speed mode
+                {
+                    uint8_t usb_msg[4+pcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
+                    update_timestamp(current_timestamp); // get current time for the timestamp
+                    
+                    // Send the request bytes first
                     for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
                     {
                         usb_msg[i] = current_timestamp[i];
@@ -4598,36 +4671,18 @@ void handle_sci_data(void)
                         usb_msg[4+i] = pcm_msg_to_send[i];
                     }
                     send_usb_packet(from_pcm, to_usb, msg_rx, sci_hs_request_bytes, usb_msg, 4+pcm_bytes_buffer_ptr);
-                }
 
-                // Send reponse bytes
-                for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
-                {
-                    usb_msg[i] = current_timestamp[i];
-                }
-                for (uint8_t i = 0; i < pcm_bytes_buffer_ptr; i++) // put every byte in the SCI-bus message after the timestamp
-                {
-                    usb_msg[4+i] = pcm_bytes_buffer[i];
-                }
-                
-                if (pcm_high_speed_enabled) send_usb_packet(from_pcm, to_usb, msg_rx, sci_hs_response_bytes, usb_msg, 4+pcm_bytes_buffer_ptr);
-                else send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 4+pcm_bytes_buffer_ptr);
-                
-                handle_lcd(from_pcm, usb_msg, 4, 4+pcm_bytes_buffer_ptr); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
-
-                // Take action if special bytes are received
-                if (!pcm_high_speed_enabled) // low speed mode
-                {
-                    if (pcm_bytes_buffer[0] == 0x12)
+                    // Then send the response bytes
+                    for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
                     {
-                        sbi(current_sci_bus_settings[0], 7); // set change settings bit
-                        sbi(current_sci_bus_settings[0], 6); // set enable bit
-                        sbi(current_sci_bus_settings[0], 4); // set speed bit (62500 baud)
-                        configure_sci_bus(current_sci_bus_settings[0]);
+                        usb_msg[i] = current_timestamp[i];
                     }
-                }
-                else // high speed mode
-                {
+                    for (uint8_t i = 0; i < pcm_bytes_buffer_ptr; i++) // put every byte in the SCI-bus message after the timestamp
+                    {
+                        usb_msg[4+i] = pcm_bytes_buffer[i];
+                    }
+                    send_usb_packet(from_pcm, to_usb, msg_rx, sci_hs_response_bytes, usb_msg, 4+pcm_bytes_buffer_ptr);
+
                     if (pcm_bytes_buffer[0] == 0xFE)
                     {
                         sbi(current_sci_bus_settings[0], 7); // set change settings bit
@@ -4637,6 +4692,8 @@ void handle_sci_data(void)
                     }
                 }
                 
+                //handle_lcd(from_pcm, usb_msg, 4, 4+pcm_bytes_buffer_ptr); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+
                 pcm_bytes_buffer_ptr = 0;
                 pcm_msg_rx_count++;
             }
@@ -4661,6 +4718,7 @@ void handle_sci_data(void)
                             break;
                         }
                     }
+
                     pcm_msg_to_send_ptr = 0; // reset pointer
                     pcm_msg_pending = false; // re-arm, make it possible to send a message again
                 }
@@ -4724,36 +4782,101 @@ void handle_sci_data(void)
         
         if (tcm_enabled)
         {
-            uint32_t timeout_start = 0;
-            bool timeout_reached = false;
-            
             // Collect bytes from the receive buffer
             uint8_t datalength = tcm_rx_available(); // get current number of bytes available to read
             if (datalength > 0)
             {
                 for (uint8_t i = 0; i < datalength; i++)
                 {
-                    tcm_last_msgbyte_received = millis();
                     tcm_bytes_buffer[tcm_bytes_buffer_ptr] = tcm_getc() & 0xFF;
                     tcm_bytes_buffer_ptr++; // increase pointer value by one so it points to the next empty slot in the buffer
-                    if (tcm_bytes_buffer_ptr > 255) // don't let buffer pointer overflow
+                    if (tcm_bytes_buffer_ptr > TCM_RX3_BUFFER_SIZE) // don't let buffer pointer overflow
                     {
-                        tcm_bytes_buffer_ptr = 255;
+                        tcm_bytes_buffer_ptr = TCM_RX3_BUFFER_SIZE;
                         break; // exit for-loop if buffer is about to overflow
                     }
                 }
+                tcm_last_msgbyte_received = millis(); // save time
             }
 
             // Decide if a message is complete using a timeout (delay) condition or send the whole buffer if it can't hold more bytes
-            if ((((millis() - tcm_last_msgbyte_received) > SCI_LS_T3_DELAY) && (tcm_bytes_buffer_ptr > 0)) || (tcm_bytes_buffer_ptr == 255))
+            if ((((millis() - tcm_last_msgbyte_received) > SCI_LS_T3_DELAY) && (tcm_bytes_buffer_ptr > 0)) || (tcm_bytes_buffer_ptr == TCM_RX3_BUFFER_SIZE))
             {
-                uint8_t usb_msg[4+tcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (TCM) message
-                update_timestamp(current_timestamp); // get current time for the timestamp
-                
-                // If high-speed mode is enabled then the original request bytes are not echoed back by the TCM
-                // Workaround: send the original request message with the same timestamp first, then the responses
-                if (tcm_high_speed_enabled)
+                if (!tcm_high_speed_enabled) // handle low-speed mode first
                 {
+                    if (!tcm_actuator_test_running)
+                    {
+                        uint8_t usb_msg[4+tcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (tcm) message
+                        update_timestamp(current_timestamp); // get current time for the timestamp
+                        
+                        for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+                        {
+                            usb_msg[i] = current_timestamp[i];
+                        }
+                        for (uint8_t i = 0; i < tcm_bytes_buffer_ptr; i++) // put every byte in the SCI-bus message after the timestamp
+                        {
+                            usb_msg[4+i] = tcm_bytes_buffer[i];
+                        }
+    
+                        if ((tcm_bytes_buffer[0] == 0x13) && (tcm_bytes_buffer[1] != 0x00))
+                        {
+                            tcm_actuator_test_running = true;
+                        }
+
+                        send_usb_packet(from_tcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 4+tcm_bytes_buffer_ptr);
+                        
+                        if (tcm_bytes_buffer[0] == 0x12) // pay attention to special bytes (speed change)
+                        {
+                            sbi(current_sci_bus_settings[0], 7); // set change settings bit
+                            sbi(current_sci_bus_settings[0], 6); // set enable bit
+                            sbi(current_sci_bus_settings[0], 4); // set speed bit (62500 baud)
+                            configure_sci_bus(current_sci_bus_settings[0]);
+                        }
+                    }
+                    else
+                    {
+                        if ((tcm_bytes_buffer[0] == 0x13) && (tcm_bytes_buffer[1] == 0x00) && (tcm_bytes_buffer[2] == 0x00))
+                        {
+                            uint8_t usb_msg[4+tcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (TCM) message
+                            update_timestamp(current_timestamp); // get current time for the timestamp
+                            tcm_actuator_test_running = false;
+    
+                            for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+                            {
+                                usb_msg[i] = current_timestamp[i];
+                            }
+                            for (uint8_t i = 0; i < tcm_bytes_buffer_ptr; i++) // put every byte in the SCI-bus message after the timestamp
+                            {
+                                usb_msg[4+i] = tcm_bytes_buffer[i];
+                            }
+    
+                            send_usb_packet(from_tcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 4+tcm_bytes_buffer_ptr);
+                        }
+                        else
+                        {
+                            uint8_t usb_msg[5+tcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (TCM) message
+                            update_timestamp(current_timestamp); // get current time for the timestamp
+                            
+                            for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+                            {
+                                usb_msg[i] = current_timestamp[i];
+                            }
+                            for (uint8_t i = 0; i < tcm_bytes_buffer_ptr; i++) // put every byte in the SCI-bus message after the timestamp
+                            {
+                                usb_msg[4] = 0x13;
+                                usb_msg[5+i] = tcm_bytes_buffer[i];
+                            }
+    
+                            send_usb_packet(from_tcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 5+tcm_bytes_buffer_ptr);
+                        }
+                    }
+                }
+                else // handle high-speed mode
+                {
+                    uint8_t usb_msg[4+tcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (TCM) message
+                    update_timestamp(current_timestamp); // get current time for the timestamp
+                    
+                    // Send the request bytes first
                     for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
                     {
                         usb_msg[i] = current_timestamp[i];
@@ -4763,45 +4886,29 @@ void handle_sci_data(void)
                         usb_msg[4+i] = tcm_msg_to_send[i];
                     }
                     send_usb_packet(from_tcm, to_usb, msg_rx, sci_hs_request_bytes, usb_msg, 4+tcm_bytes_buffer_ptr);
-                }
 
-                // Send response bytes
-                for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
-                {
-                    usb_msg[i] = current_timestamp[i];
-                }
-                for (uint8_t i = 0; i < tcm_bytes_buffer_ptr; i++) // put every byte in the SCI-bus message after the timestamp
-                {
-                    usb_msg[4+i] = tcm_bytes_buffer[i];
-                }
-                
-                if (tcm_high_speed_enabled) send_usb_packet(from_tcm, to_usb, msg_rx, sci_hs_response_bytes, usb_msg, 4+tcm_bytes_buffer_ptr);
-                else send_usb_packet(from_tcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 4+tcm_bytes_buffer_ptr);
-                
-                handle_lcd(from_tcm, usb_msg, 4, 4+tcm_bytes_buffer_ptr); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
-
-                // Take action if special bytes are received
-                if (!tcm_high_speed_enabled) // low speed mode
-                {
-                    if (tcm_bytes_buffer[0] == 0x12)
+                    // Then send the response bytes
+                    for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
                     {
-                        sbi(current_sci_bus_settings[0], 3); // set change settings bit
-                        sbi(current_sci_bus_settings[0], 2); // set enable bit
-                        sbi(current_sci_bus_settings[0], 0); // set speed bit (62500 baud)
-                        configure_sci_bus(current_sci_bus_settings[0]);
+                        usb_msg[i] = current_timestamp[i];
                     }
-                }
-                else // high speed mode
-                {
+                    for (uint8_t i = 0; i < tcm_bytes_buffer_ptr; i++) // put every byte in the SCI-bus message after the timestamp
+                    {
+                        usb_msg[4+i] = tcm_bytes_buffer[i];
+                    }
+                    send_usb_packet(from_tcm, to_usb, msg_rx, sci_hs_response_bytes, usb_msg, 4+tcm_bytes_buffer_ptr);
+
                     if (tcm_bytes_buffer[0] == 0xFE)
                     {
-                        sbi(current_sci_bus_settings[0], 3); // set change settings bit
-                        sbi(current_sci_bus_settings[0], 2); // set enable bit
-                        cbi(current_sci_bus_settings[0], 0); // clear speed bit (7812.5 baud)
+                        sbi(current_sci_bus_settings[0], 7); // set change settings bit
+                        sbi(current_sci_bus_settings[0], 6); // set enable bit
+                        cbi(current_sci_bus_settings[0], 4); // clear speed bit (7812.5 baud)
                         configure_sci_bus(current_sci_bus_settings[0]);
                     }
                 }
                 
+                //handle_lcd(from_tcm, usb_msg, 4, 4+tcm_bytes_buffer_ptr); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+
                 tcm_bytes_buffer_ptr = 0;
                 tcm_msg_rx_count++;
             }
@@ -4826,6 +4933,7 @@ void handle_sci_data(void)
                             break;
                         }
                     }
+
                     tcm_msg_to_send_ptr = 0; // reset pointer
                     tcm_msg_pending = false; // re-arm, make it possible to send a message again
                 }
