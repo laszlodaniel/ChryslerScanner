@@ -1630,6 +1630,11 @@ namespace ChryslerCCDSCIScanner
                                                     scipcmvaluetoinsert = "RUNNING";
                                                     scipcmunittoinsert = String.Empty;
                                                     break;
+                                                default:
+                                                    scipcmdescriptiontoinsert = "ENGAGE ACTUATOR TEST";
+                                                    scipcmvaluetoinsert = String.Empty;
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
                                             }
 
                                             scipcmunittoinsert = String.Empty;
@@ -1648,10 +1653,15 @@ namespace ChryslerCCDSCIScanner
                                             {
                                                 case 0x05: // coolant temperature
                                                     scipcmdescriptiontoinsert = "ENGINE COOLANT TEMPERATURE";
+                                                    scipcmvaluetoinsert = String.Empty;
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                default:
+                                                    scipcmdescriptiontoinsert = "REQUEST DIAGNOSTIC DATA";
+                                                    scipcmvaluetoinsert = String.Empty;
+                                                    scipcmunittoinsert = String.Empty;
                                                     break;
                                             }
-
-                                            scipcmunittoinsert = String.Empty;
                                         }
                                         else
                                         {
@@ -1661,9 +1671,19 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         break;
                                     case 0x15:
-                                        scipcmdescriptiontoinsert = "REQUEST MEMORY DATA";
-                                        scipcmvaluetoinsert = String.Empty;
-                                        scipcmunittoinsert = String.Empty;
+                                        if (pcmmessage.Length > 3)
+                                        {
+                                            scipcmdescriptiontoinsert = "REQUEST MEMORY DATA: ";
+                                            scipcmdescriptiontoinsert += Util.ByteToHexString(pcmmessage, 1, 3);
+                                            scipcmvaluetoinsert = Util.ByteToHexString(pcmmessage, 3, 4);
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        else
+                                        {
+                                            scipcmdescriptiontoinsert = "REQUEST MEMORY DATA";
+                                            scipcmvaluetoinsert = "2 ADDR. BYTES REQUIRED";
+                                            scipcmunittoinsert = String.Empty;
+                                        }
                                         break;
                                     case 0x16:
                                         scipcmdescriptiontoinsert = "REQUEST ECU ID";
@@ -1677,13 +1697,15 @@ namespace ChryslerCCDSCIScanner
                                             {
                                                 case 0xE0:
                                                     scipcmdescriptiontoinsert = "ENGINE FAULT CODES ERASED SUCCESSFULLY";
+                                                    scipcmvaluetoinsert = String.Empty;
+                                                    scipcmunittoinsert = String.Empty;
                                                     break;
                                                 default:
                                                     scipcmdescriptiontoinsert = "ENGINE FAULT CODE ERASE ERROR";
+                                                    scipcmvaluetoinsert = String.Empty;
+                                                    scipcmunittoinsert = String.Empty;
                                                     break;
                                             }
-                                            scipcmvaluetoinsert = String.Empty;
-                                            scipcmunittoinsert = String.Empty;
                                         }
                                         else
                                         {
