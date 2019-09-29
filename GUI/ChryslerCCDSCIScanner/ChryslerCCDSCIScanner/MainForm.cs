@@ -2129,7 +2129,7 @@ namespace ChryslerCCDSCIScanner
                                             scipcmunittoinsert = String.Empty;
                                         }
                                         break;
-                                    case 0x27: // Read flash memory
+                                    case 0x27: // Write flash memory
                                         if (pcmmessage.Length > 4)
                                         {
                                             scipcmdescriptiontoinsert = "WRITE FLASH MEMORY: ";
@@ -2139,7 +2139,7 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         else
                                         {
-                                            scipcmdescriptiontoinsert = "READ FLASH MEMORY";
+                                            scipcmdescriptiontoinsert = "WRITE FLASH MEMORY";
                                             scipcmvaluetoinsert = "3 ADDR. BYTES REQUIRED";
                                             scipcmunittoinsert = String.Empty;
                                         }
