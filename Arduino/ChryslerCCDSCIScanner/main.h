@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D8F31DC
+#define FW_DATE 0x000000005D90D2AF
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -304,6 +304,9 @@ uint8_t pcm_repeated_msg_bytes[PCM_RX2_BUFFER_SIZE]; // buffer to store all repe
 uint8_t pcm_repeated_msg_bytes_ptr = 0; // where are we right now in this buffer
 bool pcm_repeated_messages = false;
 bool pcm_actuator_test_running = false;
+uint8_t pcm_actuator_test_byte = 0;
+bool pcm_ls_request_running = false;
+uint8_t pcm_ls_request_byte = 0;
 uint32_t pcm_msg_rx_count = 0;
 uint32_t pcm_msg_tx_count = 0;
 
@@ -4589,7 +4592,7 @@ void handle_sci_data(void)
             {
                 if (!pcm_high_speed_enabled) // handle low-speed mode first
                 {
-                    if (!pcm_actuator_test_running)
+                    if (!pcm_actuator_test_running && !pcm_ls_request_running) // send message back to laptop normally
                     {
                         uint8_t usb_msg[4+pcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
                         update_timestamp(current_timestamp); // get current time for the timestamp
@@ -4606,6 +4609,13 @@ void handle_sci_data(void)
                         if ((pcm_bytes_buffer[0] == 0x13) && (pcm_bytes_buffer[1] != 0x00))
                         {
                             pcm_actuator_test_running = true;
+                            pcm_actuator_test_byte = pcm_bytes_buffer[1];
+                        }
+
+                        if ((pcm_bytes_buffer[0] == 0x2A) && (pcm_bytes_buffer[1] != 0x00))
+                        {
+                            pcm_ls_request_running = true;
+                            pcm_ls_request_byte = pcm_bytes_buffer[1];
                         }
 
                         send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 4+pcm_bytes_buffer_ptr);
@@ -4618,13 +4628,15 @@ void handle_sci_data(void)
                             configure_sci_bus(current_sci_bus_settings[0]);
                         }
                     }
-                    else
+                    else // actuator tests and certain request modes have to be handled differently; once a mode is activated the PCM sends its ID-byte continuosly without asking
                     {
+                        // Stop actuator test command is accepted
                         if ((pcm_bytes_buffer[0] == 0x13) && (pcm_bytes_buffer[1] == 0x00) && (pcm_bytes_buffer[2] == 0x00))
                         {
                             uint8_t usb_msg[4+pcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
                             update_timestamp(current_timestamp); // get current time for the timestamp
                             pcm_actuator_test_running = false;
+                            pcm_actuator_test_byte = 0;
     
                             for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
                             {
@@ -4637,22 +4649,49 @@ void handle_sci_data(void)
     
                             send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 4+pcm_bytes_buffer_ptr);
                         }
-                        else
+                        // Stop broadcasting request bytes command is accepted
+                        else if ((pcm_bytes_buffer[0] == 0x2A) && (pcm_bytes_buffer[1] == 0x00) && (pcm_bytes_buffer[2] == 0x00))
                         {
-                            uint8_t usb_msg[5+pcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
+                            uint8_t usb_msg[4+pcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
                             update_timestamp(current_timestamp); // get current time for the timestamp
-                            
+                            pcm_ls_request_running = false;
+                            pcm_ls_request_byte = 0;
+    
                             for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
                             {
                                 usb_msg[i] = current_timestamp[i];
                             }
                             for (uint8_t i = 0; i < pcm_bytes_buffer_ptr; i++) // put every byte in the SCI-bus message after the timestamp
                             {
-                                usb_msg[4] = 0x13;
-                                usb_msg[5+i] = pcm_bytes_buffer[i];
+                                usb_msg[4+i] = pcm_bytes_buffer[i];
                             }
     
-                            send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 5+pcm_bytes_buffer_ptr);
+                            send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 4+pcm_bytes_buffer_ptr);
+                        }
+                        else // only ID-bytes are received, the beginning of the messages must be supplemented so that the GUI understands what it is about
+                        {
+                            uint8_t usb_msg[7]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
+                            update_timestamp(current_timestamp); // get current time for the timestamp
+                            
+                            for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+                            {
+                                usb_msg[i] = current_timestamp[i];
+                            }
+
+                            if (pcm_actuator_test_running) // if the actuator test mode is active then put two bytes before the received byte
+                            {
+                                usb_msg[4] = 0x13;
+                                usb_msg[5] = pcm_actuator_test_byte;
+                            }
+                            
+                            if (pcm_ls_request_running) // if the request mode is active then put two bytes before the received byte; this is kind of annying, why isn't one time response enough... there's nothing "running" like in the case of actuator tests
+                            {
+                                usb_msg[4] = 0x2A;
+                                usb_msg[5] = pcm_ls_request_byte;
+                            }
+                            
+                            usb_msg[6] = pcm_bytes_buffer[0];
+                            send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 7); // the message length is fixed by the nature of the active commands
                         }
                     }
                 }
@@ -4660,7 +4699,7 @@ void handle_sci_data(void)
                 {
                     uint8_t usb_msg[4+pcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
                     update_timestamp(current_timestamp); // get current time for the timestamp
-                    
+
                     // Send the request bytes first
                     for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
                     {

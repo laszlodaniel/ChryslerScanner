@@ -116,8 +116,8 @@ namespace ChryslerCCDSCIScanner
 
 
         public static string UpdatePort = String.Empty;
-        public static Int64 OldUNIXTime = 0;
-        public static Int64 NewUNIXTime = 0;
+        public static UInt64 OldUNIXTime = 0;
+        public static UInt64 NewUNIXTime = 0;
 
 
         byte LastTargetIndex = 0; // Scanner
@@ -624,7 +624,7 @@ namespace ChryslerCCDSCIScanner
                                     DateTime HardwareDate = Util.UnixTimeStampToDateTime(payload[5] << 56 | payload[6] << 48 | payload[7] << 40 | payload[8] << 32 | payload[9] << 24 | payload[10] << 16 | payload[11] << 8 | payload[12]);
                                     DateTime AssemblyDate = Util.UnixTimeStampToDateTime(payload[13] << 56 | payload[14] << 48 | payload[15] << 40 | payload[16] << 32 | payload[17] << 24 | payload[18] << 16 | payload[19] << 8 | payload[20]);
                                     DateTime FirmwareDate = Util.UnixTimeStampToDateTime(payload[21] << 56 | payload[22] << 48 | payload[23] << 40 | payload[24] << 32 | payload[25] << 24 | payload[26] << 16 | payload[27] << 8 | payload[28]);
-                                    OldUNIXTime = payload[21] << 56 | payload[22] << 48 | payload[23] << 40 | payload[24] << 32 | payload[25] << 24 | payload[26] << 16 | payload[27] << 8 | payload[28];
+                                    OldUNIXTime = (UInt64)(payload[21] << 56 | payload[22] << 48 | payload[23] << 40 | payload[24] << 32 | payload[25] << 24 | payload[26] << 16 | payload[27] << 8 | payload[28]);
                                     string HardwareDateString = HardwareDate.ToString("yyyy.MM.dd HH:mm:ss");
                                     string AssemblyDateString = AssemblyDate.ToString("yyyy.MM.dd HH:mm:ss");
                                     string FirmwareDateString = FirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
@@ -961,7 +961,7 @@ namespace ChryslerCCDSCIScanner
                                                                             "       Hardware date: " + _HardwareDateString + Environment.NewLine +
                                                                             "       Assembly date: " + _AssemblyDateString + Environment.NewLine +
                                                                             "       Firmware date: " + _FirmwareDateString, null);
-                                            OldUNIXTime = payload[18] << 56 | payload[19] << 48 | payload[20] << 40 | payload[21] << 32 | payload[22] << 24 | payload[23] << 16 | payload[24] << 8 | payload[25];
+                                            OldUNIXTime = (UInt64)(payload[18] << 56 | payload[19] << 48 | payload[20] << 40 | payload[21] << 32 | payload[22] << 24 | payload[23] << 16 | payload[24] << 8 | payload[25]);
                                             break;
                                         case (byte)Response.Timestamp:
                                             TimeSpan ElapsedTime = TimeSpan.FromMilliseconds(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]);
@@ -1616,13 +1616,13 @@ namespace ChryslerCCDSCIScanner
                                         scipcmunittoinsert = String.Empty;
                                         break;
                                     case 0x13:
-                                        if (pcmmessage.Length > 1)
+                                        if (pcmmessage.Length > 2)
                                         {
-                                            switch (pcmmessage[1])
+                                            switch (pcmmessage[2])
                                             {
                                                 case 0x00:
-                                                    scipcmdescriptiontoinsert = "ACTUATOR TEST STOPPED";
-                                                    scipcmvaluetoinsert = String.Empty;
+                                                    scipcmdescriptiontoinsert = "ENGAGE ACTUATOR TEST";
+                                                    scipcmvaluetoinsert = "STOPPED";
                                                     scipcmunittoinsert = String.Empty;
                                                     break;
                                                 case 0x07:
@@ -1632,7 +1632,7 @@ namespace ChryslerCCDSCIScanner
                                                     break;
                                                 default:
                                                     scipcmdescriptiontoinsert = "ENGAGE ACTUATOR TEST";
-                                                    scipcmvaluetoinsert = String.Empty;
+                                                    scipcmvaluetoinsert = "RUNNING";
                                                     scipcmunittoinsert = String.Empty;
                                                     break;
                                             }
@@ -1696,13 +1696,14 @@ namespace ChryslerCCDSCIScanner
                                             switch (pcmmessage[1])
                                             {
                                                 case 0xE0:
-                                                    scipcmdescriptiontoinsert = "ENGINE FAULT CODES ERASED SUCCESSFULLY";
-                                                    scipcmvaluetoinsert = String.Empty;
+                                                case 0xFF:
+                                                    scipcmdescriptiontoinsert = "ERASE ENGINE FAULT CODES";
+                                                    scipcmvaluetoinsert = "ERASED";
                                                     scipcmunittoinsert = String.Empty;
                                                     break;
                                                 default:
-                                                    scipcmdescriptiontoinsert = "ENGINE FAULT CODE ERASE ERROR";
-                                                    scipcmvaluetoinsert = String.Empty;
+                                                    scipcmdescriptiontoinsert = "ERASE ENGINE FAULT CODES";
+                                                    scipcmvaluetoinsert = "FAILED";
                                                     scipcmunittoinsert = String.Empty;
                                                     break;
                                             }
@@ -1765,9 +1766,14 @@ namespace ChryslerCCDSCIScanner
                                     case 0x1B:
                                         if (pcmmessage.Length > 1)
                                         {
-                                            scipcmdescriptiontoinsert = "INIT BYTE MODE DOWNLOAD";
-                                            scipcmvaluetoinsert = String.Empty;
-                                            scipcmunittoinsert = String.Empty;
+                                            switch (pcmmessage[1])
+                                            {
+                                                default:
+                                                    scipcmdescriptiontoinsert = "INIT BYTE MODE DOWNLOAD";
+                                                    scipcmvaluetoinsert = String.Empty;
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                            }
                                         }
                                         else
                                         {
@@ -1777,15 +1783,333 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         break;
                                     case 0x1C:
-                                        if (pcmmessage.Length > 1)
+                                        if (pcmmessage.Length > 3)
                                         {
-                                            scipcmdescriptiontoinsert = "RESET EMR";
-                                            scipcmvaluetoinsert = String.Empty;
-                                            scipcmunittoinsert = String.Empty;
+                                            switch (pcmmessage[1])
+                                            {
+                                                case 0x10:
+                                                case 0x11:
+                                                    scipcmdescriptiontoinsert = "WRITE MEMORY: RESET EMR";
+                                                    if ((pcmmessage[2] == 0x00) && (pcmmessage[3] == 0xFF))
+                                                    {
+                                                        scipcmvaluetoinsert = "OK";
+                                                    }
+                                                    else
+                                                    {
+                                                        scipcmvaluetoinsert = "ERROR";
+                                                    }
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x1A:
+                                                    if (pcmmessage[2] == 0xFF)
+                                                    {
+                                                        scipcmdescriptiontoinsert = "WRITE MEMORY: ENABLE VARIABLE IDLE";
+
+                                                        if (pcmmessage[3] == 0xFF)
+                                                        {
+                                                            scipcmvaluetoinsert = "OK";
+                                                        }
+                                                        else
+                                                        {
+                                                            scipcmvaluetoinsert = "ERROR";
+                                                        }
+                                                    }
+                                                    else if (pcmmessage[2] == 0x00)
+                                                    {
+                                                        scipcmdescriptiontoinsert = "WRITE MEMORY: DISABLE VARIABLE IDLE";
+
+                                                        if (pcmmessage[3] == 0xFF)
+                                                        {
+                                                            scipcmvaluetoinsert = "OK";
+                                                        }
+                                                        else
+                                                        {
+                                                            scipcmvaluetoinsert = "ERROR";
+                                                        }
+                                                    }
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                default:
+                                                    scipcmdescriptiontoinsert = "WRITE MEMORY - " + "ADDRESS: " + Util.ByteToHexString(pcmmessage, 1, 2) + " VALUE: " + Util.ByteToHexString(pcmmessage, 2, 3);
+                                                    if (pcmmessage[3] == 0xFF)
+                                                    {
+                                                        scipcmvaluetoinsert = "OK";
+                                                    }
+                                                    else
+                                                    {
+                                                        scipcmvaluetoinsert = "ERROR";
+                                                    }
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                            }
                                         }
                                         else
                                         {
-                                            scipcmdescriptiontoinsert = "RESET EMR";
+                                            scipcmdescriptiontoinsert = "WRITE MEMORY";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        break;
+                                    case 0x21:
+                                        scipcmdescriptiontoinsert = "SET SYNC / TIMING / SPARK SCATTER";
+                                        scipcmvaluetoinsert = String.Empty;
+                                        scipcmunittoinsert = String.Empty;
+                                        break;
+                                    case 0x23:
+                                        if (pcmmessage.Length > 2)
+                                        {
+                                            switch (pcmmessage[1])
+                                            {
+                                                case 0x01:
+                                                    scipcmdescriptiontoinsert = "ERASE ENGINE FAULT CODES";
+                                                    if (pcmmessage[2] == 0xFF)
+                                                    {
+                                                        scipcmvaluetoinsert = "ERASED";
+                                                    }
+                                                    else
+                                                    {
+                                                        scipcmvaluetoinsert = "FAILED";
+                                                    }
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x02:
+                                                    scipcmdescriptiontoinsert = "ADAPTIVE";
+                                                    if (pcmmessage[2] != 0x00)
+                                                    {
+                                                        scipcmvaluetoinsert = "ON";
+                                                    }
+                                                    else
+                                                    {
+                                                        scipcmvaluetoinsert = "OFF";
+                                                    }
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x03:
+                                                    scipcmdescriptiontoinsert = "IAC (IDLE AIR CONTROL) COUNTER";
+                                                    if (pcmmessage[2] != 0x00)
+                                                    {
+                                                        scipcmvaluetoinsert = "ON";
+                                                    }
+                                                    else
+                                                    {
+                                                        scipcmvaluetoinsert = "OFF";
+                                                    }
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x04:
+                                                    scipcmdescriptiontoinsert = "MINIMUM TPS (THROTTLE POSITION SENSOR)";
+                                                    if (pcmmessage[2] != 0x00)
+                                                    {
+                                                        scipcmvaluetoinsert = "ON";
+                                                    }
+                                                    else
+                                                    {
+                                                        scipcmvaluetoinsert = "OFF";
+                                                    }
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x05:
+                                                    scipcmdescriptiontoinsert = "FLEX FUEL PERCENT";
+                                                    scipcmvaluetoinsert = pcmmessage[2].ToString("0");
+                                                    scipcmunittoinsert = "%";
+                                                    break;
+                                                case 0x06:
+                                                    scipcmdescriptiontoinsert = "CAM/CRANK & SYNC";
+                                                    if (pcmmessage[2] != 0x00)
+                                                    {
+                                                        scipcmvaluetoinsert = "ON (IN SYNC)";
+                                                    }
+                                                    else
+                                                    {
+                                                        scipcmvaluetoinsert = "OFF (NOT IN SYNC)";
+                                                    }
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x07:
+                                                    scipcmdescriptiontoinsert = "FUEL SHUTOFF";
+                                                    if (pcmmessage[2] != 0x00)
+                                                    {
+                                                        scipcmvaluetoinsert = "ON";
+                                                    }
+                                                    else
+                                                    {
+                                                        scipcmvaluetoinsert = "OFF";
+                                                    }
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x08:
+                                                    scipcmdescriptiontoinsert = "RUNTIME AT STALL";
+                                                    if (pcmmessage[2] != 0x00)
+                                                    {
+                                                        scipcmvaluetoinsert = "ON";
+                                                    }
+                                                    else
+                                                    {
+                                                        scipcmvaluetoinsert = "OFF";
+                                                    }
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x0B:
+                                                    scipcmdescriptiontoinsert = "RESET CAM/CRANK";
+                                                    switch (pcmmessage[2])
+                                                    {
+                                                        case 0x00:
+                                                            scipcmvaluetoinsert = "TURN OFF ENGINE";
+                                                            scipcmunittoinsert = "FAILED";
+                                                            break;
+                                                        case 0x01:
+                                                            scipcmvaluetoinsert = "COMMAND OOR";
+                                                            scipcmunittoinsert = "FAILED";
+                                                            break;
+                                                        case 0x02:
+                                                            scipcmvaluetoinsert = "DENIED WIP";
+                                                            scipcmunittoinsert = "FAILED";
+                                                            break;
+                                                        case 0xF0:
+                                                            scipcmvaluetoinsert = "COMPLETED";
+                                                            scipcmunittoinsert = "OK";
+                                                            break;
+                                                        default:
+                                                            scipcmvaluetoinsert = "UNRECOGNIZED";
+                                                            scipcmunittoinsert = "FAILED";
+                                                            break;
+                                                    }
+                                                    break;
+                                                case 0x12:
+                                                    scipcmdescriptiontoinsert = "ADAPTIVE NUMERATOR";
+                                                    switch (pcmmessage[2])
+                                                    {
+                                                        case 0x00:
+                                                            scipcmvaluetoinsert = "TURN OFF ENGINE";
+                                                            scipcmunittoinsert = "FAILED";
+                                                            break;
+                                                        case 0x01:
+                                                            scipcmvaluetoinsert = "BAD TEST ID";
+                                                            scipcmunittoinsert = "FAILED";
+                                                            break;
+                                                        case 0x02:
+                                                            scipcmvaluetoinsert = "MODULE BUSY";
+                                                            scipcmunittoinsert = "FAILED";
+                                                            break;
+                                                        case 0x03:
+                                                            scipcmvaluetoinsert = "SECURITY STATUS";
+                                                            scipcmunittoinsert = "FAILED";
+                                                            break;
+                                                        case 0xF0:
+                                                            scipcmvaluetoinsert = "EXECUTED";
+                                                            scipcmunittoinsert = "OK";
+                                                            break;
+                                                        default:
+                                                            scipcmvaluetoinsert = "UNRECOGNIZED";
+                                                            scipcmunittoinsert = "FAILED";
+                                                            break;
+                                                    }
+                                                    break;
+                                                case 0x13:
+                                                    scipcmdescriptiontoinsert = "RESET SKIM";
+                                                    scipcmvaluetoinsert = pcmmessage[2].ToString("0");
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x14:
+                                                    scipcmdescriptiontoinsert = "RESET DUTY CYCLE MONITOR";
+                                                    switch (pcmmessage[2])
+                                                    {
+                                                        case 0x00:
+                                                            scipcmvaluetoinsert = "TURN OFF ENGINE";
+                                                            scipcmunittoinsert = "FAILED";
+                                                            break;
+                                                        case 0x01:
+                                                            scipcmvaluetoinsert = "BAD TEST ID";
+                                                            scipcmunittoinsert = "FAILED";
+                                                            break;
+                                                        case 0x02:
+                                                            scipcmvaluetoinsert = "MODULE BUSY";
+                                                            scipcmunittoinsert = "FAILED";
+                                                            break;
+                                                        case 0x03:
+                                                            scipcmvaluetoinsert = "SECURITY STATUS";
+                                                            scipcmunittoinsert = "FAILED";
+                                                            break;
+                                                        case 0xF0:
+                                                            scipcmvaluetoinsert = "EXECUTED";
+                                                            scipcmunittoinsert = "OK";
+                                                            break;
+                                                        default:
+                                                            scipcmvaluetoinsert = "UNRECOGNIZED";
+                                                            scipcmunittoinsert = "FAILED";
+                                                            break;
+                                                    }
+                                                    break;
+                                                case 0x20:
+                                                    scipcmdescriptiontoinsert = "TPS ADAPTATION FOR ETC";
+                                                    if (pcmmessage[2] != 0x00)
+                                                    {
+                                                        scipcmvaluetoinsert = "ON";
+                                                    }
+                                                    else
+                                                    {
+                                                        scipcmvaluetoinsert = "OFF";
+                                                    }
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x21:
+                                                    scipcmdescriptiontoinsert = "MIN PEDAL VALUE";
+                                                    if (pcmmessage[2] != 0x00)
+                                                    {
+                                                        scipcmvaluetoinsert = "ON";
+                                                    }
+                                                    else
+                                                    {
+                                                        scipcmvaluetoinsert = "OFF";
+                                                    }
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x22:
+                                                    scipcmdescriptiontoinsert = "LEARNED KNOCK CORRECTION";
+                                                    if (pcmmessage[2] != 0x00)
+                                                    {
+                                                        scipcmvaluetoinsert = "ON";
+                                                    }
+                                                    else
+                                                    {
+                                                        scipcmvaluetoinsert = "OFF";
+                                                    }
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x23:
+                                                    scipcmdescriptiontoinsert = "LEARNED MISFIRE CORRECTION";
+                                                    if (pcmmessage[2] != 0x00)
+                                                    {
+                                                        scipcmvaluetoinsert = "ON";
+                                                    }
+                                                    else
+                                                    {
+                                                        scipcmvaluetoinsert = "OFF";
+                                                    }
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x24:
+                                                    scipcmdescriptiontoinsert = "IDLE ADAPTATION";
+                                                    if (pcmmessage[2] != 0x00)
+                                                    {
+                                                        scipcmvaluetoinsert = "ON";
+                                                    }
+                                                    else
+                                                    {
+                                                        scipcmvaluetoinsert = "OFF";
+                                                    }
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                default:
+                                                    scipcmdescriptiontoinsert = "ENGINE CONTROLLER REQUEST - " + "ADDRESS: " + Util.ByteToHexString(pcmmessage, 1, 2);
+                                                    scipcmvaluetoinsert = Util.ByteToHexString(pcmmessage, 2, 3);
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            scipcmdescriptiontoinsert = "ENGINE CONTROLLER REQUESTS";
                                             scipcmvaluetoinsert = String.Empty;
                                             scipcmunittoinsert = String.Empty;
                                         }
@@ -1794,6 +2118,21 @@ namespace ChryslerCCDSCIScanner
                                         if (pcmmessage.Length > 4)
                                         {
                                             scipcmdescriptiontoinsert = "READ FLASH MEMORY: ";
+                                            scipcmdescriptiontoinsert += Util.ByteToHexString(pcmmessage, 1, 4);
+                                            scipcmvaluetoinsert = Util.ByteToHexString(pcmmessage, 4, 5);
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        else
+                                        {
+                                            scipcmdescriptiontoinsert = "READ FLASH MEMORY";
+                                            scipcmvaluetoinsert = "3 ADDR. BYTES REQUIRED";
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        break;
+                                    case 0x27: // Read flash memory
+                                        if (pcmmessage.Length > 4)
+                                        {
+                                            scipcmdescriptiontoinsert = "WRITE FLASH MEMORY: ";
                                             scipcmdescriptiontoinsert += Util.ByteToHexString(pcmmessage, 1, 4);
                                             scipcmvaluetoinsert = Util.ByteToHexString(pcmmessage, 4, 5);
                                             scipcmunittoinsert = String.Empty;
@@ -1820,8 +2159,399 @@ namespace ChryslerCCDSCIScanner
                                             scipcmunittoinsert = String.Empty;
                                         }
                                         break;
+                                    case 0x2A:
+                                        if (pcmmessage.Length > 2)
+                                        {
+                                            switch (pcmmessage[1])
+                                            {
+                                                //case 0x00:
+                                                //    if (pcmmessage[2] == 0x00)
+                                                //    {
+                                                //        scipcmdescriptiontoinsert = "SUSPEND REQUEST";
+                                                //        scipcmvaluetoinsert = "OK";
+                                                //        scipcmunittoinsert = String.Empty;
+                                                //    }
+                                                //    else
+                                                //    {
+                                                //        scipcmdescriptiontoinsert = "SUSPEND REQUEST";
+                                                //        scipcmvaluetoinsert = "FAILED";
+                                                //        scipcmunittoinsert = String.Empty;
+                                                //    }
+                                                //    break;
+                                                case 0x01:
+                                                    scipcmdescriptiontoinsert = "PCM PART NUMBER 1&2";
+                                                    scipcmvaluetoinsert = Util.ByteToHexString(pcmmessage, 2, 3);
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x02:
+                                                    scipcmdescriptiontoinsert = "PCM PART NUMBER 3&4";
+                                                    scipcmvaluetoinsert = Util.ByteToHexString(pcmmessage, 2, 3);
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x03:
+                                                    scipcmdescriptiontoinsert = "PCM PART NUMBER 5&6";
+                                                    scipcmvaluetoinsert = Util.ByteToHexString(pcmmessage, 2, 3);
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x04:
+                                                    scipcmdescriptiontoinsert = "PCM PART NUMBER 7&8";
+                                                    scipcmvaluetoinsert = Util.ByteToHexString(pcmmessage, 2, 3);
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x0A:
+                                                    scipcmdescriptiontoinsert = "FUEL TYPE";
+                                                    switch (pcmmessage[2])
+                                                    {
+                                                        case 0x01:
+                                                            scipcmvaluetoinsert = "UNLEADED GAS";
+                                                            break;
+                                                        case 0x02:
+                                                            scipcmvaluetoinsert = "DIESEL";
+                                                            break;
+                                                        case 0x03:
+                                                            scipcmvaluetoinsert = "PROPANE";
+                                                            break;
+                                                        case 0x04:
+                                                            scipcmvaluetoinsert = "METHANOL";
+                                                            break;
+                                                        case 0x05:
+                                                            scipcmvaluetoinsert = "LEADED GAS";
+                                                            break;
+                                                        case 0x06:
+                                                            scipcmvaluetoinsert = "FLEX";
+                                                            break;
+                                                        case 0x07:
+                                                            scipcmvaluetoinsert = "CNG";
+                                                            break;
+                                                        case 0x08:
+                                                            scipcmvaluetoinsert = "ELECTRIC";
+                                                            break;
+                                                        default:
+                                                            scipcmvaluetoinsert = "N/A";
+                                                            break;
+                                                    }
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x0B:
+                                                    scipcmdescriptiontoinsert = "MODEL YEAR";
+                                                    switch (pcmmessage[2])
+                                                    {
+                                                        case 0x01:
+                                                            scipcmvaluetoinsert = "1991";
+                                                            break;
+                                                        case 0x02:
+                                                            scipcmvaluetoinsert = "1992";
+                                                            break;
+                                                        case 0x03:
+                                                            scipcmvaluetoinsert = "1993";
+                                                            break;
+                                                        case 0x04:
+                                                            scipcmvaluetoinsert = "1994";
+                                                            break;
+                                                        case 0x05:
+                                                            scipcmvaluetoinsert = "1995";
+                                                            break;
+                                                        case 0x06:
+                                                            scipcmvaluetoinsert = "1996";
+                                                            break;
+                                                        case 0x07:
+                                                            scipcmvaluetoinsert = "1997";
+                                                            break;
+                                                        case 0x08:
+                                                            scipcmvaluetoinsert = "1998";
+                                                            break;
+                                                        case 0x09:
+                                                            scipcmvaluetoinsert = "1999";
+                                                            break;
+                                                        case 0x0A:
+                                                            scipcmvaluetoinsert = "2000";
+                                                            break;
+                                                        case 0x0B:
+                                                            scipcmvaluetoinsert = "2001";
+                                                            break;
+                                                        case 0x0C:
+                                                            scipcmvaluetoinsert = "2002";
+                                                            break;
+                                                        case 0x0D:
+                                                            scipcmvaluetoinsert = "2003";
+                                                            break;
+                                                        case 0x0E:
+                                                            scipcmvaluetoinsert = "2004";
+                                                            break;
+                                                        case 0x0F:
+                                                            scipcmvaluetoinsert = "2005";
+                                                            break;
+                                                        default:
+                                                            scipcmvaluetoinsert = "N/A";
+                                                            break;
+                                                    }
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                                case 0x0C:
+                                                    scipcmdescriptiontoinsert = "ENGINE DISPLACEMENT/CONFIGURATION/ORIENTATION";
+                                                    switch (pcmmessage[2])
+                                                    {
+                                                        case 0x01:
+                                                            scipcmvaluetoinsert = "2.2 LITER";
+                                                            scipcmunittoinsert = "I4 E-W";
+                                                            break;
+                                                        case 0x02:
+                                                            scipcmvaluetoinsert = "2.5 LITER";
+                                                            scipcmunittoinsert = "I4 E-W";
+                                                            break;
+                                                        case 0x03:
+                                                            scipcmvaluetoinsert = "3.0 LITER";
+                                                            scipcmunittoinsert = "V6 E-W";
+                                                            break;
+                                                        case 0x04:
+                                                            scipcmvaluetoinsert = "3.3 LITER";
+                                                            scipcmunittoinsert = "V6 E-W";
+                                                            break;
+                                                        case 0x05:
+                                                            scipcmvaluetoinsert = "3.9 LITER";
+                                                            scipcmunittoinsert = "V6 N-S";
+                                                            break;
+                                                        case 0x06:
+                                                            scipcmvaluetoinsert = "5.2 LITER";
+                                                            scipcmunittoinsert = "V8 N-S";
+                                                            break;
+                                                        case 0x07:
+                                                            scipcmvaluetoinsert = "5.9 LITER";
+                                                            scipcmunittoinsert = "V8 N-S";
+                                                            break;
+                                                        case 0x08:
+                                                            scipcmvaluetoinsert = "3.8 LITER";
+                                                            scipcmunittoinsert = "V6 E-W";
+                                                            break;
+                                                        case 0x09:
+                                                            scipcmvaluetoinsert = "4.0 LITER";
+                                                            scipcmunittoinsert = "I6 N-S";
+                                                            break;
+                                                        case 0x0A:
+                                                            scipcmvaluetoinsert = "2.0 LITER";
+                                                            scipcmunittoinsert = "I4 E-W SOHC";
+                                                            break;
+                                                        case 0x0B:
+                                                            scipcmvaluetoinsert = "3.5 LITER";
+                                                            scipcmunittoinsert = "V6 N-S";
+                                                            break;
+                                                        case 0x0C:
+                                                            scipcmvaluetoinsert = "8.0 LITER";
+                                                            scipcmunittoinsert = "V10 N-S";
+                                                            break;
+                                                        case 0x0D:
+                                                            scipcmvaluetoinsert = "2.4 LITER";
+                                                            scipcmunittoinsert = "I4 E-W";
+                                                            break;
+                                                        case 0x0E:
+                                                            scipcmvaluetoinsert = "2.5 LITER";
+                                                            scipcmunittoinsert = "I4 N-S";
+                                                            break;
+                                                        case 0x0F:
+                                                            scipcmvaluetoinsert = "2.5 LITER";
+                                                            scipcmunittoinsert = "V6 N-S";
+                                                            break;
+                                                        case 0x10:
+                                                            scipcmvaluetoinsert = "2.0 LITER";
+                                                            scipcmunittoinsert = "I4 E-W DOHC";
+                                                            break;
+                                                        case 0x11:
+                                                            scipcmvaluetoinsert = "2.5 LITER";
+                                                            scipcmunittoinsert = "V6 E-W";
+                                                            break;
+                                                        case 0x12:
+                                                            scipcmvaluetoinsert = "5.9 LITER";
+                                                            scipcmunittoinsert = "I6 N-S";
+                                                            break;
+                                                        case 0x13:
+                                                            scipcmvaluetoinsert = "3.3 LITER";
+                                                            scipcmunittoinsert = "V6 N-S";
+                                                            break;
+                                                        case 0x14:
+                                                            scipcmvaluetoinsert = "2.7 LITER";
+                                                            scipcmunittoinsert = "V6 N-S";
+                                                            break;
+                                                        case 0x15:
+                                                            scipcmvaluetoinsert = "3.2 LITER";
+                                                            scipcmunittoinsert = "V6 N-S";
+                                                            break;
+                                                        case 0x16:
+                                                            scipcmvaluetoinsert = "1.8 LITER";
+                                                            scipcmunittoinsert = "I4 E-W";
+                                                            break;
+                                                        case 0x17:
+                                                            scipcmvaluetoinsert = "3.7 LITER";
+                                                            scipcmunittoinsert = "V6 N-S";
+                                                            break;
+                                                        case 0x18:
+                                                            scipcmvaluetoinsert = "4.7 LITER";
+                                                            scipcmunittoinsert = "V8 N-S";
+                                                            break;
+                                                        case 0x19:
+                                                            scipcmvaluetoinsert = "1.9 LITER";
+                                                            scipcmunittoinsert = "I4 E-W";
+                                                            break;
+                                                        case 0x1A:
+                                                            scipcmvaluetoinsert = "3.1 LITER";
+                                                            scipcmunittoinsert = "I5 N-S";
+                                                            break;
+                                                        case 0x1B:
+                                                            scipcmvaluetoinsert = "1.6 LITER";
+                                                            scipcmunittoinsert = "I4 E-W";
+                                                            break;
+                                                        case 0x1C:
+                                                            scipcmvaluetoinsert = "2.7 LITER";
+                                                            scipcmunittoinsert = "V6 E-W";
+                                                            break;
+                                                        default:
+                                                            scipcmvaluetoinsert = "N/A";
+                                                            scipcmunittoinsert = String.Empty;
+                                                            break;
+                                                    }
+                                                    break;
+                                                default:
+                                                    if (pcmmessage[1] != 0x00)
+                                                    {
+                                                        scipcmdescriptiontoinsert = "ENGINE CONTROLLER REQUEST - " + "ADDRESS: " + Util.ByteToHexString(pcmmessage, 1, 2);
+                                                        scipcmvaluetoinsert = Util.ByteToHexString(pcmmessage, 2, 3);
+                                                        scipcmunittoinsert = String.Empty;
+                                                    }
+                                                    else
+                                                    {
+                                                        scipcmdescriptiontoinsert = "ENGINE CONTROLLER REQUESTS";
+                                                        scipcmvaluetoinsert = "STOPPED";
+                                                        scipcmunittoinsert = String.Empty;
+                                                    }
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            scipcmdescriptiontoinsert = "ENGINE CONTROLLER REQUESTS";
+                                            scipcmvaluetoinsert = "STOPPED";
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        break;
+                                    case 0x2B:
+                                    case 0x35:
+                                        if (pcmmessage.Length > 3)
+                                        {
+                                            scipcmdescriptiontoinsert = "GET SECURITY SEED";
+                                            scipcmvaluetoinsert = Util.ByteToHexString(pcmmessage, 1, 4);
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        else
+                                        {
+                                            scipcmdescriptiontoinsert = "GET SECURITY SEED";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        break;
+                                    case 0x2C:
+                                        if (pcmmessage.Length > 4)
+                                        {
+                                            scipcmdescriptiontoinsert = "SEND SECURITY SEED";
+                                            scipcmvaluetoinsert = Util.ByteToHexString(pcmmessage, 1, 4);
+                                            if (pcmmessage[4] != 0x00)
+                                            {
+                                                scipcmunittoinsert = "SUCCEEDED";
+                                            }
+                                            else
+                                            {
+                                                scipcmunittoinsert = "FAILED";
+                                            }
+                                        }
+                                        else
+                                        {
+                                            scipcmdescriptiontoinsert = "SEND SECURITY SEED";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        break;
+                                    case 0x2D:
+                                        if (pcmmessage.Length > 3)
+                                        {
+                                            switch (pcmmessage[2])
+                                            {
+                                                default:
+                                                    scipcmdescriptiontoinsert = "MIN/MAX ENGINE PARAMETER VALUE: ";
+                                                    scipcmdescriptiontoinsert += Util.ByteToHexString(pcmmessage, 1, 3);
+                                                    scipcmvaluetoinsert = Util.ByteToHexString(pcmmessage, 3, 4);
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            scipcmdescriptiontoinsert = "MIN/MAX ENGINE PARAMETER VALUES";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        break;
+                                    case 0x2E:
+                                        if (pcmmessage.Length > 2)
+                                        {
+                                            switch (pcmmessage[1])
+                                            {
+                                                default:
+                                                    scipcmdescriptiontoinsert = "ENGINE ONE-TRIP FAULT CODES";
+                                                    scipcmvaluetoinsert = "N/A";
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            scipcmdescriptiontoinsert = "ENGINE ONE-TRIP FAULT CODES";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        break;
+                                    case 0x32:
+                                        if (pcmmessage.Length > 3)
+                                        {
+                                            scipcmdescriptiontoinsert = "ENGINE FAULT CODES";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+
+                                            //switch (pcmmessage[1])
+                                            //{
+                                            //    default:
+                                            //        scipcmdescriptiontoinsert = "ENGINE ONE-TRIP FAULT CODES";
+                                            //        scipcmvaluetoinsert = "N/A";
+                                            //        scipcmunittoinsert = String.Empty;
+                                            //        break;
+                                            //}
+                                        }
+                                        else
+                                        {
+                                            scipcmdescriptiontoinsert = "ENGINE FAULT CODES";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        break;
+                                    case 0x33:
+                                        if (pcmmessage.Length > 2)
+                                        {
+                                            switch (pcmmessage[1])
+                                            {
+                                                default:
+                                                    scipcmdescriptiontoinsert = "ENGINE ONE-TRIP FAULT CODES";
+                                                    scipcmvaluetoinsert = "N/A";
+                                                    scipcmunittoinsert = String.Empty;
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            scipcmdescriptiontoinsert = "ENGINE ONE-TRIP FAULT CODES";
+                                            scipcmvaluetoinsert = String.Empty;
+                                            scipcmunittoinsert = String.Empty;
+                                        }
+                                        break;
                                     case 0xFE:
-                                        scipcmdescriptiontoinsert = " ";
+                                        scipcmdescriptiontoinsert = String.Empty;
+                                        scipcmunittoinsert = String.Empty;
                                         break;
                                 }
 
@@ -3569,7 +4299,7 @@ namespace ChryslerCCDSCIScanner
                 }
 
                 string hexline = line.Substring(16, 18);
-                NewUNIXTime = Convert.ToInt64(hexline, 16);
+                NewUNIXTime = Convert.ToUInt64(hexline, 16);
 
                 DateTime OldFirmwareDate = Util.UnixTimeStampToDateTime(OldUNIXTime);
                 DateTime NewFirmwareDate = Util.UnixTimeStampToDateTime(NewUNIXTime);
