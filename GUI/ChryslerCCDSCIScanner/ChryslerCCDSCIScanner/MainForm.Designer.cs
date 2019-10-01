@@ -69,6 +69,7 @@
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UpdateScannerFirmwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.CCDBusEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.USBCommunicationGroupBox.SuspendLayout();
             this.DiagnosticsGroupBox.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -397,6 +398,7 @@
             // 
             // DiagnosticsGroupBox
             // 
+            this.DiagnosticsGroupBox.Controls.Add(this.CCDBusEnabledCheckBox);
             this.DiagnosticsGroupBox.Controls.Add(this.ResetViewButton);
             this.DiagnosticsGroupBox.Controls.Add(this.SortIDBytesCheckBox);
             this.DiagnosticsGroupBox.Controls.Add(this.SnapshotButton);
@@ -543,6 +545,19 @@
             this.aboutToolStripMenuItem.Text = "About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.AboutToolStripMenuItem_Click);
             // 
+            // CCDBusEnabledCheckBox
+            // 
+            this.CCDBusEnabledCheckBox.AutoSize = true;
+            this.CCDBusEnabledCheckBox.Checked = true;
+            this.CCDBusEnabledCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.CCDBusEnabledCheckBox.Location = new System.Drawing.Point(3, 543);
+            this.CCDBusEnabledCheckBox.Name = "CCDBusEnabledCheckBox";
+            this.CCDBusEnabledCheckBox.Size = new System.Drawing.Size(109, 17);
+            this.CCDBusEnabledCheckBox.TabIndex = 4;
+            this.CCDBusEnabledCheckBox.Text = "CCD-bus enabled";
+            this.CCDBusEnabledCheckBox.UseVisualStyleBackColor = true;
+            this.CCDBusEnabledCheckBox.CheckedChanged += new System.EventHandler(this.CCDBusEnabledCheckBox_CheckedChanged);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -615,6 +630,7 @@
         private System.Windows.Forms.CheckBox SortIDBytesCheckBox;
         private System.Windows.Forms.Button ResetViewButton;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
+        private System.Windows.Forms.CheckBox CCDBusEnabledCheckBox;
     }
 }
 

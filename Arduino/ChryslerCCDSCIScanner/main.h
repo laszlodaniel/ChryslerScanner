@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D90D2AF
+#define FW_DATE 0x000000005D9375C5
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -217,7 +217,7 @@ extern LiquidCrystal_I2C lcd;
 #define error_eep_not_found                     0xFB
 #define error_eep_read                          0xFC
 #define error_eep_write                         0xFD
-#define error_internal_error                    0xFE
+#define error_internal                          0xFE
 #define error_fatal                             0xFF
 
 // Command Line Interface (CLI) defines
@@ -288,8 +288,6 @@ volatile bool pcm_idle = false;
 volatile bool tcm_idle = false;
 bool pcm_high_speed_enabled = false;
 bool tcm_high_speed_enabled = false;
-bool pcm_echo_accepted = false;
-bool tcm_echo_accepted = false;
 uint8_t current_sci_bus_settings[1] = { 0xC8 }; // default settings: SCI-bus PCM "A" configuration, 7812.5 baud, TCM disabled
 
 uint8_t pcm_bytes_buffer[PCM_RX2_BUFFER_SIZE]; // received SCI-bus message from the PCM is temporary stored here
@@ -316,7 +314,6 @@ bool tcm_msg_pending = false; // flag for custom sci-bus message
 uint8_t tcm_msg_to_send[TCM_RX3_BUFFER_SIZE]; // custom sci-bus message is copied here
 uint8_t tcm_msg_to_send_ptr = 0; // custom sci-bus message length
 uint32_t tcm_last_msgbyte_received = 0; // time in milliseconds
-bool tcm_actuator_test_running = false;
 uint32_t tcm_msg_rx_count = 0;
 uint32_t tcm_msg_tx_count = 0;
 
@@ -1201,7 +1198,7 @@ Purpose:  return the next byte waiting in the receive buffer
 Returns:  low byte:  next byte in the receive buffer
           high byte: error flags
 **************************************************************************/
-uint16_t pcm_peek(void)
+uint16_t pcm_peek(uint16_t index = 0)
 {
     uint16_t tmptail;
     uint8_t data;
@@ -1214,7 +1211,7 @@ uint16_t pcm_peek(void)
         }
     }
   
-    tmptail = (PCM_RxTail + 1) & PCM_RX2_BUFFER_MASK;
+    tmptail = (PCM_RxTail + 1 + index) & PCM_RX2_BUFFER_MASK;
 
     /* get data from receive buffer */
     data = PCM_RxBuf[tmptail];
@@ -1429,7 +1426,7 @@ Purpose:  return the next byte waiting in the receive buffer
 Returns:  low byte:  next byte in the receive buffer
           high byte: error flags
 **************************************************************************/
-uint16_t tcm_peek(void)
+uint16_t tcm_peek(uint16_t index = 0)
 {
     uint16_t tmptail;
     uint8_t data;
@@ -1442,7 +1439,7 @@ uint16_t tcm_peek(void)
         }
     }
   
-    tmptail = (TCM_RxTail + 1) & TCM_RX3_BUFFER_MASK;
+    tmptail = (TCM_RxTail + 1 + index) & TCM_RX3_BUFFER_MASK;
 
     /* get data from receive buffer */
     data = TCM_RxBuf[tmptail];
@@ -2348,7 +2345,7 @@ int cmd_reset(void)
 {
     send_usb_packet(from_usb, to_usb, reset, ok, ack, 1); // RX LED is on by now and this function lights up TX LED
     digitalWrite(ACT_LED, LOW); // blink all LEDs including this, good way to test if LEDs are working or not
-    while(true); // enter into an infinite loop; watchdog timer doesn't get reset this way so it restarts the program eventually
+    while (true); // enter into an infinite loop; watchdog timer doesn't get reset this way so it restarts the program eventually
     
 } // end of cmd_reset
 
@@ -4587,13 +4584,13 @@ void handle_sci_data(void)
                 pcm_last_msgbyte_received = millis(); // save time
             }
 
-            // Decide if a message is complete using a timeout (delay) condition or send the whole buffer if it can't hold more bytes
-            if ((((millis() - pcm_last_msgbyte_received) > SCI_LS_T3_DELAY) && (pcm_bytes_buffer_ptr > 0)) || (pcm_bytes_buffer_ptr == PCM_RX2_BUFFER_SIZE))
+            // Handle completed messages
+            if (!pcm_high_speed_enabled) // handle low-speed mode first
             {
-                if (!pcm_high_speed_enabled) // handle low-speed mode first
+                if (!pcm_actuator_test_running && !pcm_ls_request_running) // send message back to laptop normally
                 {
-                    if (!pcm_actuator_test_running && !pcm_ls_request_running) // send message back to laptop normally
-                    {
+                    if ((((millis() - pcm_last_msgbyte_received) > SCI_LS_T3_DELAY) && (pcm_bytes_buffer_ptr > 0)) || (pcm_bytes_buffer_ptr == PCM_RX2_BUFFER_SIZE))
+                    { 
                         uint8_t usb_msg[4+pcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
                         update_timestamp(current_timestamp); // get current time for the timestamp
                         
@@ -4605,18 +4602,6 @@ void handle_sci_data(void)
                         {
                             usb_msg[4+i] = pcm_bytes_buffer[i];
                         }
-    
-                        if ((pcm_bytes_buffer[0] == 0x13) && (pcm_bytes_buffer[1] != 0x00))
-                        {
-                            pcm_actuator_test_running = true;
-                            pcm_actuator_test_byte = pcm_bytes_buffer[1];
-                        }
-
-                        if ((pcm_bytes_buffer[0] == 0x2A) && (pcm_bytes_buffer[1] != 0x00))
-                        {
-                            pcm_ls_request_running = true;
-                            pcm_ls_request_byte = pcm_bytes_buffer[1];
-                        }
 
                         send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 4+pcm_bytes_buffer_ptr);
                         
@@ -4627,9 +4612,16 @@ void handle_sci_data(void)
                             sbi(current_sci_bus_settings[0], 4); // set speed bit (62500 baud)
                             configure_sci_bus(current_sci_bus_settings[0]);
                         }
+                        
+                        //handle_lcd(from_pcm, usb_msg, 4, 4+pcm_bytes_buffer_ptr); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                        pcm_bytes_buffer_ptr = 0;
+                        pcm_msg_rx_count++;
                     }
-                    else // actuator tests and certain request modes have to be handled differently; once a mode is activated the PCM sends its ID-byte continuosly without asking
-                    {
+                }
+                else // 0x13 and 0x2A has a weird delay between messages so they are handled here with a smaller delay
+                {
+                    if ((((millis() - pcm_last_msgbyte_received) > 10) && (pcm_bytes_buffer_ptr > 0)) || (pcm_bytes_buffer_ptr == PCM_RX2_BUFFER_SIZE))
+                    { 
                         // Stop actuator test command is accepted
                         if ((pcm_bytes_buffer[0] == 0x13) && (pcm_bytes_buffer[1] == 0x00) && (pcm_bytes_buffer[2] == 0x00))
                         {
@@ -4646,11 +4638,11 @@ void handle_sci_data(void)
                             {
                                 usb_msg[4+i] = pcm_bytes_buffer[i];
                             }
-    
+                            
                             send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 4+pcm_bytes_buffer_ptr);
                         }
                         // Stop broadcasting request bytes command is accepted
-                        else if ((pcm_bytes_buffer[0] == 0x2A) && (pcm_bytes_buffer[1] == 0x00) && (pcm_bytes_buffer[2] == 0x00))
+                        else if ((pcm_bytes_buffer[0] == 0x2A) && (pcm_bytes_buffer[1] == 0x00)) // The 0x00 byte is not echoed back by the PCM so don't look for a third byte
                         {
                             uint8_t usb_msg[4+pcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
                             update_timestamp(current_timestamp); // get current time for the timestamp
@@ -4665,7 +4657,7 @@ void handle_sci_data(void)
                             {
                                 usb_msg[4+i] = pcm_bytes_buffer[i];
                             }
-    
+
                             send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 4+pcm_bytes_buffer_ptr);
                         }
                         else // only ID-bytes are received, the beginning of the messages must be supplemented so that the GUI understands what it is about
@@ -4678,28 +4670,35 @@ void handle_sci_data(void)
                                 usb_msg[i] = current_timestamp[i];
                             }
 
-                            if (pcm_actuator_test_running) // if the actuator test mode is active then put two bytes before the received byte
+                            if (pcm_actuator_test_running && !pcm_ls_request_running) // if the actuator test mode is active then put two bytes before the received byte
                             {
                                 usb_msg[4] = 0x13;
                                 usb_msg[5] = pcm_actuator_test_byte;
                             }
                             
-                            if (pcm_ls_request_running) // if the request mode is active then put two bytes before the received byte; this is kind of annying, why isn't one time response enough... there's nothing "running" like in the case of actuator tests
+                            if (pcm_ls_request_running && !pcm_actuator_test_running) // if the request mode is active then put two bytes before the received byte; this is kind of annying, why isn't one time response enough... there's nothing "running" like in the case of actuator tests
                             {
                                 usb_msg[4] = 0x2A;
                                 usb_msg[5] = pcm_ls_request_byte;
                             }
-                            
-                            usb_msg[6] = pcm_bytes_buffer[0];
+
+                            usb_msg[6] = pcm_bytes_buffer[0]; // BUG: this byte is different at first when the PCM begins to broadcast a single byte repeatedly, but it should be overwritten very soon after
                             send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 7); // the message length is fixed by the nature of the active commands
                         }
+                        
+                        //handle_lcd(from_pcm, usb_msg, 4, 4+pcm_bytes_buffer_ptr); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                        pcm_bytes_buffer_ptr = 0;
+                        pcm_msg_rx_count++;
                     }
                 }
-                else // handle high-speed mode
+            }
+            else // handle high-speed mode
+            {
+                if ((((millis() - pcm_last_msgbyte_received) > SCI_HS_T3_DELAY) && (pcm_bytes_buffer_ptr > 0)) || (pcm_bytes_buffer_ptr == PCM_RX2_BUFFER_SIZE))
                 {
                     uint8_t usb_msg[4+pcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
                     update_timestamp(current_timestamp); // get current time for the timestamp
-
+    
                     // Send the request bytes first
                     for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
                     {
@@ -4710,7 +4709,7 @@ void handle_sci_data(void)
                         usb_msg[4+i] = pcm_msg_to_send[i];
                     }
                     send_usb_packet(from_pcm, to_usb, msg_rx, sci_hs_request_bytes, usb_msg, 4+pcm_bytes_buffer_ptr);
-
+    
                     // Then send the response bytes
                     for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
                     {
@@ -4721,7 +4720,7 @@ void handle_sci_data(void)
                         usb_msg[4+i] = pcm_bytes_buffer[i];
                     }
                     send_usb_packet(from_pcm, to_usb, msg_rx, sci_hs_response_bytes, usb_msg, 4+pcm_bytes_buffer_ptr);
-
+    
                     if (pcm_bytes_buffer[0] == 0xFE)
                     {
                         sbi(current_sci_bus_settings[0], 7); // set change settings bit
@@ -4729,24 +4728,24 @@ void handle_sci_data(void)
                         cbi(current_sci_bus_settings[0], 4); // clear speed bit (7812.5 baud)
                         configure_sci_bus(current_sci_bus_settings[0]);
                     }
-                }
-                
-                //handle_lcd(from_pcm, usb_msg, 4, 4+pcm_bytes_buffer_ptr); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
 
-                pcm_bytes_buffer_ptr = 0;
-                pcm_msg_rx_count++;
+                    //handle_lcd(from_pcm, usb_msg, 4, 4+pcm_bytes_buffer_ptr); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                    pcm_bytes_buffer_ptr = 0;
+                    pcm_msg_rx_count++;
+                }
             }
 
-            // This section sends a message to the PCM and checks if the echoed bytes are correct by peeking into the receive buffer
+            // Send message
             if (pcm_msg_pending && (pcm_rx_available() == 0))
             {
                 if (!pcm_high_speed_enabled) // low speed mode, half-duplex mode approach
                 {
                     for (uint8_t i = 0; i < pcm_msg_to_send_ptr; i++) // repeat for the length of the message
                     {
+                        timeout_reached = false;
                         timeout_start = millis(); // save current time
                         pcm_putc(pcm_msg_to_send[i]); // put the next byte in the transmit buffer
-                        while((pcm_rx_available() <= i) && !timeout_reached)
+                        while ((pcm_rx_available() <= i) && !timeout_reached)
                         {
                             // wait here for echo (half-duplex mode)
                             if ((millis() - timeout_start) > SCI_LS_T1_DELAY) timeout_reached = true;
@@ -4754,67 +4753,70 @@ void handle_sci_data(void)
                         if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                         {
                             timeout_reached = false;
+                            send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
                             break;
                         }
                     }
 
-                    pcm_msg_to_send_ptr = 0; // reset pointer
-                    pcm_msg_pending = false; // re-arm, make it possible to send a message again
+                    // Peek into the receive buffer
+                    if ((pcm_peek(0) == 0x13) && (pcm_peek(1) != 0x00))
+                    {
+                        pcm_actuator_test_running = true;
+                        pcm_actuator_test_byte = pcm_msg_to_send[1];
+                        pcm_rx_flush(); // workaround for the first false received message
+                    }
+
+                    if ((pcm_peek(0) == 0x2A) && (pcm_peek(1) != 0x00))
+                    {
+                        pcm_ls_request_running = true;
+                        pcm_ls_request_byte = pcm_msg_to_send[1];
+                        pcm_rx_flush(); // workaround for the first false received message
+                    }
                 }
                 else // high speed mode, full-duplex mode approach
                 {
-                    // Make sure that the memory table select byte is approved by the PCM before sending the full message
-                    if (array_contains(sci_hi_speed_memarea, 16, pcm_msg_to_send[0]))
+                    uint8_t echo_retry_counter = 0;
+                    
+                    if (array_contains(sci_hi_speed_memarea, 16, pcm_msg_to_send[0])) // make sure that the memory table select byte is approved by the PCM before sending the full message
                     {
-                        timeout_start = millis(); // save current time
-                        while((pcm_rx_available() <= 0) && !timeout_reached)
+                        for (uint8_t i = 0; i < pcm_msg_to_send_ptr; i++) // repeat for the length of the message
                         {
-                            pcm_putc(pcm_msg_to_send[0]);
-                            delay(5);
-                            if ((millis() - timeout_start) > 200) timeout_reached = true; // try to set memory table for 200 milliseconds
-                        }
-                        if (timeout_reached)
-                        {
+                            pcm_again:
                             timeout_reached = false;
-                            pcm_echo_accepted = false;
-                        }
-                        else
-                        {
-                            pcm_getc(); // read echo byte into oblivion
-                            pcm_echo_accepted = true;
-                        }
-
-                        if (pcm_echo_accepted)
-                        {
-                            for (uint8_t i = 0; i < pcm_msg_to_send_ptr; i++) // repeat for the length of the message
+                            timeout_start = millis(); // save current time
+                            pcm_putc(pcm_msg_to_send[i]); // put the next byte in the transmit buffer
+                            while ((pcm_rx_available() <= i) && !timeout_reached)
                             {
-                                timeout_start = millis(); // save current time
-                                pcm_putc(pcm_msg_to_send[i]); // put the next byte in the transmit buffer
-                                while((pcm_rx_available() <= i) && !timeout_reached)
+                                // wait here for response (echo in case of F0...FF)
+                                if ((millis() - timeout_start) > SCI_HS_T3_DELAY) timeout_reached = true;
+                            }
+                            if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
+                            {
+                                timeout_reached = false;
+                                send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                                break;
+                            }
+                            if (pcm_peek(0) != pcm_msg_to_send[0]) // make sure the first memory pointer byte is echoed back
+                            {
+                                pcm_rx_flush();
+                                echo_retry_counter++;
+                                if (echo_retry_counter < 10) goto pcm_again;
+                                else
                                 {
-                                    // wait here for response (full-duplex mode assumed)
-                                    if ((millis() - timeout_start) > SCI_HS_T3_DELAY) timeout_reached = true;
-                                }
-                                if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
-                                {
-                                    timeout_reached = false;
+                                    send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1); // send error packet back to the laptop
                                     break;
                                 }
                             }
-                            pcm_msg_to_send_ptr = 0; // reset pointer
-                            pcm_msg_pending = false; // re-arm, make it possible to send a message again
-                            pcm_echo_accepted = false;
                         }
                     }
                     else
                     {
                         // Messsage doesn't start with a memory table value, invalid
                         send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
-                        pcm_msg_to_send_ptr = 0; // reset pointer
-                        pcm_msg_pending = false; // re-arm, make it possible to send a message again
-                        pcm_echo_accepted = false;
                     }
                 }
+                pcm_msg_to_send_ptr = 0; // reset pointer
+                pcm_msg_pending = false; // re-arm, make it possible to send a message again
                 pcm_msg_tx_count++;
             }
         }
@@ -4838,83 +4840,45 @@ void handle_sci_data(void)
                 tcm_last_msgbyte_received = millis(); // save time
             }
 
-            // Decide if a message is complete using a timeout (delay) condition or send the whole buffer if it can't hold more bytes
-            if ((((millis() - tcm_last_msgbyte_received) > SCI_LS_T3_DELAY) && (tcm_bytes_buffer_ptr > 0)) || (tcm_bytes_buffer_ptr == TCM_RX3_BUFFER_SIZE))
+            // Handle completed messages
+            if (!tcm_high_speed_enabled) // handle low-speed mode first
             {
-                if (!tcm_high_speed_enabled) // handle low-speed mode first
-                {
-                    if (!tcm_actuator_test_running)
-                    {
-                        uint8_t usb_msg[4+tcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (tcm) message
-                        update_timestamp(current_timestamp); // get current time for the timestamp
-                        
-                        for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
-                        {
-                            usb_msg[i] = current_timestamp[i];
-                        }
-                        for (uint8_t i = 0; i < tcm_bytes_buffer_ptr; i++) // put every byte in the SCI-bus message after the timestamp
-                        {
-                            usb_msg[4+i] = tcm_bytes_buffer[i];
-                        }
-    
-                        if ((tcm_bytes_buffer[0] == 0x13) && (tcm_bytes_buffer[1] != 0x00))
-                        {
-                            tcm_actuator_test_running = true;
-                        }
-
-                        send_usb_packet(from_tcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 4+tcm_bytes_buffer_ptr);
-                        
-                        if (tcm_bytes_buffer[0] == 0x12) // pay attention to special bytes (speed change)
-                        {
-                            sbi(current_sci_bus_settings[0], 7); // set change settings bit
-                            sbi(current_sci_bus_settings[0], 6); // set enable bit
-                            sbi(current_sci_bus_settings[0], 4); // set speed bit (62500 baud)
-                            configure_sci_bus(current_sci_bus_settings[0]);
-                        }
-                    }
-                    else
-                    {
-                        if ((tcm_bytes_buffer[0] == 0x13) && (tcm_bytes_buffer[1] == 0x00) && (tcm_bytes_buffer[2] == 0x00))
-                        {
-                            uint8_t usb_msg[4+tcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (TCM) message
-                            update_timestamp(current_timestamp); // get current time for the timestamp
-                            tcm_actuator_test_running = false;
-    
-                            for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
-                            {
-                                usb_msg[i] = current_timestamp[i];
-                            }
-                            for (uint8_t i = 0; i < tcm_bytes_buffer_ptr; i++) // put every byte in the SCI-bus message after the timestamp
-                            {
-                                usb_msg[4+i] = tcm_bytes_buffer[i];
-                            }
-    
-                            send_usb_packet(from_tcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 4+tcm_bytes_buffer_ptr);
-                        }
-                        else
-                        {
-                            uint8_t usb_msg[5+tcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (TCM) message
-                            update_timestamp(current_timestamp); // get current time for the timestamp
-                            
-                            for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
-                            {
-                                usb_msg[i] = current_timestamp[i];
-                            }
-                            for (uint8_t i = 0; i < tcm_bytes_buffer_ptr; i++) // put every byte in the SCI-bus message after the timestamp
-                            {
-                                usb_msg[4] = 0x13;
-                                usb_msg[5+i] = tcm_bytes_buffer[i];
-                            }
-    
-                            send_usb_packet(from_tcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 5+tcm_bytes_buffer_ptr);
-                        }
-                    }
-                }
-                else // handle high-speed mode
-                {
+                if ((((millis() - tcm_last_msgbyte_received) > SCI_LS_T3_DELAY) && (tcm_bytes_buffer_ptr > 0)) || (tcm_bytes_buffer_ptr == TCM_RX3_BUFFER_SIZE))
+                { 
                     uint8_t usb_msg[4+tcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (TCM) message
                     update_timestamp(current_timestamp); // get current time for the timestamp
                     
+                    for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+                    {
+                        usb_msg[i] = current_timestamp[i];
+                    }
+                    for (uint8_t i = 0; i < tcm_bytes_buffer_ptr; i++) // put every byte in the SCI-bus message after the timestamp
+                    {
+                        usb_msg[4+i] = tcm_bytes_buffer[i];
+                    }
+
+                    send_usb_packet(from_tcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 4+tcm_bytes_buffer_ptr);
+                    
+                    if (tcm_bytes_buffer[0] == 0x12) // pay attention to special bytes (speed change)
+                    {
+                        sbi(current_sci_bus_settings[0], 3); // set change settings bit
+                        sbi(current_sci_bus_settings[0], 2); // set enable bit
+                        sbi(current_sci_bus_settings[0], 0); // set speed bit (62500 baud)
+                        configure_sci_bus(current_sci_bus_settings[0]);
+                    }
+                    
+                    //handle_lcd(from_tcm, usb_msg, 4, 4+tcm_bytes_buffer_ptr); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                    tcm_bytes_buffer_ptr = 0;
+                    tcm_msg_rx_count++;
+                }
+            }
+            else // handle high-speed mode
+            {
+                if ((((millis() - tcm_last_msgbyte_received) > SCI_HS_T3_DELAY) && (tcm_bytes_buffer_ptr > 0)) || (tcm_bytes_buffer_ptr == TCM_RX3_BUFFER_SIZE))
+                {
+                    uint8_t usb_msg[4+tcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (TCM) message
+                    update_timestamp(current_timestamp); // get current time for the timestamp
+    
                     // Send the request bytes first
                     for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
                     {
@@ -4925,7 +4889,7 @@ void handle_sci_data(void)
                         usb_msg[4+i] = tcm_msg_to_send[i];
                     }
                     send_usb_packet(from_tcm, to_usb, msg_rx, sci_hs_request_bytes, usb_msg, 4+tcm_bytes_buffer_ptr);
-
+    
                     // Then send the response bytes
                     for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
                     {
@@ -4936,32 +4900,32 @@ void handle_sci_data(void)
                         usb_msg[4+i] = tcm_bytes_buffer[i];
                     }
                     send_usb_packet(from_tcm, to_usb, msg_rx, sci_hs_response_bytes, usb_msg, 4+tcm_bytes_buffer_ptr);
-
+    
                     if (tcm_bytes_buffer[0] == 0xFE)
                     {
-                        sbi(current_sci_bus_settings[0], 7); // set change settings bit
-                        sbi(current_sci_bus_settings[0], 6); // set enable bit
-                        cbi(current_sci_bus_settings[0], 4); // clear speed bit (7812.5 baud)
+                        sbi(current_sci_bus_settings[0], 3); // set change settings bit
+                        sbi(current_sci_bus_settings[0], 2); // set enable bit
+                        cbi(current_sci_bus_settings[0], 0); // clear speed bit (7812.5 baud)
                         configure_sci_bus(current_sci_bus_settings[0]);
                     }
-                }
-                
-                //handle_lcd(from_tcm, usb_msg, 4, 4+tcm_bytes_buffer_ptr); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
 
-                tcm_bytes_buffer_ptr = 0;
-                tcm_msg_rx_count++;
+                    //handle_lcd(from_tcm, usb_msg, 4, 4+tcm_bytes_buffer_ptr); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                    tcm_bytes_buffer_ptr = 0;
+                    tcm_msg_rx_count++;
+                }
             }
 
-            // This section sends a message to the TCM and checks if the echoed bytes are correct by peeking into the receive buffer
+            // Send message
             if (tcm_msg_pending && (tcm_rx_available() == 0))
             {
                 if (!tcm_high_speed_enabled) // low speed mode, half-duplex mode approach
                 {
                     for (uint8_t i = 0; i < tcm_msg_to_send_ptr; i++) // repeat for the length of the message
                     {
+                        timeout_reached = false;
                         timeout_start = millis(); // save current time
                         tcm_putc(tcm_msg_to_send[i]); // put the next byte in the transmit buffer
-                        while((tcm_rx_available() <= i) && !timeout_reached)
+                        while ((tcm_rx_available() <= i) && !timeout_reached)
                         {
                             // wait here for echo (half-duplex mode)
                             if ((millis() - timeout_start) > SCI_LS_T1_DELAY) timeout_reached = true;
@@ -4969,67 +4933,55 @@ void handle_sci_data(void)
                         if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                         {
                             timeout_reached = false;
+                            send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
                             break;
                         }
                     }
-
-                    tcm_msg_to_send_ptr = 0; // reset pointer
-                    tcm_msg_pending = false; // re-arm, make it possible to send a message again
                 }
                 else // high speed mode, full-duplex mode approach
                 {
-                    // Make sure that the memory table select byte is approved by the TCM before sending the full message
-                    if (array_contains(sci_hi_speed_memarea, 16, tcm_msg_to_send[0]))
+                    uint8_t echo_retry_counter = 0;
+                    
+                    if (array_contains(sci_hi_speed_memarea, 16, tcm_msg_to_send[0])) // make sure that the memory table select byte is approved by the TCM before sending the full message
                     {
-                        timeout_start = millis(); // save current time
-                        while((tcm_rx_available() <= 0) && !timeout_reached)
+                        for (uint8_t i = 0; i < tcm_msg_to_send_ptr; i++) // repeat for the length of the message
                         {
-                            tcm_putc(tcm_msg_to_send[0]);
-                            delay(5);
-                            if ((millis() - timeout_start) > 200) timeout_reached = true; // try to set memory table for 200 milliseconds
-                        }
-                        if (timeout_reached)
-                        {
+                            tcm_again:
                             timeout_reached = false;
-                            tcm_echo_accepted = false;
-                        }
-                        else
-                        {
-                            tcm_getc(); // read echo byte into oblivion
-                            tcm_echo_accepted = true;
-                        }
-
-                        if (tcm_echo_accepted)
-                        {
-                            for (uint8_t i = 0; i < tcm_msg_to_send_ptr; i++) // repeat for the length of the message
+                            timeout_start = millis(); // save current time
+                            tcm_putc(tcm_msg_to_send[i]); // put the next byte in the transmit buffer
+                            while ((tcm_rx_available() <= i) && !timeout_reached)
                             {
-                                timeout_start = millis(); // save current time
-                                tcm_putc(tcm_msg_to_send[i]); // put the next byte in the transmit buffer
-                                while((tcm_rx_available() <= i) && !timeout_reached)
+                                // wait here for response (echo in case of F0...FF)
+                                if ((millis() - timeout_start) > SCI_HS_T3_DELAY) timeout_reached = true;
+                            }
+                            if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
+                            {
+                                timeout_reached = false;
+                                send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                                break;
+                            }
+                            if (tcm_peek(0) != tcm_msg_to_send[0]) // make sure the first memory pointer byte is echoed back
+                            {
+                                tcm_rx_flush();
+                                echo_retry_counter++;
+                                if (echo_retry_counter < 10) goto tcm_again;
+                                else
                                 {
-                                    // wait here for response (full-duplex mode assumed)
-                                    if ((millis() - timeout_start) > SCI_HS_T3_DELAY) timeout_reached = true;
-                                }
-                                if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
-                                {
-                                    timeout_reached = false;
+                                    send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1); // send error packet back to the laptop
                                     break;
                                 }
                             }
-                            tcm_msg_to_send_ptr = 0; // reset pointer
-                            tcm_msg_pending = false; // re-arm, make it possible to send a message again
-                            tcm_echo_accepted = false;
                         }
                     }
                     else
                     {
                         // Messsage doesn't start with a memory table value, invalid
                         send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
-                        tcm_msg_to_send_ptr = 0; // reset pointer
-                        tcm_msg_pending = false; // re-arm, make it possible to send a message again
-                        tcm_echo_accepted = false;
                     }
                 }
+                tcm_msg_to_send_ptr = 0; // reset pointer
+                tcm_msg_pending = false; // re-arm, make it possible to send a message again
                 tcm_msg_tx_count++;
             }
         }

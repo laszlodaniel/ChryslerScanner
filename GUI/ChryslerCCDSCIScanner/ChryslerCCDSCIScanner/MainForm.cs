@@ -7,7 +7,6 @@ using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Net;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -46,7 +45,8 @@ namespace ChryslerCCDSCIScanner
         public List<byte> PacketBytes = new List<byte>();
         public byte PacketBytesChecksum = 0;
 
-        public BindingList<string> DiagnosticsTable = new BindingList<string>();
+        public List<string> DiagnosticsTable = new List<string>();
+        public List<string> OldDiagnosticsTable = new List<string>();
         public List<string> CCDbusMsgList = new List<string>(256);
         public List<byte> CCDBusIDList = new List<byte>(256);
         public List<string> SCIBusPCMMsgList = new List<string>(256);
@@ -188,6 +188,7 @@ namespace ChryslerCCDSCIScanner
         CircularBuffer<byte> SerialRxBuffer = new CircularBuffer<byte>(2048);
         LookupTable LT = new LookupTable();
         System.Timers.Timer TimeoutTimer = new System.Timers.Timer();
+        System.Timers.Timer DiagnosticsTableUpdateTimer = new System.Timers.Timer();
         WebClient Downloader = new WebClient();
         Uri FlashFile = new Uri("https://github.com/laszlodaniel/ChryslerCCDSCIScanner/raw/master/Arduino/ChryslerCCDSCIScanner/ChryslerCCDSCIScanner.ino.mega.hex");
         Uri SourceFile = new Uri("https://github.com/laszlodaniel/ChryslerCCDSCIScanner/raw/master/Arduino/ChryslerCCDSCIScanner/main.h");
@@ -226,9 +227,10 @@ namespace ChryslerCCDSCIScanner
             TimeoutTimer.Interval = 2000; // ms
             TimeoutTimer.Enabled = false;
 
-            // Setup backgroundworker
-            //bw.DoWork += (o, args) => DataReceived();
-            //bw.RunWorkerCompleted += (o, args) => UpdateDiagnosticsListBox();
+            // Setup diagnostics table update timer
+            DiagnosticsTableUpdateTimer.Elapsed += new ElapsedEventHandler(UpdateDiagnosticsListBox);
+            DiagnosticsTableUpdateTimer.Interval = 50; // ms, table refresh rate
+            DiagnosticsTableUpdateTimer.Enabled = true;
 
             // Fill the table with the default lines
             DiagnosticsTable.Add("┌─────────────────────────┐                                                                                               ");
@@ -1121,7 +1123,7 @@ namespace ChryslerCCDSCIScanner
                             DiagnosticsTable.RemoveAt(SCIBusTCMHeaderStart);
                             DiagnosticsTable.Insert(SCIBusTCMHeaderStart, SCIBusTCMHeaderText);
 
-                            UpdateDiagnosticsListBox();
+                            //UpdateDiagnosticsListBox();
                             break;
                         case (byte)Source.CCDBus:
                             StringBuilder ccdlistitem = new StringBuilder(EmptyLine); // start with a pre-defined empty line
@@ -1413,6 +1415,20 @@ namespace ChryslerCCDSCIScanner
                                         ccdunittoinsert = String.Empty;
                                     }
                                     break;
+                                case 0xFE:
+                                    if (ccdmessage.Length > 2)
+                                    {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xFE);
+                                        ccdvaluetoinsert = Util.ByteToHexString(ccdmessage, 1, 2);
+                                        ccdunittoinsert = String.Empty;
+                                    }
+                                    else
+                                    {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xF2);
+                                        ccdvaluetoinsert = String.Empty; ;
+                                        ccdunittoinsert = String.Empty;
+                                    }
+                                    break;
                             }
 
                             // Insert texts into the line
@@ -1514,7 +1530,7 @@ namespace ChryslerCCDSCIScanner
                             CCDBusHeaderText = Util.Truncate(CCDBusHeaderText, EmptyLine.Length); // Replacing strings causes the base string to grow so cut it back to stay in line
                             DiagnosticsTable.RemoveAt(CCDBusHeaderStart);
                             DiagnosticsTable.Insert(CCDBusHeaderStart, CCDBusHeaderText);
-                            UpdateDiagnosticsListBox();
+                            //UpdateDiagnosticsListBox();
                             Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message", msg);
                             File.AppendAllText(CCDLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
                             break;
@@ -2427,9 +2443,18 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         else
                                         {
-                                            scipcmdescriptiontoinsert = "ENGINE CONTROLLER REQUESTS";
-                                            scipcmvaluetoinsert = "STOPPED";
-                                            scipcmunittoinsert = String.Empty;
+                                            if (pcmmessage[1] == 0x00)
+                                            {
+                                                scipcmdescriptiontoinsert = "ENGINE CONTROLLER REQUESTS";
+                                                scipcmvaluetoinsert = "STOPPED";
+                                                scipcmunittoinsert = String.Empty;
+                                            }
+                                            else
+                                            {
+                                                scipcmdescriptiontoinsert = "ENGINE CONTROLLER REQUESTS";
+                                                scipcmvaluetoinsert = "STOPPED";
+                                                scipcmunittoinsert = String.Empty;
+                                            }
                                         }
                                         break;
                                     case 0x2B:
@@ -2550,7 +2575,7 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         break;
                                     case 0xFE:
-                                        scipcmdescriptiontoinsert = String.Empty;
+                                        scipcmdescriptiontoinsert = "ALREADY IN LOW-SPEED MODE";
                                         scipcmunittoinsert = String.Empty;
                                         break;
                                 }
@@ -2626,9 +2651,9 @@ namespace ChryslerCCDSCIScanner
 
                                 pcmmessagemix = temp.ToArray();
 
-                                if (pcmmessagemix.Length > 2)
+                                if (pcmmessagemix.Length > 1)
                                 {
-                                    SecondaryIDByte = pcmmessagemix[2]; // Secondary ID byte applies to high speed mode only, it's actually the first RAM address that appears in the message
+                                    SecondaryIDByte = pcmmessagemix[1]; // Secondary ID byte applies to high speed mode only, it's actually the first RAM address that appears in the message
                                 }
 
                                 if (pcmmessagemix.Length < 9) // max 8 byte fits the message column
@@ -2753,7 +2778,7 @@ namespace ChryslerCCDSCIScanner
                             SCIBusPCMHeaderText = Util.Truncate(SCIBusPCMHeaderText, EmptyLine.Length); // Replacing strings causes the base string to grow so cut it back to stay in line
                             DiagnosticsTable.RemoveAt(SCIBusPCMHeaderStart);
                             DiagnosticsTable.Insert(SCIBusPCMHeaderStart, SCIBusPCMHeaderText);
-                            UpdateDiagnosticsListBox();
+                            //UpdateDiagnosticsListBox();
                             Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (PCM)", msg);
                             break;
                         case (byte)Source.SCIBusTCM:
@@ -2887,7 +2912,7 @@ namespace ChryslerCCDSCIScanner
                             SCIBusTCMHeaderText = Util.Truncate(SCIBusTCMHeaderText, EmptyLine.Length); // Replacing strings causes the base string to grow so cut it back to stay in line
                             DiagnosticsTable.RemoveAt(SCIBusTCMHeaderStart);
                             DiagnosticsTable.Insert(SCIBusTCMHeaderStart, SCIBusTCMHeaderText);
-                            UpdateDiagnosticsListBox();
+                            //UpdateDiagnosticsListBox();
                             Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (TCM)", msg);
                             break;
                         default:
@@ -2919,43 +2944,68 @@ namespace ChryslerCCDSCIScanner
             }
         }
 
-        private void UpdateDiagnosticsListBox()
+        private void UpdateDiagnosticsListBox(object source, ElapsedEventArgs e)
         {
-            if (DiagnosticsListBox.InvokeRequired)
+            if (!OldDiagnosticsTable.SequenceEqual(DiagnosticsTable)) // only update if the new list is different than the actual
             {
-                DiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
+                OldDiagnosticsTable.Clear(); // clear old table
+                OldDiagnosticsTable.AddRange(DiagnosticsTable); // copy the new table to the old one for the next comparison when the timer ticks
+
+                if (DiagnosticsListBox.InvokeRequired)
+                {
+                    DiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
+                    {
+                        DiagnosticsListBox.SuspendLayout();
+                        DiagnosticsListBox.BeginUpdate();
+                        int savedVpos = GetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT);
+                        DiagnosticsListBox.Items.Clear();
+
+                        try
+                        {
+                            DiagnosticsListBox.Items.AddRange(DiagnosticsTable.ToArray());
+                        }
+                        catch
+                        {
+                            ResetViewButton.PerformClick();
+                        }
+
+                        DiagnosticsListBox.Update();
+                        DiagnosticsListBox.Refresh();
+                        SetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT, savedVpos, true);
+                        PostMessageA((IntPtr)DiagnosticsListBox.Handle, WM_VSCROLL, SB_THUMBPOSITION + 0x10000 * savedVpos, 0);
+                        DiagnosticsListBox.EndUpdate();
+                        DiagnosticsListBox.ResumeLayout();
+                    });
+                }
+                else
                 {
                     DiagnosticsListBox.SuspendLayout();
                     DiagnosticsListBox.BeginUpdate();
                     int savedVpos = GetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT);
                     DiagnosticsListBox.Items.Clear();
-                    DiagnosticsListBox.Items.AddRange(DiagnosticsTable.ToArray());
+
+                    try
+                    {
+                        DiagnosticsListBox.Items.AddRange(DiagnosticsTable.ToArray());
+                    }
+                    catch
+                    {
+                        ResetViewButton.PerformClick();
+                    }
+
                     DiagnosticsListBox.Update();
                     DiagnosticsListBox.Refresh();
                     SetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT, savedVpos, true);
                     PostMessageA((IntPtr)DiagnosticsListBox.Handle, WM_VSCROLL, SB_THUMBPOSITION + 0x10000 * savedVpos, 0);
                     DiagnosticsListBox.EndUpdate();
                     DiagnosticsListBox.ResumeLayout();
-                });
-            }
-            else
-            {
-                DiagnosticsListBox.SuspendLayout();
-                DiagnosticsListBox.BeginUpdate();
-                int savedVpos = GetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT);
-                DiagnosticsListBox.Items.Clear();
-                DiagnosticsListBox.Items.AddRange(DiagnosticsTable.ToArray());
-                DiagnosticsListBox.Update();
-                DiagnosticsListBox.Refresh();
-                SetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT, savedVpos, true);
-                PostMessageA((IntPtr)DiagnosticsListBox.Handle, WM_VSCROLL, SB_THUMBPOSITION + 0x10000 * savedVpos, 0);
-                DiagnosticsListBox.EndUpdate();
-                DiagnosticsListBox.ResumeLayout();
+                }
             }
         }
 
         private void ResetViewButton_Click(object sender, EventArgs e)
         {
+            DiagnosticsListBox.Items.Clear();
             DiagnosticsTable.Clear(); // delete everything
             DiagnosticsTable.Add("┌─────────────────────────┐                                                                                               ");
             DiagnosticsTable.Add("│ CCD-BUS MODULES         │ STATE: N/A                                                                                    ");
@@ -2986,7 +3036,8 @@ namespace ChryslerCCDSCIScanner
             DiagnosticsTable.Add("│                         │                                                     │                         │              │");
             DiagnosticsTable.Add("└─────────────────────────┴─────────────────────────────────────────────────────┴─────────────────────────┴──────────────┘");
             DiagnosticsTable.Add("                                                                                                                          ");
-            UpdateDiagnosticsListBox();
+            OldDiagnosticsTable.Clear();
+            UpdateDiagnosticsListBox(this, new EventArgs() as ElapsedEventArgs); // force table update
 
             CCDBusHeaderStart = 1;
             CCDBusListStart = 5;
@@ -4350,6 +4401,21 @@ namespace ChryslerCCDSCIScanner
             else
             {
                 about.BringToFront();
+            }
+        }
+
+        private void CCDBusEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            byte[] EnableCCDBusTransceiver = new byte[] { 0x3D, 0x00, 0x03, 0x03, 0x01, 0x01, 0x08 };
+            byte[] DisableCCDBusTransceiver = new byte[] { 0x3D, 0x00, 0x03, 0x03, 0x01, 0x00, 0x07 };
+
+            if (CCDBusEnabledCheckBox.Checked)
+            {
+                SerialDataWriteAsync(EnableCCDBusTransceiver);
+            }
+            else
+            {
+                SerialDataWriteAsync(DisableCCDBusTransceiver);
             }
         }
     }
