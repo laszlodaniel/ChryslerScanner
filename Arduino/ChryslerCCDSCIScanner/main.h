@@ -27,18 +27,18 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D9375C5
+#define FW_DATE 0x000000005D95F14B
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
 #define CCD_RX1_BUFFER_SIZE 32
-#define PCM_RX2_BUFFER_SIZE 128
-#define TCM_RX3_BUFFER_SIZE 128
+#define PCM_RX2_BUFFER_SIZE 256
+#define TCM_RX3_BUFFER_SIZE 256
 
 #define USB_TX0_BUFFER_SIZE 1024
 #define CCD_TX1_BUFFER_SIZE 32
-#define PCM_TX2_BUFFER_SIZE 128
-#define TCM_TX3_BUFFER_SIZE 128
+#define PCM_TX2_BUFFER_SIZE 256
+#define TCM_TX3_BUFFER_SIZE 256
 
 #define USB_RX0_BUFFER_MASK (USB_RX0_BUFFER_SIZE - 1)
 #define CCD_RX1_BUFFER_MASK (CCD_RX1_BUFFER_SIZE - 1)
@@ -214,6 +214,9 @@ extern LiquidCrystal_I2C lcd;
 #define error_packet_timeout_occured            0x06
 #define error_buffer_overflow                   0x07
 // 0x08-0xFA reserved
+#define error_sci_hs_memory_ptr_no_response     0xF8
+#define error_sci_hs_invalid_memory_ptr         0xF9
+#define error_sci_hs_no_response                0xFA
 #define error_eep_not_found                     0xFB
 #define error_eep_read                          0xFC
 #define error_eep_write                         0xFD
@@ -226,9 +229,9 @@ extern LiquidCrystal_I2C lcd;
 #define CLI_MAX_NUM_ARGS  8    // Maximum number of arguments
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
-#define sbi(port, bit) (port) |=  (1 << (bit))
-#define cbi(port, bit) (port) &= ~(1 << (bit))
-#define ibi(port, bit) (port) ^=  (1 << (bit))
+#define sbi(variable, bit) (variable) |=  (1 << (bit))
+#define cbi(variable, bit) (variable) &= ~(1 << (bit))
+#define ibi(variable, bit) (variable) ^=  (1 << (bit))
 
 // Variables
 volatile uint8_t  USB_RxBuf[USB_RX0_BUFFER_SIZE];
@@ -4629,7 +4632,7 @@ void handle_sci_data(void)
                             update_timestamp(current_timestamp); // get current time for the timestamp
                             pcm_actuator_test_running = false;
                             pcm_actuator_test_byte = 0;
-    
+                            
                             for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
                             {
                                 usb_msg[i] = current_timestamp[i];
@@ -4692,9 +4695,9 @@ void handle_sci_data(void)
                     }
                 }
             }
-            else // handle high-speed mode
+            else // handle high-speed mode, no need to wait for message completion here, it is already handled when the message was sent
             {
-                if ((((millis() - pcm_last_msgbyte_received) > SCI_HS_T3_DELAY) && (pcm_bytes_buffer_ptr > 0)) || (pcm_bytes_buffer_ptr == PCM_RX2_BUFFER_SIZE))
+                if ((pcm_bytes_buffer_ptr > 0) || (pcm_bytes_buffer_ptr == PCM_RX2_BUFFER_SIZE))
                 {
                     uint8_t usb_msg[4+pcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
                     update_timestamp(current_timestamp); // get current time for the timestamp
@@ -4759,18 +4762,50 @@ void handle_sci_data(void)
                     }
 
                     // Peek into the receive buffer
-                    if ((pcm_peek(0) == 0x13) && (pcm_peek(1) != 0x00))
+                    if ((pcm_msg_to_send_ptr > 1) && (pcm_peek(0) == 0x13) && (pcm_peek(1) != 0x00))
                     {
-                        pcm_actuator_test_running = true;
-                        pcm_actuator_test_byte = pcm_msg_to_send[1];
-                        pcm_rx_flush(); // workaround for the first false received message
+                        // See if the PCM starts to broadcast the actuator test byte
+                        timeout_reached = false;
+                        timeout_start = millis(); // save current time
+                        while ((pcm_rx_available() <= pcm_msg_to_send_ptr) && !timeout_reached)
+                        {
+                            // wait here for echo (half-duplex mode)
+                            if ((millis() - timeout_start) > 100) timeout_reached = true;
+                        }
+                        if (timeout_reached)
+                        {
+                            timeout_reached = false;
+                            send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                        }
+                        else
+                        {
+                            pcm_actuator_test_running = true;
+                            pcm_actuator_test_byte = pcm_msg_to_send[1];
+                            pcm_rx_flush(); // workaround for the first false received message
+                        }
                     }
 
-                    if ((pcm_peek(0) == 0x2A) && (pcm_peek(1) != 0x00))
+                    if ((pcm_msg_to_send_ptr > 1) && (pcm_peek(0) == 0x2A) && (pcm_peek(1) != 0x00))
                     {
-                        pcm_ls_request_running = true;
-                        pcm_ls_request_byte = pcm_msg_to_send[1];
-                        pcm_rx_flush(); // workaround for the first false received message
+                        // See if the PCM starts to broadcast the diagnostic request byte
+                        timeout_reached = false;
+                        timeout_start = millis(); // save current time
+                        while ((pcm_rx_available() <= pcm_msg_to_send_ptr) && !timeout_reached)
+                        {
+                            // wait here for echo (half-duplex mode)
+                            if ((millis() - timeout_start) > 100) timeout_reached = true;
+                        }
+                        if (timeout_reached)
+                        {
+                            timeout_reached = false;
+                            send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                        }
+                        else
+                        {
+                            pcm_ls_request_running = true;
+                            pcm_ls_request_byte = pcm_msg_to_send[1];
+                            pcm_rx_flush(); // workaround for the first false received message
+                        }
                     }
                 }
                 else // high speed mode, full-duplex mode approach
@@ -4779,6 +4814,16 @@ void handle_sci_data(void)
                     
                     if (array_contains(sci_hi_speed_memarea, 16, pcm_msg_to_send[0])) // make sure that the memory table select byte is approved by the PCM before sending the full message
                     {
+                        if ((pcm_msg_to_send_ptr > 1) && (pcm_msg_to_send[1] == 0xFF)) // return full RAM-table if the first address is an invalid 0xFF
+                        {
+                            // Prepare message buffer as if it was filled with data beforehand
+                            for (uint8_t i = 0; i < 240; i++)
+                            {
+                                pcm_msg_to_send[1 + i] = i; // put the address byte after the memory table pointer
+                            }
+                            pcm_msg_to_send_ptr = 241;
+                        }
+                        
                         for (uint8_t i = 0; i < pcm_msg_to_send_ptr; i++) // repeat for the length of the message
                         {
                             pcm_again:
@@ -4793,17 +4838,19 @@ void handle_sci_data(void)
                             if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                             {
                                 timeout_reached = false;
-                                send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                                uint8_t ret[2] = { pcm_msg_to_send[0], pcm_msg_to_send[i] };
+                                send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_no_response, ret, 2); // return two bytes to determine which table and which address is unresponsive
                                 break;
                             }
-                            if (pcm_peek(0) != pcm_msg_to_send[0]) // make sure the first memory pointer byte is echoed back
+                            if (pcm_peek(0) != pcm_msg_to_send[0]) // make sure the first memory pointer byte is echoed back correctly
                             {
                                 pcm_rx_flush();
                                 echo_retry_counter++;
                                 if (echo_retry_counter < 10) goto pcm_again;
                                 else
                                 {
-                                    send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1); // send error packet back to the laptop
+                                    uint8_t ret[1] = { pcm_msg_to_send[0] };
+                                    send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_memory_ptr_no_response, ret, 1); // send error packet back to the laptop
                                     break;
                                 }
                             }
@@ -4812,7 +4859,7 @@ void handle_sci_data(void)
                     else
                     {
                         // Messsage doesn't start with a memory table value, invalid
-                        send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                        send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_invalid_memory_ptr, err, 1); // send error packet back to the laptop
                     }
                 }
                 pcm_msg_to_send_ptr = 0; // reset pointer
@@ -4872,9 +4919,9 @@ void handle_sci_data(void)
                     tcm_msg_rx_count++;
                 }
             }
-            else // handle high-speed mode
+            else // handle high-speed mode, no need to wait for message completion here, it is already handled when the message was sent
             {
-                if ((((millis() - tcm_last_msgbyte_received) > SCI_HS_T3_DELAY) && (tcm_bytes_buffer_ptr > 0)) || (tcm_bytes_buffer_ptr == TCM_RX3_BUFFER_SIZE))
+                if ((tcm_bytes_buffer_ptr > 0) || (tcm_bytes_buffer_ptr == TCM_RX3_BUFFER_SIZE))
                 {
                     uint8_t usb_msg[4+tcm_bytes_buffer_ptr]; // create local array which will hold the timestamp and the SCI-bus (TCM) message
                     update_timestamp(current_timestamp); // get current time for the timestamp
@@ -4958,7 +5005,8 @@ void handle_sci_data(void)
                             if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                             {
                                 timeout_reached = false;
-                                send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                                uint8_t ret[2] = { tcm_msg_to_send[0], tcm_msg_to_send[i] };
+                                send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_no_response, ret, 2); // return two bytes to determine which table and which address is unresponsive
                                 break;
                             }
                             if (tcm_peek(0) != tcm_msg_to_send[0]) // make sure the first memory pointer byte is echoed back
@@ -4968,7 +5016,8 @@ void handle_sci_data(void)
                                 if (echo_retry_counter < 10) goto tcm_again;
                                 else
                                 {
-                                    send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1); // send error packet back to the laptop
+                                    uint8_t ret[1] = { tcm_msg_to_send[0] };
+                                    send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_memory_ptr_no_response, ret, 1); // send error packet back to the laptop
                                     break;
                                 }
                             }
@@ -4977,7 +5026,7 @@ void handle_sci_data(void)
                     else
                     {
                         // Messsage doesn't start with a memory table value, invalid
-                        send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                        send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_invalid_memory_ptr, err, 1); // send error packet back to the laptop
                     }
                 }
                 tcm_msg_to_send_ptr = 0; // reset pointer

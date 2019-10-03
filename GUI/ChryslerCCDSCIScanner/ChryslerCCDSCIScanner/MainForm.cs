@@ -183,6 +183,7 @@ namespace ChryslerCCDSCIScanner
         public static extern bool LockWindowUpdate(IntPtr hWndLock);
 
         AboutForm about;
+        CheatSheetForm cheatsheet;
         BackgroundWorker bw = new BackgroundWorker();
         SerialPort Serial = new SerialPort();
         CircularBuffer<byte> SerialRxBuffer = new CircularBuffer<byte>(2048);
@@ -1053,6 +1054,15 @@ namespace ChryslerCCDSCIScanner
                                             break;
                                         case 0x07:
                                             Util.UpdateTextBox(USBTextBox, "[RX->] Error: buffer overflow", msg);
+                                            break;
+                                        case 0xF8:
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Error: SCI-bus memory table not responding", msg);
+                                            break;
+                                        case 0xF9:
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Error: invalid SCI-bus memory table byte", msg);
+                                            break;
+                                        case 0xFA:
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Error: no response from SCI-bus", msg);
                                             break;
                                         case 0xFB:
                                             Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM not found", msg);
@@ -2443,16 +2453,25 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         else
                                         {
-                                            if (pcmmessage[1] == 0x00)
+                                            if (pcmmessage.Length > 1)
                                             {
-                                                scipcmdescriptiontoinsert = "ENGINE CONTROLLER REQUESTS";
-                                                scipcmvaluetoinsert = "STOPPED";
-                                                scipcmunittoinsert = String.Empty;
+                                                if (pcmmessage[1] == 0x00)
+                                                {
+                                                    scipcmdescriptiontoinsert = "ENGINE CONTROLLER REQUESTS";
+                                                    scipcmvaluetoinsert = "STOPPED";
+                                                    scipcmunittoinsert = String.Empty;
+                                                }
+                                                else
+                                                {
+                                                    scipcmdescriptiontoinsert = "ENGINE CONTROLLER REQUESTS";
+                                                    scipcmvaluetoinsert = "STOPPED";
+                                                    scipcmunittoinsert = String.Empty;
+                                                }
                                             }
                                             else
                                             {
                                                 scipcmdescriptiontoinsert = "ENGINE CONTROLLER REQUESTS";
-                                                scipcmvaluetoinsert = "STOPPED";
+                                                scipcmvaluetoinsert = String.Empty;
                                                 scipcmunittoinsert = String.Empty;
                                             }
                                         }
@@ -4401,6 +4420,19 @@ namespace ChryslerCCDSCIScanner
             else
             {
                 about.BringToFront();
+            }
+        }
+
+        private void cheatSheetToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (cheatsheet == null || !cheatsheet.Visible)
+            {
+                cheatsheet = new CheatSheetForm(this);
+                cheatsheet.Show();
+            }
+            else
+            {
+                cheatsheet.BringToFront();
             }
         }
 

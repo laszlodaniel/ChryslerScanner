@@ -56,6 +56,7 @@
             this.USBClearAllButton = new System.Windows.Forms.Button();
             this.USBClearButton = new System.Windows.Forms.Button();
             this.DiagnosticsGroupBox = new System.Windows.Forms.GroupBox();
+            this.CCDBusEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.ResetViewButton = new System.Windows.Forms.Button();
             this.SortIDBytesCheckBox = new System.Windows.Forms.CheckBox();
             this.SnapshotButton = new System.Windows.Forms.Button();
@@ -69,7 +70,7 @@
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UpdateScannerFirmwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.CCDBusEnabledCheckBox = new System.Windows.Forms.CheckBox();
+            this.cheatSheetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.USBCommunicationGroupBox.SuspendLayout();
             this.DiagnosticsGroupBox.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -410,6 +411,19 @@
             this.DiagnosticsGroupBox.TabStop = false;
             this.DiagnosticsGroupBox.Text = "Diagnostics";
             // 
+            // CCDBusEnabledCheckBox
+            // 
+            this.CCDBusEnabledCheckBox.AutoSize = true;
+            this.CCDBusEnabledCheckBox.Checked = true;
+            this.CCDBusEnabledCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.CCDBusEnabledCheckBox.Location = new System.Drawing.Point(3, 543);
+            this.CCDBusEnabledCheckBox.Name = "CCDBusEnabledCheckBox";
+            this.CCDBusEnabledCheckBox.Size = new System.Drawing.Size(109, 17);
+            this.CCDBusEnabledCheckBox.TabIndex = 4;
+            this.CCDBusEnabledCheckBox.Text = "CCD-bus enabled";
+            this.CCDBusEnabledCheckBox.UseVisualStyleBackColor = true;
+            this.CCDBusEnabledCheckBox.CheckedChanged += new System.EventHandler(this.CCDBusEnabledCheckBox_CheckedChanged);
+            // 
             // ResetViewButton
             // 
             this.ResetViewButton.Location = new System.Drawing.Point(83, 491);
@@ -525,7 +539,8 @@
             // toolsToolStripMenuItem
             // 
             this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.UpdateScannerFirmwareToolStripMenuItem});
+            this.UpdateScannerFirmwareToolStripMenuItem,
+            this.cheatSheetToolStripMenuItem});
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
             this.toolsToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
             this.toolsToolStripMenuItem.Text = "Tools";
@@ -545,18 +560,12 @@
             this.aboutToolStripMenuItem.Text = "About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.AboutToolStripMenuItem_Click);
             // 
-            // CCDBusEnabledCheckBox
+            // cheatSheetToolStripMenuItem
             // 
-            this.CCDBusEnabledCheckBox.AutoSize = true;
-            this.CCDBusEnabledCheckBox.Checked = true;
-            this.CCDBusEnabledCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.CCDBusEnabledCheckBox.Location = new System.Drawing.Point(3, 543);
-            this.CCDBusEnabledCheckBox.Name = "CCDBusEnabledCheckBox";
-            this.CCDBusEnabledCheckBox.Size = new System.Drawing.Size(109, 17);
-            this.CCDBusEnabledCheckBox.TabIndex = 4;
-            this.CCDBusEnabledCheckBox.Text = "CCD-bus enabled";
-            this.CCDBusEnabledCheckBox.UseVisualStyleBackColor = true;
-            this.CCDBusEnabledCheckBox.CheckedChanged += new System.EventHandler(this.CCDBusEnabledCheckBox_CheckedChanged);
+            this.cheatSheetToolStripMenuItem.Name = "cheatSheetToolStripMenuItem";
+            this.cheatSheetToolStripMenuItem.Size = new System.Drawing.Size(206, 22);
+            this.cheatSheetToolStripMenuItem.Text = "Cheat sheet";
+            this.cheatSheetToolStripMenuItem.Click += new System.EventHandler(this.cheatSheetToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -631,6 +640,7 @@
         private System.Windows.Forms.Button ResetViewButton;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
         private System.Windows.Forms.CheckBox CCDBusEnabledCheckBox;
+        private System.Windows.Forms.ToolStripMenuItem cheatSheetToolStripMenuItem;
     }
 }
 
