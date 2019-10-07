@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D95F14B
+#define FW_DATE 0x000000005D9B58AA
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -1661,7 +1661,7 @@ Note:
            *      *      *      *      *      *      *      *      *
 (+5V) 1    |¯¯¯¯¯¯|      |¯¯¯¯¯¯|      |¯¯¯¯¯¯|      |¯¯¯¯¯¯|      |¯¯¯
            ˄      ˅      ˄      ˅      ˄      ˅      ˄      ˅      ˄
-      0 ___|      |______|      |______|      |______|      |______| 
+(GND) 0 ___|      |______|      |______|      |______|      |______| 
            *             *             *             *             *
            1 MHz clock frequency, 50% duty cycle (whole period = 1 tick).
 **************************************************************************/
@@ -3985,6 +3985,8 @@ void handle_usb_data(void)
                                             {
                                                 ccd_enabled = false;
                                                 ccd_clock_generator(STOP);
+                                                ccd_rx_flush();
+                                                ccd_tx_flush();
                                                 send_usb_packet(from_usb, to_usb, settings, set_ccd_bus, cmd_payload, 1); // acknowledge
                                                 break;
                                             }
@@ -4142,7 +4144,7 @@ void handle_usb_data(void)
                                     }
                                     case single_msg: // 0x01 - send message to the CCD-bus, message is stored in payload 
                                     {
-                                        if ((payload_length > 0) && (payload_length <= 64)) 
+                                        if ((payload_length > 0) && (payload_length <= CCD_RX1_BUFFER_SIZE)) 
                                         {
                                             // Fill the pending buffer with the message to be sent
                                             for (uint8_t i = 0; i < payload_length; i++)
@@ -4211,7 +4213,7 @@ void handle_usb_data(void)
                                     }
                                     case single_msg: // 0x01 - send message to the SCI-bus, message is stored in payload 
                                     {
-                                        if ((payload_length > 0) && (payload_length <= 256))
+                                        if ((payload_length > 0) && (payload_length <= PCM_RX2_BUFFER_SIZE))
                                         {
                                             for (uint16_t i = 0; i < payload_length; i++) // fill the pending buffer with the message to be sent
                                             {
@@ -4298,7 +4300,7 @@ void handle_usb_data(void)
                                     }
                                     case single_msg: // 0x01 - send message to the SCI-bus, message is stored in payload 
                                     {
-                                        if ((payload_length > 0) && (payload_length <= 256))
+                                        if ((payload_length > 0) && (payload_length <= TCM_RX3_BUFFER_SIZE))
                                         {
                                             for (uint16_t i = 0; i < payload_length; i++) // fill the pending buffer with the message to be sent
                                             {
@@ -4473,25 +4475,6 @@ void handle_ccd_data(void)
                 ccd_msg_pending = false; // re-arm, make it possible to send a message again, TODO: same as above
                 ccd_msg_tx_count++;
             }
-        }
-    }
-    else // monitor ccd-bus receive buffer for garbage bytes when clock signal is suspended and purge if necessary
-    {
-        // TODO: check checksum byte and only send message back when it's correct
-        uint8_t data_length = ccd_rx_available();
-        if (data_length > 0)
-        {
-            uint8_t usb_msg[4+data_length]; // create local array which will hold the timestamp and the CCD-bus message
-            update_timestamp(current_timestamp); // get current time for the timestamp
-            for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
-            {
-                usb_msg[i] = current_timestamp[i];
-            }
-            for (uint8_t i = 0; i < ccd_bytes_count; i++) // put every byte in the CCD-bus message after the timestamp
-            {
-                usb_msg[4+i] = ccd_getc() & 0xFF; // new message bytes may arrive in the circular buffer but this way only one message is removed
-            }
-            send_usb_packet(from_ccd, to_usb, msg_rx, single_msg, usb_msg, 4+ccd_bytes_count); // send CCD-bus message back to the laptop
         }
     }
 
