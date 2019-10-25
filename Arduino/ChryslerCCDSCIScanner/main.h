@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005D9B58AA
+#define FW_DATE 0x000000005DB2E8C4
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -340,10 +340,10 @@ uint8_t avr_signature[3];
 uint16_t free_ram_available = 0;
 
 // Battery voltage detector
-const uint16_t adc_supply_voltage = 500; // supply voltage multiplied by 100: 5.00V -> 500
-const uint16_t battery_rd1 = 2707; // high resistor value in the divider (R19), multiplied by 100: 27 kOhm = 2700
-const uint16_t battery_rd2 = 508;  // low resistor value in the divider (R20), multiplied by 100: 5 kOhm = 500
-uint16_t adc_max_value = 1024; // 1023 for 10-bit resolution
+uint16_t adc_supply_voltage = 500; // supply voltage multiplied by 100: 5.00V -> 500
+uint16_t battery_rd1 = 27000; // high resistor value in the divider (R19): 27 kOhm = 27000
+uint16_t battery_rd2 = 5000;  // low resistor value in the divider (R20): 5 kOhm = 5000
+uint16_t adc_max_value = 1023; // 1023 for 10-bit resolution
 uint32_t battery_adc = 0;   // raw analog reading is stored here
 uint16_t battery_volts = 0; // converted to battery voltage and multiplied by 100: 12.85V -> 1285
 uint8_t battery_volts_array[2]; // battery_volts is separated to byte components here
@@ -2093,6 +2093,9 @@ void exteeprom_init(void)
         assembly_date[5] = 0;
         assembly_date[6] = 0;
         assembly_date[7] = 0;
+        adc_supply_voltage = 500;
+        battery_rd1 = 27000;
+        battery_rd2 = 5000;
         eep_checksum[0] = 0; // zero out value
         eep_calculated_checksum = 0;
         send_usb_packet(from_usb, to_usb, ok_error, error_eep_not_found, err, 1);
@@ -2100,14 +2103,14 @@ void exteeprom_init(void)
     else // zero = good
     {
         eep_present = true;
-        eep_result = eep.read(0, hw_version, 2); // read first 2 bytes and store it in the hw_version array
+        eep_result = eep.read(0x00, hw_version, 2); // read first 2 bytes and store it in the hw_version array
         if (eep_result) // error
         {
             hw_version[0] = 0; // zero out values
             hw_version[1] = 0;
             send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
         }
-        eep_result = eep.read(2, hw_date, 8); // read following 8 bytes in the hw_date array
+        eep_result = eep.read(0x02, hw_date, 8); // read following 8 bytes in the hw_date array
         if (eep_result) // error
         {
             hw_date[0] = 0; // zero out values
@@ -2120,7 +2123,7 @@ void exteeprom_init(void)
             hw_date[7] = 0;
             send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
         }
-        eep_result = eep.read(10, assembly_date, 8); // read following 8 bytes in the assembly_date array
+        eep_result = eep.read(0x0A, assembly_date, 8); // read following 8 bytes in the assembly_date array
         if (eep_result) // error
         {
             assembly_date[0] = 0; // zero out values
@@ -2133,7 +2136,45 @@ void exteeprom_init(void)
             assembly_date[7] = 0;
             send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
         }
-        eep_result = eep.read(255, eep_checksum, 1); // read 255th byte for the checksum byte (total of 256 bytes are reserved for hardware description)
+
+        uint8_t data[2];
+        eep_result = eep.read(0x12, data, 2); // read ADC power supply value
+        if (eep_result) // error
+        {
+            adc_supply_voltage = 500; // default value
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+        }
+        else
+        {
+            adc_supply_voltage = (data[0] << 8) | data[1]; // stored value
+            if (adc_supply_voltage == 0) adc_supply_voltage = 500; // default value
+        }
+
+        eep_result = eep.read(0x14, data, 2); // read R19 resistor value (for calibration)
+        if (eep_result)
+        {
+            battery_rd1 = 27000; // default value
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+        }
+        else
+        {
+            battery_rd1 = (data[0] << 8) | data[1]; // stored value
+            if (battery_rd1 == 0) battery_rd1 = 27000; // default value
+        }
+        
+        eep_result = eep.read(0x16, data, 2); // read R20 resistor value (for calibration)
+        if (eep_result)
+        {
+            battery_rd2 = 5000; // default value
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+        }
+        else
+        {
+            battery_rd2 = (data[0] << 8) | data[1]; // stored value
+            if (battery_rd2 == 0) battery_rd2 = 5000; // default value
+        }
+        
+        eep_result = eep.read(0xFF, eep_checksum, 1); // read 255th byte for the checksum byte (total of 256 bytes are reserved for hardware description)
         if (eep_result) // error
         {
             eep_checksum[0] = 0; // zero out value
@@ -2234,7 +2275,7 @@ void check_battery_volts(void)
     }
     
     battery_adc /= 1000; // divide the sum by 1000 to get average value
-    battery_volts = (uint16_t)(battery_adc*(adc_supply_voltage/100.0)/adc_max_value*((battery_rd1/100.0)+(battery_rd2/100.0))/(battery_rd2/100.0)*100.0); // resistor divider equation
+    battery_volts = (uint16_t)(battery_adc*(adc_supply_voltage/100.0)/adc_max_value*((double)battery_rd1+(double)battery_rd2)/(double)battery_rd2*100.0); // resistor divider equation
     
     if (battery_volts < 600) // battery_volts < 6V
     {
@@ -4104,7 +4145,60 @@ void handle_usb_data(void)
                                         }
                                         break;
                                     }
-                                    
+                                    case 0x02: // read external EEPROM
+                                    {
+                                        uint8_t address_hb = cmd_payload[0];
+                                        uint8_t address_lb = cmd_payload[1];
+                                        uint8_t address = (address_hb << 8) | address_lb;
+                                        uint8_t value = eep.read(address);
+                                        uint8_t data[3] = { address_hb, address_lb, value };
+                                        send_usb_packet(from_usb, to_usb, debug, 0x02, data, 3); // send external EEPROM value back to the laptop
+                                        break;
+                                    }
+                                    case 0x03: // write external EEPROM
+                                    {
+                                        if (eep_present)
+                                        {
+                                            uint8_t address_hb = cmd_payload[0];
+                                            uint8_t address_lb = cmd_payload[1];
+                                            uint8_t address = (address_hb << 8) | address_lb;
+                                            uint8_t value = cmd_payload[2];
+
+                                            // Disable hardware write protection (EEPROM chip has a pullup resistor on its WP-pin!)
+                                            DDRE |= (1 << PE2); // set PE2 pin as output (this pin can't be reached by pinMode and digitalWrite commands)
+                                            PORTE &= ~(1 << PE2); // pull PE2 pin low to disable write protection
+
+                                            eep_result = eep.write(address, value);
+
+                                            if (eep_result) // error
+                                            {
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_eep_write, err, 1); // send error packet back to the laptop
+                                            }
+                                            else // ok, calculate checksum again
+                                            {
+                                                uint8_t temp_checksum = 0;
+
+                                                for (uint8_t i = 0; i < 255; i++) // add all 255 bytes together and skip last byte (where the result of this calculation goes) by setting the second parameter to 255 instead of 256
+                                                {
+                                                    temp_checksum += eep.read(i); // checksum variable will roll over several times but it's okay, this is its purpose
+                                                }
+                                                
+                                                eep_result = eep.write(255, temp_checksum); // place checksum byte at the last position of the array
+
+                                                if (eep_result) // error
+                                                {
+                                                    send_usb_packet(from_usb, to_usb, ok_error, error_eep_write, err, 1); // send error packet back to the laptop
+                                                }
+                                            }
+
+                                            PORTE |= (1 << PE2); // pull PE2 pin high to enable write protection
+
+                                            uint8_t reading = eep.read(address);
+                                            uint8_t data[3] = { address_hb, address_lb, reading };
+                                            send_usb_packet(from_usb, to_usb, debug, 0x03, data, 3); // send external EEPROM value back to the laptop for confirmation
+                                        }
+                                        break;
+                                    }
                                     default:
                                     {
                                         send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);

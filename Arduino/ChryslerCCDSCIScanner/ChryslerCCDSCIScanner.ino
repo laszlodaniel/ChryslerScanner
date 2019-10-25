@@ -22,10 +22,10 @@
 // Board: Arduino/Genuino Mega or Mega 2560
 // Processor: ATmega2560 (Mega 2560)
 // Fuse bytes:
-// - HF: 0xD0
 // - LF: 0xFF
+// - HF: 0xD0
 // - EF: 0xFD
-// - Lock: 0xFF
+// - Lock: 0x3F
 
 #include <avr/io.h>
 #include <avr/boot.h>
