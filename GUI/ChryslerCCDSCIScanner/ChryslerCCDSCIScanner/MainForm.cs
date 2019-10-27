@@ -4390,7 +4390,7 @@ namespace ChryslerCCDSCIScanner
                     Process process = new Process();
                     process.StartInfo.WorkingDirectory = "Tools";
                     process.StartInfo.FileName = "avrdude.exe";
-                    process.StartInfo.Arguments = "-C avrdude.conf -v -p atmega2560 -c wiring -P " + UpdatePort + " -b 115200 -D -U flash:w:ChryslerCCDSCIScanner.ino.mega.hex:i";
+                    process.StartInfo.Arguments = "-C avrdude.conf -p m2560 -c wiring -P " + UpdatePort + " -b 115200 -D -U flash:w:ChryslerCCDSCIScanner.ino.mega.hex:i";
                     process.Start();
                     process.WaitForExit();
                     this.Refresh();

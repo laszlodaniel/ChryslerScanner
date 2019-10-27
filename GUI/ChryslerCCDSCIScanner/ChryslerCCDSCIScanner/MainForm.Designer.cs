@@ -61,7 +61,7 @@
             this.SortIDBytesCheckBox = new System.Windows.Forms.CheckBox();
             this.SnapshotButton = new System.Windows.Forms.Button();
             this.DiagnosticsListBox = new System.Windows.Forms.ListBox();
-            this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.ControlPanelGroupBox = new System.Windows.Forms.GroupBox();
             this.ExpandButton = new System.Windows.Forms.Button();
             this.ImperialUnitRadioButton = new System.Windows.Forms.RadioButton();
             this.MetricUnitRadioButton = new System.Windows.Forms.RadioButton();
@@ -69,11 +69,11 @@
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UpdateScannerFirmwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.cheatSheetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.USBCommunicationGroupBox.SuspendLayout();
             this.DiagnosticsGroupBox.SuspendLayout();
-            this.groupBox3.SuspendLayout();
+            this.ControlPanelGroupBox.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -469,19 +469,19 @@
             this.DiagnosticsListBox.Size = new System.Drawing.Size(883, 469);
             this.DiagnosticsListBox.TabIndex = 0;
             // 
-            // groupBox3
+            // ControlPanelGroupBox
             // 
-            this.groupBox3.Controls.Add(this.ExpandButton);
-            this.groupBox3.Controls.Add(this.ImperialUnitRadioButton);
-            this.groupBox3.Controls.Add(this.MetricUnitRadioButton);
-            this.groupBox3.Controls.Add(this.UnitsLabel);
-            this.groupBox3.Controls.Add(this.ConnectButton);
-            this.groupBox3.Location = new System.Drawing.Point(12, 544);
-            this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(365, 56);
-            this.groupBox3.TabIndex = 13;
-            this.groupBox3.TabStop = false;
-            this.groupBox3.Text = "Control panel";
+            this.ControlPanelGroupBox.Controls.Add(this.ExpandButton);
+            this.ControlPanelGroupBox.Controls.Add(this.ImperialUnitRadioButton);
+            this.ControlPanelGroupBox.Controls.Add(this.MetricUnitRadioButton);
+            this.ControlPanelGroupBox.Controls.Add(this.UnitsLabel);
+            this.ControlPanelGroupBox.Controls.Add(this.ConnectButton);
+            this.ControlPanelGroupBox.Location = new System.Drawing.Point(12, 544);
+            this.ControlPanelGroupBox.Name = "ControlPanelGroupBox";
+            this.ControlPanelGroupBox.Size = new System.Drawing.Size(365, 56);
+            this.ControlPanelGroupBox.TabIndex = 13;
+            this.ControlPanelGroupBox.TabStop = false;
+            this.ControlPanelGroupBox.Text = "Control panel";
             // 
             // ExpandButton
             // 
@@ -553,13 +553,6 @@
             this.UpdateScannerFirmwareToolStripMenuItem.Text = "Update scanner firmware";
             this.UpdateScannerFirmwareToolStripMenuItem.Click += new System.EventHandler(this.UpdateScannerFirmwareToolStripMenuItem_Click);
             // 
-            // aboutToolStripMenuItem
-            // 
-            this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(52, 20);
-            this.aboutToolStripMenuItem.Text = "About";
-            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.AboutToolStripMenuItem_Click);
-            // 
             // cheatSheetToolStripMenuItem
             // 
             this.cheatSheetToolStripMenuItem.Name = "cheatSheetToolStripMenuItem";
@@ -567,12 +560,19 @@
             this.cheatSheetToolStripMenuItem.Text = "Cheat sheet";
             this.cheatSheetToolStripMenuItem.Click += new System.EventHandler(this.cheatSheetToolStripMenuItem_Click);
             // 
+            // aboutToolStripMenuItem
+            // 
+            this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(52, 20);
+            this.aboutToolStripMenuItem.Text = "About";
+            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.AboutToolStripMenuItem_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1284, 612);
-            this.Controls.Add(this.groupBox3);
+            this.Controls.Add(this.ControlPanelGroupBox);
             this.Controls.Add(this.DiagnosticsGroupBox);
             this.Controls.Add(this.USBCommunicationGroupBox);
             this.Controls.Add(this.menuStrip1);
@@ -587,8 +587,8 @@
             this.USBCommunicationGroupBox.PerformLayout();
             this.DiagnosticsGroupBox.ResumeLayout(false);
             this.DiagnosticsGroupBox.PerformLayout();
-            this.groupBox3.ResumeLayout(false);
-            this.groupBox3.PerformLayout();
+            this.ControlPanelGroupBox.ResumeLayout(false);
+            this.ControlPanelGroupBox.PerformLayout();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.ResumeLayout(false);
@@ -604,7 +604,7 @@
         private System.Windows.Forms.GroupBox DiagnosticsGroupBox;
         private System.Windows.Forms.Button USBClearButton;
         private System.Windows.Forms.Button USBSendButton;
-        private System.Windows.Forms.GroupBox groupBox3;
+        private System.Windows.Forms.GroupBox ControlPanelGroupBox;
         private System.Windows.Forms.RadioButton ImperialUnitRadioButton;
         private System.Windows.Forms.RadioButton MetricUnitRadioButton;
         private System.Windows.Forms.Label UnitsLabel;
