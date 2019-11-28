@@ -46,5 +46,17 @@ namespace ChryslerCCDSCIScanner.Properties {
                 this["TransmissionMethod"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool IncludeTimestamp {
+            get {
+                return ((bool)(this["IncludeTimestamp"]));
+            }
+            set {
+                this["IncludeTimestamp"] = value;
+            }
+        }
     }
 }

@@ -35,14 +35,22 @@ namespace ChryslerCCDSCIScanner
         public byte[] buffer = new byte[2048];
         public int HeartbeatInterval = 5000;
         public int HeartbeatDuration = 50;
-        public int RandomCCDMessageIntervalMin = 20;
-        public int RandomCCDMessageIntervalMax = 100;
+        public int RandomCCDMessageIntervalMin = 20;  // ms
+        public int RandomCCDMessageIntervalMax = 100; // ms
+        public int RepeatInterval = 100; // ms
+        public int RepeatIncrement = 1;
         public bool SetCCDBus = true;
         public byte SetSCIBus = 2;
-        public byte[] CCDBusMessageToSend = new byte[] { 0xB2, 0x20, 0x22, 0x00, 0x00, 0xF4 };
-        public byte[] SCIBusPCMMessageToSend = new byte[] { 0x10 };
-        public byte[] SCIBusTCMMessageToSend = new byte[] { 0x10 };
+        public byte[] CCDBusMessageToSendStart = new byte[] { 0xB2, 0x20, 0x22, 0x00, 0x00, 0xF4 };
+        public byte[] CCDBusMessageToSendEnd = new byte[] { 0xB2, 0x20, 0x22, 0xFF, 0xFE, 0xF1 };
+        public byte[] SCIBusPCMMessageToSendStart = new byte[] { 0x10 };
+        public byte[] SCIBusPCMMessageToSendEnd = new byte[] { 0x10 };
+        public byte[] SCIBusTCMMessageToSendStart = new byte[] { 0x10 };
+        public byte[] SCIBusTCMMessageToSendEnd = new byte[] { 0x10 };
         public List<byte> PacketBytes = new List<byte>();
+        int FullPacketLength = 0;
+        byte PacketLengthHB = 0;
+        byte PacketLengthLB = 0;
         public byte PacketBytesChecksum = 0;
 
         public List<string> DiagnosticsTable = new List<string>();
@@ -285,6 +293,9 @@ namespace ChryslerCCDSCIScanner
                 }
                 if ((string)Properties.Settings.Default["TransmissionMethod"] == "hex") HexCommMethodRadioButton.Checked = true;
                 else if ((string)Properties.Settings.Default["TransmissionMethod"] == "ascii") AsciiCommMethodRadioButton.Checked = true;
+
+                if ((bool)Properties.Settings.Default["IncludeTimestamp"] == true) includeTimestampInLogFilesToolStripMenuItem.Checked = true;
+                else if ((bool)Properties.Settings.Default["IncludeTimestamp"] == false) includeTimestampInLogFilesToolStripMenuItem.Checked = false;
             }
             catch
             {
@@ -946,6 +957,16 @@ namespace ChryslerCCDSCIScanner
                                             Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus settings changed", msg);
                                             Util.UpdateTextBox(USBTextBox, configuration, null);
                                             break;
+                                        case 3: // Repeated message behavior
+                                            string repeat_interval = (payload[0] << 8 | payload[1]).ToString() + " ms";
+                                            string increment = (payload[2] << 8 | payload[3]).ToString();
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Repeated message behavior changed", msg);
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Repeated message behavior settings:" + Environment.NewLine +
+                                                                            "       Interval: " + repeat_interval + Environment.NewLine +
+                                                                            "       Increment: " + increment, null);
+                                            break;
+                                        default:
+                                            break;
                                     }
                                     break;
                                 case (byte)Command.Response:
@@ -1056,13 +1077,13 @@ namespace ChryslerCCDSCIScanner
                                             Util.UpdateTextBox(USBTextBox, "[RX->] Error: buffer overflow", msg);
                                             break;
                                         case 0xF8:
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Error: SCI-bus memory table not responding", msg);
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Error: " + Util.ByteToHexString(payload, 0, 1) + " SCI-bus RAM-table no response", msg);
                                             break;
                                         case 0xF9:
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Error: invalid SCI-bus memory table byte", msg);
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Error: " + Util.ByteToHexString(payload, 0, 1) + " SCI-bus RAM-table invalid", msg);
                                             break;
                                         case 0xFA:
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Error: no response from SCI-bus", msg);
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Error: no response from SCI-bus (" + Util.ByteToHexString(payload, 0, 2) + ")", msg);
                                             break;
                                         case 0xFB:
                                             Util.UpdateTextBox(USBTextBox, "[RX->] Error: external EEPROM not found", msg);
@@ -1515,7 +1536,15 @@ namespace ChryslerCCDSCIScanner
                                 }
                                 DiagnosticsTable.RemoveAt(CCDBusB2Start);
                                 DiagnosticsTable.Insert(CCDBusB2Start, ccdlistitem.ToString());
-                                File.AppendAllText(CCDB2F2LogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine); // save B2-messages separately
+
+                                if (includeTimestampInLogFilesToolStripMenuItem.Checked)
+                                {
+                                    TimeSpan CCDElapsedTime = TimeSpan.FromMilliseconds(ccdtimestamp[0] << 24 | ccdtimestamp[1] << 16 | ccdtimestamp[2] << 8 | ccdtimestamp[3]);
+                                    DateTime CCDTimestamp = DateTime.Today.Add(CCDElapsedTime);
+                                    string CCDTimestampString = CCDTimestamp.ToString("HH:mm:ss.fff") + " ";
+                                    File.AppendAllText(CCDB2F2LogFilename, CCDTimestampString); // no newline is appended!
+                                }
+                                File.AppendAllText(CCDB2F2LogFilename, Util.ByteToHexString(ccdmessage, 0, ccdmessage.Length) + Environment.NewLine); // save B2-messages separately
                             }
                             else if (IDByte == 0xF2)
                             {
@@ -1529,7 +1558,15 @@ namespace ChryslerCCDSCIScanner
                                 }
                                 DiagnosticsTable.RemoveAt(CCDBusF2Start);
                                 DiagnosticsTable.Insert(CCDBusF2Start, ccdlistitem.ToString());
-                                File.AppendAllText(CCDB2F2LogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine); // save F2-messages separately
+
+                                if (includeTimestampInLogFilesToolStripMenuItem.Checked)
+                                {
+                                    TimeSpan CCDElapsedTime = TimeSpan.FromMilliseconds(ccdtimestamp[0] << 24 | ccdtimestamp[1] << 16 | ccdtimestamp[2] << 8 | ccdtimestamp[3]);
+                                    DateTime CCDTimestamp = DateTime.Today.Add(CCDElapsedTime);
+                                    string CCDTimestampString = CCDTimestamp.ToString("HH:mm:ss.fff") + " ";
+                                    File.AppendAllText(CCDB2F2LogFilename, CCDTimestampString); // no newline is appended!
+                                }
+                                File.AppendAllText(CCDB2F2LogFilename, Util.ByteToHexString(ccdmessage, 0, ccdmessage.Length) + Environment.NewLine); // save F2-messages separately
                             }
                             CCDBusMsgRxCount++;
 
@@ -1542,7 +1579,15 @@ namespace ChryslerCCDSCIScanner
                             DiagnosticsTable.Insert(CCDBusHeaderStart, CCDBusHeaderText);
                             //UpdateDiagnosticsListBox();
                             Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message", msg);
-                            File.AppendAllText(CCDLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine);
+
+                            if (includeTimestampInLogFilesToolStripMenuItem.Checked)
+                            {
+                                TimeSpan CCDElapsedTime = TimeSpan.FromMilliseconds(ccdtimestamp[0] << 24 | ccdtimestamp[1] << 16 | ccdtimestamp[2] << 8 | ccdtimestamp[3]);
+                                DateTime CCDTimestamp = DateTime.Today.Add(CCDElapsedTime);
+                                string CCDTimestampString = CCDTimestamp.ToString("HH:mm:ss.fff") + " ";
+                                File.AppendAllText(CCDLogFilename, CCDTimestampString); // no newline is appended!
+                            }
+                            File.AppendAllText(CCDLogFilename, Util.ByteToHexString(ccdmessage, 0, ccdmessage.Length) + Environment.NewLine);
                             break;
                         case (byte)Source.SCIBusPCM:
                             SCIBusPCMEnabled = true;
@@ -2646,7 +2691,15 @@ namespace ChryslerCCDSCIScanner
                                     DiagnosticsTable.Insert(SCIBusPCMListStart + location, scipcmlistitem.ToString());
                                 }
                                 SCIBusPCMMsgRxCount++;
-                                File.AppendAllText(PCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine); // save message to text file
+
+                                if (includeTimestampInLogFilesToolStripMenuItem.Checked)
+                                {
+                                    TimeSpan SCIBusPCMElapsedTime = TimeSpan.FromMilliseconds(pcmtimestamp[0] << 24 | pcmtimestamp[1] << 16 | pcmtimestamp[2] << 8 | pcmtimestamp[3]);
+                                    DateTime SCIBusPCMTimestamp = DateTime.Today.Add(SCIBusPCMElapsedTime);
+                                    string SCIBusPCMTimestampString = SCIBusPCMTimestamp.ToString("HH:mm:ss.fff") + " ";
+                                    File.AppendAllText(PCMLogFilename, SCIBusPCMTimestampString); // no newline is appended!
+                                }
+                                File.AppendAllText(PCMLogFilename, Util.ByteToHexString(pcmmessage, 0, pcmmessage.Length) + Environment.NewLine); // save message to text file
                             }
                             if (subdatacode == 0x01) // high speed request bytes, just save them
                             {
@@ -2786,6 +2839,14 @@ namespace ChryslerCCDSCIScanner
                                     DiagnosticsTable.Insert(SCIBusPCMListStart + location, scipcmlistitem.ToString());
                                 }
                                 SCIBusPCMMsgRxCount++;
+
+                                if (includeTimestampInLogFilesToolStripMenuItem.Checked)
+                                {
+                                    TimeSpan SCIBusPCMElapsedTime = TimeSpan.FromMilliseconds(pcmtimestamp[0] << 24 | pcmtimestamp[1] << 16 | pcmtimestamp[2] << 8 | pcmtimestamp[3]);
+                                    DateTime SCIBusPCMTimestamp = DateTime.Today.Add(SCIBusPCMElapsedTime);
+                                    string SCIBusPCMTimestampString = SCIBusPCMTimestamp.ToString("HH:mm:ss.fff") + " ";
+                                    File.AppendAllText(PCMLogFilename, SCIBusPCMTimestampString); // no newline is appended!
+                                }
                                 File.AppendAllText(PCMLogFilename, Util.ByteToHexString(pcmmessagemix, 0, pcmmessagemix.Length) + Environment.NewLine); // save message to text file
                             }
 
@@ -2855,7 +2916,15 @@ namespace ChryslerCCDSCIScanner
                                     DiagnosticsTable.Insert(SCIBusTCMListStart + location, scitcmlistitem.ToString());
                                 }
                                 SCIBusTCMMsgRxCount++;
-                                File.AppendAllText(TCMLogFilename, Util.ByteToHexString(payload, 4, payload.Length) + Environment.NewLine); // save message to text file
+
+                                if (includeTimestampInLogFilesToolStripMenuItem.Checked)
+                                {
+                                    TimeSpan SCIBusTCMElapsedTime = TimeSpan.FromMilliseconds(tcmtimestamp[0] << 24 | tcmtimestamp[1] << 16 | tcmtimestamp[2] << 8 | tcmtimestamp[3]);
+                                    DateTime SCIBusTCMTimestamp = DateTime.Today.Add(SCIBusTCMElapsedTime);
+                                    string SCIBusTCMTimestampString = SCIBusTCMTimestamp.ToString("HH:mm:ss.fff") + " ";
+                                    File.AppendAllText(TCMLogFilename, SCIBusTCMTimestampString); // no newline is appended!
+                                }
+                                File.AppendAllText(TCMLogFilename, Util.ByteToHexString(tcmmessage, 0, tcmmessage.Length) + Environment.NewLine); // save message to text file
                                 // TODO: update header
                             }
                             if (subdatacode == 0x01) // high speed request bytes, just save them
@@ -2920,6 +2989,14 @@ namespace ChryslerCCDSCIScanner
                                     DiagnosticsTable.Insert(SCIBusTCMListStart + location, scitcmlistitem.ToString());
                                 }
                                 SCIBusTCMMsgRxCount++;
+
+                                if (includeTimestampInLogFilesToolStripMenuItem.Checked)
+                                {
+                                    TimeSpan SCIBusTCMElapsedTime = TimeSpan.FromMilliseconds(tcmtimestamp[0] << 24 | tcmtimestamp[1] << 16 | tcmtimestamp[2] << 8 | tcmtimestamp[3]);
+                                    DateTime SCIBusTCMTimestamp = DateTime.Today.Add(SCIBusTCMElapsedTime);
+                                    string SCIBusTCMTimestampString = SCIBusTCMTimestamp.ToString("HH:mm:ss.fff") + " ";
+                                    File.AppendAllText(TCMLogFilename, SCIBusTCMTimestampString); // no newline is appended!
+                                }
                                 File.AppendAllText(TCMLogFilename, Util.ByteToHexString(tcmmessagemix, 0, tcmmessagemix.Length) + Environment.NewLine); // save message to text file
                             }
 
@@ -3318,7 +3395,7 @@ namespace ChryslerCCDSCIScanner
                                     PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x06, 0x03, 0x00, HeartbeatIntervalHB, HeartbeatIntervalLB, HeartbeatDurationHB, HeartbeatDurationLB });
 
                                     PacketBytesChecksum = 0;
-                                    for (byte i = 1; i < PacketBytes.Count; i++)
+                                    for (int i = 1; i < PacketBytes.Count; i++)
                                     {
                                         PacketBytesChecksum += PacketBytes[i];
                                     }
@@ -3329,11 +3406,11 @@ namespace ChryslerCCDSCIScanner
                                 case 1: // Set CCD-bus
                                     PacketBytes.Clear();
                                     PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x03, 0x03, 0x01 });
-                                    if (SetCCDBus) PacketBytes.AddRange(new byte[] { 0x01 });
-                                    else PacketBytes.AddRange(new byte[] { 0x00 });
+                                    if (SetCCDBus) PacketBytes.Add(0x01);
+                                    else PacketBytes.Add(0x00);
 
                                     PacketBytesChecksum = 0;
-                                    for (byte i = 1; i < 6; i++)
+                                    for (int i = 1; i < 6; i++)
                                     {
                                         PacketBytesChecksum += PacketBytes[i];
                                     }
@@ -3345,7 +3422,24 @@ namespace ChryslerCCDSCIScanner
                                     PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x03, 0x03, 0x02, SetSCIBus });
 
                                     PacketBytesChecksum = 0;
-                                    for (byte i = 1; i < 6; i++)
+                                    for (int i = 1; i < 6; i++)
+                                    {
+                                        PacketBytesChecksum += PacketBytes[i];
+                                    }
+                                    PacketBytes.Add(PacketBytesChecksum);
+                                    USBSendComboBoxValue = PacketBytes.ToArray();
+                                    break;
+                                case 3: // Repeated message behavior
+                                    byte RepeatIntervalHB = (byte)((RepeatInterval >> 8) & 0xFF);
+                                    byte RepeatIntervalLB = (byte)(RepeatInterval & 0xFF);
+                                    byte RepeatIncrementHB = (byte)((RepeatIncrement >> 8) & 0xFF);
+                                    byte RepeatIncrementLB = (byte)(RepeatIncrement & 0xFF);
+
+                                    PacketBytes.Clear();
+                                    PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x06, 0x03, 0x03, RepeatIntervalHB, RepeatIntervalLB, RepeatIncrementHB, RepeatIncrementLB });
+
+                                    PacketBytesChecksum = 0;
+                                    for (int i = 1; i < PacketBytes.Count; i++)
                                     {
                                         PacketBytesChecksum += PacketBytes[i];
                                     }
@@ -3382,8 +3476,8 @@ namespace ChryslerCCDSCIScanner
                                     PacketBytes.Clear();
                                     PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x07, 0x0E, 0x01 });
 
-                                    if (Param3ComboBox.SelectedIndex == 0) PacketBytes.AddRange(new byte[] { 0x00 }); // false
-                                    else PacketBytes.AddRange(new byte[] { 0x01 }); // true
+                                    if (Param3ComboBox.SelectedIndex == 0) PacketBytes.Add(0x00); // false
+                                    else PacketBytes.Add(0x01); // true
 
                                     byte MinIntervalHB = (byte)((RandomCCDMessageIntervalMin >> 8) & 0xFF);
                                     byte MinIntervalLB = (byte)(RandomCCDMessageIntervalMin & 0xFF);
@@ -3393,7 +3487,7 @@ namespace ChryslerCCDSCIScanner
                                     PacketBytes.AddRange(new byte[] { MinIntervalHB, MinIntervalLB, MaxIntervalHB, MaxIntervalLB });
 
                                     PacketBytesChecksum = 0;
-                                    for (byte i = 1; i < 10; i++)
+                                    for (int i = 1; i < 10; i++)
                                     {
                                         PacketBytesChecksum += PacketBytes[i];
                                     }
@@ -3416,22 +3510,61 @@ namespace ChryslerCCDSCIScanner
                             switch (ModeComboBox.SelectedIndex)
                             {
                                 case 0: // Stop message transmission
+                                    USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x16, 0x00, 0x18 };
                                     break;
                                 case 1: // Single message
                                     PacketBytes.Clear();
-                                    int FullPacketLength = 6 + CCDBusMessageToSend.Length; // including sync and checksum
-                                    byte PacketLengthHB = (byte)((2 + CCDBusMessageToSend.Length) >> 8);
-                                    byte PacketLengthLB = (byte)((2 + CCDBusMessageToSend.Length) & 0xFF);
+                                    FullPacketLength = 6 + CCDBusMessageToSendStart.Length; // including sync and checksum
+                                    PacketLengthHB = (byte)((2 + CCDBusMessageToSendStart.Length) >> 8);
+                                    PacketLengthLB = (byte)((2 + CCDBusMessageToSendStart.Length) & 0xFF);
 
                                     PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x16, 0x01 });
-                                    PacketBytes.AddRange(CCDBusMessageToSend);
+                                    PacketBytes.AddRange(CCDBusMessageToSendStart);
 
-                                    byte PacketBytesChecksum = 0;
-                                    for (byte i = 1; i < FullPacketLength - 1; i++)
+                                    PacketBytesChecksum = 0;
+                                    for (int i = 1; i < FullPacketLength - 1; i++)
                                     {
                                         PacketBytesChecksum += PacketBytes[i];
                                     }
                                     PacketBytes.Add(PacketBytesChecksum);
+                                    USBSendComboBoxValue = PacketBytes.ToArray();
+                                    break;
+                                case 2: // Repeated message
+                                    PacketBytes.Clear();
+                                    if (Param3ComboBox.SelectedIndex == 0) // no iteration
+                                    {
+                                        FullPacketLength = 8 + CCDBusMessageToSendStart.Length;
+                                        PacketLengthHB = (byte)((4 + CCDBusMessageToSendStart.Length) >> 8);
+                                        PacketLengthLB = (byte)((4 + CCDBusMessageToSendStart.Length) & 0xFF);
+
+                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x16, 0x02, 0x00, (byte)CCDBusMessageToSendStart.Length });
+                                        PacketBytes.AddRange(CCDBusMessageToSendStart);
+
+                                        PacketBytesChecksum = 0;
+                                        for (int i = 1; i < FullPacketLength - 1; i++)
+                                        {
+                                            PacketBytesChecksum += PacketBytes[i];
+                                        }
+                                        PacketBytes.Add(PacketBytesChecksum);
+                                    }
+                                    else if (Param3ComboBox.SelectedIndex == 1) // iteration, same message length supposed
+                                    {
+                                        FullPacketLength = 8 + CCDBusMessageToSendStart.Length + CCDBusMessageToSendEnd.Length;
+                                        PacketLengthHB = (byte)((4 + CCDBusMessageToSendStart.Length + CCDBusMessageToSendEnd.Length) >> 8);
+                                        PacketLengthLB = (byte)((4 + CCDBusMessageToSendStart.Length + CCDBusMessageToSendEnd.Length) & 0xFF);
+
+                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x16, 0x02, 0x01, (byte)CCDBusMessageToSendStart.Length });
+                                        PacketBytes.AddRange(CCDBusMessageToSendStart);
+                                        PacketBytes.AddRange(CCDBusMessageToSendEnd);
+
+                                        PacketBytesChecksum = 0;
+                                        for (int i = 1; i < FullPacketLength - 1; i++)
+                                        {
+                                            PacketBytesChecksum += PacketBytes[i];
+                                        }
+                                        PacketBytes.Add(PacketBytesChecksum);
+                                    }
+
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 default:
@@ -3449,22 +3582,61 @@ namespace ChryslerCCDSCIScanner
                             switch (ModeComboBox.SelectedIndex)
                             {
                                 case 0: // Stop message transmission
+                                    USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x26, 0x00, 0x28 };
                                     break;
                                 case 1: // Single message
                                     PacketBytes.Clear();
-                                    int FullPacketLength = 6 + SCIBusPCMMessageToSend.Length; // including sync and checksum
-                                    byte PacketLengthHB = (byte)((2 + SCIBusPCMMessageToSend.Length) >> 8);
-                                    byte PacketLengthLB = (byte)((2 + SCIBusPCMMessageToSend.Length) & 0xFF);
+                                    FullPacketLength = 6 + SCIBusPCMMessageToSendStart.Length; // including sync and checksum
+                                    PacketLengthHB = (byte)((2 + SCIBusPCMMessageToSendStart.Length) >> 8);
+                                    PacketLengthLB = (byte)((2 + SCIBusPCMMessageToSendStart.Length) & 0xFF);
 
                                     PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x26, 0x01 });
-                                    PacketBytes.AddRange(SCIBusPCMMessageToSend);
+                                    PacketBytes.AddRange(SCIBusPCMMessageToSendStart);
 
-                                    byte PacketBytesChecksum = 0;
-                                    for (byte i = 1; i < FullPacketLength - 1; i++)
+                                    PacketBytesChecksum = 0;
+                                    for (int i = 1; i < FullPacketLength - 1; i++)
                                     {
                                         PacketBytesChecksum += PacketBytes[i];
                                     }
                                     PacketBytes.Add(PacketBytesChecksum);
+                                    USBSendComboBoxValue = PacketBytes.ToArray();
+                                    break;
+                                case 2: // Repeated message
+                                    PacketBytes.Clear();
+                                    if (Param3ComboBox.SelectedIndex == 0) // no iteration
+                                    {
+                                        FullPacketLength = 8 + SCIBusPCMMessageToSendStart.Length;
+                                        PacketLengthHB = (byte)((4 + SCIBusPCMMessageToSendStart.Length) >> 8);
+                                        PacketLengthLB = (byte)((4 + SCIBusPCMMessageToSendStart.Length) & 0xFF);
+
+                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x26, 0x02, 0x00, (byte)SCIBusPCMMessageToSendStart.Length });
+                                        PacketBytes.AddRange(SCIBusPCMMessageToSendStart);
+
+                                        PacketBytesChecksum = 0;
+                                        for (int i = 1; i < FullPacketLength - 1; i++)
+                                        {
+                                            PacketBytesChecksum += PacketBytes[i];
+                                        }
+                                        PacketBytes.Add(PacketBytesChecksum);
+                                    }
+                                    else if (Param3ComboBox.SelectedIndex == 1) // iteration, same message length supposed
+                                    {
+                                        FullPacketLength = 8 + SCIBusPCMMessageToSendStart.Length + SCIBusPCMMessageToSendEnd.Length;
+                                        PacketLengthHB = (byte)((4 + SCIBusPCMMessageToSendStart.Length + SCIBusPCMMessageToSendEnd.Length) >> 8);
+                                        PacketLengthLB = (byte)((4 + SCIBusPCMMessageToSendStart.Length + SCIBusPCMMessageToSendEnd.Length) & 0xFF);
+
+                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x26, 0x02, 0x01, (byte)SCIBusPCMMessageToSendStart.Length });
+                                        PacketBytes.AddRange(SCIBusPCMMessageToSendStart);
+                                        PacketBytes.AddRange(SCIBusPCMMessageToSendEnd);
+
+                                        PacketBytesChecksum = 0;
+                                        for (int i = 1; i < FullPacketLength - 1; i++)
+                                        {
+                                            PacketBytesChecksum += PacketBytes[i];
+                                        }
+                                        PacketBytes.Add(PacketBytesChecksum);
+                                    }
+
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 default:
@@ -3482,22 +3654,61 @@ namespace ChryslerCCDSCIScanner
                             switch (ModeComboBox.SelectedIndex)
                             {
                                 case 0: // Stop message transmission
+                                    USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x36, 0x00, 0x38 };
                                     break;
                                 case 1: // Single message
                                     PacketBytes.Clear();
-                                    int FullPacketLength = 6 + SCIBusTCMMessageToSend.Length; // including sync and checksum
-                                    byte PacketLengthHB = (byte)((2 + SCIBusTCMMessageToSend.Length) >> 8);
-                                    byte PacketLengthLB = (byte)((2 + SCIBusTCMMessageToSend.Length) & 0xFF);
+                                    FullPacketLength = 6 + SCIBusTCMMessageToSendStart.Length; // including sync and checksum
+                                    PacketLengthHB = (byte)((2 + SCIBusTCMMessageToSendStart.Length) >> 8);
+                                    PacketLengthLB = (byte)((2 + SCIBusTCMMessageToSendStart.Length) & 0xFF);
 
                                     PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x36, 0x01 });
-                                    PacketBytes.AddRange(SCIBusTCMMessageToSend);
+                                    PacketBytes.AddRange(SCIBusTCMMessageToSendStart);
 
-                                    byte PacketBytesChecksum = 0;
-                                    for (byte i = 1; i < FullPacketLength - 1; i++)
+                                    PacketBytesChecksum = 0;
+                                    for (int i = 1; i < FullPacketLength - 1; i++)
                                     {
                                         PacketBytesChecksum += PacketBytes[i];
                                     }
                                     PacketBytes.Add(PacketBytesChecksum);
+                                    USBSendComboBoxValue = PacketBytes.ToArray();
+                                    break;
+                                case 2: // Repeated message
+                                    PacketBytes.Clear();
+                                    if (Param3ComboBox.SelectedIndex == 0) // no iteration
+                                    {
+                                        FullPacketLength = 8 + SCIBusTCMMessageToSendStart.Length;
+                                        PacketLengthHB = (byte)((4 + SCIBusTCMMessageToSendStart.Length) >> 8);
+                                        PacketLengthLB = (byte)((4 + SCIBusTCMMessageToSendStart.Length) & 0xFF);
+
+                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x36, 0x02, 0x00, (byte)SCIBusTCMMessageToSendStart.Length });
+                                        PacketBytes.AddRange(SCIBusTCMMessageToSendStart);
+
+                                        PacketBytesChecksum = 0;
+                                        for (int i = 1; i < FullPacketLength - 1; i++)
+                                        {
+                                            PacketBytesChecksum += PacketBytes[i];
+                                        }
+                                        PacketBytes.Add(PacketBytesChecksum);
+                                    }
+                                    else if (Param3ComboBox.SelectedIndex == 1) // iteration, same message length supposed
+                                    {
+                                        FullPacketLength = 8 + SCIBusTCMMessageToSendStart.Length + SCIBusTCMMessageToSendEnd.Length;
+                                        PacketLengthHB = (byte)((4 + SCIBusTCMMessageToSendStart.Length + SCIBusTCMMessageToSendEnd.Length) >> 8);
+                                        PacketLengthLB = (byte)((4 + SCIBusTCMMessageToSendStart.Length + SCIBusTCMMessageToSendEnd.Length) & 0xFF);
+
+                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x36, 0x02, 0x01, (byte)SCIBusTCMMessageToSendStart.Length });
+                                        PacketBytes.AddRange(SCIBusTCMMessageToSendStart);
+                                        PacketBytes.AddRange(SCIBusTCMMessageToSendEnd);
+
+                                        PacketBytesChecksum = 0;
+                                        for (int i = 1; i < FullPacketLength - 1; i++)
+                                        {
+                                            PacketBytesChecksum += PacketBytes[i];
+                                        }
+                                        PacketBytes.Add(PacketBytesChecksum);
+                                    }
+
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 default:
@@ -3553,10 +3764,11 @@ namespace ChryslerCCDSCIScanner
                     Param1ComboBox.Font = new Font("Courier New", 9F);
                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                     Param1ComboBox.Items.Clear();
-                    Param1ComboBox.Text = Util.ByteToHexStringSimple(CCDBusMessageToSend); // Load last valid message
+                    Param1ComboBox.Text = Util.ByteToHexStringSimple(CCDBusMessageToSendStart); // Load last valid message
                     Param2Label1.Visible = false;
                     Param2Label2.Visible = false;
                     Param2ComboBox.Visible = false;
+                    Param2ComboBox.Text = Util.ByteToHexStringSimple(CCDBusMessageToSendEnd); // Load last valid message
                     Param3Label1.Visible = false;
                     Param3Label2.Visible = false;
                     Param3ComboBox.Visible = false;
@@ -3577,10 +3789,11 @@ namespace ChryslerCCDSCIScanner
                     Param1ComboBox.Font = new Font("Courier New", 9F);
                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                     Param1ComboBox.Items.Clear();
-                    Param1ComboBox.Text = Util.ByteToHexStringSimple(SCIBusPCMMessageToSend); // Load last valid message
+                    Param1ComboBox.Text = Util.ByteToHexStringSimple(SCIBusPCMMessageToSendStart); // Load last valid message
                     Param2Label1.Visible = false;
                     Param2Label2.Visible = false;
                     Param2ComboBox.Visible = false;
+                    Param2ComboBox.Text = Util.ByteToHexStringSimple(SCIBusPCMMessageToSendEnd); // Load last valid message
                     Param3Label1.Visible = false;
                     Param3Label2.Visible = false;
                     Param3ComboBox.Visible = false;
@@ -3601,10 +3814,11 @@ namespace ChryslerCCDSCIScanner
                     Param1ComboBox.Font = new Font("Courier New", 9F);
                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                     Param1ComboBox.Items.Clear();
-                    Param1ComboBox.Text = Util.ByteToHexStringSimple(SCIBusTCMMessageToSend); // Load last valid message
+                    Param1ComboBox.Text = Util.ByteToHexStringSimple(SCIBusTCMMessageToSendStart); // Load last valid message
                     Param2Label1.Visible = false;
                     Param2Label2.Visible = false;
                     Param2ComboBox.Visible = false;
+                    Param2ComboBox.Text = Util.ByteToHexStringSimple(SCIBusTCMMessageToSendEnd); // Load last valid message
                     Param3Label1.Visible = false;
                     Param3Label2.Visible = false;
                     Param3ComboBox.Visible = false;
@@ -3668,7 +3882,7 @@ namespace ChryslerCCDSCIScanner
                             break;
                         case 3: // Settings
                             ModeComboBox.Items.Clear();
-                            ModeComboBox.Items.AddRange(new string[] { "Heartbeat", "Set CCD-bus", "Set SCI-bus" });
+                            ModeComboBox.Items.AddRange(new string[] { "Heartbeat", "Set CCD-bus", "Set SCI-bus", "Repeated message behavior" });
                             ModeComboBox.SelectedIndex = 0; // Heartbeat
                             Param1Label1.Visible = true;
                             Param1Label2.Visible = true;
@@ -3796,6 +4010,7 @@ namespace ChryslerCCDSCIScanner
                                     Param1ComboBox.Font = new Font("Courier New", 9F);
                                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param1ComboBox.Items.Clear();
+                                    Param1ComboBox.Text = HeartbeatInterval.ToString();
                                     Param2Label1.Visible = true;
                                     Param2Label1.Text = "Duration:";
                                     Param2Label2.Visible = true;
@@ -3804,15 +4019,14 @@ namespace ChryslerCCDSCIScanner
                                     Param2ComboBox.Font = new Font("Courier New", 9F);
                                     Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param2ComboBox.Items.Clear();
+                                    Param2ComboBox.Text = HeartbeatDuration.ToString();
                                     Param3Label1.Visible = false;
                                     Param3Label2.Visible = false;
                                     Param3ComboBox.Visible = false;
-                                    Param1ComboBox.Text = HeartbeatInterval.ToString();
-                                    Param2ComboBox.Text = HeartbeatDuration.ToString();
                                     HintTextBox.Text = Environment.NewLine 
                                                      + "Set LED behavior in the scanner:" + Environment.NewLine 
                                                      + "- interval: blinking period of the blue ACT LED only," + Environment.NewLine 
-                                                     + "- duration: maximum on-time of any LEDs.";
+                                                     + "- duration: maximum on-time of any LEDs (default = 50 ms).";
                                     break;
                                 case 1: // Set CCD-bus
                                     Param1Label1.Visible = true;
@@ -3834,7 +4048,7 @@ namespace ChryslerCCDSCIScanner
                                     HintTextBox.Text = Environment.NewLine
                                                      + Environment.NewLine
                                                      + Environment.NewLine
-                                                     + "Turn on/off the CCD-bus transceiver chip";
+                                                     + "Turn on/off the CCD-bus transceiver chip.";
                                     break;
                                 case 2: // Set SCI-bus
                                     Param1Label1.Visible = true;
@@ -3849,8 +4063,7 @@ namespace ChryslerCCDSCIScanner
                                     Param1ComboBox.SelectedIndex = 0;
                                     Param2Label1.Visible = true;
                                     Param2Label1.Text = "Speed:";
-                                    Param2Label2.Visible = true;
-                                    Param2Label2.Text = "";
+                                    Param2Label2.Visible = false;
                                     Param2ComboBox.Visible = true;
                                     Param2ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
                                     Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -3859,18 +4072,43 @@ namespace ChryslerCCDSCIScanner
                                     Param2ComboBox.SelectedIndex = 1;
                                     Param3Label1.Visible = true;
                                     Param3Label1.Text = "Config.:";
-                                    Param3Label2.Visible = true;
-                                    Param3Label2.Text = "";
+                                    Param3Label2.Visible = false;
                                     Param3ComboBox.Visible = true;
                                     Param3ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
                                     Param3ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
                                     Param3ComboBox.Items.Clear();
                                     Param3ComboBox.Items.AddRange(new string[] { "A", "B" });
                                     Param3ComboBox.SelectedIndex = 0;
-                                    HintTextBox.Text = "Set SCI-bus transceiver circuits" + Environment.NewLine
-                                                     + "- module: engine (PCM) or transmission (TCM)" + Environment.NewLine
-                                                     + "- speed: communication speed" + Environment.NewLine
-                                                     + "- config: OBD-II pin routing specific to the vehicle";
+                                    HintTextBox.Text = "Set SCI-bus transceiver circuits:" + Environment.NewLine
+                                                     + "- module: engine (PCM) or transmission (TCM)," + Environment.NewLine
+                                                     + "- speed: communication speed," + Environment.NewLine
+                                                     + "- config: OBD-II pin routing specific to the vehicle.";
+                                    break;
+                                case 3: // Repeated message behavior
+                                    Param1Label1.Visible = true;
+                                    Param1Label1.Text = "Interval:";
+                                    Param1Label2.Visible = true;
+                                    Param1Label2.Text = "milliseconds";
+                                    Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Font = new Font("Courier New", 9F);
+                                    Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param1ComboBox.Items.Clear();
+                                    Param1ComboBox.Text = RepeatInterval.ToString();
+                                    Param2Label1.Visible = true;
+                                    Param2Label1.Text = "Incr.:";
+                                    Param2Label2.Visible = false;
+                                    Param2ComboBox.Visible = true;
+                                    Param2ComboBox.Font = new Font("Courier New", 9F);
+                                    Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param2ComboBox.Items.Clear();
+                                    Param2ComboBox.Text = RepeatIncrement.ToString();
+                                    Param3Label1.Visible = false;
+                                    Param3Label2.Visible = false;
+                                    Param3ComboBox.Visible = false;
+                                    HintTextBox.Text = "Set repeated message behavior for CCD/SCI-bus:" + Environment.NewLine
+                                                     + "- interval: elapsed time between messages (CCD-bus)," + Environment.NewLine
+                                                     + "- increment: the byte difference between each message," + Environment.NewLine
+                                                     + "when iteration is enabled (default = 1).";
                                     break;
                                 default:
                                     break;
@@ -3975,8 +4213,6 @@ namespace ChryslerCCDSCIScanner
                                     Param3ComboBox.Items.Clear();
                                     Param3ComboBox.Items.AddRange(new string[] { "false", "true" });
                                     Param3ComboBox.SelectedIndex = 1;
-                                    //Param1ComboBox.Text = "20";
-                                    //Param2ComboBox.Text = "100";
                                     HintTextBox.Text = "Broadcast random CCD-bus messages" + Environment.NewLine
                                                      + "at random times defined by min / max intervals." + Environment.NewLine
                                                      + "Do this only when the scanner is not connected" + Environment.NewLine
@@ -4000,22 +4236,70 @@ namespace ChryslerCCDSCIScanner
                             switch (ModeComboBox.SelectedIndex)
                             {
                                 case 0: // Stop message transmission
+                                    Param1Label1.Visible = false;
+                                    Param1Label2.Visible = false;
+                                    Param1ComboBox.Visible = false;
+                                    Param2Label1.Visible = false;
+                                    Param2Label2.Visible = false;
+                                    Param2ComboBox.Visible = false;
+                                    Param3Label1.Visible = false;
+                                    Param3Label2.Visible = false;
+                                    Param3ComboBox.Visible = false;
                                     HintTextBox.Text = Environment.NewLine
                                                      + Environment.NewLine
                                                      + Environment.NewLine
                                                      + "Stop repeated message transmission.";
                                     break;
                                 case 1: // Single message
+                                    Param1Label1.Visible = true;
+                                    Param1Label1.Text = "Message:";
+                                    Param1Label2.Visible = false;
+                                    Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Font = new Font("Courier New", 9F);
+                                    Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param1ComboBox.Items.Clear();
+                                    Param2Label1.Visible = false;
+                                    Param2Label2.Visible = false;
+                                    Param2ComboBox.Visible = false;
+                                    Param3Label1.Visible = false;
+                                    Param3Label2.Visible = false;
+                                    Param3ComboBox.Visible = false;
                                     HintTextBox.Text = Environment.NewLine
                                                      + Environment.NewLine
                                                      + Environment.NewLine
                                                      + "Send a single message to the CCD-bus.";
                                     break;
                                 case 2: // Repeated message(s)
+                                    Param1Label1.Visible = true;
+                                    Param1Label1.Text = "Start:";
+                                    Param1Label2.Visible = true;
+                                    Param1Label2.Text = "message";
+                                    Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Font = new Font("Courier New", 9F);
+                                    Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param1ComboBox.Items.Clear();
+                                    Param2Label1.Visible = true;
+                                    Param2Label1.Text = "End:";
+                                    Param2Label2.Visible = true;
+                                    Param2Label2.Text = "message";
+                                    Param2ComboBox.Visible = true;
+                                    Param2ComboBox.Font = new Font("Courier New", 9F);
+                                    Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param2ComboBox.Items.Clear();
+                                    Param3Label1.Visible = true;
+                                    Param3Label1.Text = "Iterate:";
+                                    Param3Label2.Visible = false;
+                                    Param3Label2.Text = "";
+                                    Param3ComboBox.Visible = true;
+                                    Param3ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
+                                    Param3ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+                                    Param3ComboBox.Items.Clear();
+                                    Param3ComboBox.Items.AddRange(new string[] { "false", "true" });
+                                    Param3ComboBox.SelectedIndex = 0;
                                     HintTextBox.Text = Environment.NewLine
-                                                     + Environment.NewLine
-                                                     + Environment.NewLine
-                                                     + "Send a message or multiple messages to the CCD-bus.";
+                                                     + "Send a message repeatedly to the CCD-bus." + Environment.NewLine
+                                                     + "Iteration increment and repeating interval is adjustable" + Environment.NewLine
+                                                     + "in settings (default increment = 1, interval = 100 ms).";
                                     break;
                                 default:
                                     break;
@@ -4032,22 +4316,70 @@ namespace ChryslerCCDSCIScanner
                             switch (ModeComboBox.SelectedIndex)
                             {
                                 case 0: // Stop message transmission
+                                    Param1Label1.Visible = false;
+                                    Param1Label2.Visible = false;
+                                    Param1ComboBox.Visible = false;
+                                    Param2Label1.Visible = false;
+                                    Param2Label2.Visible = false;
+                                    Param2ComboBox.Visible = false;
+                                    Param3Label1.Visible = false;
+                                    Param3Label2.Visible = false;
+                                    Param3ComboBox.Visible = false;
                                     HintTextBox.Text = Environment.NewLine
                                                      + Environment.NewLine
                                                      + Environment.NewLine
                                                      + "Stop repeated message transmission.";
                                     break;
                                 case 1: // Single message
+                                    Param1Label1.Visible = true;
+                                    Param1Label1.Text = "Message:";
+                                    Param1Label2.Visible = false;
+                                    Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Font = new Font("Courier New", 9F);
+                                    Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param1ComboBox.Items.Clear();
+                                    Param2Label1.Visible = false;
+                                    Param2Label2.Visible = false;
+                                    Param2ComboBox.Visible = false;
+                                    Param3Label1.Visible = false;
+                                    Param3Label2.Visible = false;
+                                    Param3ComboBox.Visible = false;
                                     HintTextBox.Text = Environment.NewLine
                                                      + Environment.NewLine
                                                      + Environment.NewLine
                                                      + "Send a single message to the SCI-bus (PCM).";
                                     break;
                                 case 2: // Repeated message(s)
+                                    Param1Label1.Visible = true;
+                                    Param1Label1.Text = "Start:";
+                                    Param1Label2.Visible = true;
+                                    Param1Label2.Text = "message";
+                                    Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Font = new Font("Courier New", 9F);
+                                    Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param1ComboBox.Items.Clear();
+                                    Param2Label1.Visible = true;
+                                    Param2Label1.Text = "End:";
+                                    Param2Label2.Visible = true;
+                                    Param2Label2.Text = "message";
+                                    Param2ComboBox.Visible = true;
+                                    Param2ComboBox.Font = new Font("Courier New", 9F);
+                                    Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param2ComboBox.Items.Clear();
+                                    Param3Label1.Visible = true;
+                                    Param3Label1.Text = "Iterate:";
+                                    Param3Label2.Visible = false;
+                                    Param3Label2.Text = "";
+                                    Param3ComboBox.Visible = true;
+                                    Param3ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
+                                    Param3ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+                                    Param3ComboBox.Items.Clear();
+                                    Param3ComboBox.Items.AddRange(new string[] { "false", "true" });
+                                    Param3ComboBox.SelectedIndex = 0;
                                     HintTextBox.Text = Environment.NewLine
                                                      + Environment.NewLine
-                                                     + Environment.NewLine
-                                                     + "Send a message or multiple messages to the SCI-bus (PCM).";
+                                                     + "Send a message repeatedly to the SCI-bus (PCM)." + Environment.NewLine
+                                                     + "Iteration increment is adjustable in settings (default = 1).";
                                     break;
                                 default:
                                     break;
@@ -4064,22 +4396,70 @@ namespace ChryslerCCDSCIScanner
                             switch (ModeComboBox.SelectedIndex)
                             {
                                 case 0: // Stop message transmission
+                                    Param1Label1.Visible = false;
+                                    Param1Label2.Visible = false;
+                                    Param1ComboBox.Visible = false;
+                                    Param2Label1.Visible = false;
+                                    Param2Label2.Visible = false;
+                                    Param2ComboBox.Visible = false;
+                                    Param3Label1.Visible = false;
+                                    Param3Label2.Visible = false;
+                                    Param3ComboBox.Visible = false;
                                     HintTextBox.Text = Environment.NewLine
                                                      + Environment.NewLine
                                                      + Environment.NewLine
                                                      + "Stop repeated message transmission.";
                                     break;
                                 case 1: // Single message
+                                    Param1Label1.Visible = true;
+                                    Param1Label1.Text = "Message:";
+                                    Param1Label2.Visible = false;
+                                    Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Font = new Font("Courier New", 9F);
+                                    Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param1ComboBox.Items.Clear();
+                                    Param2Label1.Visible = false;
+                                    Param2Label2.Visible = false;
+                                    Param2ComboBox.Visible = false;
+                                    Param3Label1.Visible = false;
+                                    Param3Label2.Visible = false;
+                                    Param3ComboBox.Visible = false;
                                     HintTextBox.Text = Environment.NewLine
                                                      + Environment.NewLine
                                                      + Environment.NewLine
                                                      + "Send a single message to the SCI-bus (TCM).";
                                     break;
                                 case 2: // Repeated message(s)
+                                    Param1Label1.Visible = true;
+                                    Param1Label1.Text = "Start:";
+                                    Param1Label2.Visible = true;
+                                    Param1Label2.Text = "message";
+                                    Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Font = new Font("Courier New", 9F);
+                                    Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param1ComboBox.Items.Clear();
+                                    Param2Label1.Visible = true;
+                                    Param2Label1.Text = "End:";
+                                    Param2Label2.Visible = true;
+                                    Param2Label2.Text = "message";
+                                    Param2ComboBox.Visible = true;
+                                    Param2ComboBox.Font = new Font("Courier New", 9F);
+                                    Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param2ComboBox.Items.Clear();
+                                    Param3Label1.Visible = true;
+                                    Param3Label1.Text = "Iterate:";
+                                    Param3Label2.Visible = false;
+                                    Param3Label2.Text = "";
+                                    Param3ComboBox.Visible = true;
+                                    Param3ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
+                                    Param3ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+                                    Param3ComboBox.Items.Clear();
+                                    Param3ComboBox.Items.AddRange(new string[] { "false", "true" });
+                                    Param3ComboBox.SelectedIndex = 0;
                                     HintTextBox.Text = Environment.NewLine
                                                      + Environment.NewLine
-                                                     + Environment.NewLine
-                                                     + "Send a message or multiple messages to the SCI-bus (TCM).";
+                                                     + "Send a message repeatedly to the SCI-bus (TCM)." + Environment.NewLine
+                                                     + "Iteration increment is adjustable in settings (default = 1).";
                                     break;
                                 default:
                                     break;
@@ -4203,6 +4583,17 @@ namespace ChryslerCCDSCIScanner
 
                                     }
                                     break;
+                                case 3: // Repeated message behavior
+                                    try
+                                    {
+                                        RepeatInterval = int.Parse(Param1ComboBox.Text);
+                                        RepeatIncrement = int.Parse(Param2ComboBox.Text);
+                                    }
+                                    catch
+                                    {
+
+                                    }
+                                    break;
                                 default:
                                     break;
                             }
@@ -4237,7 +4628,19 @@ namespace ChryslerCCDSCIScanner
                                 case 0: // Stop message transmission
                                     break;
                                 case 1: // Single message
-                                    CCDBusMessageToSend = Util.HexStringToByte(Param1ComboBox.Text);
+                                    CCDBusMessageToSendStart = Util.HexStringToByte(Param1ComboBox.Text);
+                                    break;
+                                case 2: // Repeated message
+                                    if (Param3ComboBox.SelectedIndex == 0)
+                                    {
+                                        Param2ComboBox.Enabled = false;
+                                    }
+                                    else if (Param3ComboBox.SelectedIndex == 1)
+                                    {
+                                        Param2ComboBox.Enabled = true;
+                                    }
+                                    CCDBusMessageToSendStart = Util.HexStringToByte(Param1ComboBox.Text);
+                                    CCDBusMessageToSendEnd = Util.HexStringToByte(Param2ComboBox.Text);
                                     break;
                                 default:
                                     break;
@@ -4256,7 +4659,19 @@ namespace ChryslerCCDSCIScanner
                                 case 0: // Stop message transmission
                                     break;
                                 case 1: // Single message
-                                    SCIBusPCMMessageToSend = Util.HexStringToByte(Param1ComboBox.Text);
+                                    SCIBusPCMMessageToSendStart = Util.HexStringToByte(Param1ComboBox.Text);
+                                    break;
+                                case 2: // Repeated message
+                                    if (Param3ComboBox.SelectedIndex == 0)
+                                    {
+                                        Param2ComboBox.Enabled = false;
+                                    }
+                                    else if (Param3ComboBox.SelectedIndex == 1)
+                                    {
+                                        Param2ComboBox.Enabled = true;
+                                    }
+                                    SCIBusPCMMessageToSendStart = Util.HexStringToByte(Param1ComboBox.Text);
+                                    SCIBusPCMMessageToSendEnd = Util.HexStringToByte(Param2ComboBox.Text);
                                     break;
                                 default:
                                     break;
@@ -4275,7 +4690,19 @@ namespace ChryslerCCDSCIScanner
                                 case 0: // Stop message transmission
                                     break;
                                 case 1: // Single message
-                                    SCIBusTCMMessageToSend = Util.HexStringToByte(Param1ComboBox.Text);
+                                    SCIBusTCMMessageToSendStart = Util.HexStringToByte(Param1ComboBox.Text);
+                                    break;
+                                case 2: // Repeated message
+                                    if (Param3ComboBox.SelectedIndex == 0)
+                                    {
+                                        Param2ComboBox.Enabled = false;
+                                    }
+                                    else if (Param3ComboBox.SelectedIndex == 1)
+                                    {
+                                        Param2ComboBox.Enabled = true;
+                                    }
+                                    SCIBusTCMMessageToSendStart = Util.HexStringToByte(Param1ComboBox.Text);
+                                    SCIBusTCMMessageToSendEnd = Util.HexStringToByte(Param2ComboBox.Text);
                                     break;
                                 default:
                                     break;
@@ -4448,6 +4875,20 @@ namespace ChryslerCCDSCIScanner
             else
             {
                 SerialDataWriteAsync(DisableCCDBusTransceiver);
+            }
+        }
+
+        private void includeTimestampInLogFilesToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
+        {
+            if (includeTimestampInLogFilesToolStripMenuItem.Checked)
+            {
+                Properties.Settings.Default["IncludeTimestamp"] = true;
+                Properties.Settings.Default.Save(); // Save settings in application configuration file
+            }
+            else
+            {
+                Properties.Settings.Default["IncludeTimestamp"] = false;
+                Properties.Settings.Default.Save(); // Save settings in application configuration file
             }
         }
     }
