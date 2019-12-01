@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005DB2E8C4
+#define FW_DATE 0x000000005DE3E287
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -92,9 +92,11 @@ extern LiquidCrystal_I2C lcd;
 //                                                                          FLAGS    DATA
 
 // Baudrate prescaler calculation: UBRR = (F_CPU / (16 * BAUDRATE)) - 1
-#define LOBAUD  127  // prescaler for 7812.5 baud speed (CCD-SCI / default low-speed diagnostic mode)
-#define HIBAUD  15   // prescaler for  62500 baud speed (SCI / high-speed parameter mode)
-#define USBBAUD 3    // prescaler for 250000 baud speed (USB)
+#define ELBAUD  1023 // prescaler for  976.5 baud speed (SCI-bus extra-low speed)
+#define LOBAUD  127  // prescaler for 7812.5 baud speed (CCD/SCI-bus default low-speed diagnostic mode)
+#define HIBAUD  15   // prescaler for  62500 baud speed (SCI-bus high-speed parameter mode)
+#define EHBAUD  7    // prescaler for 125000 baud speed (SCI-bus extra-high speed)
+#define USBBAUD 3    // prescaler for 250000 baud speed (USB communication)
 
 #define INT4          2  // CCD-bus idle interrupt pin
 #define INT5          3  // CCD-bus active byte interrupt pin
@@ -174,7 +176,8 @@ extern LiquidCrystal_I2C lcd;
 #define heartbeat           0x00 // ACT_LED flashing interval is stored in payload
 #define set_ccd_bus         0x01 // ON-OFF state is stored in payload
 #define set_sci_bus         0x02 // ON-OFF state, A/B configuration and speed are stored in payload
-#define set_lcd             0x03 // ON-OFF state
+#define set_repeat_behavior 0x03 // Repeated message behavior settings
+#define set_lcd             0x04 // ON-OFF state
 // 0x03-0xFF reserved 
 
 // SUB-DATA CODE byte
@@ -281,6 +284,14 @@ bool generate_random_ccd_msgs = false;
 uint16_t random_ccd_msg_interval = 0; // ms
 uint16_t random_ccd_msg_interval_min = 0;
 uint16_t random_ccd_msg_interval_max = 0;
+uint8_t ccd_repeated_msg_count = 0; // how many messages are stacked after each other
+uint8_t ccd_repeated_msg_ptr = 0; // which message is being sent
+uint8_t ccd_repeated_msg_bytes[CCD_RX1_BUFFER_SIZE]; // buffer to store all repeated message bytes
+uint8_t ccd_repeated_msg_bytes_ptr = 0; // where are we right now in this buffer
+uint32_t ccd_repeated_msg_last_millis = 0;
+bool ccd_repeated_messages = false;
+bool ccd_repeated_messages_iteration = false;
+bool ccd_repeated_messages_next = false;
 
 
 // SCI-bus
@@ -303,7 +314,10 @@ uint8_t pcm_repeated_msg_count = 0; // how many messages are stacked after each 
 uint8_t pcm_repeated_msg_ptr = 0; // which message is being sent
 uint8_t pcm_repeated_msg_bytes[PCM_RX2_BUFFER_SIZE]; // buffer to store all repeated message bytes
 uint8_t pcm_repeated_msg_bytes_ptr = 0; // where are we right now in this buffer
+uint8_t pcm_repeated_msg_increment = 1; // if iteration is true then the counter in the message will increase this much for every new message
 bool pcm_repeated_messages = false;
+bool pcm_repeated_messages_iteration = false;
+bool pcm_repeated_messages_next = false;
 bool pcm_actuator_test_running = false;
 uint8_t pcm_actuator_test_byte = 0;
 bool pcm_ls_request_running = false;
@@ -317,10 +331,21 @@ bool tcm_msg_pending = false; // flag for custom sci-bus message
 uint8_t tcm_msg_to_send[TCM_RX3_BUFFER_SIZE]; // custom sci-bus message is copied here
 uint8_t tcm_msg_to_send_ptr = 0; // custom sci-bus message length
 uint32_t tcm_last_msgbyte_received = 0; // time in milliseconds
+uint8_t tcm_repeated_msg_count = 0; // how many messages are stacked after each other
+uint8_t tcm_repeated_msg_ptr = 0; // which message is being sent
+uint8_t tcm_repeated_msg_bytes[TCM_RX3_BUFFER_SIZE]; // buffer to store all repeated message bytes
+uint8_t tcm_repeated_msg_bytes_ptr = 0; // where are we right now in this buffer
+uint8_t tcm_repeated_msg_increment = 1; // if iteration is true then the counter in the message will increase this much for every new message
+bool tcm_repeated_messages = false;
+bool tcm_repeated_messages_iteration = false;
+bool tcm_repeated_messages_next = false;
 uint32_t tcm_msg_rx_count = 0;
 uint32_t tcm_msg_tx_count = 0;
 
 const uint8_t sci_hi_speed_memarea[] = { 0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF };
+
+uint16_t repeated_msg_increment = 1; // if iteration is true then the counter in the message will increase this much for every new message
+uint16_t repeated_msg_interval = 100;
 
 // Packet related variables
 // Timeout values for packets
@@ -683,7 +708,7 @@ Purpose:  initialize UART0 and set baudrate for USB communication,
 Input:    direct ubrr value
 Returns:  none
 **************************************************************************/
-void usb_init(uint8_t ubrr)
+void usb_init(uint16_t ubrr)
 {
     /* reset ringbuffer */
     ATOMIC_BLOCK(ATOMIC_FORCEON)
@@ -695,7 +720,8 @@ void usb_init(uint8_t ubrr)
     }
   
     /* set baud rate */
-    UBRR0L = ubrr; // don't mess with the high register, low is all you need
+    UBRR0H = (ubrr >> 8) & 0x0F;
+    UBRR0L = ubrr & 0xFF;
 
     /* enable USART receiver and transmitter and receive complete interrupt */
     USB_CONTROL |= (1 << RXCIE0) | (1 << RXEN0) | (1 << TXEN0);
@@ -742,10 +768,11 @@ uint16_t usb_getc(void)
 Function: usb_peek()
 Purpose:  return the next byte waiting in the receive buffer
           without removing it
+Input:    index number in the buffer (default = 0 = next available byte)
 Returns:  low byte:  next byte in receive buffer
           high byte: error flags
 **************************************************************************/
-uint16_t usb_peek(void)
+uint16_t usb_peek(uint16_t index = 0)
 {
     uint16_t tmptail;
     uint8_t data;
@@ -758,7 +785,7 @@ uint16_t usb_peek(void)
         }
     }
   
-    tmptail = (USB_RxTail + 1) & USB_RX0_BUFFER_MASK;
+    tmptail = (USB_RxTail + 1 + index) & USB_RX0_BUFFER_MASK;
 
     /* get data from receive buffer */
     data = USB_RxBuf[tmptail];
@@ -911,7 +938,7 @@ Purpose:  initialize UART1 and set baudrate to conform CCD-bus requirements,
 Input:    direct ubrr value
 Returns:  none
 **************************************************************************/
-void ccd_init(uint8_t ubrr)
+void ccd_init(uint16_t ubrr)
 {
     /* reset ringbuffer */
     ATOMIC_BLOCK(ATOMIC_FORCEON)
@@ -923,7 +950,8 @@ void ccd_init(uint8_t ubrr)
     }
   
     /* set baud rate */
-    UBRR1L = ubrr; // don't mess with the high register, you already know why lol
+    UBRR1H = (ubrr >> 8) & 0x0F;
+    UBRR1L = ubrr & 0xFF;
 
     /* enable USART receiver and transmitter and receive complete interrupt */
     CCD_CONTROL |= (1 << RXCIE1) | (1 << RXEN1) | (1 << TXEN1);
@@ -970,6 +998,7 @@ uint16_t ccd_getc(void)
 Function: ccd_peek()
 Purpose:  return byte waiting in the receive buffer at index
           without removing it (by default the next byte available to read)
+Input:    index number in the buffer (default = 0 = next available byte)
 Returns:  low byte:  next byte in the receive buffer
           high byte: error flags
 **************************************************************************/
@@ -1139,7 +1168,7 @@ Purpose:  initialize UART2 and set baudrate to conform SCI-bus requirements,
 Input:    direct ubrr value
 Returns:  none
 **************************************************************************/
-void pcm_init(uint8_t ubrr)
+void pcm_init(uint16_t ubrr)
 {
     /* reset ringbuffer */
     ATOMIC_BLOCK(ATOMIC_FORCEON)
@@ -1151,7 +1180,8 @@ void pcm_init(uint8_t ubrr)
     }
   
     /* set baud rate */
-    UBRR2L = ubrr; // don't mess with the high register, you already know why lol
+    UBRR2H = (ubrr >> 8) & 0x0F;
+    UBRR2L = ubrr & 0xFF;
 
     /* enable USART receiver and transmitter and receive complete interrupt */
     PCM_CONTROL |= (1 << RXCIE2) | (1 << RXEN2) | (1 << TXEN2);
@@ -1198,6 +1228,7 @@ uint16_t pcm_getc(void)
 Function: pcm_peek()
 Purpose:  return the next byte waiting in the receive buffer
           without removing it
+Input:    index number in the buffer (default = 0 = next available byte)
 Returns:  low byte:  next byte in the receive buffer
           high byte: error flags
 **************************************************************************/
@@ -1367,7 +1398,7 @@ Purpose:  initialize UART3 and set baudrate to conform SCI-bus requirements,
 Input:    direct ubrr value
 Returns:  none
 **************************************************************************/
-void tcm_init(uint8_t ubrr)
+void tcm_init(uint16_t ubrr)
 {
     /* reset ringbuffer */
     ATOMIC_BLOCK(ATOMIC_FORCEON)
@@ -1379,7 +1410,8 @@ void tcm_init(uint8_t ubrr)
     }
   
     /* set baud rate */
-    UBRR3L = ubrr; // don't mess with the high register, you already know why lol
+    UBRR3H = (ubrr >> 8) & 0x0F;
+    UBRR3L = ubrr & 0xFF;
 
     /* enable USART receiver and transmitter and receive complete interrupt */
     TCM_CONTROL |= (1 << RXCIE3) | (1 << RXEN3) | (1 << TXEN3);
@@ -1426,6 +1458,7 @@ uint16_t tcm_getc(void)
 Function: tcm_peek()
 Purpose:  return the next byte waiting in the receive buffer
           without removing it
+Input:    index number in the buffer (default = 0 = next available byte)
 Returns:  low byte:  next byte in the receive buffer
           high byte: error flags
 **************************************************************************/
@@ -3848,7 +3881,7 @@ void handle_usb_data(void)
     if (usb_rx_available() > 0) // proceed only if the receive buffer contains at least 1 byte
     {
         blink_led(RX_LED); // blink RX-LED
-        uint8_t sync = usb_getc(); // read the next available byte in the USB receive buffer, it's supposed to be the first byte of a message
+        uint8_t sync = usb_getc() & 0xFF; // read the next available byte in the USB receive buffer, it's supposed to be the first byte of a message
         uint32_t command_timeout_start = 0;
         bool command_timeout_reached = false;
         
@@ -4056,7 +4089,23 @@ void handle_usb_data(void)
                                         configure_sci_bus(cmd_payload[0]); // pass settings to this function
                                         break;
                                     }
-                                    case set_lcd: // 0x03 - LCD ON/OFF
+                                    case set_repeat_behavior: // 0x03
+                                    {
+                                        if (!payload_bytes || (payload_length < 4))
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            break;
+                                        }
+
+                                        repeated_msg_interval = (cmd_payload[0] << 8) + cmd_payload[1]; // 0-65535 milliseconds
+                                        repeated_msg_increment = (cmd_payload[2] << 8) + cmd_payload[3]; // 0-65535
+
+                                        //uint8_t ret[1] = { set_repeat_behavior };
+                                        //send_usb_packet(from_usb, to_usb, ok_error, ok, ret, 1); // acknowledge
+                                        send_usb_packet(from_usb, to_usb, settings, set_repeat_behavior, cmd_payload, 4); // acknowledge
+                                        break;
+                                    }
+                                    case set_lcd: // 0x04 - LCD ON/OFF
                                     {
                                         if (!payload_bytes)
                                         {
@@ -4114,45 +4163,65 @@ void handle_usb_data(void)
                                 switch (subdatacode)
                                 {
                                     // TODO
-                                    case 0x01: // broadcast random ccd-bus messages
+                                    case 0x01: // broadcast random CCD-bus messages
                                     {
-                                        if (cmd_payload[0] == 0x01)
+                                        if (!payload_bytes)
                                         {
-                                            if (!payload_bytes || (payload_length < 5))
-                                            {
-                                                send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
-                                            }
-                                            else
-                                            {
-                                                generate_random_ccd_msgs = true;
-                                                random_ccd_msg_interval_min = (cmd_payload[1] << 8) | cmd_payload[2];
-                                                random_ccd_msg_interval_max = (cmd_payload[3] << 8) | cmd_payload[4];
-                                                random_ccd_msg_interval = random(random_ccd_msg_interval_min, random_ccd_msg_interval_max);
-                                                send_usb_packet(from_usb, to_usb, debug, 0x01, ack, 1); // acknowledge
-                                            }
-                                        }
-                                        else if (cmd_payload[0] == 0x00)
-                                        {
-                                            generate_random_ccd_msgs = false;
-                                            random_ccd_msg_interval_min = 0;
-                                            random_ccd_msg_interval_max = 0;
-                                            random_ccd_msg_interval = 0;
-                                            send_usb_packet(from_usb, to_usb, debug, 0x01, ack, 1); // acknowledge
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
                                         }
                                         else
                                         {
-                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            if (payload_length > 4)
+                                            {
+                                                switch (cmd_payload[0])
+                                                {
+                                                    case 0x00:
+                                                    {
+                                                        generate_random_ccd_msgs = false;
+                                                        random_ccd_msg_interval_min = 0;
+                                                        random_ccd_msg_interval_max = 0;
+                                                        random_ccd_msg_interval = 0;
+                                                        send_usb_packet(from_usb, to_usb, debug, 0x01, ack, 1); // acknowledge
+                                                        break;
+                                                    }
+                                                    case 0x01:
+                                                    {
+                                                        generate_random_ccd_msgs = true;
+                                                        random_ccd_msg_interval_min = (cmd_payload[1] << 8) | cmd_payload[2];
+                                                        random_ccd_msg_interval_max = (cmd_payload[3] << 8) | cmd_payload[4];
+                                                        random_ccd_msg_interval = random(random_ccd_msg_interval_min, random_ccd_msg_interval_max);
+                                                        send_usb_packet(from_usb, to_usb, debug, 0x01, ack, 1); // acknowledge
+                                                        break;
+                                                    }
+                                                    default:
+                                                    {
+                                                        send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            }
                                         }
                                         break;
                                     }
                                     case 0x02: // read external EEPROM
                                     {
-                                        uint8_t address_hb = cmd_payload[0];
-                                        uint8_t address_lb = cmd_payload[1];
-                                        uint8_t address = (address_hb << 8) | address_lb;
-                                        uint8_t value = eep.read(address);
-                                        uint8_t data[3] = { address_hb, address_lb, value };
-                                        send_usb_packet(from_usb, to_usb, debug, 0x02, data, 3); // send external EEPROM value back to the laptop
+                                        if (eep_present)
+                                        {
+                                            uint8_t address_hb = cmd_payload[0];
+                                            uint8_t address_lb = cmd_payload[1];
+                                            uint16_t address = (address_hb << 8) | address_lb;
+                                            uint8_t value = eep.read(address);
+                                            uint8_t data[3] = { address_hb, address_lb, value };
+                                            send_usb_packet(from_usb, to_usb, debug, 0x02, data, 3); // send external EEPROM value back to the laptop
+                                        }
+                                        else
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_eep_not_found, err, 1);
+                                        }
                                         break;
                                     }
                                     case 0x03: // write external EEPROM
@@ -4161,7 +4230,7 @@ void handle_usb_data(void)
                                         {
                                             uint8_t address_hb = cmd_payload[0];
                                             uint8_t address_lb = cmd_payload[1];
-                                            uint8_t address = (address_hb << 8) | address_lb;
+                                            uint16_t address = (address_hb << 8) | address_lb;
                                             uint8_t value = cmd_payload[2];
 
                                             // Disable hardware write protection (EEPROM chip has a pullup resistor on its WP-pin!)
@@ -4197,6 +4266,168 @@ void handle_usb_data(void)
                                             uint8_t data[3] = { address_hb, address_lb, reading };
                                             send_usb_packet(from_usb, to_usb, debug, 0x03, data, 3); // send external EEPROM value back to the laptop for confirmation
                                         }
+                                        else
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_eep_not_found, err, 1);
+                                        }
+                                        break;
+                                    }
+                                    case 0x04: // set arbitrary UART-speed on different channels
+                                    {
+                                        if (!payload_bytes)
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                        }
+                                        else
+                                        {
+                                            if (payload_length > 1)
+                                            {
+                                                switch (cmd_payload[0])
+                                                {
+                                                    case 0x01: // CCD-bus
+                                                    {
+                                                        switch (cmd_payload[1])
+                                                        {
+                                                            case 0x01: // 976.5 baud
+                                                            {
+                                                                ccd_init(ELBAUD);
+                                                                ccd_rx_flush();
+                                                                ccd_tx_flush();
+                                                                send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
+                                                                break;
+                                                            }
+                                                            case 0x02: // 7812.5 baud
+                                                            {
+                                                                ccd_init(LOBAUD);
+                                                                ccd_rx_flush();
+                                                                ccd_tx_flush();
+                                                                send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
+                                                                break;
+                                                            }
+                                                            case 0x03: // 62500 baud
+                                                            {
+                                                                ccd_init(HIBAUD);
+                                                                ccd_rx_flush();
+                                                                ccd_tx_flush();
+                                                                send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
+                                                                break;
+                                                            }
+                                                            case 0x04: // 125000 baud
+                                                            {
+                                                                ccd_init(EHBAUD);
+                                                                ccd_rx_flush();
+                                                                ccd_tx_flush();
+                                                                send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
+                                                                break;
+                                                            }
+                                                            default:
+                                                            {
+                                                                send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                                                break;
+                                                            }
+                                                        }
+                                                        break;
+                                                    }
+                                                    case 0x02: // SCI-bus (PCM)
+                                                    {
+                                                        switch (cmd_payload[1])
+                                                        {
+                                                            case 0x01: // 976.5 baud
+                                                            {
+                                                                pcm_init(ELBAUD);
+                                                                pcm_rx_flush();
+                                                                pcm_tx_flush();
+                                                                send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
+                                                                break;
+                                                            }
+                                                            case 0x02: // 7812.5 baud
+                                                            {
+                                                                pcm_init(LOBAUD);
+                                                                pcm_rx_flush();
+                                                                pcm_tx_flush();
+                                                                send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
+                                                                break;
+                                                            }
+                                                            case 0x03: // 62500 baud
+                                                            {
+                                                                pcm_init(HIBAUD);
+                                                                pcm_rx_flush();
+                                                                pcm_tx_flush();
+                                                                send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
+                                                                break;
+                                                            }
+                                                            case 0x04: // 125000 baud
+                                                            {
+                                                                pcm_init(EHBAUD);
+                                                                pcm_rx_flush();
+                                                                pcm_tx_flush();
+                                                                send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
+                                                                break;
+                                                            }
+                                                            default:
+                                                            {
+                                                                send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                                                break;
+                                                            }
+                                                        }
+                                                        break;
+                                                    }
+                                                    case 0x03: // SCI-bus (TCM)
+                                                    {
+                                                        switch (cmd_payload[1])
+                                                        {
+                                                            case 0x01: // 976.5 baud
+                                                            {
+                                                                tcm_init(ELBAUD);
+                                                                tcm_rx_flush();
+                                                                tcm_tx_flush();
+                                                                send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
+                                                                break;
+                                                            }
+                                                            case 0x02: // 7812.5 baud
+                                                            {
+                                                                tcm_init(LOBAUD);
+                                                                tcm_rx_flush();
+                                                                tcm_tx_flush();
+                                                                send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
+                                                                break;
+                                                            }
+                                                            case 0x03: // 62500 baud
+                                                            {
+                                                                tcm_init(HIBAUD);
+                                                                tcm_rx_flush();
+                                                                tcm_tx_flush();
+                                                                send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
+                                                                break;
+                                                            }
+                                                            case 0x04: // 125000 baud
+                                                            {
+                                                                tcm_init(EHBAUD);
+                                                                tcm_rx_flush();
+                                                                tcm_tx_flush();
+                                                                send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
+                                                                break;
+                                                            }
+                                                            default:
+                                                            {
+                                                                send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                                                break;
+                                                            }
+                                                        }
+                                                        break;
+                                                    }
+                                                    default:
+                                                    {
+                                                        send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            }
+                                        }
                                         break;
                                     }
                                     default:
@@ -4231,7 +4462,14 @@ void handle_usb_data(void)
                                 {
                                     case stop_msg_flow: // 0x00 - stop message transmission (single and repeated as well)
                                     {
-                                        // TODO
+                                        ccd_repeated_msg_count = 0;
+                                        ccd_repeated_msg_ptr = 0;
+                                        ccd_repeated_msg_bytes_ptr = 0;
+                                        ccd_repeated_messages = false;
+                                        ccd_repeated_messages_iteration = false;
+                                        ccd_repeated_messages_next = false;
+                                        ccd_msg_pending = false;
+                                        
                                         ret[0] = to_ccd; // improvised payload array with only 1 element which is the target bus
                                         send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 1);
                                         break;
@@ -4257,8 +4495,6 @@ void handle_usb_data(void)
                                             }
         
                                             ccd_msg_pending = true; // set flag so the main loop knows there's something to do
-                                            //ret[0] = to_ccd;
-                                            //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
                                         }
                                         else
                                         {
@@ -4266,11 +4502,48 @@ void handle_usb_data(void)
                                         }
                                         break;
                                     }
-                                    case repeated_msg: // 0x02 - send message(s) to the CCD-bus, number of messages, repeat interval(s) are stored in payload
+                                    case repeated_msg: // 0x02 - send repeated message(s) to the CCD-bus
                                     {
-                                        // TODO
-                                        ret[0] = to_ccd;
-                                        send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
+                                        if ((payload_length > 2) && (payload_length <= CCD_RX1_BUFFER_SIZE)) // at least 3 bytes are required
+                                        {
+                                            switch (cmd_payload[0]) // first payload byte tells us if a message has variables that need to increase every iteration
+                                            {
+                                                case 0x00: // no iteration needed, send the same message again ang again, 1 message only!
+                                                {
+                                                    // Payload structure example:
+                                                    // 00 06 B2 20 22 00 00 F4
+                                                    // -----------------------------------
+                                                    // 00: no message iteration needed, send the same message(s) again ang again
+                                                    // 06: message length
+                                                    // B2 20 22 00 00 F4: message
+
+                                                    for (uint8_t i = 2; i < (payload_length); i++)
+                                                    {
+                                                        ccd_repeated_msg_bytes[i-2] = cmd_payload[i]; // copy and save all the message bytes for this session
+                                                    }
+            
+                                                    ccd_repeated_msg_bytes_ptr = cmd_payload[1]; // message length
+                                                    ccd_repeated_messages = true; // set flag
+                                                    ccd_repeated_messages_iteration = false; // set flag
+                                                    ccd_repeated_messages_next = true; // set flag
+                                                    break;
+                                                }
+                                                case 0x01: // message iteration needed, 1 message only!
+                                                {
+                                                    // TODO
+                                                    break;
+                                                }
+                                                default:
+                                                {
+                                                    send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, no message included
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, no message included
+                                        }
                                         break;
                                     }
                                     default:
@@ -4300,7 +4573,14 @@ void handle_usb_data(void)
                                 {
                                     case stop_msg_flow: // 0x00 - stop message transmission (single and repeated as well)
                                     {
-                                        // TODO
+                                        pcm_repeated_msg_count = 0;
+                                        pcm_repeated_msg_ptr = 0;
+                                        pcm_repeated_msg_bytes_ptr = 0;
+                                        pcm_repeated_messages = false;
+                                        pcm_repeated_messages_iteration = false;
+                                        pcm_repeated_messages_next = false;
+                                        pcm_msg_pending = false;
+                                        
                                         ret[0] = to_pcm;
                                         send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 1);
                                         break;
@@ -4316,8 +4596,6 @@ void handle_usb_data(void)
                                             // Checksum isn't used on SCI-bus transmissions, except when receiving fault codes.
                                             pcm_msg_to_send_ptr = payload_length;
                                             pcm_msg_pending = true; // set flag so the main loop knows there's something to do
-                                            //ret[0] = to_pcm;
-                                            //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
                                         }
                                         else
                                         {
@@ -4325,40 +4603,67 @@ void handle_usb_data(void)
                                         }
                                         break;
                                     }
-                                    case repeated_msg: // 0x02 - send message(s) to the SCI-bus
+                                    case repeated_msg: // 0x02 - send repeated message(s) to the SCI-bus
                                     {
-                                        // NOT TESTED
-                                        // !!!
-                                        // Payload structure example:
-                                        // 03 03 F4 0A 0B 03 F4 0C 0D 02 F4 11
-                                        // -----------------------------------
-                                        // 03: message count
-                                        // 03: first message length
-                                        // F4 0A 0B: first message
-                                        // 03: second message length
-                                        // F4 0C 0D: second message
-                                        // 02: third message length
-                                        // F4 11: third message
-
-                                        pcm_repeated_msg_count = cmd_payload[0]; // save total message count
-                                        pcm_repeated_msg_ptr = 0; // start with the first one
-
-                                        for (uint8_t i = 0; i < (payload_length - 1); i++)
+                                        if ((payload_length > 2) && (payload_length <= PCM_RX2_BUFFER_SIZE)) // at least 3 bytes are required
                                         {
-                                            pcm_repeated_msg_bytes[i] = cmd_payload[i]; // copy and save all the message bytes for this session
+                                            switch (cmd_payload[0]) // first payload byte tells us if a message has variables that need to increase every iteration
+                                            {
+                                                case 0x00: // no iteration needed, send the same message again ang again, 1 message only!
+                                                {
+                                                    // Payload structure example:
+                                                    // 00 06 F4 0A 0B 0C 0D 11
+                                                    // -----------------------------------
+                                                    // 00: no message iteration needed, send the same message(s) again ang again
+                                                    // 06: message length
+                                                    // F4 0A 0B 0C 0D 11: message
+
+                                                    for (uint8_t i = 2; i < (payload_length); i++)
+                                                    {
+                                                        pcm_repeated_msg_bytes[i-2] = cmd_payload[i]; // copy and save all the message bytes for this session
+                                                    }
+            
+                                                    pcm_repeated_msg_bytes_ptr = cmd_payload[1]; // message length
+                                                    pcm_repeated_messages = true; // set flag
+                                                    pcm_repeated_messages_iteration = false; // set flag
+                                                    pcm_repeated_messages_next = true; // set flag
+
+                                                    ret[0] = to_pcm;
+                                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
+                                                    break;
+                                                }
+                                                case 0x01: // message iteration needed, 1 message only!
+                                                {
+                                                    // NOT TESTED
+                                                    // !!!
+                                                    // Payload structure example:
+                                                    // 01 04 26 00 00 00 26 01 FF FF 
+                                                    // -----------------------------------
+                                                    // 01: message iteration needed, 1 message only!
+                                                    // 04: message length
+                                                    // 26 00 00 00: first message in the sequence
+                                                    // 26 01 FF FF: last message in the sequence
+
+                                                    pcm_repeated_messages = true; // set flag
+                                                    pcm_repeated_messages_iteration = true; // set flag
+                                                    pcm_repeated_messages_next = true; // set flag
+                                                    pcm_repeated_msg_increment = cmd_payload[1];
+
+                                                    ret[0] = to_pcm;
+                                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
+                                                    break;
+                                                }
+                                                default:
+                                                {
+                                                    send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, no message included
+                                                    break;
+                                                }
+                                            }
                                         }
-
-                                        pcm_repeated_msg_bytes_ptr = 1; // skip the first message count byte and start with the current message's length
-                                        pcm_repeated_messages = true; // set flag
-
-                                        // The SCI-bus (PCM) message handler should copy the current message from this buffer to the transmit buffer, 
-                                        // wait for response and then copy the next message, wait for response, etc, then restart at the first message again,
-                                        // until "pcm_repeated_messages" is set to false.
-                                        // !!!
-                                        // NOT TESTED
-
-                                        ret[0] = to_pcm;
-                                        send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
+                                        else
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, no message included
+                                        }
                                         break;
                                     }
                                     default:
@@ -4387,7 +4692,14 @@ void handle_usb_data(void)
                                 {
                                     case stop_msg_flow: // 0x00 - stop message transmission (single and repeated as well)
                                     {
-                                        // TODO
+                                        tcm_repeated_msg_count = 0;
+                                        tcm_repeated_msg_ptr = 0;
+                                        tcm_repeated_msg_bytes_ptr = 0;
+                                        tcm_repeated_messages = false;
+                                        tcm_repeated_messages_iteration = false;
+                                        tcm_repeated_messages_next = false;
+                                        tcm_msg_pending = false;
+                                        
                                         ret[0] = to_tcm;
                                         send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 1);
                                         break;
@@ -4403,8 +4715,6 @@ void handle_usb_data(void)
                                             // Checksum isn't used on SCI-bus transmissions, except when receiving fault codes.
                                             tcm_msg_to_send_ptr = payload_length;
                                             tcm_msg_pending = true; // set flag so the main loop knows there's something to do
-                                            //ret[0] = to_tcm;
-                                            //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 1); // acknowledge
                                         }
                                         else
                                         {
@@ -4414,9 +4724,65 @@ void handle_usb_data(void)
                                     }
                                     case repeated_msg: // 0x02 - send message(s) to the SCI-bus, number of messages, repeat interval(s) are stored in payload
                                     {
-                                        // TODO
-                                        ret[0] = to_tcm;
-                                        send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
+                                        if ((payload_length > 2) && (payload_length <= TCM_RX3_BUFFER_SIZE)) // at least 3 bytes are required
+                                        {
+                                            switch (cmd_payload[0]) // first payload byte tells us if a message has variables that need to increase every iteration
+                                            {
+                                                case 0x00: // no iteration needed, send the same message again ang again, 1 message only!
+                                                {
+                                                    // Payload structure example:
+                                                    // 00 06 F4 0A 0B 0C 0D 11
+                                                    // -----------------------------------
+                                                    // 00: no message iteration needed, send the same message(s) again ang again
+                                                    // 06: message length
+                                                    // F4 0A 0B 0C 0D 11: message
+
+                                                    for (uint8_t i = 2; i < (payload_length); i++)
+                                                    {
+                                                        tcm_repeated_msg_bytes[i-2] = cmd_payload[i]; // copy and save all the message bytes for this session
+                                                    }
+            
+                                                    tcm_repeated_msg_bytes_ptr = cmd_payload[1]; // message length
+                                                    tcm_repeated_messages = true; // set flag
+                                                    tcm_repeated_messages_iteration = false; // set flag
+                                                    tcm_repeated_messages_next = true; // set flag
+
+                                                    ret[0] = to_tcm;
+                                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
+                                                    break;
+                                                }
+                                                case 0x01: // message iteration needed, 1 message only!
+                                                {
+                                                    // NOT TESTED
+                                                    // !!!
+                                                    // Payload structure example:
+                                                    // 01 04 26 00 00 00 26 01 FF FF 
+                                                    // -----------------------------------
+                                                    // 01: message iteration needed, 1 message only!
+                                                    // 04: message length
+                                                    // 26 00 00 00: first message in the sequence
+                                                    // 26 01 FF FF: last message in the sequence
+
+                                                    tcm_repeated_messages = true; // set flag
+                                                    tcm_repeated_messages_iteration = true; // set flag
+                                                    tcm_repeated_messages_next = true; // set flag
+                                                    tcm_repeated_msg_increment = cmd_payload[1];
+
+                                                    ret[0] = to_tcm;
+                                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
+                                                    break;
+                                                }
+                                                default:
+                                                {
+                                                    send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, no message included
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, no message included
+                                        }
                                         break;
                                     }
                                     default:
@@ -4528,6 +4894,21 @@ void handle_ccd_data(void)
                 send_usb_packet(from_ccd, to_usb, msg_rx, single_msg, usb_msg, 4+ccd_bytes_count); // send CCD-bus message back to the laptop
                 
                 //handle_lcd(from_ccd, usb_msg, 4, 4+ccd_bytes_count); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+
+                if (ccd_repeated_messages && !ccd_repeated_messages_iteration)
+                {
+                    bool match = true;
+                    for (uint8_t i = 0; i < ccd_bytes_count; i++)
+                    {
+                        if (ccd_msg_to_send[i] != usb_msg[4+i]) match = false; // compare received bytes with message sent
+                    }
+
+                    if (match) ccd_repeated_messages_next = true; // if echo is correct prepare next message
+                }
+                else if (ccd_repeated_messages && ccd_repeated_messages_iteration)
+                {
+                    // TODO
+                }
                 
                 ccd_bytes_count = 0; // force ISR to update this value again so we don't end up here in the next program loop
                 ccd_msg_in_buffer = 0;
@@ -4556,6 +4937,30 @@ void handle_ccd_data(void)
                     ccd_msg_to_send[ccd_msg_to_send_ptr - 1] = calculate_checksum(ccd_msg_to_send, 0, ccd_msg_to_send_ptr - 1);
                     ccd_msg_pending = true;
                     random_ccd_msg_interval = random(random_ccd_msg_interval_min, random_ccd_msg_interval_max); // generate new delay value between fake messages
+                }
+            }
+
+            // Repeated messages are prepared here
+            if (ccd_repeated_messages && (ccd_rx_available() == 0))
+            {
+                current_millis = millis(); // check current time
+                if ((current_millis - ccd_repeated_msg_last_millis) > repeated_msg_interval) // wait between messages
+                {
+                  ccd_repeated_msg_last_millis = current_millis;
+                  if (ccd_repeated_messages_next && !ccd_repeated_messages_iteration) // no iteration, same message over and over again
+                  {
+                      for (uint16_t i = 0; i < ccd_repeated_msg_bytes_ptr; i++) // fill the pending buffer with the message to be sent
+                      {
+                          ccd_msg_to_send[i] = ccd_repeated_msg_bytes[i];
+                      }
+                      ccd_msg_to_send_ptr = ccd_repeated_msg_bytes_ptr;
+                      ccd_msg_pending = true; // set flag
+                      ccd_repeated_messages_next = false;
+                  }
+                  else if (ccd_repeated_messages_next && ccd_repeated_messages_iteration) // iteration, message is incremented for every repeat according to settings
+                  {
+                      // TODO
+                  }
                 }
             }
 
@@ -4692,6 +5097,16 @@ void handle_sci_data(void)
                             sbi(current_sci_bus_settings[0], 4); // set speed bit (62500 baud)
                             configure_sci_bus(current_sci_bus_settings[0]);
                         }
+
+                        if (pcm_repeated_messages && !pcm_repeated_messages_iteration)
+                        {
+                            // TODO, for now assume a proper answer
+                            pcm_repeated_messages_next = true;
+                        }
+                        else if (pcm_repeated_messages && pcm_repeated_messages_iteration)
+                        {
+                            // TODO
+                        }
                         
                         //handle_lcd(from_pcm, usb_msg, 4, 4+pcm_bytes_buffer_ptr); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
                         pcm_bytes_buffer_ptr = 0;
@@ -4801,7 +5216,7 @@ void handle_sci_data(void)
                     }
                     send_usb_packet(from_pcm, to_usb, msg_rx, sci_hs_response_bytes, usb_msg, 4+pcm_bytes_buffer_ptr);
     
-                    if (pcm_bytes_buffer[0] == 0xFE)
+                    if (pcm_bytes_buffer[0] == 0xFE) // pay attention to special bytes (speed change)
                     {
                         sbi(current_sci_bus_settings[0], 7); // set change settings bit
                         sbi(current_sci_bus_settings[0], 6); // set enable bit
@@ -4809,9 +5224,38 @@ void handle_sci_data(void)
                         configure_sci_bus(current_sci_bus_settings[0]);
                     }
 
+                    if (pcm_repeated_messages && !pcm_repeated_messages_iteration)
+                    {
+                        // TODO, for now assume a proper answer
+                        pcm_repeated_messages_next = true;
+                    }
+                    else if (pcm_repeated_messages && pcm_repeated_messages_iteration)
+                    {
+                        // TODO
+                    }
+
                     //handle_lcd(from_pcm, usb_msg, 4, 4+pcm_bytes_buffer_ptr); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
                     pcm_bytes_buffer_ptr = 0;
                     pcm_msg_rx_count++;
+                }
+            }
+
+            // Repeated messages are prepared here
+            if (pcm_repeated_messages && (pcm_rx_available() == 0))
+            {
+                if (pcm_repeated_messages_next && !pcm_repeated_messages_iteration) // no iteration, same message over and over again
+                {
+                    for (uint16_t i = 0; i < pcm_repeated_msg_bytes_ptr; i++) // fill the pending buffer with the message to be sent
+                    {
+                        pcm_msg_to_send[i] = pcm_repeated_msg_bytes[i];
+                    }
+                    pcm_msg_to_send_ptr = pcm_repeated_msg_bytes_ptr;
+                    pcm_msg_pending = true; // set flag
+                    pcm_repeated_messages_next = false;
+                }
+                else if (pcm_repeated_messages_next && pcm_repeated_messages_iteration) // iteration, message is incremented for every repeat according to settings
+                {
+                    // TODO
                 }
             }
 
@@ -4919,7 +5363,7 @@ void handle_sci_data(void)
                                 send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_no_response, ret, 2); // return two bytes to determine which table and which address is unresponsive
                                 break;
                             }
-                            if (pcm_peek(0) != pcm_msg_to_send[0]) // make sure the first memory pointer byte is echoed back correctly
+                            if (pcm_peek(0) != pcm_msg_to_send[0]) // make sure the first RAM-table byte is echoed back correctly
                             {
                                 pcm_rx_flush();
                                 echo_retry_counter++;
@@ -4935,7 +5379,7 @@ void handle_sci_data(void)
                     }
                     else
                     {
-                        // Messsage doesn't start with a memory table value, invalid
+                        // Messsage doesn't start with a RAM-table value, invalid
                         send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_invalid_memory_ptr, err, 1); // send error packet back to the laptop
                     }
                 }
@@ -4990,6 +5434,16 @@ void handle_sci_data(void)
                         sbi(current_sci_bus_settings[0], 0); // set speed bit (62500 baud)
                         configure_sci_bus(current_sci_bus_settings[0]);
                     }
+
+                    if (tcm_repeated_messages && !tcm_repeated_messages_iteration)
+                    {
+                        // TODO, for now assume a proper answer
+                        tcm_repeated_messages_next = true;
+                    }
+                    else if (tcm_repeated_messages && tcm_repeated_messages_iteration)
+                    {
+                        // TODO
+                    }
                     
                     //handle_lcd(from_tcm, usb_msg, 4, 4+tcm_bytes_buffer_ptr); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
                     tcm_bytes_buffer_ptr = 0;
@@ -5033,9 +5487,38 @@ void handle_sci_data(void)
                         configure_sci_bus(current_sci_bus_settings[0]);
                     }
 
+                    if (tcm_repeated_messages && !tcm_repeated_messages_iteration)
+                    {
+                        // TODO, for now assume a proper answer
+                        tcm_repeated_messages_next = true;
+                    }
+                    else if (tcm_repeated_messages && tcm_repeated_messages_iteration)
+                    {
+                        // TODO
+                    }
+
                     //handle_lcd(from_tcm, usb_msg, 4, 4+tcm_bytes_buffer_ptr); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
                     tcm_bytes_buffer_ptr = 0;
                     tcm_msg_rx_count++;
+                }
+            }
+
+            // Repeated messages are prepared here
+            if (tcm_repeated_messages && (tcm_rx_available() == 0))
+            {
+                if (tcm_repeated_messages_next && !tcm_repeated_messages_iteration) // no iteration, same message over and over again
+                {
+                    for (uint16_t i = 0; i < tcm_repeated_msg_bytes_ptr; i++) // fill the pending buffer with the message to be sent
+                    {
+                        tcm_msg_to_send[i] = tcm_repeated_msg_bytes[i];
+                    }
+                    tcm_msg_to_send_ptr = tcm_repeated_msg_bytes_ptr;
+                    tcm_msg_pending = true; // set flag
+                    tcm_repeated_messages_next = false;
+                }
+                else if (tcm_repeated_messages_next && tcm_repeated_messages_iteration) // iteration, message is incremented for every repeat according to settings
+                {
+                    // TODO
                 }
             }
 
@@ -5119,7 +5602,13 @@ void handle_sci_data(void)
 /*************************************************************************
 Function: handle_leds()
 Purpose:  turn off indicator LEDs when blink duration expires
-Note:     ACT heartbeat is handled here too
+Note:     ACT heartbeat is handled here too;
+          how this works:
+          - LEDs are turned on somewhere in the code and a timestamp
+            is saved at the same time (xx_led_ontime),
+          - this function is called pretty frequently so it can
+            precisely track how long a given LED is on,
+            then turn it off when the time comes
 **************************************************************************/
 void handle_leds(void)
 {

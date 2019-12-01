@@ -39,6 +39,8 @@ namespace ChryslerCCDSCIScanner
         public int RandomCCDMessageIntervalMax = 100; // ms
         public int RepeatInterval = 100; // ms
         public int RepeatIncrement = 1;
+        public byte[] extEEPROMaddress = new byte[] { 0x00, 0x00 };
+        public byte[] extEEPROMvalue = new byte[] { 0x00 };
         public bool SetCCDBus = true;
         public byte SetSCIBus = 2;
         public byte[] CCDBusMessageToSendStart = new byte[] { 0xB2, 0x20, 0x22, 0x00, 0x00, 0xF4 };
@@ -48,7 +50,6 @@ namespace ChryslerCCDSCIScanner
         public byte[] SCIBusTCMMessageToSendStart = new byte[] { 0x10 };
         public byte[] SCIBusTCMMessageToSendEnd = new byte[] { 0x10 };
         public List<byte> PacketBytes = new List<byte>();
-        int FullPacketLength = 0;
         byte PacketLengthHB = 0;
         byte PacketLengthLB = 0;
         public byte PacketBytesChecksum = 0;
@@ -3357,6 +3358,8 @@ namespace ChryslerCCDSCIScanner
         private void UpdateUSBSendComboBox()
         {
             byte[] USBSendComboBoxValue = new byte[] { 0x00 };
+            PacketBytes.Clear();
+            PacketBytesChecksum = 0;
 
             switch (TargetComboBox.SelectedIndex)
             {
@@ -3391,10 +3394,8 @@ namespace ChryslerCCDSCIScanner
                                     byte HeartbeatDurationHB = (byte)((HeartbeatDuration >> 8) & 0xFF);
                                     byte HeartbeatDurationLB = (byte)(HeartbeatDuration & 0xFF);
 
-                                    PacketBytes.Clear();
                                     PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x06, 0x03, 0x00, HeartbeatIntervalHB, HeartbeatIntervalLB, HeartbeatDurationHB, HeartbeatDurationLB });
 
-                                    PacketBytesChecksum = 0;
                                     for (int i = 1; i < PacketBytes.Count; i++)
                                     {
                                         PacketBytesChecksum += PacketBytes[i];
@@ -3404,25 +3405,21 @@ namespace ChryslerCCDSCIScanner
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 case 1: // Set CCD-bus
-                                    PacketBytes.Clear();
                                     PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x03, 0x03, 0x01 });
                                     if (SetCCDBus) PacketBytes.Add(0x01);
                                     else PacketBytes.Add(0x00);
 
-                                    PacketBytesChecksum = 0;
-                                    for (int i = 1; i < 6; i++)
+                                    for (int i = 1; i < PacketBytes.Count; i++)
                                     {
                                         PacketBytesChecksum += PacketBytes[i];
                                     }
+
                                     PacketBytes.Add(PacketBytesChecksum);
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 case 2: // Set SCI-bus
-                                    PacketBytes.Clear();
                                     PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x03, 0x03, 0x02, SetSCIBus });
-
-                                    PacketBytesChecksum = 0;
-                                    for (int i = 1; i < 6; i++)
+                                    for (int i = 1; i < PacketBytes.Count; i++)
                                     {
                                         PacketBytesChecksum += PacketBytes[i];
                                     }
@@ -3435,14 +3432,13 @@ namespace ChryslerCCDSCIScanner
                                     byte RepeatIncrementHB = (byte)((RepeatIncrement >> 8) & 0xFF);
                                     byte RepeatIncrementLB = (byte)(RepeatIncrement & 0xFF);
 
-                                    PacketBytes.Clear();
                                     PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x06, 0x03, 0x03, RepeatIntervalHB, RepeatIntervalLB, RepeatIncrementHB, RepeatIncrementLB });
 
-                                    PacketBytesChecksum = 0;
                                     for (int i = 1; i < PacketBytes.Count; i++)
                                     {
                                         PacketBytesChecksum += PacketBytes[i];
                                     }
+
                                     PacketBytes.Add(PacketBytesChecksum);
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
@@ -3473,9 +3469,7 @@ namespace ChryslerCCDSCIScanner
                             switch (ModeComboBox.SelectedIndex)
                             {
                                 case 0: // Generate random CCD-bus messages
-                                    PacketBytes.Clear();
                                     PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x07, 0x0E, 0x01 });
-
                                     if (Param3ComboBox.SelectedIndex == 0) PacketBytes.Add(0x00); // false
                                     else PacketBytes.Add(0x01); // true
 
@@ -3486,13 +3480,40 @@ namespace ChryslerCCDSCIScanner
 
                                     PacketBytes.AddRange(new byte[] { MinIntervalHB, MinIntervalLB, MaxIntervalHB, MaxIntervalLB });
 
-                                    PacketBytesChecksum = 0;
-                                    for (int i = 1; i < 10; i++)
+                                    for (int i = 1; i < PacketBytes.Count; i++)
                                     {
                                         PacketBytesChecksum += PacketBytes[i];
                                     }
+
                                     PacketBytes.Add(PacketBytesChecksum);
                                     USBSendComboBoxValue = PacketBytes.ToArray();
+                                    break;
+                                case 1: // Read external EEPROM
+                                    PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x04, 0x0E, 0x02 });
+                                    PacketBytes.AddRange(extEEPROMaddress);
+
+                                    for (int i = 1; i < PacketBytes.Count; i++)
+                                    {
+                                        PacketBytesChecksum += PacketBytes[i];
+                                    }
+
+                                    PacketBytes.Add(PacketBytesChecksum);
+                                    USBSendComboBoxValue = PacketBytes.ToArray();
+                                    break;
+                                case 2: // Write external EEPROM
+                                    PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x05, 0x0E, 0x03 });
+                                    PacketBytes.AddRange(extEEPROMaddress);
+                                    PacketBytes.AddRange(extEEPROMvalue);
+
+                                    for (int i = 1; i < PacketBytes.Count; i++)
+                                    {
+                                        PacketBytesChecksum += PacketBytes[i]; 
+                                    }
+
+                                    PacketBytes.Add(PacketBytesChecksum);
+                                    USBSendComboBoxValue = PacketBytes.ToArray();
+                                    break;
+                                case 3: // Set arbitrary UART speed
                                     break;
                                 default:
                                     USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x0E, 0x00, 0x10 };
@@ -3513,43 +3534,38 @@ namespace ChryslerCCDSCIScanner
                                     USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x16, 0x00, 0x18 };
                                     break;
                                 case 1: // Single message
-                                    PacketBytes.Clear();
-                                    FullPacketLength = 6 + CCDBusMessageToSendStart.Length; // including sync and checksum
                                     PacketLengthHB = (byte)((2 + CCDBusMessageToSendStart.Length) >> 8);
                                     PacketLengthLB = (byte)((2 + CCDBusMessageToSendStart.Length) & 0xFF);
 
                                     PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x16, 0x01 });
                                     PacketBytes.AddRange(CCDBusMessageToSendStart);
 
-                                    PacketBytesChecksum = 0;
-                                    for (int i = 1; i < FullPacketLength - 1; i++)
+                                    for (int i = 1; i < PacketBytes.Count; i++)
                                     {
                                         PacketBytesChecksum += PacketBytes[i];
                                     }
+
                                     PacketBytes.Add(PacketBytesChecksum);
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 case 2: // Repeated message
-                                    PacketBytes.Clear();
                                     if (Param3ComboBox.SelectedIndex == 0) // no iteration
                                     {
-                                        FullPacketLength = 8 + CCDBusMessageToSendStart.Length;
                                         PacketLengthHB = (byte)((4 + CCDBusMessageToSendStart.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + CCDBusMessageToSendStart.Length) & 0xFF);
 
                                         PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x16, 0x02, 0x00, (byte)CCDBusMessageToSendStart.Length });
                                         PacketBytes.AddRange(CCDBusMessageToSendStart);
 
-                                        PacketBytesChecksum = 0;
-                                        for (int i = 1; i < FullPacketLength - 1; i++)
+                                        for (int i = 1; i < PacketBytes.Count; i++)
                                         {
                                             PacketBytesChecksum += PacketBytes[i];
                                         }
+
                                         PacketBytes.Add(PacketBytesChecksum);
                                     }
                                     else if (Param3ComboBox.SelectedIndex == 1) // iteration, same message length supposed
                                     {
-                                        FullPacketLength = 8 + CCDBusMessageToSendStart.Length + CCDBusMessageToSendEnd.Length;
                                         PacketLengthHB = (byte)((4 + CCDBusMessageToSendStart.Length + CCDBusMessageToSendEnd.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + CCDBusMessageToSendStart.Length + CCDBusMessageToSendEnd.Length) & 0xFF);
 
@@ -3557,11 +3573,11 @@ namespace ChryslerCCDSCIScanner
                                         PacketBytes.AddRange(CCDBusMessageToSendStart);
                                         PacketBytes.AddRange(CCDBusMessageToSendEnd);
 
-                                        PacketBytesChecksum = 0;
-                                        for (int i = 1; i < FullPacketLength - 1; i++)
+                                        for (int i = 1; i < PacketBytes.Count; i++)
                                         {
                                             PacketBytesChecksum += PacketBytes[i];
                                         }
+
                                         PacketBytes.Add(PacketBytesChecksum);
                                     }
 
@@ -3585,43 +3601,38 @@ namespace ChryslerCCDSCIScanner
                                     USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x26, 0x00, 0x28 };
                                     break;
                                 case 1: // Single message
-                                    PacketBytes.Clear();
-                                    FullPacketLength = 6 + SCIBusPCMMessageToSendStart.Length; // including sync and checksum
                                     PacketLengthHB = (byte)((2 + SCIBusPCMMessageToSendStart.Length) >> 8);
                                     PacketLengthLB = (byte)((2 + SCIBusPCMMessageToSendStart.Length) & 0xFF);
 
                                     PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x26, 0x01 });
                                     PacketBytes.AddRange(SCIBusPCMMessageToSendStart);
 
-                                    PacketBytesChecksum = 0;
-                                    for (int i = 1; i < FullPacketLength - 1; i++)
+                                    for (int i = 1; i < PacketBytes.Count; i++)
                                     {
                                         PacketBytesChecksum += PacketBytes[i];
                                     }
+
                                     PacketBytes.Add(PacketBytesChecksum);
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 case 2: // Repeated message
-                                    PacketBytes.Clear();
                                     if (Param3ComboBox.SelectedIndex == 0) // no iteration
                                     {
-                                        FullPacketLength = 8 + SCIBusPCMMessageToSendStart.Length;
                                         PacketLengthHB = (byte)((4 + SCIBusPCMMessageToSendStart.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + SCIBusPCMMessageToSendStart.Length) & 0xFF);
 
                                         PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x26, 0x02, 0x00, (byte)SCIBusPCMMessageToSendStart.Length });
                                         PacketBytes.AddRange(SCIBusPCMMessageToSendStart);
 
-                                        PacketBytesChecksum = 0;
-                                        for (int i = 1; i < FullPacketLength - 1; i++)
+                                        for (int i = 1; i < PacketBytes.Count; i++)
                                         {
                                             PacketBytesChecksum += PacketBytes[i];
                                         }
+
                                         PacketBytes.Add(PacketBytesChecksum);
                                     }
                                     else if (Param3ComboBox.SelectedIndex == 1) // iteration, same message length supposed
                                     {
-                                        FullPacketLength = 8 + SCIBusPCMMessageToSendStart.Length + SCIBusPCMMessageToSendEnd.Length;
                                         PacketLengthHB = (byte)((4 + SCIBusPCMMessageToSendStart.Length + SCIBusPCMMessageToSendEnd.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + SCIBusPCMMessageToSendStart.Length + SCIBusPCMMessageToSendEnd.Length) & 0xFF);
 
@@ -3629,11 +3640,11 @@ namespace ChryslerCCDSCIScanner
                                         PacketBytes.AddRange(SCIBusPCMMessageToSendStart);
                                         PacketBytes.AddRange(SCIBusPCMMessageToSendEnd);
 
-                                        PacketBytesChecksum = 0;
-                                        for (int i = 1; i < FullPacketLength - 1; i++)
+                                        for (int i = 1; i < PacketBytes.Count; i++)
                                         {
                                             PacketBytesChecksum += PacketBytes[i];
                                         }
+
                                         PacketBytes.Add(PacketBytesChecksum);
                                     }
 
@@ -3657,43 +3668,38 @@ namespace ChryslerCCDSCIScanner
                                     USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x36, 0x00, 0x38 };
                                     break;
                                 case 1: // Single message
-                                    PacketBytes.Clear();
-                                    FullPacketLength = 6 + SCIBusTCMMessageToSendStart.Length; // including sync and checksum
                                     PacketLengthHB = (byte)((2 + SCIBusTCMMessageToSendStart.Length) >> 8);
                                     PacketLengthLB = (byte)((2 + SCIBusTCMMessageToSendStart.Length) & 0xFF);
 
                                     PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x36, 0x01 });
                                     PacketBytes.AddRange(SCIBusTCMMessageToSendStart);
 
-                                    PacketBytesChecksum = 0;
-                                    for (int i = 1; i < FullPacketLength - 1; i++)
+                                    for (int i = 1; i < PacketBytes.Count; i++)
                                     {
                                         PacketBytesChecksum += PacketBytes[i];
                                     }
+
                                     PacketBytes.Add(PacketBytesChecksum);
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 case 2: // Repeated message
-                                    PacketBytes.Clear();
                                     if (Param3ComboBox.SelectedIndex == 0) // no iteration
                                     {
-                                        FullPacketLength = 8 + SCIBusTCMMessageToSendStart.Length;
                                         PacketLengthHB = (byte)((4 + SCIBusTCMMessageToSendStart.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + SCIBusTCMMessageToSendStart.Length) & 0xFF);
 
                                         PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x36, 0x02, 0x00, (byte)SCIBusTCMMessageToSendStart.Length });
                                         PacketBytes.AddRange(SCIBusTCMMessageToSendStart);
 
-                                        PacketBytesChecksum = 0;
-                                        for (int i = 1; i < FullPacketLength - 1; i++)
+                                        for (int i = 1; i < PacketBytes.Count; i++)
                                         {
                                             PacketBytesChecksum += PacketBytes[i];
                                         }
+
                                         PacketBytes.Add(PacketBytesChecksum);
                                     }
                                     else if (Param3ComboBox.SelectedIndex == 1) // iteration, same message length supposed
                                     {
-                                        FullPacketLength = 8 + SCIBusTCMMessageToSendStart.Length + SCIBusTCMMessageToSendEnd.Length;
                                         PacketLengthHB = (byte)((4 + SCIBusTCMMessageToSendStart.Length + SCIBusTCMMessageToSendEnd.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + SCIBusTCMMessageToSendStart.Length + SCIBusTCMMessageToSendEnd.Length) & 0xFF);
 
@@ -3701,11 +3707,11 @@ namespace ChryslerCCDSCIScanner
                                         PacketBytes.AddRange(SCIBusTCMMessageToSendStart);
                                         PacketBytes.AddRange(SCIBusTCMMessageToSendEnd);
 
-                                        PacketBytesChecksum = 0;
-                                        for (int i = 1; i < FullPacketLength - 1; i++)
+                                        for (int i = 1; i < PacketBytes.Count; i++)
                                         {
                                             PacketBytesChecksum += PacketBytes[i];
                                         }
+
                                         PacketBytes.Add(PacketBytesChecksum);
                                     }
 
@@ -3920,7 +3926,7 @@ namespace ChryslerCCDSCIScanner
                             break;
                         case 5: // Debug
                             ModeComboBox.Items.Clear();
-                            ModeComboBox.Items.AddRange(new string[] { "Generate random CCD-bus messages" });
+                            ModeComboBox.Items.AddRange(new string[] { "Generate random CCD-bus messages", "Read external EEPROM", "Write external EEPROM", "Set arbitrary UART-speed" });
                             ModeComboBox.SelectedIndex = 0; // Generate random CCD-bus messages
                             Param1Label1.Visible = true;
                             Param1Label2.Visible = true;
@@ -4206,7 +4212,6 @@ namespace ChryslerCCDSCIScanner
                                     Param3Label1.Visible = true;
                                     Param3Label1.Text = "Enable:";
                                     Param3Label2.Visible = false;
-                                    Param3Label2.Text = "";
                                     Param3ComboBox.Visible = true;
                                     Param3ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
                                     Param3ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -4218,12 +4223,79 @@ namespace ChryslerCCDSCIScanner
                                                      + "Do this only when the scanner is not connected" + Environment.NewLine
                                                      + "to the car and connect both standalone bias jumpers!";
                                     break;
+                                case 1: // Read external EEPROM
+                                    Param1Label1.Visible = true;
+                                    Param1Label1.Text = "Address:";
+                                    Param1Label2.Visible = false;
+                                    Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Font = new Font("Courier New", 9F);
+                                    Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param1ComboBox.Items.Clear();
+                                    Param1ComboBox.Text = Util.ByteToHexString(extEEPROMaddress, 0, extEEPROMaddress.Length);
+                                    Param2Label1.Visible = false;
+                                    Param2Label2.Visible = false;
+                                    Param2ComboBox.Visible = false;
+                                    Param3Label1.Visible = false;
+                                    Param3Label2.Visible = false;
+                                    Param3ComboBox.Visible = false;
+                                    HintTextBox.Text = Environment.NewLine
+                                                     + Environment.NewLine
+                                                     + Environment.NewLine
+                                                     + "Read 1 byte from the external EEPROM chip.";
+                                    break;
+                                case 2: // Write external EEPROM
+                                    Param1Label1.Visible = true;
+                                    Param1Label1.Text = "Address:";
+                                    Param1Label2.Visible = false;
+                                    Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Font = new Font("Courier New", 9F);
+                                    Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param1ComboBox.Items.Clear();
+                                    Param1ComboBox.Text = Util.ByteToHexString(extEEPROMaddress, 0, extEEPROMaddress.Length);
+                                    Param2Label1.Visible = true;
+                                    Param2Label1.Text = "Value:";
+                                    Param2Label2.Visible = false;
+                                    Param2ComboBox.Visible = true;
+                                    Param2ComboBox.Font = new Font("Courier New", 9F);
+                                    Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param2ComboBox.Items.Clear();
+                                    Param2ComboBox.Text = Util.ByteToHexString(extEEPROMvalue, 0, extEEPROMvalue.Length);
+                                    Param3Label1.Visible = false;
+                                    Param3Label2.Visible = false;
+                                    Param3ComboBox.Visible = false;
+                                    HintTextBox.Text = Environment.NewLine
+                                                     + Environment.NewLine
+                                                     + Environment.NewLine
+                                                     + "Write 1 byte to the external EEPROM chip.";
+                                    break;
+                                case 3: // Set arbitrary UART-speed
+                                    Param1Label1.Visible = true;
+                                    Param1Label1.Text = "Bus:";
+                                    Param1Label2.Visible = false;
+                                    Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
+                                    Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+                                    Param1ComboBox.Items.Clear();
+                                    Param1ComboBox.Items.AddRange(new string[] { "CCD-bus", "SCI-bus (PCM)", "SCI-bus (TCM)" });
+                                    Param1ComboBox.SelectedIndex = 0;
+                                    Param2Label1.Visible = true;
+                                    Param2Label1.Text = "Speed:";
+                                    Param2Label2.Visible = false;
+                                    Param2ComboBox.Visible = true;
+                                    Param2ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
+                                    Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+                                    Param2ComboBox.Items.Clear();
+                                    Param2ComboBox.Items.AddRange(new string[] { "976.5 baud", "7812.5 baud", "62500 baud", "125000 baud" });
+                                    Param2ComboBox.SelectedIndex = 0;
+                                    Param3Label1.Visible = false;
+                                    Param3Label2.Visible = false;
+                                    Param3ComboBox.Visible = false;
+                                    HintTextBox.Text = Environment.NewLine
+                                                     + Environment.NewLine
+                                                     + Environment.NewLine
+                                                     + "Set arbitrary UART-speed.";
+                                    break;
                             }
-
-                            //HintTextBox.Text = Environment.NewLine
-                            //            + Environment.NewLine
-                            //            + "Experimental commands are first tested here" + Environment.NewLine
-                            //            + "before they are moved to their right place.";
                             break;
                         default:
                             break;
@@ -4612,6 +4684,32 @@ namespace ChryslerCCDSCIScanner
                                     {
 
                                     }
+                                    break;
+                                case 1: // Read external EEPROM
+                                    try
+                                    {
+                                        extEEPROMaddress = Util.HexStringToByte(Param1ComboBox.Text);
+                                    }
+                                    catch
+                                    {
+
+                                    }
+                                    break;
+                                case 2: // Write external EEPROM
+                                    try
+                                    {
+                                        extEEPROMaddress = Util.HexStringToByte(Param1ComboBox.Text);
+                                        extEEPROMvalue = Util.HexStringToByte(Param2ComboBox.Text);
+                                    }
+                                    catch
+                                    {
+
+                                    }
+                                    break;
+                                case 3: // Set arbitrary UART speed
+
+                                    break;
+                                default:
                                     break;
                             }
                             break;

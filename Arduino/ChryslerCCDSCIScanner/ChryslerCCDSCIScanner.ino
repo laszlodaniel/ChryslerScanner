@@ -114,7 +114,7 @@ void setup()
     
     configure_sci_bus(current_sci_bus_settings[0]); // default SCI-bus setting: A-configuration, 7812.5 baud, PCM only (TCM disabled)
     send_hwfw_info(); // send hardware/firmware information to laptop
-    wdt_enable(WDTO_2S); // enable watchdog timer that resets program if its timer reaches 2 seconds (useful if the prorgam hangs for some reason and needs auto-reset)
+    wdt_enable(WDTO_2S); // enable watchdog timer that resets program if its timer reaches 2 seconds (useful if the code hangs for some reason and needs auto-reset)
 }
 
 void loop()
