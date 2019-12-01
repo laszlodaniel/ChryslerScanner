@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005DE3E287
+#define FW_DATE 0x000000005DE43162
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -4523,6 +4523,16 @@ void handle_usb_data(void)
                                                     }
             
                                                     ccd_repeated_msg_bytes_ptr = cmd_payload[1]; // message length
+
+                                                    // Check if the checksum byte in the message is correct
+                                                    uint8_t tmp = calculate_checksum(ccd_repeated_msg_bytes, 0, ccd_repeated_msg_bytes_ptr - 1);
+            
+                                                    // Correct the last checksum byte if wrong
+                                                    if (ccd_repeated_msg_bytes[ccd_repeated_msg_bytes_ptr - 1] != tmp)
+                                                    {
+                                                        ccd_repeated_msg_bytes[ccd_repeated_msg_bytes_ptr - 1] = tmp;
+                                                    }
+                                                    
                                                     ccd_repeated_messages = true; // set flag
                                                     ccd_repeated_messages_iteration = false; // set flag
                                                     ccd_repeated_messages_next = true; // set flag
