@@ -9,16 +9,16 @@ namespace ChryslerCCDSCIScanner
 {
     public static class Util
     {
-        public static string ByteToHexString(byte[] data, int offset, int count)
+        public static string ByteToHexString(byte[] data, int offset, int length)
         {
             StringBuilder ret = new StringBuilder();
             byte counter = 0;
 
             if (data != null)
             {
-                for (int i = offset; i < count; i++)
+                for (int i = offset; i < length; i++)
                 {
-                    if (count < 17) ret.Append(Convert.ToString(data[i], 16).PadLeft(2, '0').PadRight(3, ' ').ToUpper());
+                    if (length < 17) ret.Append(Convert.ToString(data[i], 16).PadLeft(2, '0').PadRight(3, ' ').ToUpper());
                     else
                     {
                         ret.Append(Convert.ToString(data[i], 16).PadLeft(2, '0').PadRight(3, ' ').ToUpper());
@@ -26,7 +26,7 @@ namespace ChryslerCCDSCIScanner
                         counter++;
                         if (counter > 15)
                         {
-                            ret.Append(Environment.NewLine); // New line after every 16 bytes
+                            if (i != (length - 1)) ret.Append(Environment.NewLine); // New line after every 16 bytes
                             counter = 0;
                         }
                     }
@@ -81,7 +81,7 @@ namespace ChryslerCCDSCIScanner
                 {
                     textbox.Invoke((MethodInvoker)delegate
                     {
-                        if (textbox.TextLength + text.Length > textbox.MaxLength)
+                        if (textbox.TextLength + ret.Length > textbox.MaxLength)
                         {
                             textbox.Clear();
                             GC.Collect();
@@ -91,7 +91,7 @@ namespace ChryslerCCDSCIScanner
                 }
                 else
                 {
-                    if (textbox.TextLength + text.Length > textbox.MaxLength)
+                    if (textbox.TextLength + ret.Length > textbox.MaxLength)
                     {
                         textbox.Clear();
                         GC.Collect();

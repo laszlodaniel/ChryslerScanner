@@ -50,8 +50,8 @@ namespace ChryslerCCDSCIScanner
         public byte[] SCIBusTCMMessageToSendStart = new byte[] { 0x10 };
         public byte[] SCIBusTCMMessageToSendEnd = new byte[] { 0x10 };
         public List<byte> PacketBytes = new List<byte>();
-        byte PacketLengthHB = 0;
-        byte PacketLengthLB = 0;
+        public byte PacketLengthHB = 0;
+        public byte PacketLengthLB = 0;
         public byte PacketBytesChecksum = 0;
 
         public List<string> DiagnosticsTable = new List<string>();
@@ -129,9 +129,9 @@ namespace ChryslerCCDSCIScanner
         public static UInt64 NewUNIXTime = 0;
 
 
-        byte LastTargetIndex = 0; // Scanner
-        byte LastCommandIndex = 2; // Status
-        byte LastModeIndex = 0; // None
+        public byte LastTargetIndex = 0; // Scanner
+        public byte LastCommandIndex = 2; // Status
+        public byte LastModeIndex = 0; // None
 
         public enum TransmissionMethod
         {
@@ -139,44 +139,6 @@ namespace ChryslerCCDSCIScanner
             Ascii = 1
         }
         public byte TM = 0;
-
-        public enum Source
-        {
-            USB = 0,
-            CCDBus = 1,
-            SCIBusPCM = 2,
-            SCIBusTCM = 3
-        }
-
-        public enum Target
-        {
-            USB = 0,
-            CCDBus = 1,
-            SCIBusPCM = 2,
-            SCIBusTCM = 3
-        }
-
-        public enum Command
-        {
-            Reset = 0,
-            Handshake = 1,
-            Status = 2,
-            Settings = 3,
-            Request = 4,
-            Response = 5,
-            SendMessage = 6,
-            MessageReceived = 7,
-            Debug = 14,
-            OkError = 15
-        }
-
-        public enum Response
-        {
-            HwFwInfo = 0,
-            Timestamp = 1,
-            BatteryVoltage = 2,
-            ExternalEEPROMChecksum = 3
-        }
 
         private const int SB_VERT = 0x0001;
         private const int WM_VSCROLL = 0x0115;
@@ -202,7 +164,6 @@ namespace ChryslerCCDSCIScanner
         WebClient Downloader = new WebClient();
         Uri FlashFile = new Uri("https://github.com/laszlodaniel/ChryslerCCDSCIScanner/raw/master/Arduino/ChryslerCCDSCIScanner/ChryslerCCDSCIScanner.ino.mega.hex");
         Uri SourceFile = new Uri("https://github.com/laszlodaniel/ChryslerCCDSCIScanner/raw/master/Arduino/ChryslerCCDSCIScanner/main.h");
-
 
         public MainForm()
         {
@@ -610,14 +571,14 @@ namespace ChryslerCCDSCIScanner
 
                     switch (source)
                     {
-                        case (byte)Source.USB: // message is coming from the scanner directly, no need to analyze target, it has to be an external computer
+                        case 0x00: // USB - message is coming from the scanner directly, no need to analyze target, it has to be an external computer
                             switch (command)
                             {
-                                case (byte)Command.Reset:
+                                case 0x00: // Reset
                                     if (payload[0] == 0) Util.UpdateTextBox(USBTextBox, "[RX->] Scanner is resetting, please wait", msg);
                                     else if (payload[0] == 1) Util.UpdateTextBox(USBTextBox, "[RX->] Scanner is ready to accept instructions", msg);
                                     break;
-                                case (byte)Command.Handshake:
+                                case 0x01: // Handshake
                                     if (Encoding.ASCII.GetString(payload) == "CHRYSLERCCDSCISCANNER")
                                     {
                                         Util.UpdateTextBox(USBTextBox, "[RX->] Handshake response (" + Serial.PortName + ")", msg);
@@ -631,7 +592,7 @@ namespace ChryslerCCDSCIScanner
                                         ScannerFound = false;
                                     }
                                     break;
-                                case (byte)Command.Status:
+                                case 0x02: // Status
                                     string AVRSignature = Util.ByteToHexString(payload, 0, 3);
                                     if ((payload[0] == 0x1E) && (payload[1] == 0x98) && (payload[2] == 0x01)) AVRSignature += " (ATmega2560)";
                                     else AVRSignature += " (unknown)";
@@ -787,10 +748,10 @@ namespace ChryslerCCDSCIScanner
                                                                     "         - messages received: " + SCIBusTCMRxMessagesString + Environment.NewLine +
                                                                     "         - messages transmitted: " + SCIBusTCMTxMessagesString, null);
                                     break;
-                                case (byte)Command.Settings:
+                                case 0x03: // Settings
                                     switch (subdatacode)
                                     {
-                                        case 0x00: // Heartbeat
+                                        case 0x01: // Heartbeat
                                             Util.UpdateTextBox(USBTextBox, "[RX->] Heartbeat settings changed", msg);
                                             if ((payload[0] << 8 | payload[1]) > 0)
                                             {
@@ -805,7 +766,7 @@ namespace ChryslerCCDSCIScanner
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Heartbeat disabled", null);
                                             }
                                             break;
-                                        case 0x01: // Set CCD-bus
+                                        case 0x02: // Set CCD-bus
                                             Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus settings changed", msg);
                                             if (payload[0] == 0)
                                             {
@@ -818,7 +779,7 @@ namespace ChryslerCCDSCIScanner
                                                 CCDBusEnabled = true;
                                             }
                                             break;
-                                        case 0x02: // Set SCI-bus
+                                        case 0x03: // Set SCI-bus
                                             string configuration = String.Empty;
 
                                             configuration += "[INFO] PCM settings:" + Environment.NewLine;
@@ -958,7 +919,7 @@ namespace ChryslerCCDSCIScanner
                                             Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus settings changed", msg);
                                             Util.UpdateTextBox(USBTextBox, configuration, null);
                                             break;
-                                        case 3: // Repeated message behavior
+                                        case 0x04: // Repeated message behavior
                                             string repeat_interval = (payload[0] << 8 | payload[1]).ToString() + " ms";
                                             string increment = (payload[2] << 8 | payload[3]).ToString();
                                             Util.UpdateTextBox(USBTextBox, "[RX->] Repeated message behavior changed", msg);
@@ -966,14 +927,16 @@ namespace ChryslerCCDSCIScanner
                                                                             "       Interval: " + repeat_interval + Environment.NewLine +
                                                                             "       Increment: " + increment, null);
                                             break;
+                                        case 0x05: // Set LCD
+                                            break;
                                         default:
                                             break;
                                     }
                                     break;
-                                case (byte)Command.Response:
+                                case 0x05: // Response
                                     switch (subdatacode)
                                     {
-                                        case (byte)Response.HwFwInfo:
+                                        case 0x01: // Hardware/Firmware info
                                             string HardwareVersionString = "V" + ((payload[0] << 8 | payload[1]) / 100.00).ToString("0.00").Replace(",", ".");
                                             DateTime _HardwareDate = Util.UnixTimeStampToDateTime(payload[2] << 56 | payload[3] << 48 | payload[4] << 40 | payload[5] << 32 | payload[6] << 24 | payload[7] << 16 | payload[8] << 8 | payload[9]);
                                             DateTime _AssemblyDate = Util.UnixTimeStampToDateTime(payload[10] << 56 | payload[11] << 48 | payload[12] << 40 | payload[13] << 32 | payload[14] << 24 | payload[15] << 16 | payload[16] << 8 | payload[17]);
@@ -988,19 +951,19 @@ namespace ChryslerCCDSCIScanner
                                                                             "       Firmware date: " + _FirmwareDateString, null);
                                             OldUNIXTime = (UInt64)(payload[18] << 56 | payload[19] << 48 | payload[20] << 40 | payload[21] << 32 | payload[22] << 24 | payload[23] << 16 | payload[24] << 8 | payload[25]);
                                             break;
-                                        case (byte)Response.Timestamp:
+                                        case 0x02: // Timestamp
                                             TimeSpan ElapsedTime = TimeSpan.FromMilliseconds(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]);
                                             DateTime Timestamp = DateTime.Today.Add(ElapsedTime);
                                             string TimestampString = Timestamp.ToString("HH:mm:ss.fff");
                                             Util.UpdateTextBox(USBTextBox, "[RX->] Timestamp response", msg);
                                             Util.UpdateTextBox(USBTextBox, "[INFO] Timestamp: " + TimestampString, null);
                                             break;
-                                        case (byte)Response.BatteryVoltage:
+                                        case 0x03: // Battery voltage
                                             string _BatteryVoltageString = ((payload[0] << 8 | payload[1]) / 100.00).ToString("0.00").Replace(",", ".") + " V";
                                             Util.UpdateTextBox(USBTextBox, "[RX->] Battery voltage response", msg);
                                             Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + _BatteryVoltageString, null);
                                             break;
-                                        case (byte)Response.ExternalEEPROMChecksum:
+                                        case 0x04: // External EEPROM checksum
                                             Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM checksum response", msg);
                                             if (payload[0] == 0x01) // External EEPROM present
                                             {
@@ -1027,20 +990,20 @@ namespace ChryslerCCDSCIScanner
                                             break;
                                     }
                                     break;
-                                case (byte)Command.SendMessage:
+                                case 0x06: // Send message
                                     switch (subdatacode)
                                     {
-                                        case 0x00:
+                                        case 0x01:
                                             if (payload[0] == 0x01) Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message TX stopped", msg);
                                             else if (payload[0] == 0x02) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message TX stopped", msg);
                                             else if (payload[0] == 0x03) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message TX stopped", msg);
                                             break;
-                                        case 0x01:
+                                        case 0x02:
                                             if (payload[0] == 0x01) Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message prepared for TX", msg);
                                             else if (payload[0] == 0x02) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message prepared for TX", msg);
                                             else if (payload[0] == 0x03) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message prepared for TX", msg);
                                             break;
-                                        case 0x02:
+                                        case 0x03:
                                             if (payload[0] == 0x01) Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message TX started", msg);
                                             else if (payload[0] == 0x02) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message TX started", msg);
                                             else if (payload[0] == 0x03) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message TX started", msg);
@@ -1050,7 +1013,7 @@ namespace ChryslerCCDSCIScanner
                                             break;
                                     }
                                     break;
-                                case (byte)Command.OkError:
+                                case 0x0F: // OK/Error
                                     switch (subdatacode)
                                     {
                                         case 0x00:
@@ -1157,7 +1120,7 @@ namespace ChryslerCCDSCIScanner
 
                             //UpdateDiagnosticsListBox();
                             break;
-                        case (byte)Source.CCDBus:
+                        case 0x01: // CCD-bus
                             StringBuilder ccdlistitem = new StringBuilder(EmptyLine); // start with a pre-defined empty line
                             string ccdmsgtoinsert = String.Empty;
                             string ccddescriptiontoinsert = String.Empty;
@@ -1590,7 +1553,7 @@ namespace ChryslerCCDSCIScanner
                             }
                             File.AppendAllText(CCDLogFilename, Util.ByteToHexString(ccdmessage, 0, ccdmessage.Length) + Environment.NewLine);
                             break;
-                        case (byte)Source.SCIBusPCM:
+                        case 0x02: // SCI-bus (PCM)
                             SCIBusPCMEnabled = true;
                             StringBuilder scipcmlistitem = new StringBuilder(EmptyLine); // start with a pre-defined empty line
                             string scipcmmsgtoinsert = String.Empty;
@@ -1607,7 +1570,7 @@ namespace ChryslerCCDSCIScanner
                             // In case of high speed mode the request and response bytes are sent in separate packets.
                             // First packet is always the request bytes list, save them here and do nothing else.
                             // Second packet contains the response bytes, mix it with the request bytes and update the table.
-                            if (subdatacode == 0x00) // low speed bytes
+                            if (subdatacode == 0x01) // low speed bytes
                             {
                                 if (pcmmessage.Length < 9) // max 8 byte fits the message column
                                 {
@@ -2702,7 +2665,7 @@ namespace ChryslerCCDSCIScanner
                                 }
                                 File.AppendAllText(PCMLogFilename, Util.ByteToHexString(pcmmessage, 0, pcmmessage.Length) + Environment.NewLine); // save message to text file
                             }
-                            if (subdatacode == 0x01) // high speed request bytes, just save them
+                            if (subdatacode == 0x02) // high speed request bytes, just save them
                             {
                                 SCIBusPCMReqMsgList.Clear(); // first clear previous bytes
                                 for (int i = 0; i < pcmmessage.Length; i++)
@@ -2710,7 +2673,7 @@ namespace ChryslerCCDSCIScanner
                                     SCIBusPCMReqMsgList.Add(pcmmessage[i]);
                                 }
                             }
-                            else if (subdatacode == 0x02) // high speed response bytes, mix them with saved request bytes
+                            else if (subdatacode == 0x03) // high speed response bytes, mix them with saved request bytes
                             {
                                 byte[] requestbytes = SCIBusPCMReqMsgList.ToArray();
                                 List<byte> temp = new List<byte>(512);
@@ -2862,7 +2825,7 @@ namespace ChryslerCCDSCIScanner
                             //UpdateDiagnosticsListBox();
                             Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (PCM)", msg);
                             break;
-                        case (byte)Source.SCIBusTCM:
+                        case 0x03: // SCI-bus (TCM)
                             IDByte = payload[4];
                             SCIBusTCMEnabled = true;
                             StringBuilder scitcmlistitem = new StringBuilder(EmptyLine); // start with a pre-defined empty line
@@ -2875,7 +2838,7 @@ namespace ChryslerCCDSCIScanner
                             // In case of high speed mode the request and response bytes are sent in separate packets.
                             // First packet is always the request bytes list (subdatacode 0x01), save them here and do nothing else.
                             // Second packet contains the response bytes (subdatacode 0x02), mix it with the request bytes and update the table.
-                            if (subdatacode == 0x00) // low speed bytes
+                            if (subdatacode == 0x01) // low speed bytes
                             {
                                 if (tcmmessage.Length < 9) // max 8 byte fits the message column
                                 {
@@ -2928,7 +2891,7 @@ namespace ChryslerCCDSCIScanner
                                 File.AppendAllText(TCMLogFilename, Util.ByteToHexString(tcmmessage, 0, tcmmessage.Length) + Environment.NewLine); // save message to text file
                                 // TODO: update header
                             }
-                            if (subdatacode == 0x01) // high speed request bytes, just save them
+                            if (subdatacode == 0x02) // high speed request bytes, just save them
                             {
                                 SCIBusTCMReqMsgList.Clear(); // first clear previous bytes
                                 for (int i = 0; i < tcmmessage.Length; i++)
@@ -2936,7 +2899,7 @@ namespace ChryslerCCDSCIScanner
                                     SCIBusTCMReqMsgList.Add(tcmmessage[i]);
                                 }
                             }
-                            else if (subdatacode == 0x02) // high speed response bytes, mix them with saved request bytes
+                            else if (subdatacode == 0x03) // high speed response bytes, mix them with saved request bytes
                             {
                                 byte[] requestbytes = SCIBusTCMReqMsgList.ToArray();
                                 List<byte> temp = new List<byte>(512);
@@ -3394,7 +3357,7 @@ namespace ChryslerCCDSCIScanner
                                     byte HeartbeatDurationHB = (byte)((HeartbeatDuration >> 8) & 0xFF);
                                     byte HeartbeatDurationLB = (byte)(HeartbeatDuration & 0xFF);
 
-                                    PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x06, 0x03, 0x00, HeartbeatIntervalHB, HeartbeatIntervalLB, HeartbeatDurationHB, HeartbeatDurationLB });
+                                    PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x06, 0x03, 0x01, HeartbeatIntervalHB, HeartbeatIntervalLB, HeartbeatDurationHB, HeartbeatDurationLB });
 
                                     for (int i = 1; i < PacketBytes.Count; i++)
                                     {
@@ -3405,7 +3368,7 @@ namespace ChryslerCCDSCIScanner
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 case 1: // Set CCD-bus
-                                    PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x03, 0x03, 0x01 });
+                                    PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x03, 0x03, 0x02 });
                                     if (SetCCDBus) PacketBytes.Add(0x01);
                                     else PacketBytes.Add(0x00);
 
@@ -3418,7 +3381,7 @@ namespace ChryslerCCDSCIScanner
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 case 2: // Set SCI-bus
-                                    PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x03, 0x03, 0x02, SetSCIBus });
+                                    PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x03, 0x03, 0x03, SetSCIBus });
                                     for (int i = 1; i < PacketBytes.Count; i++)
                                     {
                                         PacketBytesChecksum += PacketBytes[i];
@@ -3432,7 +3395,7 @@ namespace ChryslerCCDSCIScanner
                                     byte RepeatIncrementHB = (byte)((RepeatIncrement >> 8) & 0xFF);
                                     byte RepeatIncrementLB = (byte)(RepeatIncrement & 0xFF);
 
-                                    PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x06, 0x03, 0x03, RepeatIntervalHB, RepeatIntervalLB, RepeatIncrementHB, RepeatIncrementLB });
+                                    PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x06, 0x03, 0x04, RepeatIntervalHB, RepeatIntervalLB, RepeatIncrementHB, RepeatIncrementLB });
 
                                     for (int i = 1; i < PacketBytes.Count; i++)
                                     {
@@ -3450,16 +3413,16 @@ namespace ChryslerCCDSCIScanner
                             switch (ModeComboBox.SelectedIndex)
                             {
                                 case 0: // Hardware/Firmware information
-                                    USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x04, 0x00, 0x06 };
-                                    break;
-                                case 1: // Timestamp
                                     USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x04, 0x01, 0x07 };
                                     break;
-                                case 2: // Battery voltage
+                                case 1: // Timestamp
                                     USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x04, 0x02, 0x08 };
                                     break;
-                                case 3: // External EEPROM checksum
+                                case 2: // Battery voltage
                                     USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x04, 0x03, 0x09 };
+                                    break;
+                                case 3: // External EEPROM checksum
+                                    USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x04, 0x04, 0x0A };
                                     break;
                                 default:
                                     break;
@@ -3531,13 +3494,13 @@ namespace ChryslerCCDSCIScanner
                             switch (ModeComboBox.SelectedIndex)
                             {
                                 case 0: // Stop message transmission
-                                    USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x16, 0x00, 0x18 };
+                                    USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x16, 0x01, 0x19 };
                                     break;
                                 case 1: // Single message
                                     PacketLengthHB = (byte)((2 + CCDBusMessageToSendStart.Length) >> 8);
                                     PacketLengthLB = (byte)((2 + CCDBusMessageToSendStart.Length) & 0xFF);
 
-                                    PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x16, 0x01 });
+                                    PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x16, 0x02 });
                                     PacketBytes.AddRange(CCDBusMessageToSendStart);
 
                                     for (int i = 1; i < PacketBytes.Count; i++)
@@ -3554,7 +3517,7 @@ namespace ChryslerCCDSCIScanner
                                         PacketLengthHB = (byte)((4 + CCDBusMessageToSendStart.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + CCDBusMessageToSendStart.Length) & 0xFF);
 
-                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x16, 0x02, 0x00, (byte)CCDBusMessageToSendStart.Length });
+                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x16, 0x03, 0x00, (byte)CCDBusMessageToSendStart.Length });
                                         PacketBytes.AddRange(CCDBusMessageToSendStart);
 
                                         for (int i = 1; i < PacketBytes.Count; i++)
@@ -3569,7 +3532,7 @@ namespace ChryslerCCDSCIScanner
                                         PacketLengthHB = (byte)((4 + CCDBusMessageToSendStart.Length + CCDBusMessageToSendEnd.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + CCDBusMessageToSendStart.Length + CCDBusMessageToSendEnd.Length) & 0xFF);
 
-                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x16, 0x02, 0x01, (byte)CCDBusMessageToSendStart.Length });
+                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x16, 0x03, 0x01, (byte)CCDBusMessageToSendStart.Length });
                                         PacketBytes.AddRange(CCDBusMessageToSendStart);
                                         PacketBytes.AddRange(CCDBusMessageToSendEnd);
 
@@ -3598,13 +3561,13 @@ namespace ChryslerCCDSCIScanner
                             switch (ModeComboBox.SelectedIndex)
                             {
                                 case 0: // Stop message transmission
-                                    USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x26, 0x00, 0x28 };
+                                    USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x26, 0x01, 0x29 };
                                     break;
                                 case 1: // Single message
                                     PacketLengthHB = (byte)((2 + SCIBusPCMMessageToSendStart.Length) >> 8);
                                     PacketLengthLB = (byte)((2 + SCIBusPCMMessageToSendStart.Length) & 0xFF);
 
-                                    PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x26, 0x01 });
+                                    PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x26, 0x02 });
                                     PacketBytes.AddRange(SCIBusPCMMessageToSendStart);
 
                                     for (int i = 1; i < PacketBytes.Count; i++)
@@ -3621,7 +3584,7 @@ namespace ChryslerCCDSCIScanner
                                         PacketLengthHB = (byte)((4 + SCIBusPCMMessageToSendStart.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + SCIBusPCMMessageToSendStart.Length) & 0xFF);
 
-                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x26, 0x02, 0x00, (byte)SCIBusPCMMessageToSendStart.Length });
+                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x26, 0x03, 0x00, (byte)SCIBusPCMMessageToSendStart.Length });
                                         PacketBytes.AddRange(SCIBusPCMMessageToSendStart);
 
                                         for (int i = 1; i < PacketBytes.Count; i++)
@@ -3636,7 +3599,7 @@ namespace ChryslerCCDSCIScanner
                                         PacketLengthHB = (byte)((4 + SCIBusPCMMessageToSendStart.Length + SCIBusPCMMessageToSendEnd.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + SCIBusPCMMessageToSendStart.Length + SCIBusPCMMessageToSendEnd.Length) & 0xFF);
 
-                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x26, 0x02, 0x01, (byte)SCIBusPCMMessageToSendStart.Length });
+                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x26, 0x03, 0x01, (byte)SCIBusPCMMessageToSendStart.Length });
                                         PacketBytes.AddRange(SCIBusPCMMessageToSendStart);
                                         PacketBytes.AddRange(SCIBusPCMMessageToSendEnd);
 
@@ -3665,13 +3628,13 @@ namespace ChryslerCCDSCIScanner
                             switch (ModeComboBox.SelectedIndex)
                             {
                                 case 0: // Stop message transmission
-                                    USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x36, 0x00, 0x38 };
+                                    USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x36, 0x01, 0x39 };
                                     break;
                                 case 1: // Single message
                                     PacketLengthHB = (byte)((2 + SCIBusTCMMessageToSendStart.Length) >> 8);
                                     PacketLengthLB = (byte)((2 + SCIBusTCMMessageToSendStart.Length) & 0xFF);
 
-                                    PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x36, 0x01 });
+                                    PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x36, 0x02 });
                                     PacketBytes.AddRange(SCIBusTCMMessageToSendStart);
 
                                     for (int i = 1; i < PacketBytes.Count; i++)
@@ -3688,7 +3651,7 @@ namespace ChryslerCCDSCIScanner
                                         PacketLengthHB = (byte)((4 + SCIBusTCMMessageToSendStart.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + SCIBusTCMMessageToSendStart.Length) & 0xFF);
 
-                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x36, 0x02, 0x00, (byte)SCIBusTCMMessageToSendStart.Length });
+                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x36, 0x03, 0x00, (byte)SCIBusTCMMessageToSendStart.Length });
                                         PacketBytes.AddRange(SCIBusTCMMessageToSendStart);
 
                                         for (int i = 1; i < PacketBytes.Count; i++)
@@ -3703,7 +3666,7 @@ namespace ChryslerCCDSCIScanner
                                         PacketLengthHB = (byte)((4 + SCIBusTCMMessageToSendStart.Length + SCIBusTCMMessageToSendEnd.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + SCIBusTCMMessageToSendStart.Length + SCIBusTCMMessageToSendEnd.Length) & 0xFF);
 
-                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x36, 0x02, 0x01, (byte)SCIBusTCMMessageToSendStart.Length });
+                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x36, 0x03, 0x01, (byte)SCIBusTCMMessageToSendStart.Length });
                                         PacketBytes.AddRange(SCIBusTCMMessageToSendStart);
                                         PacketBytes.AddRange(SCIBusTCMMessageToSendEnd);
 
@@ -4868,65 +4831,75 @@ namespace ChryslerCCDSCIScanner
             //if (true)
             if ((UpdatePort != String.Empty) && (OldUNIXTime != 0) && ScannerFound)
             {
-                Util.UpdateTextBox(USBTextBox, "[INFO] Searching for new scanner firmware" + Environment.NewLine 
-                                             + "       This may take a few seconds...", null);
+                Util.UpdateTextBox(USBTextBox, "[INFO] Searching for new scanner firmware" + Environment.NewLine +
+                                               "       This may take a few seconds...", null);
 
                 // Download latest main.h file from GitHub
-                System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
-                Downloader.DownloadFile(SourceFile, @"Tools/main.h");
-                
-                // Get new UNIX time value from the downloaded file
-                string line = String.Empty;
-                bool done = false;
-                using (Stream stream = File.Open(@"Tools/main.h", FileMode.Open))
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                try
                 {
-                    using (StreamReader reader = new StreamReader(stream))
+                    Downloader.DownloadFile(SourceFile, @"Tools/main.h");
+                }
+                catch
+                {
+                    Util.UpdateTextBox(USBTextBox, "[INFO] Download error", null);
+                }
+
+                if (File.Exists(@"Tools/main.h"))
+                {
+                    // Get new UNIX time value from the downloaded file
+                    string line = String.Empty;
+                    bool done = false;
+                    using (Stream stream = File.Open(@"Tools/main.h", FileMode.Open))
                     {
-                        while(!done)
+                        using (StreamReader reader = new StreamReader(stream))
                         {
-                            line = reader.ReadLine();
-                            if (line.Contains("#define FW_DATE"))
+                            while (!done)
                             {
-                                done = true;
+                                line = reader.ReadLine();
+                                if (line.Contains("#define FW_DATE"))
+                                {
+                                    done = true;
+                                }
                             }
                         }
                     }
-                }
 
-                string hexline = line.Substring(16, 18);
-                NewUNIXTime = Convert.ToUInt64(hexline, 16);
+                    string hexline = line.Substring(16, 18);
+                    NewUNIXTime = Convert.ToUInt64(hexline, 16);
 
-                DateTime OldFirmwareDate = Util.UnixTimeStampToDateTime(OldUNIXTime);
-                DateTime NewFirmwareDate = Util.UnixTimeStampToDateTime(NewUNIXTime);
-                string OldFirmwareDateString = OldFirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
-                string NewFirmwareDateString = NewFirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
+                    DateTime OldFirmwareDate = Util.UnixTimeStampToDateTime(OldUNIXTime);
+                    DateTime NewFirmwareDate = Util.UnixTimeStampToDateTime(NewUNIXTime);
+                    string OldFirmwareDateString = OldFirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
+                    string NewFirmwareDateString = NewFirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
 
-                Util.UpdateTextBox(USBTextBox, "[INFO] Old firmware date: " + OldFirmwareDateString, null);
-                Util.UpdateTextBox(USBTextBox, "[INFO] New firmware date: " + NewFirmwareDateString, null);
+                    Util.UpdateTextBox(USBTextBox, "[INFO] Old firmware date: " + OldFirmwareDateString, null);
+                    Util.UpdateTextBox(USBTextBox, "[INFO] New firmware date: " + NewFirmwareDateString, null);
 
-                if (NewUNIXTime > OldUNIXTime)
-                {
-                    Util.UpdateTextBox(USBTextBox, "[INFO] Downloading new firmware", null);
-                    Downloader.DownloadFile(FlashFile, @"Tools/ChryslerCCDSCIScanner.ino.mega.hex");
-                    Util.UpdateTextBox(USBTextBox, "[INFO] Beginning firmware update", null);
-                    ConnectButton.PerformClick(); // disconnect
-                    Thread.Sleep(500); // wait until UI updates its controls
-                    this.Refresh();
-                    Process process = new Process();
-                    process.StartInfo.WorkingDirectory = "Tools";
-                    process.StartInfo.FileName = "avrdude.exe";
-                    process.StartInfo.Arguments = "-C avrdude.conf -p m2560 -c wiring -P " + UpdatePort + " -b 115200 -D -U flash:w:ChryslerCCDSCIScanner.ino.mega.hex:i";
-                    process.Start();
-                    process.WaitForExit();
-                    this.Refresh();
-                    Util.UpdateTextBox(USBTextBox, "[INFO] Scanner firmware update finished" + Environment.NewLine + "       Connect again manually", null);
-                    File.Delete(@"Tools/main.h");
-                    File.Delete(@"Tools/ChryslerCCDSCIScanner.ino.mega.hex");
-                }
-                else
-                {
-                    Util.UpdateTextBox(USBTextBox, "[INFO] No scanner firmware update available", null);
-                    File.Delete(@"Tools/main.h");
+                    if (NewUNIXTime > OldUNIXTime)
+                    {
+                        Util.UpdateTextBox(USBTextBox, "[INFO] Downloading new firmware", null);
+                        Downloader.DownloadFile(FlashFile, @"Tools/ChryslerCCDSCIScanner.ino.mega.hex");
+                        Util.UpdateTextBox(USBTextBox, "[INFO] Beginning firmware update", null);
+                        ConnectButton.PerformClick(); // disconnect
+                        Thread.Sleep(500); // wait until UI updates its controls
+                        this.Refresh();
+                        Process process = new Process();
+                        process.StartInfo.WorkingDirectory = "Tools";
+                        process.StartInfo.FileName = "avrdude.exe";
+                        process.StartInfo.Arguments = "-C avrdude.conf -p m2560 -c wiring -P " + UpdatePort + " -b 115200 -D -U flash:w:ChryslerCCDSCIScanner.ino.mega.hex:i";
+                        process.Start();
+                        process.WaitForExit();
+                        this.Refresh();
+                        Util.UpdateTextBox(USBTextBox, "[INFO] Scanner firmware update finished" + Environment.NewLine + "       Connect again manually", null);
+                        File.Delete(@"Tools/main.h");
+                        File.Delete(@"Tools/ChryslerCCDSCIScanner.ino.mega.hex");
+                    }
+                    else
+                    {
+                        Util.UpdateTextBox(USBTextBox, "[INFO] No scanner firmware update available", null);
+                        File.Delete(@"Tools/main.h");
+                    }
                 }
             }
             else
