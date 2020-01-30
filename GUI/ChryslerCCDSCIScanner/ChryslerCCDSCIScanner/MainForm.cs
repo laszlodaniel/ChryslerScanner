@@ -4936,8 +4936,8 @@ namespace ChryslerCCDSCIScanner
 
         private void CCDBusEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            byte[] EnableCCDBusTransceiver = new byte[] { 0x3D, 0x00, 0x03, 0x03, 0x01, 0x01, 0x08 };
-            byte[] DisableCCDBusTransceiver = new byte[] { 0x3D, 0x00, 0x03, 0x03, 0x01, 0x00, 0x07 };
+            byte[] EnableCCDBusTransceiver = new byte[] { 0x3D, 0x00, 0x03, 0x03, 0x02, 0x01, 0x09 };
+            byte[] DisableCCDBusTransceiver = new byte[] { 0x3D, 0x00, 0x03, 0x03, 0x02, 0x00, 0x08 };
 
             if (CCDBusEnabledCheckBox.Checked)
             {
