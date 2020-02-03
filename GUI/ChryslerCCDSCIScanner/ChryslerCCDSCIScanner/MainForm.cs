@@ -1166,6 +1166,17 @@ namespace ChryslerCCDSCIScanner
                                         }
                                     }
                                     break;
+                                case 0x25:
+                                    if (ccdmessage.Length > 2)
+                                    {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x25);
+
+                                        ImperialSlope = LT.GetCCDBusMessageSlope(0x25)[0];
+                                        ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0.0");
+
+                                        ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x25)[0];
+                                    }
+                                    break;
                                 case 0x29:
                                     if (ccdmessage.Length > 3)
                                     {
@@ -1303,6 +1314,14 @@ namespace ChryslerCCDSCIScanner
                                     {
                                         ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xB2);
                                         ccdvaluetoinsert = "INVALID REQUEST";
+                                        ccdunittoinsert = String.Empty;
+                                    }
+                                    break;
+                                case 0xC2:
+                                    if (ccdmessage.Length > 2)
+                                    {
+                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xC2);
+                                        ccdvaluetoinsert = Util.ByteToHexString(ccdmessage, 1, ccdmessage.Length - 1);
                                         ccdunittoinsert = String.Empty;
                                     }
                                     break;
