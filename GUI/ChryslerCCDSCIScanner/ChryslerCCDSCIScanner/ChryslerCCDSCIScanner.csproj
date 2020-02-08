@@ -65,7 +65,6 @@
       <DependentUpon>CheatSheetForm.cs</DependentUpon>
     </Compile>
     <Compile Include="CircularBuffer.cs" />
-    <Compile Include="LookupTable.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -56,6 +56,9 @@
             this.USBClearAllButton = new System.Windows.Forms.Button();
             this.USBClearButton = new System.Windows.Forms.Button();
             this.DiagnosticsGroupBox = new System.Windows.Forms.GroupBox();
+            this.PercentageLabel = new System.Windows.Forms.Label();
+            this.RemainingTimeLabel = new System.Windows.Forms.Label();
+            this.ProgressBar1 = new System.Windows.Forms.ProgressBar();
             this.CCDBusEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.ResetViewButton = new System.Windows.Forms.Button();
             this.SortIDBytesCheckBox = new System.Windows.Forms.CheckBox();
@@ -69,10 +72,10 @@
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UpdateScannerFirmwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.cheatSheetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.CheatSheetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.includeTimestampInLogFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.IncludeTimestampInLogFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.USBCommunicationGroupBox.SuspendLayout();
             this.DiagnosticsGroupBox.SuspendLayout();
             this.ControlPanelGroupBox.SuspendLayout();
@@ -401,6 +404,9 @@
             // 
             // DiagnosticsGroupBox
             // 
+            this.DiagnosticsGroupBox.Controls.Add(this.PercentageLabel);
+            this.DiagnosticsGroupBox.Controls.Add(this.RemainingTimeLabel);
+            this.DiagnosticsGroupBox.Controls.Add(this.ProgressBar1);
             this.DiagnosticsGroupBox.Controls.Add(this.CCDBusEnabledCheckBox);
             this.DiagnosticsGroupBox.Controls.Add(this.ResetViewButton);
             this.DiagnosticsGroupBox.Controls.Add(this.SortIDBytesCheckBox);
@@ -412,6 +418,35 @@
             this.DiagnosticsGroupBox.TabIndex = 3;
             this.DiagnosticsGroupBox.TabStop = false;
             this.DiagnosticsGroupBox.Text = "Diagnostics";
+            // 
+            // PercentageLabel
+            // 
+            this.PercentageLabel.AutoSize = true;
+            this.PercentageLabel.Location = new System.Drawing.Point(683, 542);
+            this.PercentageLabel.Name = "PercentageLabel";
+            this.PercentageLabel.Size = new System.Drawing.Size(36, 13);
+            this.PercentageLabel.TabIndex = 17;
+            this.PercentageLabel.Text = "0.00%";
+            // 
+            // RemainingTimeLabel
+            // 
+            this.RemainingTimeLabel.AutoSize = true;
+            this.RemainingTimeLabel.Location = new System.Drawing.Point(761, 542);
+            this.RemainingTimeLabel.Name = "RemainingTimeLabel";
+            this.RemainingTimeLabel.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.RemainingTimeLabel.Size = new System.Drawing.Size(127, 13);
+            this.RemainingTimeLabel.TabIndex = 16;
+            this.RemainingTimeLabel.Text = "Remaining time: 00:00:00";
+            this.RemainingTimeLabel.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            // 
+            // ProgressBar1
+            // 
+            this.ProgressBar1.Enabled = false;
+            this.ProgressBar1.Location = new System.Drawing.Point(686, 559);
+            this.ProgressBar1.Name = "ProgressBar1";
+            this.ProgressBar1.Size = new System.Drawing.Size(200, 10);
+            this.ProgressBar1.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
+            this.ProgressBar1.TabIndex = 15;
             // 
             // CCDBusEnabledCheckBox
             // 
@@ -543,9 +578,9 @@
             // 
             this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.UpdateScannerFirmwareToolStripMenuItem,
-            this.cheatSheetToolStripMenuItem});
+            this.CheatSheetToolStripMenuItem});
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
-            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
+            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(46, 20);
             this.toolsToolStripMenuItem.Text = "Tools";
             // 
             // UpdateScannerFirmwareToolStripMenuItem
@@ -556,12 +591,28 @@
             this.UpdateScannerFirmwareToolStripMenuItem.Text = "Update scanner firmware";
             this.UpdateScannerFirmwareToolStripMenuItem.Click += new System.EventHandler(this.UpdateScannerFirmwareToolStripMenuItem_Click);
             // 
-            // cheatSheetToolStripMenuItem
+            // CheatSheetToolStripMenuItem
             // 
-            this.cheatSheetToolStripMenuItem.Name = "cheatSheetToolStripMenuItem";
-            this.cheatSheetToolStripMenuItem.Size = new System.Drawing.Size(206, 22);
-            this.cheatSheetToolStripMenuItem.Text = "Cheat sheet";
-            this.cheatSheetToolStripMenuItem.Click += new System.EventHandler(this.cheatSheetToolStripMenuItem_Click);
+            this.CheatSheetToolStripMenuItem.Name = "CheatSheetToolStripMenuItem";
+            this.CheatSheetToolStripMenuItem.Size = new System.Drawing.Size(206, 22);
+            this.CheatSheetToolStripMenuItem.Text = "Cheat sheet";
+            this.CheatSheetToolStripMenuItem.Click += new System.EventHandler(this.CheatSheetToolStripMenuItem_Click);
+            // 
+            // settingsToolStripMenuItem
+            // 
+            this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.IncludeTimestampInLogFilesToolStripMenuItem});
+            this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
+            this.settingsToolStripMenuItem.Text = "Settings";
+            // 
+            // IncludeTimestampInLogFilesToolStripMenuItem
+            // 
+            this.IncludeTimestampInLogFilesToolStripMenuItem.CheckOnClick = true;
+            this.IncludeTimestampInLogFilesToolStripMenuItem.Name = "IncludeTimestampInLogFilesToolStripMenuItem";
+            this.IncludeTimestampInLogFilesToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
+            this.IncludeTimestampInLogFilesToolStripMenuItem.Text = "Include timestamp in log files";
+            this.IncludeTimestampInLogFilesToolStripMenuItem.CheckedChanged += new System.EventHandler(this.IncludeTimestampInLogFilesToolStripMenuItem_CheckedChanged);
             // 
             // aboutToolStripMenuItem
             // 
@@ -569,22 +620,6 @@
             this.aboutToolStripMenuItem.Size = new System.Drawing.Size(52, 20);
             this.aboutToolStripMenuItem.Text = "About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.AboutToolStripMenuItem_Click);
-            // 
-            // settingsToolStripMenuItem
-            // 
-            this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.includeTimestampInLogFilesToolStripMenuItem});
-            this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
-            this.settingsToolStripMenuItem.Text = "Settings";
-            // 
-            // includeTimestampInLogFilesToolStripMenuItem
-            // 
-            this.includeTimestampInLogFilesToolStripMenuItem.CheckOnClick = true;
-            this.includeTimestampInLogFilesToolStripMenuItem.Name = "includeTimestampInLogFilesToolStripMenuItem";
-            this.includeTimestampInLogFilesToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
-            this.includeTimestampInLogFilesToolStripMenuItem.Text = "Include timestamp in log files";
-            this.includeTimestampInLogFilesToolStripMenuItem.CheckedChanged += new System.EventHandler(this.includeTimestampInLogFilesToolStripMenuItem_CheckedChanged);
             // 
             // MainForm
             // 
@@ -659,9 +694,12 @@
         private System.Windows.Forms.Button ResetViewButton;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
         private System.Windows.Forms.CheckBox CCDBusEnabledCheckBox;
-        private System.Windows.Forms.ToolStripMenuItem cheatSheetToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem CheatSheetToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem includeTimestampInLogFilesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem IncludeTimestampInLogFilesToolStripMenuItem;
+        private System.Windows.Forms.ProgressBar ProgressBar1;
+        private System.Windows.Forms.Label PercentageLabel;
+        private System.Windows.Forms.Label RemainingTimeLabel;
     }
 }
 

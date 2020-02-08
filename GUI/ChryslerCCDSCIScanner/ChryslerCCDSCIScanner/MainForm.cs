@@ -22,14 +22,26 @@ namespace ChryslerCCDSCIScanner
         public string DateTimeNow;
         public static string USBLogFilename;
         public static string USBBinaryLogFilename;
-        public static string DiagnosticsSnapshotFilename;
-        public static string CCDLogFilename;
-        public static string CCDB2F2LogFilename;
-        public static string PCMLogFilename;
-        public static string TCMLogFilename;
-        public static string UpdateScannerFirmwareLogFilename;
+        public string DiagnosticsSnapshotFilename;
+        public string CCDLogFilename;
+        public string CCDB2F2LogFilename;
+        public string CCDEPROMTextFilename;
+        public string CCDEPROMBinaryFilename;
+        public string CCDEEPROMTextFilename;
+        public string CCDEEPROMBinaryFilename;
+        public string PCMLogFilename;
+        public string PCMEPROMTextFilename;
+        public string PCMEPROMBinaryFilename;
+        public string PCMEEPROMTextFilename;
+        public string PCMEEPROMBinaryFilename;
+        public string TCMLogFilename;
+        public string TCMEPROMTextFilename;
+        public string TCMEPROMBinaryFilename;
+        public string TCMEEPROMTextFilename;
+        public string TCMEEPROMBinaryFilename;
+        public string UpdateScannerFirmwareLogFilename;
         public static bool USBShowTraffic = true;
-        public static byte Units = 0;
+        public byte Units = 0;
         public bool Timeout = false;
         public bool ScannerFound = false;
         public byte[] buffer = new byte[2048];
@@ -39,6 +51,7 @@ namespace ChryslerCCDSCIScanner
         public int RandomCCDMessageIntervalMax = 100; // ms
         public int RepeatInterval = 100; // ms
         public int RepeatIncrement = 1;
+        public bool RepeatIterate = false;
         public byte[] extEEPROMaddress = new byte[] { 0x00, 0x00 };
         public byte[] extEEPROMvalue = new byte[] { 0x00 };
         public bool SetCCDBus = true;
@@ -123,11 +136,14 @@ namespace ChryslerCCDSCIScanner
         public double MetricSlope = 0;
         public double MetricOffset = 0;
 
-
         public static string UpdatePort = String.Empty;
         public static UInt64 OldUNIXTime = 0;
         public static UInt64 NewUNIXTime = 0;
 
+        public byte CalculatedProgressBarValue = 0;
+        public DateTime CalculatedRemainingTime;
+        public bool MemoryReadFinished = false;
+        public byte MemoryReadError = 0;
 
         public byte LastTargetIndex = 0; // Scanner
         public byte LastCommandIndex = 2; // Status
@@ -158,7 +174,6 @@ namespace ChryslerCCDSCIScanner
         BackgroundWorker bw = new BackgroundWorker();
         SerialPort Serial = new SerialPort();
         CircularBuffer<byte> SerialRxBuffer = new CircularBuffer<byte>(2048);
-        LookupTable LT = new LookupTable();
         System.Timers.Timer TimeoutTimer = new System.Timers.Timer();
         System.Timers.Timer DiagnosticsTableUpdateTimer = new System.Timers.Timer();
         WebClient Downloader = new WebClient();
@@ -183,15 +198,31 @@ namespace ChryslerCCDSCIScanner
             if (!Directory.Exists("LOG/PCM")) Directory.CreateDirectory("LOG/PCM");
             if (!Directory.Exists("LOG/TCM")) Directory.CreateDirectory("LOG/TCM");
             if (!Directory.Exists("LOG/USB")) Directory.CreateDirectory("LOG/USB");
+            if (!Directory.Exists("ROMs")) Directory.CreateDirectory("ROMs");
 
             // Set logfile names inside the LOG directory
             DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             USBLogFilename = @"LOG/USB/usblog_" + DateTimeNow + ".txt";
             USBBinaryLogFilename = @"LOG/USB/usblog_" + DateTimeNow + ".bin";
+
             CCDLogFilename = @"LOG/CCD/ccdlog_" + DateTimeNow + ".txt";
             CCDB2F2LogFilename = @"LOG/CCD/ccdb2f2log_" + DateTimeNow + ".txt";
+            CCDEPROMTextFilename = @"ROMS/ccd_eprom_" + DateTimeNow + ".txt";
+            CCDEPROMBinaryFilename = @"ROMs/ccd_eprom_" + DateTimeNow + ".bin";
+            CCDEEPROMTextFilename = @"ROMs/ccd_eeprom_" + DateTimeNow + ".txt";
+            CCDEEPROMBinaryFilename = @"ROMs/ccd_eeprom_" + DateTimeNow + ".bin";
+
             PCMLogFilename = @"LOG/PCM/pcmlog_" + DateTimeNow + ".txt";
+            PCMEPROMTextFilename = @"ROMs/pcm_eprom_" + DateTimeNow + ".txt";
+            PCMEPROMBinaryFilename = @"ROMs/pcm_eprom_" + DateTimeNow + ".bin";
+            PCMEEPROMTextFilename = @"ROMs/pcm_eeprom_" + DateTimeNow + ".txt";
+            PCMEEPROMBinaryFilename = @"ROMs/pcm_eeprom_" + DateTimeNow + ".bin";
+
             TCMLogFilename = @"LOG/TCM/tcmlog_" + DateTimeNow + ".txt";
+            TCMEPROMTextFilename = @"ROMs/tcm_eprom_" + DateTimeNow + ".txt";
+            TCMEPROMBinaryFilename = @"ROMs/tcm_eprom_" + DateTimeNow + ".bin";
+            TCMEEPROMTextFilename = @"ROMs/tcm_eeprom_" + DateTimeNow + ".txt";
+            TCMEEPROMBinaryFilename = @"ROMs/tcm_eeprom_" + DateTimeNow + ".bin";
 
             // Setup timeout timer
             TimeoutTimer.Elapsed += new ElapsedEventHandler(TimeoutHandler);
@@ -199,9 +230,9 @@ namespace ChryslerCCDSCIScanner
             TimeoutTimer.Enabled = false;
 
             // Setup diagnostics table update timer
-            DiagnosticsTableUpdateTimer.Elapsed += new ElapsedEventHandler(UpdateDiagnosticsListBox);
-            DiagnosticsTableUpdateTimer.Interval = 50; // ms, table refresh rate
-            DiagnosticsTableUpdateTimer.Enabled = true;
+            //DiagnosticsTableUpdateTimer.Elapsed += new ElapsedEventHandler(UpdateDiagnosticsListBox);
+            //DiagnosticsTableUpdateTimer.Interval = 50; // ms, table refresh rate
+            //DiagnosticsTableUpdateTimer.Enabled = true;
 
             // Fill the table with the default lines
             DiagnosticsTable.Add("┌─────────────────────────┐                                                                                               ");
@@ -256,8 +287,8 @@ namespace ChryslerCCDSCIScanner
                 if ((string)Properties.Settings.Default["TransmissionMethod"] == "hex") HexCommMethodRadioButton.Checked = true;
                 else if ((string)Properties.Settings.Default["TransmissionMethod"] == "ascii") AsciiCommMethodRadioButton.Checked = true;
 
-                if ((bool)Properties.Settings.Default["IncludeTimestamp"] == true) includeTimestampInLogFilesToolStripMenuItem.Checked = true;
-                else if ((bool)Properties.Settings.Default["IncludeTimestamp"] == false) includeTimestampInLogFilesToolStripMenuItem.Checked = false;
+                if ((bool)Properties.Settings.Default["IncludeTimestamp"] == true) IncludeTimestampInLogFilesToolStripMenuItem.Checked = true;
+                else if ((bool)Properties.Settings.Default["IncludeTimestamp"] == false) IncludeTimestampInLogFilesToolStripMenuItem.Checked = false;
             }
             catch
             {
@@ -1118,7 +1149,7 @@ namespace ChryslerCCDSCIScanner
                             DiagnosticsTable.RemoveAt(SCIBusTCMHeaderStart);
                             DiagnosticsTable.Insert(SCIBusTCMHeaderStart, SCIBusTCMHeaderText);
 
-                            //UpdateDiagnosticsListBox();
+                            UpdateDiagnosticsListBox();
                             break;
                         case 0x01: // CCD-bus
                             StringBuilder ccdlistitem = new StringBuilder(EmptyLine); // start with a pre-defined empty line
@@ -1130,8 +1161,6 @@ namespace ChryslerCCDSCIScanner
                             byte[] ccdmessage = new byte[payload.Length - 4];
                             Array.Copy(payload, 0, ccdtimestamp, 0, 4); // copy timestamp only
                             Array.Copy(payload, 4, ccdmessage, 0, payload.Length - 4); // copy message only
-
-                            IDByte = ccdmessage[0];
 
                             if (ccdmessage.Length < 9) // max 8 byte fits the message column
                             {
@@ -1146,302 +1175,336 @@ namespace ChryslerCCDSCIScanner
                             ccdlistitem.Remove(2, ccdmsgtoinsert.Length); // remove as much whitespaces as the length of the message
                             ccdlistitem.Insert(2, ccdmsgtoinsert); // insert message where whitespaces were
 
-                            // Determine description, value and unit texts
+                            // First byte in a CCD-bus message is the ID-byte
+                            IDByte = ccdmessage[0];
+
                             switch (IDByte)
                             {
+                                case 0x0C: // battery voltage, oil pressure, coolant temperature, intake temperature
+                                    if (ccdmessage.Length > 5)
+                                    {
+                                        if (Units == 1) // Imperial
+                                        {
+                                            string battery_voltage = (ccdmessage[1] * 0.125D).ToString("0.0").Replace(",", ".");
+                                            string oil_pressure = (ccdmessage[2] * 0.5D).ToString("0.0").Replace(",", ".");
+                                            string coolant_temperature = Math.Round((ccdmessage[3] * 1.8D) - 83.2D).ToString("0");
+                                            string intake_air_temperature = Math.Round((ccdmessage[4] * 1.8D) - 83.2D).ToString("0");
+                                            ccddescriptiontoinsert = "BATTERY: " + battery_voltage + " V | " + "OIL: " + oil_pressure + " PSI | " + "COOLANT: " + coolant_temperature + " °F";
+                                            ccdvaluetoinsert = "IAT: " + intake_air_temperature + " °F";
+                                        }
+                                        if (Units == 0) // Metric
+                                        {
+                                            string battery_voltage = (ccdmessage[1] * 0.125D).ToString("0.0").Replace(",", ".");
+                                            string oil_pressure = (ccdmessage[2] * 0.5D * 6.894757D).ToString("0.0").Replace(",", ".");
+                                            string coolant_temperature = Math.Round((((ccdmessage[3] * 1.8D) - 83.2D) * 0.555556D) - 17.77778D).ToString("0");
+                                            string intake_air_temperature = Math.Round((((ccdmessage[4] * 1.8D) - 83.2D) * 0.555556D) - 17.77778D).ToString("0");
+                                            ccddescriptiontoinsert = "BATTERY: " + battery_voltage + " V | " + "OIL: " + oil_pressure + " KPA | " + "COOLANT: " + coolant_temperature + " °C";
+                                            ccdvaluetoinsert = "IAT: " + intake_air_temperature + " °C";
+                                        }
+
+                                        ccdunittoinsert = String.Empty;
+                                    }
+                                    break;
                                 case 0x24:
                                     if (ccdmessage.Length > 3)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x24);
+                                        ccddescriptiontoinsert = "VEHICLE SPEED";
 
                                         if (Units == 1) // Imperial
                                         {
                                             ccdvaluetoinsert = ccdmessage[1].ToString("0");
-                                            ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x24)[0];
+                                            ccdunittoinsert = "MPH";
                                         }
                                         if (Units == 0) // Metric
                                         {
                                             ccdvaluetoinsert = ccdmessage[2].ToString("0");
-                                            ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x24)[1];
+                                            ccdunittoinsert = "KM/H";
                                         }
                                     }
                                     break;
                                 case 0x25:
                                     if (ccdmessage.Length > 2)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x25);
+                                        ccddescriptiontoinsert = "FUEL TANK LEVEL";
 
-                                        ImperialSlope = LT.GetCCDBusMessageSlope(0x25)[0];
-                                        ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0.0");
+                                        ImperialSlope = 0.3922D;
+                                        ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0.0").Replace(",", ".");
 
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x25)[0];
+                                        ccdunittoinsert = "%";
                                     }
                                     break;
                                 case 0x29:
                                     if (ccdmessage.Length > 3)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x29);
+                                        ccddescriptiontoinsert = "LAST ENGINE SHUTDOWN";
 
                                         if (ccdmessage[1] < 10) ccdvaluetoinsert = "0";
                                         ccdvaluetoinsert += ccdmessage[1].ToString("0") + ":";
                                         if (ccdmessage[2] < 10) ccdvaluetoinsert += "0";
                                         ccdvaluetoinsert += ccdmessage[2].ToString("0");
 
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x29)[0];
+                                        ccdunittoinsert = "HOUR:MINUTE";
+                                    }
+                                    break;
+                                case 0x3A:
+                                    if (ccdmessage.Length > 3)
+                                    {
+                                        ccddescriptiontoinsert = "INSTRUMENT CLUSTER LAMP STATES (AIRBAG LAMP)";
+
+                                        ccdvaluetoinsert = Util.ByteToHexString(ccdmessage, 1, 3);
+
+                                        ccdunittoinsert = String.Empty;
                                     }
                                     break;
                                 case 0x42:
                                     if (ccdmessage.Length > 3)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x42);
+                                        ccddescriptiontoinsert = "THROTTLE POSITION SENSOR | CRUISE CONTROL";
 
-                                        ImperialSlope = LT.GetCCDBusMessageSlope(0x42)[0];
+                                        ImperialSlope = 0.65D;
                                         ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0");
 
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x42)[0];
+                                        ccdunittoinsert = "%";
                                     }
                                     break;
                                 case 0x44:
-                                    if (ccdmessage.Length > 2)
+                                    if (ccdmessage.Length > 3)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x44);
+                                        ccddescriptiontoinsert = "FUEL USED";
 
-                                        ccdvaluetoinsert = ccdmessage[1].ToString("0");
+                                        ccdvaluetoinsert = ((ccdmessage[1] << 8) | ccdmessage[2]).ToString("0");
 
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x44)[0];
+                                        ccdunittoinsert = String.Empty;
                                     }
                                     break;
                                 case 0x50:
                                     if (ccdmessage.Length > 2)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x50);
+                                        ccddescriptiontoinsert = "AIRBAG LAMP STATE";
                                         if ((ccdmessage[1] & 0x01) == 0x01) ccdvaluetoinsert = "AIRBAG LAMP ON";
                                         else ccdvaluetoinsert = "AIRBAG LAMP OFF";
 
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x50)[0];
+                                        ccdunittoinsert = String.Empty;
                                     }
                                     break;
                                 case 0x6D:
                                     if (ccdmessage.Length > 3)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x6D);
+                                        ccddescriptiontoinsert = "VEHICLE IDENTIFICATION NUMBER (VIN)";
                                         if ((ccdmessage[1] > 0) && (ccdmessage[1] < 18))
                                         {
                                             // Replace characters in the VIN string (one by one)
                                             VIN = VIN.Remove(ccdmessage[1] - 1, 1).Insert(ccdmessage[1] - 1, ((char)(ccdmessage[2])).ToString());
                                         }
-
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x6D)[0];
+                                        ccdvaluetoinsert = VIN;
+                                        ccdunittoinsert = String.Empty;
                                     }
-                                    ccdvaluetoinsert = VIN;
                                     break;
                                 case 0x75:
                                     if (ccdmessage.Length > 3)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x75);
+                                        ccddescriptiontoinsert = "A/C HIGH SIDE PRESSURE";
 
                                         if (Units == 1) // Imperial
                                         {
-                                            ImperialSlope = LT.GetCCDBusMessageSlope(0x75)[0];
+                                            ImperialSlope = 1.961D;
                                             ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0.0").Replace(",", ".");
 
-                                            ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x75)[0];
+                                            ccdunittoinsert = "PSI";
                                         }
                                         if (Units == 0) // Metric
                                         {
-                                            MetricSlope = (LT.GetCCDBusMessageSlope(0x75)[0] * LT.GetCCDBusMessageSlConv(0x75)[0]);
+                                            MetricSlope = 1.961D * 6.894757D;
                                             ccdvaluetoinsert = (ccdmessage[1] * MetricSlope).ToString("0.0").Replace(",", ".");
 
-                                            ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x75)[0];
+                                            ccdunittoinsert = "KPA";
                                         }
                                     }
                                     break;
                                 case 0x7B:
                                     if (ccdmessage.Length > 2)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x7B);
-                                        ImperialSlope = LT.GetCCDBusMessageSlope(0x7B)[0];
-                                        ImperialOffset = LT.GetCCDBusMessageOffset(0x7B)[0];
-                                        ccdvaluetoinsert = ((ccdmessage[1] * ImperialSlope) + ImperialOffset).ToString("0.0").Replace(",", ".");
+                                        ccddescriptiontoinsert = "OUTSIDE AIR TEMPERATURE"; // Fahrenheit only
+                                        ImperialSlope = 1D;
+                                        ImperialOffset = -70.0D;
+                                        ccdvaluetoinsert = ((ccdmessage[1] * ImperialSlope) + ImperialOffset).ToString("0");
 
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x7B)[0];
+                                        ccdunittoinsert = "°F";
                                     }
                                     break;
                                 case 0x8C:
                                     if (ccdmessage.Length > 3)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0x8C);
+                                        ccddescriptiontoinsert = "ENGINE COOLANT TEMPERATURE | INTAKE AIR TEMPERATURE";
 
                                         if (Units == 1) // Imperial
                                         {
-                                            ImperialSlope = LT.GetCCDBusMessageSlope(0x8C)[0];
-                                            ImperialOffset = LT.GetCCDBusMessageOffset(0x8C)[0];
-                                            ccdvaluetoinsert = ((ccdmessage[1] * ImperialSlope) + ImperialOffset).ToString("0.0").Replace(",", ".") + " | ";
-                                            ccdvaluetoinsert += ((ccdmessage[2] * ImperialSlope) + ImperialOffset).ToString("0.0").Replace(",", ".");
+                                            ImperialSlope = 1.8D;
+                                            ImperialOffset = -198.4D;
+                                            ccdvaluetoinsert = Math.Round((ccdmessage[1] * ImperialSlope) + ImperialOffset).ToString("0") + " | ";
+                                            ccdvaluetoinsert += Math.Round((ccdmessage[2] * ImperialSlope) + ImperialOffset).ToString("0");
 
-                                            ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0x8C)[0];
+                                            ccdunittoinsert = "°F | °F";
                                         }
                                         if (Units == 0) // Metric
                                         {
-                                            ImperialSlope = LT.GetCCDBusMessageSlope(0x8C)[0];
-                                            ImperialOffset = LT.GetCCDBusMessageOffset(0x8C)[0];
-                                            MetricSlope = LT.GetCCDBusMessageSlConv(0x8C)[0];
-                                            MetricOffset = LT.GetCCDBusMessageOfConv(0x8C)[0];
-                                            ccdvaluetoinsert = ((((ccdmessage[1] * ImperialSlope) + ImperialOffset) * MetricSlope) + MetricOffset).ToString("0.0").Replace(",", ".") + " | ";
-                                            ccdvaluetoinsert += ((((ccdmessage[2] * ImperialSlope) + ImperialOffset) * MetricSlope) + MetricOffset).ToString("0.0").Replace(",", ".");
+                                            ImperialSlope = 1.8D;
+                                            ImperialOffset = -198.4D;
+                                            MetricSlope = 0.555556D;
+                                            MetricOffset = -17.77778D;
+                                            ccdvaluetoinsert = Math.Round((((ccdmessage[1] * ImperialSlope) + ImperialOffset) * MetricSlope) + MetricOffset).ToString("0") + " | ";
+                                            ccdvaluetoinsert += Math.Round((((ccdmessage[2] * ImperialSlope) + ImperialOffset) * MetricSlope) + MetricOffset).ToString("0");
 
-                                            ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0x8C)[0];
+                                            ccdunittoinsert = "°C | °C";
                                         }
                                     }
                                     break;
                                 case 0xA9:
                                     if (ccdmessage.Length > 2)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xA9);
+                                        ccddescriptiontoinsert = "LAST ENGINE SHUTDOWN";
                                         ccdvaluetoinsert = ccdmessage[1].ToString("0");
 
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0xA9)[0];
+                                        ccdunittoinsert = "MINUTE";
                                     }
                                     break;
                                 case 0xB2:
                                     if (ccdmessage.Length > 5)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xB2);
+                                        ccddescriptiontoinsert = "DRB REQUEST";
                                         ccdvaluetoinsert = String.Empty;
                                         ccdunittoinsert = String.Empty;
                                     }
-                                    else
+                                    break;
+                                case 0xBE:
+                                    if (ccdmessage.Length > 2)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xB2);
-                                        ccdvaluetoinsert = "INVALID REQUEST";
+                                        ccddescriptiontoinsert = "IGNITION SWITCH POSITION";
+                                        ccdvaluetoinsert = Util.ByteToHexString(ccdmessage, 1, 2);
                                         ccdunittoinsert = String.Empty;
                                     }
                                     break;
                                 case 0xC2:
                                     if (ccdmessage.Length > 2)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xC2);
+                                        ccddescriptiontoinsert = "SKIM SECRET KEY";
                                         ccdvaluetoinsert = Util.ByteToHexString(ccdmessage, 1, ccdmessage.Length - 1);
+                                        ccdunittoinsert = String.Empty;
+                                    }
+                                    break;
+                                case 0xCC:
+                                    if (ccdmessage.Length > 3)
+                                    {
+                                        ccddescriptiontoinsert = "ACCUMULATED MILEAGE";
+                                        ccdvaluetoinsert = Util.ByteToHexString(ccdmessage, 1, 3);
                                         ccdunittoinsert = String.Empty;
                                     }
                                     break;
                                 case 0xCE:
                                     if (ccdmessage.Length > 5)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xCE);
+                                        ccddescriptiontoinsert = "VEHICLE DISTANCE / ODOMETER";
 
                                         if (Units == 1) // Imperial
                                         {
-                                            ImperialSlope = LT.GetCCDBusMessageSlope(0xCE)[0];
+                                            ImperialSlope = 0.000125D;
                                             ccdvaluetoinsert = ((UInt32)(ccdmessage[1] << 24 | ccdmessage[2] << 16 | ccdmessage[3] << 8 | ccdmessage[4]) * ImperialSlope).ToString("0.000").Replace(",", ".");
-
-                                            ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0xCE)[0];
+                                            ccdunittoinsert = "MILE";
                                         }
                                         if (Units == 0) // Metric
                                         {
-                                            MetricSlope = (LT.GetCCDBusMessageSlope(0xCE)[0] * LT.GetCCDBusMessageSlConv(0xCE)[0]);
+                                            MetricSlope = 0.000125D * 1.609334138D;
                                             ccdvaluetoinsert = ((UInt32)(ccdmessage[1] << 24 | ccdmessage[2] << 16 | ccdmessage[3] << 8 | ccdmessage[4]) * MetricSlope).ToString("0.000").Replace(",", ".");
-
-                                            ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0xCE)[0];
+                                            ccdunittoinsert = "KILOMETER";
                                         }
                                     }
                                     break;
                                 case 0xD4:
                                     if (ccdmessage.Length > 3)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xD4);
-                                        ImperialSlope = LT.GetCCDBusMessageSlope(0xD4)[0];
+                                        ccddescriptiontoinsert = "BATTERY VOLTAGE | CALCULATED CHARGING VOLTAGE";
+                                        ImperialSlope = 0.0592D;
                                         ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0.0").Replace(",", ".") + " | " + (ccdmessage[2] * ImperialSlope).ToString("0.0").Replace(",", ".");
-
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0xD4)[0];
+                                        ccdunittoinsert = "V | V";
                                     }
                                     break;
                                 case 0xDA:
                                     if (ccdmessage.Length > 2)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xDA);
+                                        ccddescriptiontoinsert = "INSTRUMENT CLUSTER LAMP STATES";
                                         if ((ccdmessage[1] & 0x40) == 0x40) ccdvaluetoinsert = "MIL LAMP ON";
                                         else ccdvaluetoinsert = "MIL LAMP OFF";
 
-                                        ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0xDA)[0];
+                                        ccdunittoinsert = String.Empty;
                                     }
                                     break;
                                 case 0xE4:
                                     if (ccdmessage.Length > 3)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xE4);
+                                        ccddescriptiontoinsert = "ENGINE SPEED | INTAKE MANIFOLD ABSOLUTE PRESSURE";
 
                                         if (Units == 1) // Imperial
                                         {
-                                            ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[0]; // RPM
+                                            ImperialSlope = 32D; // RPM
                                             ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0") + " | ";
 
-                                            ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[1]; // PSI
+                                            ImperialSlope = 0.059756D; // PSI
                                             ccdvaluetoinsert += (ccdmessage[2] * ImperialSlope).ToString("0.0").Replace(",", ".");
 
-                                            ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0xE4)[0];
+                                            ccdunittoinsert = "RPM | PSI";
                                         }
                                         if (Units == 0) // Metric
                                         {
-                                            ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[0]; // RPM
+                                            ImperialSlope = 32D; // RPM
                                             ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0") + " | ";
 
-                                            ImperialSlope = LT.GetCCDBusMessageSlope(0xE4)[1]; // KPA
-                                            MetricSlope = LT.GetCCDBusMessageSlConv(0xE4)[1];
+                                            ImperialSlope = 0.059756D; // KPA
+                                            MetricSlope = 6.894757D;
                                             ccdvaluetoinsert += ((ccdmessage[2] * ImperialSlope) * MetricSlope).ToString("0.0").Replace(",", ".");
 
-                                            ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0xE4)[0];
+                                            ccdunittoinsert = "RPM | KPA";
                                         }
                                     }
                                     break;
                                 case 0xEE:
                                     if (ccdmessage.Length > 4)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xEE);
+                                        ccddescriptiontoinsert = "TRIP DISTANCE / TRIPMETER";
 
                                         if (Units == 1) // Imperial
                                         {
-                                            ImperialSlope = LT.GetCCDBusMessageSlope(0xEE)[0];
+                                            ImperialSlope = 0.016D;
                                             ccdvaluetoinsert = ((UInt32)(ccdmessage[1] << 16 | ccdmessage[2] << 8 | ccdmessage[3]) * ImperialSlope).ToString("0.000").Replace(",", ".");
-
-                                            ccdunittoinsert = LT.GetCCDBusMessageUnitImperial(0xEE)[0];
+                                            ccdunittoinsert = "MILE";
                                         }
                                         if (Units == 0) // Metric
                                         {
-                                            MetricSlope = (LT.GetCCDBusMessageSlope(0xEE)[0] * LT.GetCCDBusMessageSlConv(0xEE)[0]);
+                                            MetricSlope = 0.016D * 1.609334138D;
                                             ccdvaluetoinsert = ((UInt32)(ccdmessage[1] << 16 | ccdmessage[2] << 8 | ccdmessage[3]) * MetricSlope).ToString("0.000").Replace(",", ".");
-
-                                            ccdunittoinsert = LT.GetCCDBusMessageUnitMetric(0xEE)[0];
+                                            ccdunittoinsert = "KILOMETER";
                                         }
                                     }
                                     break;
                                 case 0xF2:
                                     if (ccdmessage.Length > 5)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xF2);
+                                        ccddescriptiontoinsert = "DRB RESPONSE";
                                         ccdvaluetoinsert = String.Empty;
-                                        ccdunittoinsert = String.Empty;
-                                    }
-                                    else
-                                    {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xF2);
-                                        ccdvaluetoinsert = "INVALID RESPONSE";
                                         ccdunittoinsert = String.Empty;
                                     }
                                     break;
                                 case 0xFE:
                                     if (ccdmessage.Length > 2)
                                     {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xFE);
+                                        ccddescriptiontoinsert = "INTERIOR LAMP DIMMING";
                                         ccdvaluetoinsert = Util.ByteToHexString(ccdmessage, 1, 2);
                                         ccdunittoinsert = String.Empty;
                                     }
-                                    else
-                                    {
-                                        ccddescriptiontoinsert = LT.GetCCDBusMessageDescription(0xF2);
-                                        ccdvaluetoinsert = String.Empty; ;
-                                        ccdunittoinsert = String.Empty;
-                                    }
+                                    break;
+                                case 0xFF:
+                                    ccddescriptiontoinsert = "CCD-BUS WAKE UP";
+                                    ccdvaluetoinsert = String.Empty;
+                                    ccdunittoinsert = String.Empty;
                                     break;
                             }
 
@@ -1467,7 +1530,7 @@ namespace ChryslerCCDSCIScanner
                             {
                                 CCDBusIDByteNum++;
 
-                                // Put B2 and F2 messages at the bottom of the table
+                                // Handle B2 and F2 messages elsewhere
                                 if ((IDByte != 0xB2) && (IDByte != 0xF2)) // if it's not diagnostic request or response message
                                 {
                                     CCDBusIDList.Add(IDByte); // add ID-byte to the list
@@ -1520,7 +1583,7 @@ namespace ChryslerCCDSCIScanner
                                 DiagnosticsTable.RemoveAt(CCDBusB2Start);
                                 DiagnosticsTable.Insert(CCDBusB2Start, ccdlistitem.ToString());
 
-                                if (includeTimestampInLogFilesToolStripMenuItem.Checked)
+                                if (IncludeTimestampInLogFilesToolStripMenuItem.Checked)
                                 {
                                     TimeSpan CCDElapsedTime = TimeSpan.FromMilliseconds(ccdtimestamp[0] << 24 | ccdtimestamp[1] << 16 | ccdtimestamp[2] << 8 | ccdtimestamp[3]);
                                     DateTime CCDTimestamp = DateTime.Today.Add(CCDElapsedTime);
@@ -1542,7 +1605,7 @@ namespace ChryslerCCDSCIScanner
                                 DiagnosticsTable.RemoveAt(CCDBusF2Start);
                                 DiagnosticsTable.Insert(CCDBusF2Start, ccdlistitem.ToString());
 
-                                if (includeTimestampInLogFilesToolStripMenuItem.Checked)
+                                if (IncludeTimestampInLogFilesToolStripMenuItem.Checked)
                                 {
                                     TimeSpan CCDElapsedTime = TimeSpan.FromMilliseconds(ccdtimestamp[0] << 24 | ccdtimestamp[1] << 16 | ccdtimestamp[2] << 8 | ccdtimestamp[3]);
                                     DateTime CCDTimestamp = DateTime.Today.Add(CCDElapsedTime);
@@ -1560,10 +1623,12 @@ namespace ChryslerCCDSCIScanner
                             CCDBusHeaderText = Util.Truncate(CCDBusHeaderText, EmptyLine.Length); // Replacing strings causes the base string to grow so cut it back to stay in line
                             DiagnosticsTable.RemoveAt(CCDBusHeaderStart);
                             DiagnosticsTable.Insert(CCDBusHeaderStart, CCDBusHeaderText);
-                            //UpdateDiagnosticsListBox();
+
+                            UpdateDiagnosticsListBox();
+
                             Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message", msg);
 
-                            if (includeTimestampInLogFilesToolStripMenuItem.Checked)
+                            if (IncludeTimestampInLogFilesToolStripMenuItem.Checked)
                             {
                                 TimeSpan CCDElapsedTime = TimeSpan.FromMilliseconds(ccdtimestamp[0] << 24 | ccdtimestamp[1] << 16 | ccdtimestamp[2] << 8 | ccdtimestamp[3]);
                                 DateTime CCDTimestamp = DateTime.Today.Add(CCDElapsedTime);
@@ -1584,8 +1649,6 @@ namespace ChryslerCCDSCIScanner
                             Array.Copy(payload, 0, pcmtimestamp, 0, 4); // copy timestamp only
                             Array.Copy(payload, 4, pcmmessage, 0, payload.Length - 4); // copy message only
 
-                            IDByte = pcmmessage[0];
-
                             // In case of high speed mode the request and response bytes are sent in separate packets.
                             // First packet is always the request bytes list, save them here and do nothing else.
                             // Second packet contains the response bytes, mix it with the request bytes and update the table.
@@ -1602,6 +1665,8 @@ namespace ChryslerCCDSCIScanner
 
                                 scipcmlistitem.Remove(2, scipcmmsgtoinsert.Length); // remove as much whitespaces as the length of the message
                                 scipcmlistitem.Insert(2, scipcmmsgtoinsert); // insert message where whitespaces were
+
+                                IDByte = pcmmessage[0]; // first byte of the message
 
                                 // Insert description in the line
                                 switch (IDByte)
@@ -2175,6 +2240,31 @@ namespace ChryslerCCDSCIScanner
                                             scipcmdescriptiontoinsert += Util.ByteToHexString(pcmmessage, 1, 4);
                                             scipcmvaluetoinsert = Util.ByteToHexString(pcmmessage, 4, 5);
                                             scipcmunittoinsert = String.Empty;
+
+                                            if (RepeatIterate)
+                                            {
+                                                File.AppendAllText(PCMEPROMTextFilename, Util.ByteToHexString(pcmmessage, 0, pcmmessage.Length) + Environment.NewLine); // save message to text file
+
+                                                byte[] CommandOnly = pcmmessage.Take(4).ToArray();
+                                                if (CommandOnly.SequenceEqual(SCIBusPCMMessageToSendEnd))
+                                                {
+                                                    RepeatIterate = false;
+                                                    ConvertTextToBinaryDump(PCMEPROMTextFilename);
+                                                }
+
+                                                ProgressBar1.BeginInvoke((MethodInvoker)delegate
+                                                {
+                                                    //if (ProgressBar1.Value < ProgressBar1.Maximum) ProgressBar1.Value += 1;
+                                                    //else ProgressBar1.Value = 0;
+                                                });
+                                                    
+                                            }
+                                            else
+                                            {
+                                                ProgressBar1.Value = 0;
+                                                PercentageLabel.Text = "0.00%";
+                                                RemainingTimeLabel.Text = "Remaining time: 00:00:00";
+                                            }
                                         }
                                         else
                                         {
@@ -2205,6 +2295,31 @@ namespace ChryslerCCDSCIScanner
                                             scipcmdescriptiontoinsert += Util.ByteToHexString(pcmmessage, 1, 3);
                                             scipcmvaluetoinsert = Util.ByteToHexString(pcmmessage, 3, 4);
                                             scipcmunittoinsert = String.Empty;
+
+                                            if (RepeatIterate)
+                                            {
+                                                File.AppendAllText(PCMEEPROMTextFilename, Util.ByteToHexString(pcmmessage, 0, pcmmessage.Length) + Environment.NewLine); // save message to text file
+
+                                                byte[] CommandOnly = pcmmessage.Take(3).ToArray();
+                                                if (CommandOnly.SequenceEqual(SCIBusPCMMessageToSendEnd))
+                                                {
+                                                    RepeatIterate = false;
+                                                    ConvertTextToBinaryDump(PCMEEPROMTextFilename);
+                                                }
+
+                                                ProgressBar1.BeginInvoke((MethodInvoker)delegate
+                                                {
+                                                    //if (ProgressBar1.Value < ProgressBar1.Maximum) ProgressBar1.Value += 1;
+                                                    //else ProgressBar1.Value = 0;
+                                                });
+
+                                            }
+                                            else
+                                            {
+                                                ProgressBar1.Value = 0;
+                                                PercentageLabel.Text = "0.00%";
+                                                RemainingTimeLabel.Text = "Remaining time: 00:00:00";
+                                            }
                                         }
                                         else
                                         {
@@ -2675,7 +2790,7 @@ namespace ChryslerCCDSCIScanner
                                 }
                                 SCIBusPCMMsgRxCount++;
 
-                                if (includeTimestampInLogFilesToolStripMenuItem.Checked)
+                                if (IncludeTimestampInLogFilesToolStripMenuItem.Checked)
                                 {
                                     TimeSpan SCIBusPCMElapsedTime = TimeSpan.FromMilliseconds(pcmtimestamp[0] << 24 | pcmtimestamp[1] << 16 | pcmtimestamp[2] << 8 | pcmtimestamp[3]);
                                     DateTime SCIBusPCMTimestamp = DateTime.Today.Add(SCIBusPCMElapsedTime);
@@ -2823,7 +2938,7 @@ namespace ChryslerCCDSCIScanner
                                 }
                                 SCIBusPCMMsgRxCount++;
 
-                                if (includeTimestampInLogFilesToolStripMenuItem.Checked)
+                                if (IncludeTimestampInLogFilesToolStripMenuItem.Checked)
                                 {
                                     TimeSpan SCIBusPCMElapsedTime = TimeSpan.FromMilliseconds(pcmtimestamp[0] << 24 | pcmtimestamp[1] << 16 | pcmtimestamp[2] << 8 | pcmtimestamp[3]);
                                     DateTime SCIBusPCMTimestamp = DateTime.Today.Add(SCIBusPCMElapsedTime);
@@ -2841,8 +2956,38 @@ namespace ChryslerCCDSCIScanner
                             SCIBusPCMHeaderText = Util.Truncate(SCIBusPCMHeaderText, EmptyLine.Length); // Replacing strings causes the base string to grow so cut it back to stay in line
                             DiagnosticsTable.RemoveAt(SCIBusPCMHeaderStart);
                             DiagnosticsTable.Insert(SCIBusPCMHeaderStart, SCIBusPCMHeaderText);
-                            //UpdateDiagnosticsListBox();
+
+                            UpdateDiagnosticsListBox();
+
                             Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (PCM)", msg);
+
+                            if (MemoryReadFinished)
+                            {
+                                switch (MemoryReadError)
+                                {
+                                    case 0: // ok
+                                        Util.UpdateTextBox(USBTextBox, "[INFO] EPROM/EEPROM binary export finished", null);
+                                        break;
+                                    case 1: // missing messages
+                                        Util.UpdateTextBox(USBTextBox, "[INFO] EPROM/EEPROM text message missing" + Environment.NewLine +
+                                                                       "       Number of lines don't match up with" + Environment.NewLine +
+                                                                       "       expected binary size." + Environment.NewLine +
+                                                                       "       Restart application and try again.", null);
+                                        break;
+                                    case 2: // memory value missing
+                                        Util.UpdateTextBox(USBTextBox, "[INFO] EPROM/EEPROM text message incomplete" + Environment.NewLine +
+                                                                       "       Some messages lack the memory value" + Environment.NewLine +
+                                                                       "       that is needed to build the binary file" + Environment.NewLine +
+                                                                       "       Restart application and try again.", null);
+                                        break;
+                                    default:
+                                        Util.UpdateTextBox(USBTextBox, "[INFO] EPROM/EEPROM reading error", null);
+                                        break;
+                                }
+
+                                MemoryReadFinished = false;
+                                MemoryReadError = 0;
+                            }
                             break;
                         case 0x03: // SCI-bus (TCM)
                             IDByte = payload[4];
@@ -2900,7 +3045,7 @@ namespace ChryslerCCDSCIScanner
                                 }
                                 SCIBusTCMMsgRxCount++;
 
-                                if (includeTimestampInLogFilesToolStripMenuItem.Checked)
+                                if (IncludeTimestampInLogFilesToolStripMenuItem.Checked)
                                 {
                                     TimeSpan SCIBusTCMElapsedTime = TimeSpan.FromMilliseconds(tcmtimestamp[0] << 24 | tcmtimestamp[1] << 16 | tcmtimestamp[2] << 8 | tcmtimestamp[3]);
                                     DateTime SCIBusTCMTimestamp = DateTime.Today.Add(SCIBusTCMElapsedTime);
@@ -2973,7 +3118,7 @@ namespace ChryslerCCDSCIScanner
                                 }
                                 SCIBusTCMMsgRxCount++;
 
-                                if (includeTimestampInLogFilesToolStripMenuItem.Checked)
+                                if (IncludeTimestampInLogFilesToolStripMenuItem.Checked)
                                 {
                                     TimeSpan SCIBusTCMElapsedTime = TimeSpan.FromMilliseconds(tcmtimestamp[0] << 24 | tcmtimestamp[1] << 16 | tcmtimestamp[2] << 8 | tcmtimestamp[3]);
                                     DateTime SCIBusTCMTimestamp = DateTime.Today.Add(SCIBusTCMElapsedTime);
@@ -2991,7 +3136,7 @@ namespace ChryslerCCDSCIScanner
                             SCIBusTCMHeaderText = Util.Truncate(SCIBusTCMHeaderText, EmptyLine.Length); // Replacing strings causes the base string to grow so cut it back to stay in line
                             DiagnosticsTable.RemoveAt(SCIBusTCMHeaderStart);
                             DiagnosticsTable.Insert(SCIBusTCMHeaderStart, SCIBusTCMHeaderText);
-                            //UpdateDiagnosticsListBox();
+                            UpdateDiagnosticsListBox();
                             Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (TCM)", msg);
                             break;
                         default:
@@ -3023,42 +3168,13 @@ namespace ChryslerCCDSCIScanner
             }
         }
 
-        private void UpdateDiagnosticsListBox(object source, ElapsedEventArgs e)
+        private void UpdateDiagnosticsListBox()
         {
-            if (!OldDiagnosticsTable.SequenceEqual(DiagnosticsTable)) // only update if the new list is different than the actual
+            if (DiagnosticsListBox.InvokeRequired)
             {
-                OldDiagnosticsTable.Clear(); // clear old table
-                OldDiagnosticsTable.AddRange(DiagnosticsTable); // copy the new table to the old one for the next comparison when the timer ticks
-
-                if (DiagnosticsListBox.InvokeRequired)
+                DiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
                 {
-                    DiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
-                    {
-                        DiagnosticsListBox.SuspendLayout();
-                        DiagnosticsListBox.BeginUpdate();
-                        int savedVpos = GetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT);
-                        DiagnosticsListBox.Items.Clear();
-
-                        try
-                        {
-                            DiagnosticsListBox.Items.AddRange(DiagnosticsTable.ToArray());
-                        }
-                        catch
-                        {
-                            ResetViewButton.PerformClick();
-                        }
-
-                        DiagnosticsListBox.Update();
-                        DiagnosticsListBox.Refresh();
-                        SetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT, savedVpos, true);
-                        PostMessageA((IntPtr)DiagnosticsListBox.Handle, WM_VSCROLL, SB_THUMBPOSITION + 0x10000 * savedVpos, 0);
-                        DiagnosticsListBox.EndUpdate();
-                        DiagnosticsListBox.ResumeLayout();
-                    });
-                }
-                else
-                {
-                    DiagnosticsListBox.SuspendLayout();
+                    //DiagnosticsListBox.SuspendLayout();
                     DiagnosticsListBox.BeginUpdate();
                     int savedVpos = GetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT);
                     DiagnosticsListBox.Items.Clear();
@@ -3077,10 +3193,92 @@ namespace ChryslerCCDSCIScanner
                     SetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT, savedVpos, true);
                     PostMessageA((IntPtr)DiagnosticsListBox.Handle, WM_VSCROLL, SB_THUMBPOSITION + 0x10000 * savedVpos, 0);
                     DiagnosticsListBox.EndUpdate();
-                    DiagnosticsListBox.ResumeLayout();
+                    //DiagnosticsListBox.ResumeLayout();
+                });
+            }
+            else
+            {
+                //DiagnosticsListBox.SuspendLayout();
+                DiagnosticsListBox.BeginUpdate();
+                int savedVpos = GetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT);
+                DiagnosticsListBox.Items.Clear();
+
+                try
+                {
+                    DiagnosticsListBox.Items.AddRange(DiagnosticsTable.ToArray());
                 }
+                catch
+                {
+                    ResetViewButton.PerformClick();
+                }
+
+                DiagnosticsListBox.Update();
+                DiagnosticsListBox.Refresh();
+                SetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT, savedVpos, true);
+                PostMessageA((IntPtr)DiagnosticsListBox.Handle, WM_VSCROLL, SB_THUMBPOSITION + 0x10000 * savedVpos, 0);
+                DiagnosticsListBox.EndUpdate();
+                //DiagnosticsListBox.ResumeLayout();
             }
         }
+
+        //private void UpdateDiagnosticsListBox(object source, ElapsedEventArgs e)
+        //{
+        //    if (!OldDiagnosticsTable.SequenceEqual(DiagnosticsTable)) // only update if the new list is different than the actual
+        //    {
+        //        OldDiagnosticsTable.Clear(); // clear old table
+        //        OldDiagnosticsTable.AddRange(DiagnosticsTable); // copy the new table to the old one for the next comparison when the timer ticks
+
+        //        if (DiagnosticsListBox.InvokeRequired)
+        //        {
+        //            DiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
+        //            {
+        //                DiagnosticsListBox.SuspendLayout();
+        //                DiagnosticsListBox.BeginUpdate();
+        //                int savedVpos = GetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT);
+        //                DiagnosticsListBox.Items.Clear();
+
+        //                try
+        //                {
+        //                    DiagnosticsListBox.Items.AddRange(DiagnosticsTable.ToArray());
+        //                }
+        //                catch
+        //                {
+        //                    ResetViewButton.PerformClick();
+        //                }
+
+        //                DiagnosticsListBox.Update();
+        //                DiagnosticsListBox.Refresh();
+        //                SetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT, savedVpos, true);
+        //                PostMessageA((IntPtr)DiagnosticsListBox.Handle, WM_VSCROLL, SB_THUMBPOSITION + 0x10000 * savedVpos, 0);
+        //                DiagnosticsListBox.EndUpdate();
+        //                DiagnosticsListBox.ResumeLayout();
+        //            });
+        //        }
+        //        else
+        //        {
+        //            DiagnosticsListBox.SuspendLayout();
+        //            DiagnosticsListBox.BeginUpdate();
+        //            int savedVpos = GetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT);
+        //            DiagnosticsListBox.Items.Clear();
+
+        //            try
+        //            {
+        //                DiagnosticsListBox.Items.AddRange(DiagnosticsTable.ToArray());
+        //            }
+        //            catch
+        //            {
+        //                ResetViewButton.PerformClick();
+        //            }
+
+        //            DiagnosticsListBox.Update();
+        //            DiagnosticsListBox.Refresh();
+        //            SetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT, savedVpos, true);
+        //            PostMessageA((IntPtr)DiagnosticsListBox.Handle, WM_VSCROLL, SB_THUMBPOSITION + 0x10000 * savedVpos, 0);
+        //            DiagnosticsListBox.EndUpdate();
+        //            DiagnosticsListBox.ResumeLayout();
+        //        }
+        //    }
+        //}
 
         private void ResetViewButton_Click(object sender, EventArgs e)
         {
@@ -3115,8 +3313,8 @@ namespace ChryslerCCDSCIScanner
             DiagnosticsTable.Add("│                         │                                                     │                         │              │");
             DiagnosticsTable.Add("└─────────────────────────┴─────────────────────────────────────────────────────┴─────────────────────────┴──────────────┘");
             DiagnosticsTable.Add("                                                                                                                          ");
-            OldDiagnosticsTable.Clear();
-            UpdateDiagnosticsListBox(this, new EventArgs() as ElapsedEventArgs); // force table update
+            //OldDiagnosticsTable.Clear();
+            //UpdateDiagnosticsListBox(this, new EventArgs() as ElapsedEventArgs); // force table update
 
             CCDBusHeaderStart = 1;
             CCDBusListStart = 5;
@@ -3164,6 +3362,8 @@ namespace ChryslerCCDSCIScanner
             {
                 if (USBSendComboBox.Text != String.Empty)
                 {
+                    UpdateUSBSendComboBox();
+
                     if (HexCommMethodRadioButton.Checked)
                     {
                         byte[] bytes = Util.HexStringToByte(USBSendComboBox.Text);
@@ -3514,8 +3714,11 @@ namespace ChryslerCCDSCIScanner
                             {
                                 case 0: // Stop message transmission
                                     USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x16, 0x01, 0x19 };
+                                    RepeatIterate = false;
                                     break;
                                 case 1: // Single message
+                                    RepeatIterate = false;
+
                                     PacketLengthHB = (byte)((2 + CCDBusMessageToSendStart.Length) >> 8);
                                     PacketLengthLB = (byte)((2 + CCDBusMessageToSendStart.Length) & 0xFF);
 
@@ -3533,6 +3736,8 @@ namespace ChryslerCCDSCIScanner
                                 case 2: // Repeated message
                                     if (Param3ComboBox.SelectedIndex == 0) // no iteration
                                     {
+                                        RepeatIterate = false;
+
                                         PacketLengthHB = (byte)((4 + CCDBusMessageToSendStart.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + CCDBusMessageToSendStart.Length) & 0xFF);
 
@@ -3548,6 +3753,8 @@ namespace ChryslerCCDSCIScanner
                                     }
                                     else if (Param3ComboBox.SelectedIndex == 1) // iteration, same message length supposed
                                     {
+                                        RepeatIterate = true;
+                                        
                                         PacketLengthHB = (byte)((4 + CCDBusMessageToSendStart.Length + CCDBusMessageToSendEnd.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + CCDBusMessageToSendStart.Length + CCDBusMessageToSendEnd.Length) & 0xFF);
 
@@ -3581,8 +3788,11 @@ namespace ChryslerCCDSCIScanner
                             {
                                 case 0: // Stop message transmission
                                     USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x26, 0x01, 0x29 };
+                                    RepeatIterate = false;
                                     break;
                                 case 1: // Single message
+                                    RepeatIterate = false;
+
                                     PacketLengthHB = (byte)((2 + SCIBusPCMMessageToSendStart.Length) >> 8);
                                     PacketLengthLB = (byte)((2 + SCIBusPCMMessageToSendStart.Length) & 0xFF);
 
@@ -3600,6 +3810,8 @@ namespace ChryslerCCDSCIScanner
                                 case 2: // Repeated message
                                     if (Param3ComboBox.SelectedIndex == 0) // no iteration
                                     {
+                                        RepeatIterate = false;
+
                                         PacketLengthHB = (byte)((4 + SCIBusPCMMessageToSendStart.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + SCIBusPCMMessageToSendStart.Length) & 0xFF);
 
@@ -3615,6 +3827,8 @@ namespace ChryslerCCDSCIScanner
                                     }
                                     else if (Param3ComboBox.SelectedIndex == 1) // iteration, same message length supposed
                                     {
+                                        RepeatIterate = true;
+
                                         PacketLengthHB = (byte)((4 + SCIBusPCMMessageToSendStart.Length + SCIBusPCMMessageToSendEnd.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + SCIBusPCMMessageToSendStart.Length + SCIBusPCMMessageToSendEnd.Length) & 0xFF);
 
@@ -3648,8 +3862,11 @@ namespace ChryslerCCDSCIScanner
                             {
                                 case 0: // Stop message transmission
                                     USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x36, 0x01, 0x39 };
+                                    RepeatIterate = false;
                                     break;
                                 case 1: // Single message
+                                    RepeatIterate = false;
+
                                     PacketLengthHB = (byte)((2 + SCIBusTCMMessageToSendStart.Length) >> 8);
                                     PacketLengthLB = (byte)((2 + SCIBusTCMMessageToSendStart.Length) & 0xFF);
 
@@ -3667,6 +3884,8 @@ namespace ChryslerCCDSCIScanner
                                 case 2: // Repeated message
                                     if (Param3ComboBox.SelectedIndex == 0) // no iteration
                                     {
+                                        RepeatIterate = false;
+
                                         PacketLengthHB = (byte)((4 + SCIBusTCMMessageToSendStart.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + SCIBusTCMMessageToSendStart.Length) & 0xFF);
 
@@ -3682,6 +3901,8 @@ namespace ChryslerCCDSCIScanner
                                     }
                                     else if (Param3ComboBox.SelectedIndex == 1) // iteration, same message length supposed
                                     {
+                                        RepeatIterate = true;
+
                                         PacketLengthHB = (byte)((4 + SCIBusTCMMessageToSendStart.Length + SCIBusTCMMessageToSendEnd.Length) >> 8);
                                         PacketLengthLB = (byte)((4 + SCIBusTCMMessageToSendStart.Length + SCIBusTCMMessageToSendEnd.Length) & 0xFF);
 
@@ -4799,6 +5020,164 @@ namespace ChryslerCCDSCIScanner
             UpdateUSBSendComboBox();
         }
 
+        private void ConvertTextToBinaryDump(string filename)
+        {
+            // Open file and decide what kind of memory dump is it
+            string[] text = File.ReadAllLines(filename);
+            List<byte[]> raw_byte_list = new List<byte[]>();
+            int start_address = 0;
+            int end_address = 0;
+
+            foreach (string t in text)
+            {
+                raw_byte_list.Add(Util.HexStringToByte(t));
+            }
+
+            List<byte[]> byte_list = raw_byte_list.Distinct().ToList(); // remove duplicated lines caused by the scanner when re-trying a memory address
+
+            byte id = byte_list[0].ToArray()[0]; // firs byte of the first message
+
+            switch (id)
+            {
+                case 0x15: // PCM ROM dump (16-bit, 0-64 kilobytes)
+                    // Determine if the text dump is correct and no values are missing
+                    start_address = (byte_list[0].ToArray()[1] << 8) | byte_list[0].ToArray()[2];
+                    end_address = (byte_list[byte_list.Count - 1].ToArray()[1] << 8) | byte_list[byte_list.Count - 1].ToArray()[2];
+
+                    // Good sign if there are as much messages like the difference of the ending and starting addresses
+                    if ((end_address - start_address + 1) == byte_list.Count)
+                    {
+                        // See if every line has 4 bytes. The 4th byte is the one that need to be saved in a binary file
+                        bool ok = true;
+                        foreach (byte[] b in byte_list)
+                        {
+                            if (b.Length != 4)
+                            {
+                                ok = false;
+                                break;
+                            }
+                        }
+
+                        if (ok)
+                        {
+                            using (BinaryWriter writer = new BinaryWriter(File.Open(PCMEPROMBinaryFilename, FileMode.Append)))
+                            {
+                                foreach (byte[] b in byte_list)
+                                {
+                                    writer.Write(b[3]); // write the 4th byte to the binary file
+                                }
+
+                                writer.Close();
+                            }
+                            
+                            MemoryReadError = 0;
+                        }
+                        else
+                        {
+                            MemoryReadError = 2; // memory value missing
+                        }
+
+                    }
+                    else
+                    {
+                        MemoryReadError = 1; // not enough messages
+                    }
+                    MemoryReadFinished = true;
+                    break;
+                case 0x26: // PCM ROM dump (24-bit, 0-16383 kilobytes)
+                    // Determine if the text dump is correct and no values are missing
+                    start_address = (byte_list[0].ToArray()[1] << 16) | (byte_list[0].ToArray()[2] << 8) | byte_list[0].ToArray()[3];
+                    end_address = (byte_list[byte_list.Count - 1].ToArray()[1] << 16) | (byte_list[byte_list.Count - 1].ToArray()[2] << 8) | byte_list[byte_list.Count - 1].ToArray()[3];
+
+                    // Good sign if there are as much messages like the difference of the ending and starting addresses
+                    if ((end_address - start_address + 1) == byte_list.Count)
+                    {
+                        // See if every line has 5 bytes. The 5th byte is the one that need to be saved in a binary file
+                        bool ok = true;
+                        foreach (byte[] b in byte_list)
+                        {
+                            if (b.Length != 5)
+                            {
+                                ok = false;
+                                break;
+                            }
+                        }
+
+                        if (ok)
+                        {
+                            using (BinaryWriter writer = new BinaryWriter(File.Open(PCMEPROMBinaryFilename, FileMode.Append)))
+                            {
+                                foreach (byte[] b in byte_list)
+                                {
+                                    writer.Write(b[4]); // write the 5th byte to the binary file
+                                }
+
+                                writer.Close();
+                            }
+
+                            MemoryReadError = 0;
+                        }
+                        else
+                        {
+                            MemoryReadError = 2; // memory value missing
+                        }
+                    }
+                    else
+                    {
+                        MemoryReadError = 1; // not enough messages
+                    }
+                    MemoryReadFinished = true;
+                    break;
+                case 0x28: // PCM EEPROM dump (16-bit, 0-64 kilobytes)
+                    // Determine if the text dump is correct and no values are missing
+                    start_address = (byte_list[0].ToArray()[1] << 8) | byte_list[0].ToArray()[2];
+                    end_address = (byte_list[byte_list.Count - 1].ToArray()[1] << 8) | byte_list[byte_list.Count - 1].ToArray()[2];
+
+                    // Good sign if there are as much messages like the difference of the ending and starting addresses
+                    if ((end_address - start_address + 1) == byte_list.Count)
+                    {
+                        // See if every line has 4 bytes. The 4th byte is the one that need to be saved in a binary file
+                        bool ok = true;
+                        foreach (byte[] b in byte_list)
+                        {
+                            if (b.Length != 4)
+                            {
+                                ok = false;
+                                break;
+                            }
+                        }
+
+                        if (ok)
+                        {
+                            using (BinaryWriter writer = new BinaryWriter(File.Open(PCMEEPROMBinaryFilename, FileMode.Append)))
+                            {
+                                foreach (byte[] b in byte_list)
+                                {
+                                    writer.Write(b[3]); // write the 4th byte to the binary file
+                                }
+
+                                writer.Close();
+                            }
+
+                            MemoryReadError = 0;
+                        }
+                        else
+                        {
+                            MemoryReadError = 2; // memory value missing
+                        }
+                    }
+                    else
+                    {
+                        MemoryReadError = 1; // not enough messages
+                    }
+                    MemoryReadFinished = true;
+                    break;
+                default:
+                    MemoryReadFinished = true;
+                    break;
+            }
+        }
+
         private void Param1ComboBox_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == (char)Keys.Return)
@@ -4940,7 +5319,7 @@ namespace ChryslerCCDSCIScanner
             }
         }
 
-        private void cheatSheetToolStripMenuItem_Click(object sender, EventArgs e)
+        private void CheatSheetToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (cheatsheet == null || !cheatsheet.Visible)
             {
@@ -4968,9 +5347,9 @@ namespace ChryslerCCDSCIScanner
             }
         }
 
-        private void includeTimestampInLogFilesToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
+        private void IncludeTimestampInLogFilesToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
         {
-            if (includeTimestampInLogFilesToolStripMenuItem.Checked)
+            if (IncludeTimestampInLogFilesToolStripMenuItem.Checked)
             {
                 Properties.Settings.Default["IncludeTimestamp"] = true;
                 Properties.Settings.Default.Save(); // Save settings in application configuration file

@@ -89,11 +89,6 @@ void setup()
     ccd_clock_generator(START); // start listening to the CCD-bus; the transceiver chip only works if it receives this continuos clock signal; clever way to turn it on/off
     randomSeed(analogRead(1));  // use A1 analog input pin's floatling noise to generate random numbers
 
-    for (uint8_t i = 0; i < 21; i++) // copy handshake bytes from flash to ram
-    {
-        handshake_array[i] = pgm_read_byte(&handshake_progmem[i]);
-    }
-
     read_avr_signature(avr_signature); // read AVR signature bytes that identifies the microcontroller
 
     usb_rx_flush(); // flush all uart buffers
@@ -105,6 +100,8 @@ void setup()
     tcm_rx_flush();
     tcm_tx_flush();
 
+    ccd.repeated_msg_interval = 100; // let other modules talk on the CCD-bus while repeating messages on it
+
     delay(2000);
     //print_display_layout_1_metric();
 
@@ -112,7 +109,7 @@ void setup()
     scanner_ready[0] = 0x01;
     send_usb_packet(from_usb, to_usb, reset, ok, scanner_ready, 1); // Scanner ready
     
-    configure_sci_bus(current_sci_bus_settings[0]); // default SCI-bus setting: A-configuration, 7812.5 baud, PCM only (TCM disabled)
+    configure_sci_bus(0xC8); // default SCI-bus setting: A-configuration, 7812.5 baud, PCM only (TCM disabled)
     send_hwfw_info(); // send hardware/firmware information to laptop
     wdt_enable(WDTO_2S); // enable watchdog timer that resets program if its timer reaches 2 seconds (useful if the code hangs for some reason and needs auto-reset)
 }
