@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005E3E8AA1
+#define FW_DATE 0x000000005E43F67B
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -4451,7 +4451,8 @@ void handle_usb_data(void)
                                             {
                                                 ccd.msg_buffer[i] = cmd_payload[i];
                                             }
-                                            
+
+                                            ccd.msg_buffer_ptr = payload_length;
                                             ccd.msg_buffer[ccd.msg_buffer_ptr - 1] = calculate_checksum(ccd.msg_buffer, 0, ccd.msg_buffer_ptr - 1); // overwrite last checksum byte with the correct one
                                             ccd.msg_buffer_ptr = payload_length;
                                             ccd.msg_tx_pending  = true; // set flag so the main loop knows there's something to do
