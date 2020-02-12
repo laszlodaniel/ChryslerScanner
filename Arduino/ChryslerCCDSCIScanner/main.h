@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005E442714
+#define FW_DATE 0x000000005E444762
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -302,8 +302,6 @@ typedef struct {
     uint32_t repeated_msg_last_millis = 0;
     uint8_t repeat_retry_counter = 0;
     bool random_msg = false;
-    uint8_t random_msg_length_min = 0;
-    uint8_t random_msg_length_max = 0;
     uint16_t random_msg_interval = 0;
     uint16_t random_msg_interval_min = 0;
     uint16_t random_msg_interval_max = 0;
@@ -4159,8 +4157,8 @@ void handle_usb_data(void)
                                             case 0x00:
                                             {
                                                 ccd.random_msg = false;
-                                                ccd.random_msg_length_min = 0;
-                                                ccd.random_msg_length_max = 0;
+                                                ccd.random_msg_interval_min = 0;
+                                                ccd.random_msg_interval_max = 0;
                                                 ccd.random_msg_interval = 0;
                                                 send_usb_packet(from_usb, to_usb, debug, 0x01, ack, 1); // acknowledge
                                                 break;
@@ -4168,9 +4166,9 @@ void handle_usb_data(void)
                                             case 0x01:
                                             {
                                                 ccd.random_msg = true;
-                                                ccd.random_msg_length_min = (cmd_payload[1] << 8) | cmd_payload[2];
-                                                ccd.random_msg_length_max = (cmd_payload[3] << 8) | cmd_payload[4];
-                                                ccd.random_msg_interval = random(ccd.random_msg_length_min, ccd.random_msg_length_max);
+                                                ccd.random_msg_interval_min = (cmd_payload[1] << 8) | cmd_payload[2];
+                                                ccd.random_msg_interval_max = (cmd_payload[3] << 8) | cmd_payload[4];
+                                                ccd.random_msg_interval = random(ccd.random_msg_interval_min, ccd.random_msg_interval_max);
                                                 send_usb_packet(from_usb, to_usb, debug, 0x01, ack, 1); // acknowledge
                                                 break;
                                             }
