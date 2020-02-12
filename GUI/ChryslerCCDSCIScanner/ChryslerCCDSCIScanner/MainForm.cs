@@ -1229,7 +1229,6 @@ namespace ChryslerCCDSCIScanner
 
                                         ImperialSlope = 0.3922D;
                                         ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0.0").Replace(",", ".");
-
                                         ccdunittoinsert = "%";
                                     }
                                     break;
@@ -1242,17 +1241,28 @@ namespace ChryslerCCDSCIScanner
                                         ccdvaluetoinsert += ccdmessage[1].ToString("0") + ":";
                                         if (ccdmessage[2] < 10) ccdvaluetoinsert += "0";
                                         ccdvaluetoinsert += ccdmessage[2].ToString("0");
-
                                         ccdunittoinsert = "HOUR:MINUTE";
+                                    }
+                                    break;
+                                case 0x35:
+                                    if (ccdmessage.Length > 3)
+                                    {
+                                        ccddescriptiontoinsert = "US/METRIC STATUS | SEAT-BELT: ";
+
+                                        if (((ccdmessage[1] & 0x02) >> 1) == 1) ccdvaluetoinsert = "METRIC";
+                                        else ccdvaluetoinsert = "US";
+
+                                        if (((ccdmessage[1] & 0x04) >> 2) == 1) ccddescriptiontoinsert += "BUCKLED";
+                                        else ccddescriptiontoinsert += "UNBUCKLED";
+
+                                        ccdunittoinsert = String.Empty;
                                     }
                                     break;
                                 case 0x3A:
                                     if (ccdmessage.Length > 3)
                                     {
                                         ccddescriptiontoinsert = "INSTRUMENT CLUSTER LAMP STATES (AIRBAG LAMP)";
-
                                         ccdvaluetoinsert = Util.ByteToHexString(ccdmessage, 1, 3);
-
                                         ccdunittoinsert = String.Empty;
                                     }
                                     break;
@@ -1263,7 +1273,6 @@ namespace ChryslerCCDSCIScanner
 
                                         ImperialSlope = 0.65D;
                                         ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0");
-
                                         ccdunittoinsert = "%";
                                     }
                                     break;
@@ -1271,9 +1280,7 @@ namespace ChryslerCCDSCIScanner
                                     if (ccdmessage.Length > 3)
                                     {
                                         ccddescriptiontoinsert = "FUEL USED";
-
                                         ccdvaluetoinsert = ((ccdmessage[1] << 8) | ccdmessage[2]).ToString("0");
-
                                         ccdunittoinsert = String.Empty;
                                     }
                                     break;
@@ -1283,7 +1290,6 @@ namespace ChryslerCCDSCIScanner
                                         ccddescriptiontoinsert = "AIRBAG LAMP STATE";
                                         if ((ccdmessage[1] & 0x01) == 0x01) ccdvaluetoinsert = "AIRBAG LAMP ON";
                                         else ccdvaluetoinsert = "AIRBAG LAMP OFF";
-
                                         ccdunittoinsert = String.Empty;
                                     }
                                     break;
@@ -1309,14 +1315,12 @@ namespace ChryslerCCDSCIScanner
                                         {
                                             ImperialSlope = 1.961D;
                                             ccdvaluetoinsert = (ccdmessage[1] * ImperialSlope).ToString("0.0").Replace(",", ".");
-
                                             ccdunittoinsert = "PSI";
                                         }
                                         if (Units == 0) // Metric
                                         {
                                             MetricSlope = 1.961D * 6.894757D;
                                             ccdvaluetoinsert = (ccdmessage[1] * MetricSlope).ToString("0.0").Replace(",", ".");
-
                                             ccdunittoinsert = "KPA";
                                         }
                                     }
@@ -1324,12 +1328,22 @@ namespace ChryslerCCDSCIScanner
                                 case 0x7B:
                                     if (ccdmessage.Length > 2)
                                     {
-                                        ccddescriptiontoinsert = "OUTSIDE AIR TEMPERATURE"; // Fahrenheit only
-                                        ImperialSlope = 1D;
-                                        ImperialOffset = -70.0D;
-                                        ccdvaluetoinsert = ((ccdmessage[1] * ImperialSlope) + ImperialOffset).ToString("0");
+                                        ccddescriptiontoinsert = "OUTSIDE AIR TEMPERATURE"; // Fahrenheit only by default
 
-                                        ccdunittoinsert = "°F";
+                                        if (Units == 1) // Imperial
+                                        {
+                                            ImperialSlope = 1D;
+                                            ImperialOffset = -70.0D;
+                                            ccdvaluetoinsert = ((ccdmessage[1] * ImperialSlope) + ImperialOffset).ToString("0");
+                                            ccdunittoinsert = "°F";
+                                        }
+                                        if (Units == 0) // Metric (manual conversion)
+                                        {
+                                            ImperialSlope = 1D;
+                                            ImperialOffset = -70.0D;
+                                            ccdvaluetoinsert = Math.Round((((ccdmessage[1] * ImperialSlope) + ImperialOffset) - 32) / 1.8D).ToString("0");
+                                            ccdunittoinsert = "°C";
+                                        }
                                     }
                                     break;
                                 case 0x8C:
@@ -1343,7 +1357,6 @@ namespace ChryslerCCDSCIScanner
                                             ImperialOffset = -198.4D;
                                             ccdvaluetoinsert = Math.Round((ccdmessage[1] * ImperialSlope) + ImperialOffset).ToString("0") + " | ";
                                             ccdvaluetoinsert += Math.Round((ccdmessage[2] * ImperialSlope) + ImperialOffset).ToString("0");
-
                                             ccdunittoinsert = "°F | °F";
                                         }
                                         if (Units == 0) // Metric
@@ -1354,7 +1367,6 @@ namespace ChryslerCCDSCIScanner
                                             MetricOffset = -17.77778D;
                                             ccdvaluetoinsert = Math.Round((((ccdmessage[1] * ImperialSlope) + ImperialOffset) * MetricSlope) + MetricOffset).ToString("0") + " | ";
                                             ccdvaluetoinsert += Math.Round((((ccdmessage[2] * ImperialSlope) + ImperialOffset) * MetricSlope) + MetricOffset).ToString("0");
-
                                             ccdunittoinsert = "°C | °C";
                                         }
                                     }
@@ -1364,8 +1376,38 @@ namespace ChryslerCCDSCIScanner
                                     {
                                         ccddescriptiontoinsert = "LAST ENGINE SHUTDOWN";
                                         ccdvaluetoinsert = ccdmessage[1].ToString("0");
-
                                         ccdunittoinsert = "MINUTE";
+                                    }
+                                    break;
+                                case 0xB1:
+                                    if (ccdmessage.Length > 2)
+                                    {
+                                        List<string> warning_list = new List<string>();
+                                        warning_list.Clear();
+
+                                        if (ccdmessage[1] == 0)
+                                        {
+                                            ccddescriptiontoinsert = "NO WARNING";
+                                            ccdvaluetoinsert = String.Empty;
+                                            ccdunittoinsert = String.Empty;
+                                        }
+                                        else
+                                        {
+                                            if ((ccdmessage[1] & 0x01) == 1) warning_list.Add("KEY IN IGNITION");
+                                            if (((ccdmessage[1] & 0x02) >> 1) == 1) warning_list.Add("SEAT BELT");
+                                            if (((ccdmessage[1] & 0x04) >> 2) == 1) ccdvaluetoinsert = "EXTERIOR LAMP";
+                                            if (((ccdmessage[1] & 0x10) >> 4) == 1) warning_list.Add("OVERSPEED ");
+
+                                            ccddescriptiontoinsert = "WARNING: ";
+
+                                            foreach (string s in warning_list)
+                                            {
+                                                ccddescriptiontoinsert += s + " | ";
+                                            }
+
+                                            if (ccddescriptiontoinsert.Length > 9) ccddescriptiontoinsert = ccddescriptiontoinsert.Remove(ccddescriptiontoinsert.Length - 3); // remove last "|" character
+                                            ccdunittoinsert = String.Empty;
+                                        }
                                     }
                                     break;
                                 case 0xB2:
@@ -1434,7 +1476,6 @@ namespace ChryslerCCDSCIScanner
                                         ccddescriptiontoinsert = "INSTRUMENT CLUSTER LAMP STATES";
                                         if ((ccdmessage[1] & 0x40) == 0x40) ccdvaluetoinsert = "MIL LAMP ON";
                                         else ccdvaluetoinsert = "MIL LAMP OFF";
-
                                         ccdunittoinsert = String.Empty;
                                     }
                                     break;
@@ -1450,7 +1491,6 @@ namespace ChryslerCCDSCIScanner
 
                                             ImperialSlope = 0.059756D; // PSI
                                             ccdvaluetoinsert += (ccdmessage[2] * ImperialSlope).ToString("0.0").Replace(",", ".");
-
                                             ccdunittoinsert = "RPM | PSI";
                                         }
                                         if (Units == 0) // Metric
@@ -1461,7 +1501,6 @@ namespace ChryslerCCDSCIScanner
                                             ImperialSlope = 0.059756D; // KPA
                                             MetricSlope = 6.894757D;
                                             ccdvaluetoinsert += ((ccdmessage[2] * ImperialSlope) * MetricSlope).ToString("0.0").Replace(",", ".");
-
                                             ccdunittoinsert = "RPM | KPA";
                                         }
                                     }
@@ -1482,6 +1521,38 @@ namespace ChryslerCCDSCIScanner
                                             MetricSlope = 0.016D * 1.609334138D;
                                             ccdvaluetoinsert = ((UInt32)(ccdmessage[1] << 16 | ccdmessage[2] << 8 | ccdmessage[3]) * MetricSlope).ToString("0.000").Replace(",", ".");
                                             ccdunittoinsert = "KILOMETER";
+                                        }
+                                    }
+                                    break;
+                                case 0xF1:
+                                    if (ccdmessage.Length > 2)
+                                    {
+                                        List<string> warning_list = new List<string>();
+                                        warning_list.Clear();
+
+                                        if (ccdmessage[1] == 0)
+                                        {
+                                            ccddescriptiontoinsert = "NO WARNING";
+                                            ccdvaluetoinsert = String.Empty;
+                                            ccdunittoinsert = String.Empty;
+                                        }
+                                        else
+                                        {
+                                            if ((ccdmessage[1] & 0x01) == 1) warning_list.Add("LOW FUEL");
+                                            if (((ccdmessage[1] & 0x02) >> 1) == 1) warning_list.Add("LOW OIL");
+                                            if (((ccdmessage[1] & 0x04) >> 2) == 1) warning_list.Add("HI TEMP");
+                                            if (((ccdmessage[1] & 0x08) >> 3) == 1) ccdvaluetoinsert = "CRITICAL TEMP"; // display this in the value columns
+                                            if (((ccdmessage[1] & 0x10) >> 4) == 1) warning_list.Add("BRAKE PRESS");
+
+                                            ccddescriptiontoinsert = "WARNING: ";
+
+                                            foreach (string s in warning_list)
+                                            {
+                                                ccddescriptiontoinsert += s + " | ";
+                                            }
+
+                                            if (ccddescriptiontoinsert.Length > 9) ccddescriptiontoinsert = ccddescriptiontoinsert.Remove(ccddescriptiontoinsert.Length - 3); // remove last "|" character
+                                            ccdunittoinsert = String.Empty;
                                         }
                                     }
                                     break;
