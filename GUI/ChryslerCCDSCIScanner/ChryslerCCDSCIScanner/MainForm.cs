@@ -951,12 +951,29 @@ namespace ChryslerCCDSCIScanner
                                             Util.UpdateTextBox(USBTextBox, configuration, null);
                                             break;
                                         case 0x04: // Repeated message behavior
-                                            string repeat_interval = (payload[0] << 8 | payload[1]).ToString() + " ms";
-                                            string increment = (payload[2] << 8 | payload[3]).ToString();
+                                            string bus = String.Empty;
+                                            switch (payload[0])
+                                            {
+                                                case 0x01:
+                                                    bus = "CCD-bus";
+                                                    break;
+                                                case 0x02:
+                                                    bus = "SCI-bus (PCM)";
+                                                    break;
+                                                case 0x03:
+                                                    bus = "SCI-bus (TCM)";
+                                                    break;
+                                                default:
+                                                    bus = "Unknown";
+                                                    break;
+                                            }
+                                            string repeat_interval = (payload[1] << 8 | payload[2]).ToString("0") + " ms";
+                                            string increment = (payload[3] << 8 | payload[4]).ToString("0");
                                             Util.UpdateTextBox(USBTextBox, "[RX->] Repeated message behavior changed", msg);
                                             Util.UpdateTextBox(USBTextBox, "[INFO] Repeated message behavior settings:" + Environment.NewLine +
-                                                                            "       Interval: " + repeat_interval + Environment.NewLine +
-                                                                            "       Increment: " + increment, null);
+                                                                           "       Bus: " + bus + Environment.NewLine +
+                                                                           "       Interval: " + repeat_interval + Environment.NewLine +
+                                                                           "       Increment: " + increment, null);
                                             break;
                                         case 0x05: // Set LCD
                                             break;
@@ -3680,12 +3697,13 @@ namespace ChryslerCCDSCIScanner
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 case 3: // Repeated message behavior
+                                    byte bus = (byte)(Param1ComboBox.SelectedIndex + 1);
                                     byte RepeatIntervalHB = (byte)((RepeatInterval >> 8) & 0xFF);
                                     byte RepeatIntervalLB = (byte)(RepeatInterval & 0xFF);
                                     byte RepeatIncrementHB = (byte)((RepeatIncrement >> 8) & 0xFF);
                                     byte RepeatIncrementLB = (byte)(RepeatIncrement & 0xFF);
 
-                                    PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x06, 0x03, 0x04, RepeatIntervalHB, RepeatIntervalLB, RepeatIncrementHB, RepeatIncrementLB });
+                                    PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x07, 0x03, 0x04, bus, RepeatIntervalHB, RepeatIntervalLB, RepeatIncrementHB, RepeatIncrementLB });
 
                                     for (int i = 1; i < PacketBytes.Count; i++)
                                     {
@@ -4372,29 +4390,36 @@ namespace ChryslerCCDSCIScanner
                                     break;
                                 case 3: // Repeated message behavior
                                     Param1Label1.Visible = true;
-                                    Param1Label1.Text = "Interval:";
-                                    Param1Label2.Visible = true;
-                                    Param1Label2.Text = "milliseconds";
+                                    Param1Label1.Text = "Bus:";
+                                    Param1Label2.Visible = false;
                                     Param1ComboBox.Visible = true;
                                     Param1ComboBox.Enabled = true;
-                                    Param1ComboBox.Font = new Font("Courier New", 9F);
-                                    Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param1ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
+                                    Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
                                     Param1ComboBox.Items.Clear();
-                                    Param1ComboBox.Text = RepeatInterval.ToString();
+                                    Param1ComboBox.Items.AddRange(new string[] { "CCD-bus", "SCI-bus (PCM)", "SCI-bus (TCM)" });
+                                    Param1ComboBox.SelectedIndex = 0;
                                     Param2Label1.Visible = true;
-                                    Param2Label1.Text = "Incr.:";
-                                    Param2Label2.Visible = false;
+                                    Param2Label1.Text = "Interval:";
+                                    Param2Label2.Visible = true;
+                                    Param2Label2.Text = "milliseconds";
                                     Param2ComboBox.Visible = true;
                                     Param2ComboBox.Enabled = true;
                                     Param2ComboBox.Font = new Font("Courier New", 9F);
                                     Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param2ComboBox.Items.Clear();
-                                    Param2ComboBox.Text = RepeatIncrement.ToString();
-                                    Param3Label1.Visible = false;
+                                    Param2ComboBox.Text = RepeatInterval.ToString();
+                                    Param3Label1.Visible = true;
+                                    Param3Label1.Text = "Incr.:";
                                     Param3Label2.Visible = false;
-                                    Param3ComboBox.Visible = false;
+                                    Param3ComboBox.Visible = true;
+                                    Param3ComboBox.Enabled = true;
+                                    Param3ComboBox.Font = new Font("Courier New", 9F);
+                                    Param3ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param3ComboBox.Items.Clear();
+                                    Param3ComboBox.Text = RepeatIncrement.ToString();
                                     HintTextBox.Text = "Set repeated message behavior for CCD/SCI-bus:" + Environment.NewLine
-                                                     + "- interval: elapsed time between messages (CCD-bus)," + Environment.NewLine
+                                                     + "- interval: elapsed time between messages," + Environment.NewLine
                                                      + "- increment: the byte difference between each message," + Environment.NewLine
                                                      + "when iteration is enabled (default = 1).";
                                     break;
@@ -4960,8 +4985,8 @@ namespace ChryslerCCDSCIScanner
                                 case 3: // Repeated message behavior
                                     try
                                     {
-                                        RepeatInterval = int.Parse(Param1ComboBox.Text);
-                                        RepeatIncrement = int.Parse(Param2ComboBox.Text);
+                                        RepeatInterval = int.Parse(Param2ComboBox.Text);
+                                        RepeatIncrement = int.Parse(Param3ComboBox.Text);
                                     }
                                     catch
                                     {

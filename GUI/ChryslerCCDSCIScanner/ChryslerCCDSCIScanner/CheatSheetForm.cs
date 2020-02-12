@@ -34,6 +34,7 @@ namespace ChryslerCCDSCIScanner
             CheatSheetRichTextBox.AppendText("DRBDBReader usage:" + Environment.NewLine + Environment.NewLine);
             CheatSheetRichTextBox.AppendText("readdb: load \"database.mem\" file into RAM" + Environment.NewLine);
             CheatSheetRichTextBox.AppendText("modlist: list all supported modules" + Environment.NewLine);
+            CheatSheetRichTextBox.AppendText("modsearch <name>: search module by <name>" + Environment.NewLine);
             CheatSheetRichTextBox.AppendText("modtxlist <id>: list all commands of a module <id>" + Environment.NewLine);
             CheatSheetRichTextBox.AppendText("dumpconverter <id>: list properties of a command <id>" + Environment.NewLine);
             CheatSheetRichTextBox.AppendText("txrunconverter <id> <value>: imperial conversion of <value> using <id> properties" + Environment.NewLine);

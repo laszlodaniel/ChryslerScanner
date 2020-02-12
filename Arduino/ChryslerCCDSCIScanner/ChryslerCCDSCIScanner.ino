@@ -101,6 +101,7 @@ void setup()
     tcm_tx_flush();
 
     ccd.repeated_msg_interval = 100; // let other modules talk on the CCD-bus while repeating messages on it
+    ccd.repeated_msg_increment = 2; // assume two returned byte by each request, so it's enough to request every second memory address
 
     delay(2000);
     //print_display_layout_1_metric();
