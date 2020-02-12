@@ -4287,6 +4287,7 @@ namespace ChryslerCCDSCIScanner
                                     Param1Label2.Visible = true;
                                     Param1Label2.Text = "millisecond";
                                     Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Enabled = true;
                                     Param1ComboBox.Font = new Font("Courier New", 9F);
                                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param1ComboBox.Items.Clear();
@@ -4296,6 +4297,7 @@ namespace ChryslerCCDSCIScanner
                                     Param2Label2.Visible = true;
                                     Param2Label2.Text = "millisecond";
                                     Param2ComboBox.Visible = true;
+                                    Param2ComboBox.Enabled = true;
                                     Param2ComboBox.Font = new Font("Courier New", 9F);
                                     Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param2ComboBox.Items.Clear();
@@ -4314,6 +4316,7 @@ namespace ChryslerCCDSCIScanner
                                     Param1Label2.Visible = true;
                                     Param1Label2.Text = "";
                                     Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Enabled = true;
                                     Param1ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
                                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
                                     Param1ComboBox.Items.Clear();
@@ -4336,6 +4339,7 @@ namespace ChryslerCCDSCIScanner
                                     Param1Label2.Visible = true;
                                     Param1Label2.Text = "";
                                     Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Enabled = true;
                                     Param1ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
                                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
                                     Param1ComboBox.Items.Clear();
@@ -4345,6 +4349,7 @@ namespace ChryslerCCDSCIScanner
                                     Param2Label1.Text = "Speed:";
                                     Param2Label2.Visible = false;
                                     Param2ComboBox.Visible = true;
+                                    Param2ComboBox.Enabled = true;
                                     Param2ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
                                     Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
                                     Param2ComboBox.Items.Clear();
@@ -4354,6 +4359,7 @@ namespace ChryslerCCDSCIScanner
                                     Param3Label1.Text = "Config.:";
                                     Param3Label2.Visible = false;
                                     Param3ComboBox.Visible = true;
+                                    Param3ComboBox.Enabled = true;
                                     Param3ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
                                     Param3ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
                                     Param3ComboBox.Items.Clear();
@@ -4370,6 +4376,7 @@ namespace ChryslerCCDSCIScanner
                                     Param1Label2.Visible = true;
                                     Param1Label2.Text = "milliseconds";
                                     Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Enabled = true;
                                     Param1ComboBox.Font = new Font("Courier New", 9F);
                                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param1ComboBox.Items.Clear();
@@ -4378,6 +4385,7 @@ namespace ChryslerCCDSCIScanner
                                     Param2Label1.Text = "Incr.:";
                                     Param2Label2.Visible = false;
                                     Param2ComboBox.Visible = true;
+                                    Param2ComboBox.Enabled = true;
                                     Param2ComboBox.Font = new Font("Courier New", 9F);
                                     Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param2ComboBox.Items.Clear();
@@ -4470,6 +4478,7 @@ namespace ChryslerCCDSCIScanner
                                     Param1Label2.Visible = true;
                                     Param1Label2.Text = "millisecond";
                                     Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Enabled = true;
                                     Param1ComboBox.Font = new Font("Courier New", 9F);
                                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param1ComboBox.Items.Clear();
@@ -4479,6 +4488,7 @@ namespace ChryslerCCDSCIScanner
                                     Param2Label2.Visible = true;
                                     Param2Label2.Text = "millisecond";
                                     Param2ComboBox.Visible = true;
+                                    Param2ComboBox.Enabled = true;
                                     Param2ComboBox.Font = new Font("Courier New", 9F);
                                     Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param2ComboBox.Items.Clear();
@@ -4487,6 +4497,7 @@ namespace ChryslerCCDSCIScanner
                                     Param3Label1.Text = "Enable:";
                                     Param3Label2.Visible = false;
                                     Param3ComboBox.Visible = true;
+                                    Param3ComboBox.Enabled = true;
                                     Param3ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
                                     Param3ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
                                     Param3ComboBox.Items.Clear();
@@ -4502,6 +4513,7 @@ namespace ChryslerCCDSCIScanner
                                     Param1Label1.Text = "Address:";
                                     Param1Label2.Visible = false;
                                     Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Enabled = true;
                                     Param1ComboBox.Font = new Font("Courier New", 9F);
                                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param1ComboBox.Items.Clear();
@@ -4522,6 +4534,7 @@ namespace ChryslerCCDSCIScanner
                                     Param1Label1.Text = "Address:";
                                     Param1Label2.Visible = false;
                                     Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Enabled = true;
                                     Param1ComboBox.Font = new Font("Courier New", 9F);
                                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param1ComboBox.Items.Clear();
@@ -4530,6 +4543,7 @@ namespace ChryslerCCDSCIScanner
                                     Param2Label1.Text = "Value:";
                                     Param2Label2.Visible = false;
                                     Param2ComboBox.Visible = true;
+                                    Param2ComboBox.Enabled = true;
                                     Param2ComboBox.Font = new Font("Courier New", 9F);
                                     Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param2ComboBox.Items.Clear();
@@ -4547,6 +4561,7 @@ namespace ChryslerCCDSCIScanner
                                     Param1Label1.Text = "Bus:";
                                     Param1Label2.Visible = false;
                                     Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Enabled = true;
                                     Param1ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
                                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
                                     Param1ComboBox.Items.Clear();
@@ -4556,6 +4571,7 @@ namespace ChryslerCCDSCIScanner
                                     Param2Label1.Text = "Speed:";
                                     Param2Label2.Visible = false;
                                     Param2ComboBox.Visible = true;
+                                    Param2ComboBox.Enabled = true;
                                     Param2ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
                                     Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
                                     Param2ComboBox.Items.Clear();
@@ -4601,6 +4617,7 @@ namespace ChryslerCCDSCIScanner
                                     Param1Label1.Text = "Message:";
                                     Param1Label2.Visible = false;
                                     Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Enabled = true;
                                     Param1ComboBox.Font = new Font("Courier New", 9F);
                                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param1ComboBox.Items.Clear();
@@ -4621,6 +4638,7 @@ namespace ChryslerCCDSCIScanner
                                     Param1Label2.Visible = true;
                                     Param1Label2.Text = "message";
                                     Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Enabled = true;
                                     Param1ComboBox.Font = new Font("Courier New", 9F);
                                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param1ComboBox.Items.Clear();
@@ -4629,6 +4647,7 @@ namespace ChryslerCCDSCIScanner
                                     Param2Label2.Visible = true;
                                     Param2Label2.Text = "message";
                                     Param2ComboBox.Visible = true;
+                                    Param2ComboBox.Enabled = false;
                                     Param2ComboBox.Font = new Font("Courier New", 9F);
                                     Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param2ComboBox.Items.Clear();
@@ -4637,6 +4656,7 @@ namespace ChryslerCCDSCIScanner
                                     Param3Label2.Visible = false;
                                     Param3Label2.Text = "";
                                     Param3ComboBox.Visible = true;
+                                    Param3ComboBox.Enabled = true;
                                     Param3ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
                                     Param3ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
                                     Param3ComboBox.Items.Clear();
@@ -4681,6 +4701,7 @@ namespace ChryslerCCDSCIScanner
                                     Param1Label1.Text = "Message:";
                                     Param1Label2.Visible = false;
                                     Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Enabled = true;
                                     Param1ComboBox.Font = new Font("Courier New", 9F);
                                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param1ComboBox.Items.Clear();
@@ -4701,6 +4722,7 @@ namespace ChryslerCCDSCIScanner
                                     Param1Label2.Visible = true;
                                     Param1Label2.Text = "message";
                                     Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Enabled = true;
                                     Param1ComboBox.Font = new Font("Courier New", 9F);
                                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param1ComboBox.Items.Clear();
@@ -4709,6 +4731,7 @@ namespace ChryslerCCDSCIScanner
                                     Param2Label2.Visible = true;
                                     Param2Label2.Text = "message";
                                     Param2ComboBox.Visible = true;
+                                    Param2ComboBox.Enabled = false;
                                     Param2ComboBox.Font = new Font("Courier New", 9F);
                                     Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param2ComboBox.Items.Clear();
@@ -4717,6 +4740,7 @@ namespace ChryslerCCDSCIScanner
                                     Param3Label2.Visible = false;
                                     Param3Label2.Text = "";
                                     Param3ComboBox.Visible = true;
+                                    Param3ComboBox.Enabled = true;
                                     Param3ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
                                     Param3ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
                                     Param3ComboBox.Items.Clear();
@@ -4761,6 +4785,7 @@ namespace ChryslerCCDSCIScanner
                                     Param1Label1.Text = "Message:";
                                     Param1Label2.Visible = false;
                                     Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Enabled = true;
                                     Param1ComboBox.Font = new Font("Courier New", 9F);
                                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param1ComboBox.Items.Clear();
@@ -4781,6 +4806,7 @@ namespace ChryslerCCDSCIScanner
                                     Param1Label2.Visible = true;
                                     Param1Label2.Text = "message";
                                     Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Enabled = true;
                                     Param1ComboBox.Font = new Font("Courier New", 9F);
                                     Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param1ComboBox.Items.Clear();
@@ -4789,6 +4815,7 @@ namespace ChryslerCCDSCIScanner
                                     Param2Label2.Visible = true;
                                     Param2Label2.Text = "message";
                                     Param2ComboBox.Visible = true;
+                                    Param2ComboBox.Enabled = true;
                                     Param2ComboBox.Font = new Font("Courier New", 9F);
                                     Param2ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
                                     Param2ComboBox.Items.Clear();
@@ -4797,6 +4824,7 @@ namespace ChryslerCCDSCIScanner
                                     Param3Label2.Visible = false;
                                     Param3Label2.Text = "";
                                     Param3ComboBox.Visible = true;
+                                    Param3ComboBox.Enabled = true;
                                     Param3ComboBox.Font = new Font("Microsoft Sans Serif", 8.25F);
                                     Param3ComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
                                     Param3ComboBox.Items.Clear();
