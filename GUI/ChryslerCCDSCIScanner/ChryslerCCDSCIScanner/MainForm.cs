@@ -3405,7 +3405,7 @@ namespace ChryslerCCDSCIScanner
             DiagnosticsTable.Add("└─────────────────────────┴─────────────────────────────────────────────────────┴─────────────────────────┴──────────────┘");
             DiagnosticsTable.Add("                                                                                                                          ");
             //OldDiagnosticsTable.Clear();
-            //UpdateDiagnosticsListBox(this, new EventArgs() as ElapsedEventArgs); // force table update
+            UpdateDiagnosticsListBox(); // force table update
 
             CCDBusHeaderStart = 1;
             CCDBusListStart = 5;
