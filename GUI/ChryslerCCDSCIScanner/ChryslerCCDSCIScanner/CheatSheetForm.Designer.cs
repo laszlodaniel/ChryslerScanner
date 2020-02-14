@@ -61,6 +61,7 @@
             this.ClientSize = new System.Drawing.Size(684, 462);
             this.Controls.Add(this.CheatSheetRichTextBox);
             this.Controls.Add(this.CloseButton);
+            this.MaximizeBox = false;
             this.Name = "CheatSheetForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Cheat sheet";

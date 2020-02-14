@@ -65,16 +65,18 @@
             this.SnapshotButton = new System.Windows.Forms.Button();
             this.DiagnosticsListBox = new System.Windows.Forms.ListBox();
             this.ControlPanelGroupBox = new System.Windows.Forms.GroupBox();
+            this.RefreshButton = new System.Windows.Forms.Button();
             this.ExpandButton = new System.Windows.Forms.Button();
-            this.ImperialUnitRadioButton = new System.Windows.Forms.RadioButton();
-            this.MetricUnitRadioButton = new System.Windows.Forms.RadioButton();
-            this.UnitsLabel = new System.Windows.Forms.Label();
+            this.COMPortsComboBox = new System.Windows.Forms.ComboBox();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UpdateScannerFirmwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.CheatSheetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.IncludeTimestampInLogFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.UnitsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.MetricToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.ImperialToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.USBCommunicationGroupBox.SuspendLayout();
             this.DiagnosticsGroupBox.SuspendLayout();
@@ -97,9 +99,9 @@
             // 
             // ConnectButton
             // 
-            this.ConnectButton.Location = new System.Drawing.Point(6, 19);
+            this.ConnectButton.Location = new System.Drawing.Point(6, 18);
             this.ConnectButton.Name = "ConnectButton";
-            this.ConnectButton.Size = new System.Drawing.Size(75, 23);
+            this.ConnectButton.Size = new System.Drawing.Size(75, 25);
             this.ConnectButton.TabIndex = 0;
             this.ConnectButton.Text = "Connect";
             this.ConnectButton.UseVisualStyleBackColor = true;
@@ -453,7 +455,7 @@
             this.CCDBusEnabledCheckBox.AutoSize = true;
             this.CCDBusEnabledCheckBox.Checked = true;
             this.CCDBusEnabledCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.CCDBusEnabledCheckBox.Location = new System.Drawing.Point(3, 543);
+            this.CCDBusEnabledCheckBox.Location = new System.Drawing.Point(14, 544);
             this.CCDBusEnabledCheckBox.Name = "CCDBusEnabledCheckBox";
             this.CCDBusEnabledCheckBox.Size = new System.Drawing.Size(109, 17);
             this.CCDBusEnabledCheckBox.TabIndex = 4;
@@ -476,7 +478,7 @@
             this.SortIDBytesCheckBox.AutoSize = true;
             this.SortIDBytesCheckBox.Checked = true;
             this.SortIDBytesCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.SortIDBytesCheckBox.Location = new System.Drawing.Point(3, 520);
+            this.SortIDBytesCheckBox.Location = new System.Drawing.Point(14, 521);
             this.SortIDBytesCheckBox.Name = "SortIDBytesCheckBox";
             this.SortIDBytesCheckBox.Size = new System.Drawing.Size(87, 17);
             this.SortIDBytesCheckBox.TabIndex = 2;
@@ -508,10 +510,9 @@
             // 
             // ControlPanelGroupBox
             // 
+            this.ControlPanelGroupBox.Controls.Add(this.RefreshButton);
             this.ControlPanelGroupBox.Controls.Add(this.ExpandButton);
-            this.ControlPanelGroupBox.Controls.Add(this.ImperialUnitRadioButton);
-            this.ControlPanelGroupBox.Controls.Add(this.MetricUnitRadioButton);
-            this.ControlPanelGroupBox.Controls.Add(this.UnitsLabel);
+            this.ControlPanelGroupBox.Controls.Add(this.COMPortsComboBox);
             this.ControlPanelGroupBox.Controls.Add(this.ConnectButton);
             this.ControlPanelGroupBox.Location = new System.Drawing.Point(12, 544);
             this.ControlPanelGroupBox.Name = "ControlPanelGroupBox";
@@ -520,47 +521,36 @@
             this.ControlPanelGroupBox.TabStop = false;
             this.ControlPanelGroupBox.Text = "Control panel";
             // 
+            // RefreshButton
+            // 
+            this.RefreshButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.RefreshButton.Location = new System.Drawing.Point(153, 18);
+            this.RefreshButton.Name = "RefreshButton";
+            this.RefreshButton.Size = new System.Drawing.Size(55, 25);
+            this.RefreshButton.TabIndex = 16;
+            this.RefreshButton.Text = "Refresh";
+            this.RefreshButton.UseVisualStyleBackColor = true;
+            this.RefreshButton.Click += new System.EventHandler(this.RefreshButton_Click);
+            // 
             // ExpandButton
             // 
-            this.ExpandButton.Location = new System.Drawing.Point(87, 19);
+            this.ExpandButton.Location = new System.Drawing.Point(284, 18);
             this.ExpandButton.Name = "ExpandButton";
-            this.ExpandButton.Size = new System.Drawing.Size(75, 23);
+            this.ExpandButton.Size = new System.Drawing.Size(75, 25);
             this.ExpandButton.TabIndex = 1;
             this.ExpandButton.Text = "Expand >>";
             this.ExpandButton.UseVisualStyleBackColor = true;
             this.ExpandButton.Click += new System.EventHandler(this.ExpandButton_Click);
             // 
-            // ImperialUnitRadioButton
+            // COMPortsComboBox
             // 
-            this.ImperialUnitRadioButton.AutoSize = true;
-            this.ImperialUnitRadioButton.Location = new System.Drawing.Point(302, 22);
-            this.ImperialUnitRadioButton.Name = "ImperialUnitRadioButton";
-            this.ImperialUnitRadioButton.Size = new System.Drawing.Size(60, 17);
-            this.ImperialUnitRadioButton.TabIndex = 11;
-            this.ImperialUnitRadioButton.Text = "imperial";
-            this.ImperialUnitRadioButton.UseVisualStyleBackColor = true;
-            // 
-            // MetricUnitRadioButton
-            // 
-            this.MetricUnitRadioButton.AutoSize = true;
-            this.MetricUnitRadioButton.Checked = true;
-            this.MetricUnitRadioButton.Location = new System.Drawing.Point(243, 22);
-            this.MetricUnitRadioButton.Name = "MetricUnitRadioButton";
-            this.MetricUnitRadioButton.Size = new System.Drawing.Size(53, 17);
-            this.MetricUnitRadioButton.TabIndex = 10;
-            this.MetricUnitRadioButton.TabStop = true;
-            this.MetricUnitRadioButton.Text = "metric";
-            this.MetricUnitRadioButton.UseVisualStyleBackColor = true;
-            this.MetricUnitRadioButton.CheckedChanged += new System.EventHandler(this.UnitsRadioButtons_CheckedChanged);
-            // 
-            // UnitsLabel
-            // 
-            this.UnitsLabel.AutoSize = true;
-            this.UnitsLabel.Location = new System.Drawing.Point(203, 24);
-            this.UnitsLabel.Name = "UnitsLabel";
-            this.UnitsLabel.Size = new System.Drawing.Size(34, 13);
-            this.UnitsLabel.TabIndex = 12;
-            this.UnitsLabel.Text = "Units:";
+            this.COMPortsComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.COMPortsComboBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.COMPortsComboBox.FormattingEnabled = true;
+            this.COMPortsComboBox.Location = new System.Drawing.Point(87, 19);
+            this.COMPortsComboBox.Name = "COMPortsComboBox";
+            this.COMPortsComboBox.Size = new System.Drawing.Size(60, 23);
+            this.COMPortsComboBox.TabIndex = 15;
             // 
             // menuStrip1
             // 
@@ -601,7 +591,8 @@
             // settingsToolStripMenuItem
             // 
             this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.IncludeTimestampInLogFilesToolStripMenuItem});
+            this.IncludeTimestampInLogFilesToolStripMenuItem,
+            this.UnitsToolStripMenuItem});
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
             this.settingsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.settingsToolStripMenuItem.Text = "Settings";
@@ -613,6 +604,31 @@
             this.IncludeTimestampInLogFilesToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
             this.IncludeTimestampInLogFilesToolStripMenuItem.Text = "Include timestamp in log files";
             this.IncludeTimestampInLogFilesToolStripMenuItem.CheckedChanged += new System.EventHandler(this.IncludeTimestampInLogFilesToolStripMenuItem_CheckedChanged);
+            // 
+            // UnitsToolStripMenuItem
+            // 
+            this.UnitsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.MetricToolStripMenuItem,
+            this.ImperialToolStripMenuItem});
+            this.UnitsToolStripMenuItem.Name = "UnitsToolStripMenuItem";
+            this.UnitsToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
+            this.UnitsToolStripMenuItem.Text = "Units";
+            // 
+            // MetricToolStripMenuItem
+            // 
+            this.MetricToolStripMenuItem.CheckOnClick = true;
+            this.MetricToolStripMenuItem.Name = "MetricToolStripMenuItem";
+            this.MetricToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
+            this.MetricToolStripMenuItem.Text = "Metric";
+            this.MetricToolStripMenuItem.Click += new System.EventHandler(this.MetricToolStripMenuItem_Click);
+            // 
+            // ImperialToolStripMenuItem
+            // 
+            this.ImperialToolStripMenuItem.CheckOnClick = true;
+            this.ImperialToolStripMenuItem.Name = "ImperialToolStripMenuItem";
+            this.ImperialToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
+            this.ImperialToolStripMenuItem.Text = "Imperial";
+            this.ImperialToolStripMenuItem.Click += new System.EventHandler(this.ImperialToolStripMenuItem_Click);
             // 
             // aboutToolStripMenuItem
             // 
@@ -632,6 +648,7 @@
             this.Controls.Add(this.menuStrip1);
             this.DoubleBuffered = true;
             this.MainMenuStrip = this.menuStrip1;
+            this.MaximizeBox = false;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Chrysler CCD/SCI Scanner";
@@ -642,7 +659,6 @@
             this.DiagnosticsGroupBox.ResumeLayout(false);
             this.DiagnosticsGroupBox.PerformLayout();
             this.ControlPanelGroupBox.ResumeLayout(false);
-            this.ControlPanelGroupBox.PerformLayout();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.ResumeLayout(false);
@@ -659,9 +675,6 @@
         private System.Windows.Forms.Button USBClearButton;
         private System.Windows.Forms.Button USBSendButton;
         private System.Windows.Forms.GroupBox ControlPanelGroupBox;
-        private System.Windows.Forms.RadioButton ImperialUnitRadioButton;
-        private System.Windows.Forms.RadioButton MetricUnitRadioButton;
-        private System.Windows.Forms.Label UnitsLabel;
         private System.Windows.Forms.Button USBClearAllButton;
         private System.Windows.Forms.ComboBox USBSendComboBox;
         private System.Windows.Forms.Button ExpandButton;
@@ -700,6 +713,11 @@
         private System.Windows.Forms.ProgressBar ProgressBar1;
         private System.Windows.Forms.Label PercentageLabel;
         private System.Windows.Forms.Label RemainingTimeLabel;
+        private System.Windows.Forms.ToolStripMenuItem UnitsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem MetricToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem ImperialToolStripMenuItem;
+        private System.Windows.Forms.Button RefreshButton;
+        private System.Windows.Forms.ComboBox COMPortsComboBox;
     }
 }
 

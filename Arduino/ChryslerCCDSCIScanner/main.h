@@ -1,6 +1,6 @@
 /*
  * ChryslerCCDSCIScanner (https://github.com/laszlodaniel/ChryslerCCDSCIScanner)
- * Copyright (C) 2018-2019, László Dániel
+ * Copyright (C) 2018-2020, László Dániel
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005E444762
+#define FW_DATE 0x000000005E46B2ED
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -423,7 +423,6 @@ uint8_t enter_symbol[8]  = { 0x00, 0x01, 0x05, 0x09, 0x1F, 0x08, 0x04, 0x00 }; /
 uint8_t degree_symbol[8] = { 0x06, 0x09, 0x09, 0x06, 0x00, 0x00, 0x00, 0x00 }; // °
 
 bool lcd_enabled = false;
-
 
 // Interrupt Service Routines
 ISR(USB_RECEIVE_INTERRUPT)
@@ -1746,6 +1745,31 @@ void blink_led(uint8_t led)
 
 
 /*************************************************************************
+Function: free_ram()
+Purpose:  returns how many bytes exists between the end of the heap and 
+          the last allocated memory on the stack, so it is effectively 
+          how much the stack/heap can grow before they collide.
+**************************************************************************/
+uint16_t free_ram(void)
+{
+    extern int  __bss_end; 
+    extern int  *__brkval; 
+    uint16_t free_memory; 
+    
+    if((int)__brkval == 0)
+    {
+        free_memory = ((int)&free_memory) - ((int)&__bss_end); 
+    }
+    else 
+    {
+        free_memory = ((int)&free_memory) - ((int)__brkval); 
+    }
+    return free_memory; 
+
+} // end of free_ram
+
+
+/*************************************************************************
 Function: send_usb_packet()
 Purpose:  assemble and send data packet through serial link (UART0)
 Inputs:   - one source byte,
@@ -1763,10 +1787,22 @@ void send_usb_packet(uint8_t source, uint8_t target, uint8_t command, uint8_t su
     // Calculate the length of the full packet:
     // PAYLOAD length + 1 SYNC byte + 2 LENGTH bytes + 1 DATA CODE byte + 1 SUB-DATA CODE byte + 1 CHECKSUM byte
     uint16_t packet_length = payloadbufflen + 6;    
-    uint8_t packet[packet_length]; // create a temporary byte-array
     bool payload_bytes = false;
     uint8_t calculated_checksum = 0;
     uint8_t datacode = 0;
+
+    // Check if there's enough RAM to store the whole packet
+    if (free_ram() < (packet_length + 50)) // require +50 free bytes to be safe
+    {
+        uint8_t error[7] = { 0x3D, 0x00, 0x03, 0x8F, 0xF7, 0xFF, 0x8E }; // prepare the "not enough MCU RAM" error message
+        for (uint16_t i = 0; i < 7; i++)
+        {
+            usb_putc(error[i]);
+        }
+        return;
+    }
+
+    uint8_t packet[packet_length]; // create a temporary byte-array
 
     if (payloadbufflen <= 0) payload_bytes = false;
     else payload_bytes = true;
@@ -2002,31 +2038,6 @@ void configure_sci_bus(uint8_t data)
     send_usb_packet(from_usb, to_usb, settings, set_sci_bus, combined_settings, 1); // acknowledge
 
 } // end of configure_sci_bus
-
-
-/*************************************************************************
-Function: free_ram()
-Purpose:  returns how many bytes exists between the end of the heap and 
-          the last allocated memory on the stack, so it is effectively 
-          how much the stack/heap can grow before they collide.
-**************************************************************************/
-uint16_t free_ram(void)
-{
-    extern int  __bss_end; 
-    extern int  *__brkval; 
-    uint16_t free_memory; 
-    
-    if((int)__brkval == 0)
-    {
-        free_memory = ((int)&free_memory) - ((int)&__bss_end); 
-    }
-    else 
-    {
-        free_memory = ((int)&free_memory) - ((int)__brkval); 
-    }
-    return free_memory; 
-
-} // end of free_ram
 
 
 /*****************************************************************************

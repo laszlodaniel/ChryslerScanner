@@ -64,7 +64,6 @@
     <Compile Include="CheatSheetForm.Designer.cs">
       <DependentUpon>CheatSheetForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="CircularBuffer.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -107,6 +106,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\chrysler_icon_128x128.png" />
     <Content Include="Resources\chrysler_icon_64x64.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

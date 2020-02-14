@@ -9,6 +9,19 @@ namespace ChryslerCCDSCIScanner
 {
     public static class Util
     {
+        public static bool CompareArrays(byte[] first, byte[] second, int index, int length)
+        {
+            bool ret = false;
+
+            for (int i = index; i < length; i++)
+            {
+                if (first[i] == second[i]) ret = true;
+                else ret = false;
+            }
+
+            return ret;
+        }
+
         public static string ByteToHexString(byte[] data, int offset, int length)
         {
             StringBuilder ret = new StringBuilder();

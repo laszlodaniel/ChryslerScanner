@@ -16,12 +16,10 @@ namespace ChryslerCCDSCIScanner
 
         public AboutForm(MainForm incomingForm)
         {
-            this.CenterToParent();
             originalForm = incomingForm;
-
             InitializeComponent();
-
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+            this.CenterToParent();
         }
 
         private void CloseButton_Click(object sender, EventArgs e)
