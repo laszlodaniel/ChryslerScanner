@@ -3300,6 +3300,14 @@ namespace ChryslerCCDSCIScanner
                         {
                             string line = Encoding.ASCII.GetString(bufferlist.Take(bufferlist.Count - 1).ToArray()); // convert to ASCII text except the last character (EOL)
                             Util.UpdateTextBox(USBTextBox, line, null);
+
+                            // Save raw USB packet to a binary logfile
+                            using (BinaryWriter writer = new BinaryWriter(File.Open(USBBinaryLogFilename, FileMode.Append)))
+                            {
+                                writer.Write(bufferlist.ToArray());
+                                writer.Close();
+                            }
+
                             bufferlist.Clear();
                         }
                         break;
@@ -3486,6 +3494,17 @@ namespace ChryslerCCDSCIScanner
                         if ((MessageBytes.Length > 1) && (MessageBytes != null))
                         {
                             Serial.Write(MessageBytes, 0, MessageBytes.Length);
+
+                            // Save raw USB packet to a binary logfile
+                            using (BinaryWriter writer = new BinaryWriter(File.Open(USBBinaryLogFilename, FileMode.Append)))
+                            {
+                                if (MessageBytes != null)
+                                {
+                                    writer.Write(MessageBytes);
+                                    writer.Close();
+                                }
+                            }
+
                             if (!USBSendComboBox.Items.Contains(USBSendComboBox.Text)) // only add unique items (no repeat!)
                             {
                                 USBSendComboBox.Items.Add(USBSendComboBox.Text); // add command to the list so it can be selected later
