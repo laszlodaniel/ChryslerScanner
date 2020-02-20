@@ -3520,7 +3520,6 @@ namespace ChryslerCCDSCIScanner
             if (ExpandButton.Text == "Expand >>")
             {
                 this.Size = new Size(1300, 650);
-                this.CenterToScreen();
                 DiagnosticsGroupBox.Visible = true;
                 ExpandButton.Text = "<< Collapse";
             }
@@ -3528,7 +3527,6 @@ namespace ChryslerCCDSCIScanner
             {
                 DiagnosticsGroupBox.Visible = false;
                 this.Size = new Size(405, 650);
-                this.CenterToScreen();
                 ExpandButton.Text = "Expand >>";
             }
         }
@@ -5421,22 +5419,21 @@ namespace ChryslerCCDSCIScanner
 
         private void AboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (about == null || !about.Visible)
+            about = new AboutForm(this)
             {
-                about = new AboutForm(this);
-                about.Show();
-            }
-            else
-            {
-                about.BringToFront();
-            }
+                StartPosition = FormStartPosition.CenterParent
+            };
+            about.ShowDialog();
         }
 
         private void CheatSheetToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (cheatsheet == null || !cheatsheet.Visible)
             {
-                cheatsheet = new CheatSheetForm(this);
+                cheatsheet = new CheatSheetForm(this)
+                {
+                    StartPosition = FormStartPosition.CenterParent
+                };
                 cheatsheet.Show();
             }
             else

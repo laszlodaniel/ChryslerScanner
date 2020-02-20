@@ -64,7 +64,7 @@
             this.VersionLabel.Name = "VersionLabel";
             this.VersionLabel.Size = new System.Drawing.Size(141, 13);
             this.VersionLabel.TabIndex = 6;
-            this.VersionLabel.Text = "Version: CCDSCI.2020.0003";
+            this.VersionLabel.Text = "Version: CCDSCI.2020.0004";
             // 
             // AboutDescriptionLabel01
             // 
@@ -105,11 +105,13 @@
             this.Controls.Add(this.AboutTitleLabel);
             this.Controls.Add(this.AboutPictureBox);
             this.Controls.Add(this.CloseButton);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "AboutForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "About";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.AboutForm_FormClosed);
             ((System.ComponentModel.ISupportInitialize)(this.AboutPictureBox)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

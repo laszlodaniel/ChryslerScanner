@@ -16,11 +16,6 @@ namespace ChryslerCCDSCIScanner
             this.CenterToParent();
         }
 
-        private void CloseButton_Click(object sender, EventArgs e)
-        {
-            this.Close();
-        }
-
         private void CheatSheetForm_Load(object sender, EventArgs e)
         {
             CheatSheetRichTextBox.AppendText("DRBDBReader usage:" + Environment.NewLine + Environment.NewLine);
@@ -82,6 +77,17 @@ namespace ChryslerCCDSCIScanner
             CheatSheetRichTextBox.AppendText("Example CCD-bus message: 24 16 24 5E (again hexadecimal format implied)." + Environment.NewLine);
             CheatSheetRichTextBox.AppendText("This format is interesting because it makes use of the two payload bytes to avoid conversion between imperial and metric values." + Environment.NewLine);
             CheatSheetRichTextBox.AppendText("See the first payload byte is 0x16 = 22 MPH and the second byte 0x24 = 36 KM/H happens to be equal to 22 × 1.609344 (= 35.4 ~ 36) as per the metric conversion rule." + Environment.NewLine);
+        }
+
+        private void CloseButton_Click(object sender, EventArgs e)
+        {
+            GC.Collect();
+            this.Close();
+        }
+
+        private void CheatSheetForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            GC.Collect();
         }
     }
 }

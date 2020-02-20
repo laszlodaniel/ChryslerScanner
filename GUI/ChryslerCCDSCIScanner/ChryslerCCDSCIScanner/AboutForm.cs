@@ -19,12 +19,17 @@ namespace ChryslerCCDSCIScanner
             originalForm = incomingForm;
             InitializeComponent();
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-            this.CenterToParent();
         }
 
         private void CloseButton_Click(object sender, EventArgs e)
         {
+            GC.Collect();
             this.Close();
+        }
+
+        private void AboutForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            GC.Collect();
         }
     }
 }

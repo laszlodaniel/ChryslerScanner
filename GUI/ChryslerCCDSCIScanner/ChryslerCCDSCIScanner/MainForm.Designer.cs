@@ -68,7 +68,7 @@
             this.RefreshButton = new System.Windows.Forms.Button();
             this.ExpandButton = new System.Windows.Forms.Button();
             this.COMPortsComboBox = new System.Windows.Forms.ComboBox();
-            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            this.MenuStrip = new System.Windows.Forms.MenuStrip();
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UpdateScannerFirmwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.CheatSheetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -81,7 +81,7 @@
             this.USBCommunicationGroupBox.SuspendLayout();
             this.DiagnosticsGroupBox.SuspendLayout();
             this.ControlPanelGroupBox.SuspendLayout();
-            this.menuStrip1.SuspendLayout();
+            this.MenuStrip.SuspendLayout();
             this.SuspendLayout();
             // 
             // USBTextBox
@@ -552,17 +552,17 @@
             this.COMPortsComboBox.Size = new System.Drawing.Size(60, 23);
             this.COMPortsComboBox.TabIndex = 15;
             // 
-            // menuStrip1
+            // MenuStrip
             // 
-            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.MenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolsToolStripMenuItem,
             this.settingsToolStripMenuItem,
             this.aboutToolStripMenuItem});
-            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
-            this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(1284, 24);
-            this.menuStrip1.TabIndex = 14;
-            this.menuStrip1.Text = "menuStrip1";
+            this.MenuStrip.Location = new System.Drawing.Point(0, 0);
+            this.MenuStrip.Name = "MenuStrip";
+            this.MenuStrip.Size = new System.Drawing.Size(1284, 24);
+            this.MenuStrip.TabIndex = 14;
+            this.MenuStrip.Text = "menuStrip1";
             // 
             // toolsToolStripMenuItem
             // 
@@ -645,9 +645,10 @@
             this.Controls.Add(this.ControlPanelGroupBox);
             this.Controls.Add(this.DiagnosticsGroupBox);
             this.Controls.Add(this.USBCommunicationGroupBox);
-            this.Controls.Add(this.menuStrip1);
+            this.Controls.Add(this.MenuStrip);
             this.DoubleBuffered = true;
-            this.MainMenuStrip = this.menuStrip1;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.MainMenuStrip = this.MenuStrip;
             this.MaximizeBox = false;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -659,8 +660,8 @@
             this.DiagnosticsGroupBox.ResumeLayout(false);
             this.DiagnosticsGroupBox.PerformLayout();
             this.ControlPanelGroupBox.ResumeLayout(false);
-            this.menuStrip1.ResumeLayout(false);
-            this.menuStrip1.PerformLayout();
+            this.MenuStrip.ResumeLayout(false);
+            this.MenuStrip.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -697,7 +698,7 @@
         private System.Windows.Forms.RadioButton AsciiCommMethodRadioButton;
         private System.Windows.Forms.RadioButton HexCommMethodRadioButton;
         private System.Windows.Forms.Label MethodLabel;
-        private System.Windows.Forms.MenuStrip menuStrip1;
+        private System.Windows.Forms.MenuStrip MenuStrip;
         private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem UpdateScannerFirmwareToolStripMenuItem;
         private System.Windows.Forms.Label PreviewLabel;

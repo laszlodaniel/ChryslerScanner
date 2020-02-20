@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005E46B2ED
+#define FW_DATE 0x000000005E4EA7B1
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -238,6 +238,9 @@ extern LiquidCrystal_I2C lcd;
 #define sbi(variable, bit) (variable) |=  (1 << (bit))
 #define cbi(variable, bit) (variable) &= ~(1 << (bit))
 #define ibi(variable, bit) (variable) ^=  (1 << (bit))
+
+#define to_uint16(hb, lb)               (uint16_t)(((uint8_t)hb << 8) | (uint8_t)lb)
+#define to_uint32(msb, hb, lb, lsb)     (uint32_t)(((uint32_t)msb << 24) | ((uint32_t)hb << 16) | ((uint32_t)lb << 8) | (uint32_t)lsb)
 
 // Variables
 volatile uint8_t  USB_RxBuf[USB_RX0_BUFFER_SIZE];
@@ -2136,7 +2139,7 @@ void exteeprom_init(void)
         }
         else
         {
-            adc_supply_voltage = (data[0] << 8) | data[1]; // stored value
+            adc_supply_voltage = to_uint16(data[0], data[1]); // stored value
             if (adc_supply_voltage == 0) adc_supply_voltage = 500; // default value
         }
 
@@ -2148,7 +2151,7 @@ void exteeprom_init(void)
         }
         else
         {
-            battery_rd1 = (data[0] << 8) | data[1]; // stored value
+            battery_rd1 = to_uint16(data[0], data[1]); // stored value
             if (battery_rd1 == 0) battery_rd1 = 27000; // default value
         }
         
@@ -2160,7 +2163,7 @@ void exteeprom_init(void)
         }
         else
         {
-            battery_rd2 = (data[0] << 8) | data[1]; // stored value
+            battery_rd2 = to_uint16(data[0], data[1]); // stored value
             if (battery_rd2 == 0) battery_rd2 = 5100; // default value
         }
         
@@ -3871,7 +3874,7 @@ void handle_usb_data(void)
                 length_lb = usb_getc() & 0xFF; // read second length byte
         
                 // Calculate how much more bytes should we read by combining the two length bytes into a word.
-                bytes_to_read = (length_hb << 8) + length_lb + 1; // +1 CHECKSUM byte
+                bytes_to_read = to_uint16(length_hb, length_lb) + 1; // +1 CHECKSUM byte
                 
                 // Calculate the exact size of the payload.
                 payload_length = bytes_to_read - 3; // in this case we have to be careful not to count data code byte, sub-data code byte and checksum byte
@@ -4006,7 +4009,7 @@ void handle_usb_data(void)
                                             break;
                                         }
                                         
-                                        uint16_t flashing_interval = (cmd_payload[0] << 8) + cmd_payload[1]; // 0-65535 milliseconds
+                                        uint16_t flashing_interval = to_uint16(cmd_payload[0], cmd_payload[1]); // 0-65535 milliseconds
                                         if (flashing_interval == 0) heartbeat_enabled = false; // zero value is allowed, meaning no heartbeat
                                         else
                                         {
@@ -4014,7 +4017,7 @@ void handle_usb_data(void)
                                             heartbeat_enabled = true;
                                         }
                                         
-                                        uint16_t blink_duration = (cmd_payload[2] << 8) + cmd_payload[3]; // 0-65535 milliseconds
+                                        uint16_t blink_duration = to_uint16(cmd_payload[2], cmd_payload[3]); // 0-65535 milliseconds
                                         if (blink_duration > 0) led_blink_duration = blink_duration; // zero value is not allowed, this applies to all 3 status leds! (rx, tx, act)
                                         
                                         send_usb_packet(from_usb, to_usb, settings, heartbeat, cmd_payload, 4); // acknowledge
@@ -4076,19 +4079,19 @@ void handle_usb_data(void)
                                         {
                                             case 0x01: // CCD-bus
                                             {
-                                                ccd.repeated_msg_interval = (cmd_payload[1] << 8) + cmd_payload[2]; // 0-65535 milliseconds
-                                                ccd.repeated_msg_increment = (cmd_payload[3] << 8) + cmd_payload[4]; // 0-65535
+                                                ccd.repeated_msg_interval = to_uint16(cmd_payload[1], cmd_payload[2]); // 0-65535 milliseconds
+                                                ccd.repeated_msg_increment = to_uint16(cmd_payload[3], cmd_payload[4]); // 0-65535
                                                 break;
                                             }
                                             case 0x02: // SCI-bus (PCM)
                                             {
-                                                pcm.repeated_msg_interval = (cmd_payload[1] << 8) + cmd_payload[2]; // 0-65535 milliseconds
-                                                pcm.repeated_msg_increment = (cmd_payload[3] << 8) + cmd_payload[4]; // 0-65535
+                                                pcm.repeated_msg_interval = to_uint16(cmd_payload[1], cmd_payload[2]); // 0-65535 milliseconds
+                                                pcm.repeated_msg_increment = to_uint16(cmd_payload[3], cmd_payload[4]); // 0-65535
                                             }
                                             case 0x03: // SCI-bus (TCM)
                                             {
-                                                tcm.repeated_msg_interval = (cmd_payload[1] << 8) + cmd_payload[2]; // 0-65535 milliseconds
-                                                tcm.repeated_msg_increment = (cmd_payload[3] << 8) + cmd_payload[4]; // 0-65535
+                                                tcm.repeated_msg_interval = to_uint16(cmd_payload[1], cmd_payload[2]); // 0-65535 milliseconds
+                                                tcm.repeated_msg_increment = to_uint16(cmd_payload[3], cmd_payload[4]); // 0-65535
                                             }
                                         }
 
@@ -4177,8 +4180,8 @@ void handle_usb_data(void)
                                             case 0x01:
                                             {
                                                 ccd.random_msg = true;
-                                                ccd.random_msg_interval_min = (cmd_payload[1] << 8) | cmd_payload[2];
-                                                ccd.random_msg_interval_max = (cmd_payload[3] << 8) | cmd_payload[4];
+                                                ccd.random_msg_interval_min = to_uint16(cmd_payload[1], cmd_payload[2]);
+                                                ccd.random_msg_interval_max = to_uint16(cmd_payload[3], cmd_payload[4]);
                                                 ccd.random_msg_interval = random(ccd.random_msg_interval_min, ccd.random_msg_interval_max);
                                                 send_usb_packet(from_usb, to_usb, debug, 0x01, ack, 1); // acknowledge
                                                 break;
@@ -4203,7 +4206,7 @@ void handle_usb_data(void)
                                         {
                                             uint8_t address_hb = cmd_payload[0];
                                             uint8_t address_lb = cmd_payload[1];
-                                            uint16_t address = (address_hb << 8) | address_lb;
+                                            uint16_t address = to_uint16(address_hb, address_lb);
                                             uint8_t value = eep.read(address);
                                             uint8_t data[3] = { address_hb, address_lb, value };
                                             send_usb_packet(from_usb, to_usb, debug, 0x02, data, 3); // send external EEPROM value back to the laptop
@@ -4226,7 +4229,7 @@ void handle_usb_data(void)
                                         {
                                             uint8_t address_hb = cmd_payload[0];
                                             uint8_t address_lb = cmd_payload[1];
-                                            uint16_t address = (address_hb << 8) | address_lb;
+                                            uint16_t address = to_uint16(address_hb, address_lb);
                                             uint8_t value = cmd_payload[2];
 
                                             // Disable hardware write protection (EEPROM chip has a pullup resistor on its WP-pin!)
@@ -4671,18 +4674,18 @@ void handle_usb_data(void)
 
                                                     if (pcm.repeated_msg_length == 0x04) // 4-bytes length
                                                     {
-                                                        pcm.repeated_msg_raw_start = ((uint32_t)cmd_payload[2] << 24) | ((uint32_t)cmd_payload[3] << 16) | ((uint32_t)cmd_payload[4] << 8) | (uint32_t)cmd_payload[5];
-                                                        pcm.repeated_msg_raw_end = ((uint32_t)cmd_payload[6] << 24) | ((uint32_t)cmd_payload[7] << 16) | ((uint32_t)cmd_payload[8] << 8) | (uint32_t)cmd_payload[9];
+                                                        pcm.repeated_msg_raw_start =  to_uint32(cmd_payload[2], cmd_payload[3], cmd_payload[4], cmd_payload[5]);
+                                                        pcm.repeated_msg_raw_end = to_uint32(cmd_payload[6], cmd_payload[7], cmd_payload[8], cmd_payload[9]);
                                                     }
                                                     else if (pcm.repeated_msg_length == 0x03) // 3-bytes length
                                                     {
-                                                        pcm.repeated_msg_raw_start = ((uint32_t)cmd_payload[2] << 16) | ((uint32_t)cmd_payload[3] << 8) | (uint32_t)cmd_payload[4];
-                                                        pcm.repeated_msg_raw_end = ((uint32_t)cmd_payload[5] << 16) | ((uint32_t)cmd_payload[6] << 8) | (uint32_t)cmd_payload[7];
+                                                        pcm.repeated_msg_raw_start = to_uint32(0, cmd_payload[2], cmd_payload[3], cmd_payload[4]);
+                                                        pcm.repeated_msg_raw_end = to_uint32(0, cmd_payload[5], cmd_payload[6], cmd_payload[7]);
                                                     }
                                                     else if (pcm.repeated_msg_length == 0x02) // 2-bytes length
                                                     {
-                                                        pcm.repeated_msg_raw_start = (cmd_payload[2] << 8) | cmd_payload[3];
-                                                        pcm.repeated_msg_raw_end = (cmd_payload[4] << 8) | cmd_payload[5];
+                                                        pcm.repeated_msg_raw_start = to_uint16(cmd_payload[2], cmd_payload[3]);
+                                                        pcm.repeated_msg_raw_end = to_uint16(cmd_payload[4], cmd_payload[5]);
                                                     }
                                                     else if (pcm.repeated_msg_length == 0x01) // 1-byte length
                                                     {
@@ -4820,18 +4823,18 @@ void handle_usb_data(void)
 
                                                 if (tcm.repeated_msg_length == 0x04) // 4-bytes length
                                                 {
-                                                    tcm.repeated_msg_raw_start = ((uint32_t)cmd_payload[2] << 24) | ((uint32_t)cmd_payload[3] << 16) | ((uint32_t)cmd_payload[4] << 8) | (uint32_t)cmd_payload[5];
-                                                    tcm.repeated_msg_raw_end = ((uint32_t)cmd_payload[6] << 24) | ((uint32_t)cmd_payload[7] << 16) | ((uint32_t)cmd_payload[8] << 8) | (uint32_t)cmd_payload[9];
+                                                    tcm.repeated_msg_raw_start = to_uint32(cmd_payload[2], cmd_payload[3], cmd_payload[4], cmd_payload[5]);
+                                                    tcm.repeated_msg_raw_end = to_uint32(cmd_payload[6], cmd_payload[7], cmd_payload[8], cmd_payload[9]);
                                                 }
                                                 else if (tcm.repeated_msg_length == 0x03) // 3-bytes length
                                                 {
-                                                    tcm.repeated_msg_raw_start = ((uint32_t)cmd_payload[2] << 16) | ((uint32_t)cmd_payload[3] << 8) | (uint32_t)cmd_payload[4];
-                                                    tcm.repeated_msg_raw_end = ((uint32_t)cmd_payload[5] << 16) | ((uint32_t)cmd_payload[6] << 8) | (uint32_t)cmd_payload[7];
+                                                    tcm.repeated_msg_raw_start = to_uint32(0, cmd_payload[2], cmd_payload[3], cmd_payload[4]);
+                                                    tcm.repeated_msg_raw_end = to_uint32(0, cmd_payload[5], cmd_payload[6], cmd_payload[7]);
                                                 }
                                                 else if (tcm.repeated_msg_length == 0x02) // 2-bytes length
                                                 {
-                                                    tcm.repeated_msg_raw_start = (cmd_payload[2] << 8) | cmd_payload[3];
-                                                    tcm.repeated_msg_raw_end = (cmd_payload[4] << 8) | cmd_payload[5];
+                                                    tcm.repeated_msg_raw_start = to_uint16(cmd_payload[2], cmd_payload[3]);
+                                                    tcm.repeated_msg_raw_end = to_uint16(cmd_payload[4], cmd_payload[5]);
                                                 }
                                                 else if (tcm.repeated_msg_length == 0x01) // 1-byte length
                                                 {
@@ -5390,7 +5393,7 @@ void handle_sci_data(void)
                         else // increment existing message
                         {
                             // First combine bytes into a single integer
-                            uint32_t message = ((uint32_t)pcm.msg_buffer[0] << 24) | ((uint32_t)pcm.msg_buffer[1] << 16) | ((uint32_t)pcm.msg_buffer[2] << 8) | (uint32_t)pcm.msg_buffer[3];
+                            uint32_t message = to_uint32(pcm.msg_buffer[0], pcm.msg_buffer[1], pcm.msg_buffer[2], pcm.msg_buffer[3]);
                             message += pcm.repeated_msg_increment; // add increment
                             pcm.msg_buffer[0] = (message >> 24) & 0xFF; // decompose integer into byte compontents again
                             pcm.msg_buffer[1] = (message >> 16) & 0xFF;
@@ -5412,7 +5415,7 @@ void handle_sci_data(void)
                         else // increment existing message
                         {
                             // First combine bytes into a single integer
-                            uint32_t message = ((uint32_t)pcm.msg_buffer[0] << 16) | ((uint32_t)pcm.msg_buffer[1] << 8) | (uint32_t)pcm.msg_buffer[2];
+                            uint32_t message = to_uint32(0, pcm.msg_buffer[0], pcm.msg_buffer[1], pcm.msg_buffer[2]);
                             message += pcm.repeated_msg_increment; // add increment
                             pcm.msg_buffer[0] = (message >> 16) & 0xFF; // decompose integer into byte compontents again
                             pcm.msg_buffer[1] = (message >> 8) & 0xFF;
@@ -5432,7 +5435,7 @@ void handle_sci_data(void)
                         else // increment existing message
                         {
                             // First combine bytes into a single integer
-                            uint32_t message = ((uint32_t)pcm.msg_buffer[0] << 8) | (uint32_t)pcm.msg_buffer[1];
+                            uint16_t message = to_uint16(pcm.msg_buffer[0], pcm.msg_buffer[1]);
                             message += pcm.repeated_msg_increment; // add increment
                             pcm.msg_buffer[0] = (message >> 8) & 0xFF; // decompose integer into byte compontents again
                             pcm.msg_buffer[1] = message & 0xFF;
