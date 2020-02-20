@@ -3520,13 +3520,15 @@ namespace ChryslerCCDSCIScanner
             if (ExpandButton.Text == "Expand >>")
             {
                 this.Size = new Size(1300, 650);
+                this.CenterToScreen();
                 DiagnosticsGroupBox.Visible = true;
                 ExpandButton.Text = "<< Collapse";
             }
             else if (ExpandButton.Text == "<< Collapse")
             {
-                DiagnosticsGroupBox.Visible = false;
                 this.Size = new Size(405, 650);
+                this.CenterToScreen();
+                DiagnosticsGroupBox.Visible = false;
                 ExpandButton.Text = "Expand >>";
             }
         }
