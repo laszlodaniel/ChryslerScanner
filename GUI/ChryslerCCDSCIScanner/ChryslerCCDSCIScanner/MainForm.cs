@@ -65,6 +65,7 @@ namespace ChryslerCCDSCIScanner
         public byte PacketLengthHB = 0;
         public byte PacketLengthLB = 0;
         public byte PacketBytesChecksum = 0;
+        public bool DiagnosticsListBoxUpdate = true;
 
         public List<string> DiagnosticsTable = new List<string>();
         public List<string> OldDiagnosticsTable = new List<string>();
@@ -232,9 +233,9 @@ namespace ChryslerCCDSCIScanner
             TimeoutTimer.Enabled = false;
 
             // Setup diagnostics table update timer
-            //DiagnosticsTableUpdateTimer.Elapsed += new ElapsedEventHandler(UpdateDiagnosticsListBox);
-            //DiagnosticsTableUpdateTimer.Interval = 50; // ms, table refresh rate
-            //DiagnosticsTableUpdateTimer.Enabled = true;
+            DiagnosticsTableUpdateTimer.Elapsed += new ElapsedEventHandler(UpdateHandler);
+            DiagnosticsTableUpdateTimer.Interval = 50; // ms, table refresh rate
+            DiagnosticsTableUpdateTimer.Enabled = true;
 
             // Fill the table with the default lines
             DiagnosticsTable.Add("┌─────────────────────────┐                                                                                               ");
@@ -320,13 +321,18 @@ namespace ChryslerCCDSCIScanner
         {
             Application.DoEvents();
             if (ScannerFound) ConnectButton.PerformClick(); // disconnect first
-            if (Serial.IsOpen) Serial.Close();
-            
+            Process.GetCurrentProcess().Kill();
         }
 
         private void TimeoutHandler(object source, ElapsedEventArgs e)
         {
             Timeout = true;
+        }
+
+        private void UpdateHandler(object source, ElapsedEventArgs e)
+        {
+            DiagnosticsTableUpdateTimer.Enabled = false;
+            DiagnosticsListBoxUpdate = true;
         }
 
         private void UpdateCOMPortList()
@@ -556,9 +562,7 @@ namespace ChryslerCCDSCIScanner
 
                             int location = 0;
                             int secondary_location = 0;
-                            byte IDByte = 0;
-                            byte SecondaryIDByte = 0;
-
+                            
                             switch (Source)
                             {
                                 case 0x00: // USB - message is coming from the scanner directly, no need to analyze target, it has to be an external computer
@@ -1221,7 +1225,6 @@ namespace ChryslerCCDSCIScanner
                                     }
                                     DiagnosticsTable.RemoveAt(SCIBusTCMHeaderStart);
                                     DiagnosticsTable.Insert(SCIBusTCMHeaderStart, SCIBusTCMHeaderText);
-
                                     UpdateDiagnosticsListBox();
                                     break;
                                 case 0x01: // CCD-bus
@@ -1232,6 +1235,7 @@ namespace ChryslerCCDSCIScanner
                                     string ccdunittoinsert = String.Empty;
                                     byte[] ccdtimestamp = new byte[4];
                                     byte[] ccdmessage = new byte[Payload.Length - 4];
+                                    byte CCDIDByte = 0;
                                     Array.Copy(Payload, 0, ccdtimestamp, 0, 4); // copy timestamp only
                                     Array.Copy(Payload, 4, ccdmessage, 0, Payload.Length - 4); // copy message only
 
@@ -1249,9 +1253,9 @@ namespace ChryslerCCDSCIScanner
                                     ccdlistitem.Insert(2, ccdpackettoinsert); // insert message where whitespaces were
 
                                     // First byte in a CCD-bus message is the ID-byte
-                                    IDByte = ccdmessage[0];
+                                    CCDIDByte = ccdmessage[0];
 
-                                    switch (IDByte)
+                                    switch (CCDIDByte)
                                     {
                                         case 0x0C: // battery voltage, oil pressure, coolant temperature, intake temperature
                                             if (ccdmessage.Length > 5)
@@ -1670,19 +1674,19 @@ namespace ChryslerCCDSCIScanner
                                     }
 
                                     // Now decide where to put this message in the table itself
-                                    if (!CCDBusIDList.Contains(IDByte)) // if this ID-byte is not on the list insert it into a new line
+                                    if (!CCDBusIDList.Contains(CCDIDByte)) // if this ID-byte is not on the list insert it into a new line
                                     {
                                         CCDBusIDByteNum++;
 
                                         // Handle B2 and F2 messages elsewhere
-                                        if ((IDByte != 0xB2) && (IDByte != 0xF2)) // if it's not diagnostic request or response message
+                                        if ((CCDIDByte != 0xB2) && (CCDIDByte != 0xF2)) // if it's not diagnostic request or response message
                                         {
-                                            CCDBusIDList.Add(IDByte); // add ID-byte to the list
+                                            CCDBusIDList.Add(CCDIDByte); // add ID-byte to the list
                                             if (IDSorting)
                                             {
                                                 CCDBusIDList.Sort(); // sort ID-bytes by ascending order
                                             }
-                                            location = CCDBusIDList.FindIndex(x => x == IDByte); // now see where this new ID-byte ends up after sorting
+                                            location = CCDBusIDList.FindIndex(x => x == CCDIDByte); // now see where this new ID-byte ends up after sorting
 
                                             if (CCDBusIDList.Count == 1)
                                             {
@@ -1706,15 +1710,15 @@ namespace ChryslerCCDSCIScanner
                                     }
                                     else
                                     {
-                                        if ((IDByte != 0xB2) && (IDByte != 0xF2)) // if it's not diagnostic request or response message
+                                        if ((CCDIDByte != 0xB2) && (CCDIDByte != 0xF2)) // if it's not diagnostic request or response message
                                         {
-                                            location = CCDBusIDList.FindIndex(x => x == IDByte);
+                                            location = CCDBusIDList.FindIndex(x => x == CCDIDByte);
                                             DiagnosticsTable.RemoveAt(CCDBusListStart + location);
                                             DiagnosticsTable.Insert(CCDBusListStart + location, ccdlistitem.ToString());
                                         }
                                     }
 
-                                    if (IDByte == 0xB2)
+                                    if (CCDIDByte == 0xB2)
                                     {
                                         if (!CCDBusB2MsgPresent)
                                         {
@@ -1736,7 +1740,7 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         File.AppendAllText(CCDB2F2LogFilename, Util.ByteToHexString(ccdmessage, 0, ccdmessage.Length) + Environment.NewLine); // save B2-messages separately
                                     }
-                                    else if (IDByte == 0xF2)
+                                    else if (CCDIDByte == 0xF2)
                                     {
                                         if (!CCDBusF2MsgPresent)
                                         {
@@ -1767,9 +1771,7 @@ namespace ChryslerCCDSCIScanner
                                     CCDBusHeaderText = Util.Truncate(CCDBusHeaderText, EmptyLine.Length); // Replacing strings causes the base string to grow so cut it back to stay in line
                                     DiagnosticsTable.RemoveAt(CCDBusHeaderStart);
                                     DiagnosticsTable.Insert(CCDBusHeaderStart, CCDBusHeaderText);
-
                                     UpdateDiagnosticsListBox();
-
                                     Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message", Packet);
 
                                     if (IncludeTimestampInLogFilesToolStripMenuItem.Checked)
@@ -1790,6 +1792,8 @@ namespace ChryslerCCDSCIScanner
                                     string scipcmunittoinsert = String.Empty;
                                     byte[] pcmtimestamp = new byte[4];
                                     byte[] pcmmessage = new byte[Payload.Length - 4];
+                                    byte PCMIDByte = 0;
+                                    byte PCMSecondaryIDByte = 0;
                                     Array.Copy(Payload, 0, pcmtimestamp, 0, 4); // copy timestamp only
                                     Array.Copy(Payload, 4, pcmmessage, 0, Payload.Length - 4); // copy message only
 
@@ -1810,10 +1814,10 @@ namespace ChryslerCCDSCIScanner
                                         scipcmlistitem.Remove(2, scipcmmsgtoinsert.Length); // remove as much whitespaces as the length of the message
                                         scipcmlistitem.Insert(2, scipcmmsgtoinsert); // insert message where whitespaces were
 
-                                        IDByte = pcmmessage[0]; // first byte of the message
+                                        PCMIDByte = pcmmessage[0]; // first byte of the message
 
                                         // Insert description in the line
-                                        switch (IDByte)
+                                        switch (PCMIDByte)
                                         {
                                             case 0x10:
                                                 scipcmdescriptiontoinsert = "ENGINE FAULT CODE LIST";
@@ -2903,15 +2907,15 @@ namespace ChryslerCCDSCIScanner
                                         }
 
                                         // Now decide where to put this message in reality
-                                        if (!SCIBusPCMIDList.Contains(IDByte)) // if this ID-byte is not on the list
+                                        if (!SCIBusPCMIDList.Contains(PCMIDByte)) // if this ID-byte is not on the list
                                         {
                                             SCIBusPCMIDByteNum++;
-                                            SCIBusPCMIDList.Add(IDByte); // add ID-byte to the list
+                                            SCIBusPCMIDList.Add(PCMIDByte); // add ID-byte to the list
                                             if (IDSorting)
                                             {
                                                 SCIBusPCMIDList.Sort(); // sort ID-bytes by ascending order
                                             }
-                                            location = SCIBusPCMIDList.FindIndex(x => x == IDByte); // now see where this new ID-byte ends up after sorting
+                                            location = SCIBusPCMIDList.FindIndex(x => x == PCMIDByte); // now see where this new ID-byte ends up after sorting
                                             if (SCIBusPCMIDList.Count == 1)
                                             {
                                                 DiagnosticsTable.RemoveAt(SCIBusPCMListStart);
@@ -2928,7 +2932,7 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         else // if this ID-byte is already displayed
                                         {
-                                            location = SCIBusPCMIDList.FindIndex(x => x == IDByte);
+                                            location = SCIBusPCMIDList.FindIndex(x => x == PCMIDByte);
                                             DiagnosticsTable.RemoveAt(SCIBusPCMListStart + location);
                                             DiagnosticsTable.Insert(SCIBusPCMListStart + location, scipcmlistitem.ToString());
                                         }
@@ -2967,7 +2971,8 @@ namespace ChryslerCCDSCIScanner
 
                                         if (pcmmessagemix.Length > 1)
                                         {
-                                            SecondaryIDByte = pcmmessagemix[1]; // Secondary ID byte applies to high speed mode only, it's actually the first RAM address that appears in the message
+                                            PCMIDByte = pcmmessagemix[0]; // first byte of the message
+                                            PCMSecondaryIDByte = pcmmessagemix[1]; // Secondary ID byte applies to high speed mode only, it's actually the first RAM address that appears in the message
                                         }
 
                                         if (pcmmessagemix.Length < 9) // max 8 byte fits the message column
@@ -2983,10 +2988,10 @@ namespace ChryslerCCDSCIScanner
                                         scipcmlistitem.Insert(2, scipcmmsgtoinsert); // insert message where whitespaces were
 
                                         // Insert description in the line
-                                        switch (IDByte) // RAM table select byte
+                                        switch (PCMIDByte) // RAM table select byte
                                         {
                                             case 0xF4:
-                                                switch (SecondaryIDByte) // the second byte acts now as a secondary ID-byte (RAM address)
+                                                switch (PCMSecondaryIDByte) // the second byte acts now as a secondary ID-byte (RAM address)
                                                 {
                                                     case 0x0A:
                                                         scipcmdescriptiontoinsert = "ENGINE SPEED";
@@ -3049,16 +3054,16 @@ namespace ChryslerCCDSCIScanner
                                         }
 
                                         // Now decide where to put this message in reality
-                                        if (!SCIBusPCMIDList.Contains(IDByte)) // if this ID-byte is not on the list
+                                        if (!SCIBusPCMIDList.Contains(PCMIDByte)) // if this ID-byte is not on the list
                                         {
                                             SCIBusPCMIDByteNum++;
-                                            SCIBusPCMIDList.Add(IDByte); // add ID-byte to the list
+                                            SCIBusPCMIDList.Add(PCMIDByte); // add ID-byte to the list
                                             if (IDSorting)
                                             {
                                                 SCIBusPCMIDList.Sort(); // sort ID-bytes by ascending order
                                             }
 
-                                            location = SCIBusPCMIDList.FindIndex(x => x == IDByte); // now see where this new ID-byte ends up after sorting
+                                            location = SCIBusPCMIDList.FindIndex(x => x == PCMIDByte); // now see where this new ID-byte ends up after sorting
 
                                             if (SCIBusPCMIDList.Count == 1)
                                             {
@@ -3076,7 +3081,7 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         else // if this ID-byte is already displayed
                                         {
-                                            location = SCIBusPCMIDList.FindIndex(x => x == IDByte);
+                                            location = SCIBusPCMIDList.FindIndex(x => x == PCMIDByte);
                                             DiagnosticsTable.RemoveAt(SCIBusPCMListStart + location);
                                             DiagnosticsTable.Insert(SCIBusPCMListStart + location, scipcmlistitem.ToString());
                                         }
@@ -3100,9 +3105,7 @@ namespace ChryslerCCDSCIScanner
                                     SCIBusPCMHeaderText = Util.Truncate(SCIBusPCMHeaderText, EmptyLine.Length); // Replacing strings causes the base string to grow so cut it back to stay in line
                                     DiagnosticsTable.RemoveAt(SCIBusPCMHeaderStart);
                                     DiagnosticsTable.Insert(SCIBusPCMHeaderStart, SCIBusPCMHeaderText);
-
                                     UpdateDiagnosticsListBox();
-
                                     Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus message (PCM)", Packet);
 
                                     if (MemoryReadFinished)
@@ -3134,12 +3137,13 @@ namespace ChryslerCCDSCIScanner
                                     }
                                     break;
                                 case 0x03: // SCI-bus (TCM)
-                                    IDByte = Payload[4];
                                     SCIBusTCMEnabled = true;
                                     StringBuilder scitcmlistitem = new StringBuilder(EmptyLine); // start with a pre-defined empty line
                                     string scitcmmsgtoinsert = String.Empty;
                                     byte[] tcmtimestamp = new byte[4];
                                     byte[] tcmmessage = new byte[Payload.Length - 4];
+                                    byte TCMIDByte = 0;
+                                    byte TCMSecondaryIDByte = 0;
                                     Array.Copy(Payload, 0, tcmtimestamp, 0, 4); // copy timestamp only
                                     Array.Copy(Payload, 4, tcmmessage, 0, Payload.Length - 4); // copy message only
 
@@ -3157,19 +3161,21 @@ namespace ChryslerCCDSCIScanner
                                             scitcmmsgtoinsert = Util.ByteToHexString(tcmmessage, 0, 7) + " .. ";
                                         }
 
+                                        TCMIDByte = tcmmessage[0];
+
                                         scitcmlistitem.Remove(2, scitcmmsgtoinsert.Length); // remove as much whitespaces as the length of the message
                                         scitcmlistitem.Insert(2, scitcmmsgtoinsert); // insert message where whitespaces were
 
                                         // Now decide where to put this message in reality
-                                        if (!SCIBusTCMIDList.Contains(IDByte)) // if this ID-byte is not on the list
+                                        if (!SCIBusTCMIDList.Contains(TCMIDByte)) // if this ID-byte is not on the list
                                         {
                                             SCIBusTCMIDByteNum++;
-                                            SCIBusTCMIDList.Add(IDByte); // add ID-byte to the list
+                                            SCIBusTCMIDList.Add(TCMIDByte); // add ID-byte to the list
                                             if (IDSorting)
                                             {
                                                 SCIBusTCMIDList.Sort(); // sort ID-bytes by ascending order
                                             }
-                                            location = SCIBusTCMIDList.FindIndex(x => x == IDByte); // now see where this new ID-byte ends up after sorting
+                                            location = SCIBusTCMIDList.FindIndex(x => x == TCMIDByte); // now see where this new ID-byte ends up after sorting
                                             if (SCIBusTCMIDList.Count == 1)
                                             {
                                                 DiagnosticsTable.RemoveAt(SCIBusTCMListStart);
@@ -3183,7 +3189,7 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         else // if this ID-byte is already displayed
                                         {
-                                            location = SCIBusTCMIDList.FindIndex(x => x == IDByte);
+                                            location = SCIBusTCMIDList.FindIndex(x => x == TCMIDByte);
                                             DiagnosticsTable.RemoveAt(SCIBusTCMListStart + location);
                                             DiagnosticsTable.Insert(SCIBusTCMListStart + location, scitcmlistitem.ToString());
                                         }
@@ -3221,6 +3227,12 @@ namespace ChryslerCCDSCIScanner
 
                                         tcmmessagemix = temp.ToArray();
 
+                                        if (tcmmessagemix.Length > 1)
+                                        {
+                                            TCMIDByte = tcmmessagemix[0]; // first byte of the message
+                                            TCMSecondaryIDByte = tcmmessagemix[1]; // Secondary ID byte applies to high speed mode only, it's actually the first RAM address that appears in the message
+                                        }
+
                                         if (tcmmessagemix.Length < 9) // max 8 byte fits the message column
                                         {
                                             scitcmmsgtoinsert = Util.ByteToHexString(tcmmessagemix, 0, tcmmessagemix.Length) + " ";
@@ -3234,15 +3246,15 @@ namespace ChryslerCCDSCIScanner
                                         scitcmlistitem.Insert(2, scitcmmsgtoinsert); // insert message where whitespaces were
 
                                         // Now decide where to put this message in reality
-                                        if (!SCIBusTCMIDList.Contains(IDByte)) // if this ID-byte is not on the list
+                                        if (!SCIBusTCMIDList.Contains(TCMIDByte)) // if this ID-byte is not on the list
                                         {
                                             SCIBusTCMIDByteNum++;
-                                            SCIBusTCMIDList.Add(IDByte); // add ID-byte to the list
+                                            SCIBusTCMIDList.Add(TCMIDByte); // add ID-byte to the list
                                             if (IDSorting)
                                             {
                                                 SCIBusTCMIDList.Sort(); // sort ID-bytes by ascending order
                                             }
-                                            location = SCIBusTCMIDList.FindIndex(x => x == IDByte); // now see where this new ID-byte ends up after sorting
+                                            location = SCIBusTCMIDList.FindIndex(x => x == TCMIDByte); // now see where this new ID-byte ends up after sorting
                                             if (SCIBusTCMIDList.Count == 1)
                                             {
                                                 DiagnosticsTable.RemoveAt(SCIBusTCMListStart);
@@ -3256,7 +3268,7 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         else // if this ID-byte is already displayed
                                         {
-                                            location = SCIBusTCMIDList.FindIndex(x => x == IDByte);
+                                            location = SCIBusTCMIDList.FindIndex(x => x == TCMIDByte);
                                             DiagnosticsTable.RemoveAt(SCIBusTCMListStart + location);
                                             DiagnosticsTable.Insert(SCIBusTCMListStart + location, scitcmlistitem.ToString());
                                         }
@@ -3320,11 +3332,35 @@ namespace ChryslerCCDSCIScanner
 
         private void UpdateDiagnosticsListBox()
         {
-            if (DiagnosticsListBox.InvokeRequired)
+            if (DiagnosticsListBoxUpdate) // if the update interval has passed
             {
-                DiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
+                if (DiagnosticsListBox.InvokeRequired)
                 {
-                    //DiagnosticsListBox.SuspendLayout();
+                    DiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
+                    {
+                        DiagnosticsListBox.SuspendLayout();
+                        DiagnosticsListBox.BeginUpdate();
+                        int savedVpos = GetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT);
+                        DiagnosticsListBox.Items.Clear();
+
+                        try
+                        {
+                            DiagnosticsListBox.Items.AddRange(DiagnosticsTable.ToArray());
+                        }
+                        catch
+                        {
+                            ResetViewButton.PerformClick();
+                        }
+
+                        SetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT, savedVpos, true);
+                        PostMessageA((IntPtr)DiagnosticsListBox.Handle, WM_VSCROLL, SB_THUMBPOSITION + 0x10000 * savedVpos, 0);
+                        DiagnosticsListBox.EndUpdate();
+                        DiagnosticsListBox.ResumeLayout();
+                    });
+                }
+                else
+                {
+                    DiagnosticsListBox.SuspendLayout();
                     DiagnosticsListBox.BeginUpdate();
                     int savedVpos = GetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT);
                     DiagnosticsListBox.Items.Clear();
@@ -3338,36 +3374,14 @@ namespace ChryslerCCDSCIScanner
                         ResetViewButton.PerformClick();
                     }
 
-                    DiagnosticsListBox.Update();
-                    DiagnosticsListBox.Refresh();
                     SetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT, savedVpos, true);
                     PostMessageA((IntPtr)DiagnosticsListBox.Handle, WM_VSCROLL, SB_THUMBPOSITION + 0x10000 * savedVpos, 0);
                     DiagnosticsListBox.EndUpdate();
-                    //DiagnosticsListBox.ResumeLayout();
-                });
-            }
-            else
-            {
-                //DiagnosticsListBox.SuspendLayout();
-                DiagnosticsListBox.BeginUpdate();
-                int savedVpos = GetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT);
-                DiagnosticsListBox.Items.Clear();
-
-                try
-                {
-                    DiagnosticsListBox.Items.AddRange(DiagnosticsTable.ToArray());
-                }
-                catch
-                {
-                    ResetViewButton.PerformClick();
+                    DiagnosticsListBox.ResumeLayout();
                 }
 
-                DiagnosticsListBox.Update();
-                DiagnosticsListBox.Refresh();
-                SetScrollPos((IntPtr)DiagnosticsListBox.Handle, SB_VERT, savedVpos, true);
-                PostMessageA((IntPtr)DiagnosticsListBox.Handle, WM_VSCROLL, SB_THUMBPOSITION + 0x10000 * savedVpos, 0);
-                DiagnosticsListBox.EndUpdate();
-                //DiagnosticsListBox.ResumeLayout();
+                DiagnosticsTableUpdateTimer.Enabled = true; // enable timer again
+                DiagnosticsListBoxUpdate = false; // reset flag
             }
         }
 
@@ -5492,6 +5506,18 @@ namespace ChryslerCCDSCIScanner
         private void RefreshButton_Click(object sender, EventArgs e)
         {
             UpdateCOMPortList();
+        }
+
+        private void DiagnosticsTableUpdateIntervalApplyButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                DiagnosticsTableUpdateTimer.Interval = int.Parse(DiagnosticsTableUpdateIntervalTextBox.Text);
+            }
+            catch
+            {
+
+            }
         }
     }
 }

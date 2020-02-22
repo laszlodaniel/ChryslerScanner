@@ -56,6 +56,10 @@
             this.USBClearAllButton = new System.Windows.Forms.Button();
             this.USBClearButton = new System.Windows.Forms.Button();
             this.DiagnosticsGroupBox = new System.Windows.Forms.GroupBox();
+            this.DiagnosticsTableUpdateIntervalApplyButton = new System.Windows.Forms.Button();
+            this.DiagnosticsTableUpdateIntervalLabel02 = new System.Windows.Forms.Label();
+            this.DiagnosticsTableUpdateIntervalLabel01 = new System.Windows.Forms.Label();
+            this.DiagnosticsTableUpdateIntervalTextBox = new System.Windows.Forms.TextBox();
             this.PercentageLabel = new System.Windows.Forms.Label();
             this.RemainingTimeLabel = new System.Windows.Forms.Label();
             this.ProgressBar1 = new System.Windows.Forms.ProgressBar();
@@ -406,6 +410,10 @@
             // 
             // DiagnosticsGroupBox
             // 
+            this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsTableUpdateIntervalApplyButton);
+            this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsTableUpdateIntervalLabel02);
+            this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsTableUpdateIntervalLabel01);
+            this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsTableUpdateIntervalTextBox);
             this.DiagnosticsGroupBox.Controls.Add(this.PercentageLabel);
             this.DiagnosticsGroupBox.Controls.Add(this.RemainingTimeLabel);
             this.DiagnosticsGroupBox.Controls.Add(this.ProgressBar1);
@@ -420,6 +428,42 @@
             this.DiagnosticsGroupBox.TabIndex = 3;
             this.DiagnosticsGroupBox.TabStop = false;
             this.DiagnosticsGroupBox.Text = "Diagnostics";
+            // 
+            // DiagnosticsTableUpdateIntervalApplyButton
+            // 
+            this.DiagnosticsTableUpdateIntervalApplyButton.Location = new System.Drawing.Point(842, 489);
+            this.DiagnosticsTableUpdateIntervalApplyButton.Name = "DiagnosticsTableUpdateIntervalApplyButton";
+            this.DiagnosticsTableUpdateIntervalApplyButton.Size = new System.Drawing.Size(45, 25);
+            this.DiagnosticsTableUpdateIntervalApplyButton.TabIndex = 21;
+            this.DiagnosticsTableUpdateIntervalApplyButton.Text = "Apply";
+            this.DiagnosticsTableUpdateIntervalApplyButton.UseVisualStyleBackColor = true;
+            this.DiagnosticsTableUpdateIntervalApplyButton.Click += new System.EventHandler(this.DiagnosticsTableUpdateIntervalApplyButton_Click);
+            // 
+            // DiagnosticsTableUpdateIntervalLabel02
+            // 
+            this.DiagnosticsTableUpdateIntervalLabel02.AutoSize = true;
+            this.DiagnosticsTableUpdateIntervalLabel02.Location = new System.Drawing.Point(816, 494);
+            this.DiagnosticsTableUpdateIntervalLabel02.Name = "DiagnosticsTableUpdateIntervalLabel02";
+            this.DiagnosticsTableUpdateIntervalLabel02.Size = new System.Drawing.Size(20, 13);
+            this.DiagnosticsTableUpdateIntervalLabel02.TabIndex = 20;
+            this.DiagnosticsTableUpdateIntervalLabel02.Text = "ms";
+            // 
+            // DiagnosticsTableUpdateIntervalLabel01
+            // 
+            this.DiagnosticsTableUpdateIntervalLabel01.AutoSize = true;
+            this.DiagnosticsTableUpdateIntervalLabel01.Location = new System.Drawing.Point(693, 494);
+            this.DiagnosticsTableUpdateIntervalLabel01.Name = "DiagnosticsTableUpdateIntervalLabel01";
+            this.DiagnosticsTableUpdateIntervalLabel01.Size = new System.Drawing.Size(82, 13);
+            this.DiagnosticsTableUpdateIntervalLabel01.TabIndex = 19;
+            this.DiagnosticsTableUpdateIntervalLabel01.Text = "Update interval:";
+            // 
+            // DiagnosticsTableUpdateIntervalTextBox
+            // 
+            this.DiagnosticsTableUpdateIntervalTextBox.Location = new System.Drawing.Point(776, 491);
+            this.DiagnosticsTableUpdateIntervalTextBox.Name = "DiagnosticsTableUpdateIntervalTextBox";
+            this.DiagnosticsTableUpdateIntervalTextBox.Size = new System.Drawing.Size(36, 20);
+            this.DiagnosticsTableUpdateIntervalTextBox.TabIndex = 18;
+            this.DiagnosticsTableUpdateIntervalTextBox.Text = "50";
             // 
             // PercentageLabel
             // 
@@ -719,6 +763,10 @@
         private System.Windows.Forms.ToolStripMenuItem ImperialToolStripMenuItem;
         private System.Windows.Forms.Button RefreshButton;
         private System.Windows.Forms.ComboBox COMPortsComboBox;
+        private System.Windows.Forms.Label DiagnosticsTableUpdateIntervalLabel02;
+        private System.Windows.Forms.Label DiagnosticsTableUpdateIntervalLabel01;
+        private System.Windows.Forms.TextBox DiagnosticsTableUpdateIntervalTextBox;
+        private System.Windows.Forms.Button DiagnosticsTableUpdateIntervalApplyButton;
     }
 }
 
