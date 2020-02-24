@@ -136,6 +136,7 @@ namespace ChryslerCCDSCIScanner
         public double MetricSlope = 0;
         public double MetricOffset = 0;
 
+        public string SelectedPort = String.Empty;
         public static string UpdatePort = String.Empty;
         public static UInt64 OldUNIXTime = 0;
         public static UInt64 NewUNIXTime = 0;
@@ -345,16 +346,39 @@ namespace ChryslerCCDSCIScanner
                 COMPortsComboBox.Items.AddRange(ports);
                 SerialPortAvailable = true;
                 ConnectButton.Enabled = true;
+
+                if (SelectedPort == String.Empty) // if no port has been selected
+                {
+                    COMPortsComboBox.SelectedIndex = 0; // select first available port
+                    SelectedPort = COMPortsComboBox.Text;
+                }
+                else
+                {
+                    try
+                    {
+                        COMPortsComboBox.SelectedIndex = COMPortsComboBox.Items.IndexOf(SelectedPort);
+                    }
+                    catch
+                    {
+                        COMPortsComboBox.SelectedIndex = 0;
+                    }
+                }
             }
             else
             {
                 COMPortsComboBox.Items.Add("N/A");
                 SerialPortAvailable = false;
                 ConnectButton.Enabled = false;
+                COMPortsComboBox.SelectedIndex = 0; // select "N/A"
+                SelectedPort = String.Empty;
                 Util.UpdateTextBox(USBTextBox, "[INFO] No scanner available", null);
             }
 
-            COMPortsComboBox.SelectedIndex = 0; // select first available item
+        }
+
+        private void COMPortsComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            SelectedPort = COMPortsComboBox.Text;
         }
 
         private void ConnectButton_Click(object sender, EventArgs e)
@@ -4054,7 +4078,7 @@ namespace ChryslerCCDSCIScanner
                     CommandComboBox.Items.Clear();
                     CommandComboBox.Items.AddRange(new string[] { "Send message" });
                     ModeComboBox.Items.Clear();
-                    ModeComboBox.Items.AddRange(new string[] { "Stop message transmission", "Single message", "Repeated message(s)" });
+                    ModeComboBox.Items.AddRange(new string[] { "Stop message transmission", "Single message", "Repeated message(s)", "Repeated set of messages" });
                     CommandComboBox.SelectedIndex = 0; // Send message
                     ModeComboBox.SelectedIndex = 1; // Single message
                     Param1Label1.Visible = true;
@@ -4079,7 +4103,7 @@ namespace ChryslerCCDSCIScanner
                     CommandComboBox.Items.Clear();
                     CommandComboBox.Items.AddRange(new string[] { "Send message" });
                     ModeComboBox.Items.Clear();
-                    ModeComboBox.Items.AddRange(new string[] { "Stop message transmission", "Single message", "Repeated message(s)" });
+                    ModeComboBox.Items.AddRange(new string[] { "Stop message transmission", "Single message", "Repeated message(s)", "Repeated set of messages" });
                     CommandComboBox.SelectedIndex = 0; // Send message
                     ModeComboBox.SelectedIndex = 1; // Single message
                     Param1Label1.Visible = true;
@@ -4104,7 +4128,7 @@ namespace ChryslerCCDSCIScanner
                     CommandComboBox.Items.Clear();
                     CommandComboBox.Items.AddRange(new string[] { "Send message" });
                     ModeComboBox.Items.Clear();
-                    ModeComboBox.Items.AddRange(new string[] { "Stop message transmission", "Single message", "Repeated message(s)" });
+                    ModeComboBox.Items.AddRange(new string[] { "Stop message transmission", "Single message", "Repeated message(s)", "Repeated set of messages" });
                     CommandComboBox.SelectedIndex = 0; // Send message
                     ModeComboBox.SelectedIndex = 1; // Single message
                     Param1Label1.Visible = true;
@@ -4695,6 +4719,28 @@ namespace ChryslerCCDSCIScanner
                                                      + "Iteration increment and repeating interval is adjustable" + Environment.NewLine
                                                      + "in settings (default increment = 1, interval = 100 ms).";
                                     break;
+                                case 3: // Repeated set of messages
+                                    Param1Label1.Visible = true;
+                                    Param1Label1.Text = "List:";
+                                    Param1Label2.Visible = false;
+                                    Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Enabled = true;
+                                    Param1ComboBox.Font = new Font("Courier New", 9F);
+                                    Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param1ComboBox.Items.Clear();
+                                    Param2Label1.Visible = false;
+                                    Param2Label2.Visible = false;
+                                    Param2ComboBox.Visible = false;
+                                    Param2ComboBox.Enabled = false;
+                                    Param3Label1.Visible = false;
+                                    Param3Label2.Visible = false;
+                                    Param3ComboBox.Visible = false;
+                                    Param3ComboBox.Enabled = false;
+                                    HintTextBox.Text = Environment.NewLine
+                                                     + "Send a set of messages repeatedly to the CCD-bus." + Environment.NewLine
+                                                     + "Separate messages by colons or semicolons." + Environment.NewLine
+                                                     + "Repeating interval is adjustable in settings.";
+                                    break;
                                 default:
                                     break;
                             }
@@ -4779,6 +4825,28 @@ namespace ChryslerCCDSCIScanner
                                                      + "Send a message repeatedly to the SCI-bus (PCM)." + Environment.NewLine
                                                      + "Iteration increment is adjustable in settings (default = 1).";
                                     break;
+                                case 3: // Repeated set of messages
+                                    Param1Label1.Visible = true;
+                                    Param1Label1.Text = "List:";
+                                    Param1Label2.Visible = false;
+                                    Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Enabled = true;
+                                    Param1ComboBox.Font = new Font("Courier New", 9F);
+                                    Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param1ComboBox.Items.Clear();
+                                    Param2Label1.Visible = false;
+                                    Param2Label2.Visible = false;
+                                    Param2ComboBox.Visible = false;
+                                    Param2ComboBox.Enabled = false;
+                                    Param3Label1.Visible = false;
+                                    Param3Label2.Visible = false;
+                                    Param3ComboBox.Visible = false;
+                                    Param3ComboBox.Enabled = false;
+                                    HintTextBox.Text = Environment.NewLine
+                                                     + "Send a set of messages repeatedly to the SCI-bus (PCM)." + Environment.NewLine
+                                                     + "Separate messages by colons or semicolons." + Environment.NewLine
+                                                     + "Repeating interval is adjustable in settings.";
+                                    break;
                                 default:
                                     break;
                             }
@@ -4862,6 +4930,28 @@ namespace ChryslerCCDSCIScanner
                                                      + Environment.NewLine
                                                      + "Send a message repeatedly to the SCI-bus (TCM)." + Environment.NewLine
                                                      + "Iteration increment is adjustable in settings (default = 1).";
+                                    break;
+                                case 3: // Repeated set of messages
+                                    Param1Label1.Visible = true;
+                                    Param1Label1.Text = "List:";
+                                    Param1Label2.Visible = false;
+                                    Param1ComboBox.Visible = true;
+                                    Param1ComboBox.Enabled = true;
+                                    Param1ComboBox.Font = new Font("Courier New", 9F);
+                                    Param1ComboBox.DropDownStyle = ComboBoxStyle.DropDown;
+                                    Param1ComboBox.Items.Clear();
+                                    Param2Label1.Visible = false;
+                                    Param2Label2.Visible = false;
+                                    Param2ComboBox.Visible = false;
+                                    Param2ComboBox.Enabled = false;
+                                    Param3Label1.Visible = false;
+                                    Param3Label2.Visible = false;
+                                    Param3ComboBox.Visible = false;
+                                    Param3ComboBox.Enabled = false;
+                                    HintTextBox.Text = Environment.NewLine
+                                                     + "Send a set of messages repeatedly to the SCI-bus (TCM)." + Environment.NewLine
+                                                     + "Separate messages by colons or semicolons." + Environment.NewLine
+                                                     + "Repeating interval is adjustable in settings.";
                                     break;
                                 default:
                                     break;
