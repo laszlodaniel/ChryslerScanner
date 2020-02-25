@@ -66,6 +66,7 @@ namespace ChryslerCCDSCIScanner
         public byte PacketLengthLB = 0;
         public byte PacketBytesChecksum = 0;
         public bool DiagnosticsListBoxUpdate = true;
+        public bool CCDBusLastB2Request = false;
 
         public List<string> DiagnosticsTable = new List<string>();
         public List<string> OldDiagnosticsTable = new List<string>();
@@ -79,6 +80,9 @@ namespace ChryslerCCDSCIScanner
         public List<byte> SCIBusTCMReqMsgList = new List<byte>(256);
         public List<byte> SCIBusTCMIDList = new List<byte>(256);
         public List<byte> SCIBusTCMSecondaryIDList = new List<byte>(256);
+        public List<byte[]> CCDBusRepeatedSetMessages = new List<byte[]>() { new byte[] { 0x01, 0xE4, 0x00, 0x00, 0xE4 } };
+        public List<byte[]> SCIBusPCMRepeatedSetMessages = new List<byte[]>() { new byte[] { 0x01, 0x14, 0x07 } };
+        public List<byte[]> SCIBusTCMRepeatedSetMessages = new List<byte[]>() { new byte[] { 0x01, 0x14, 0x07 } };
 
         public string EmptyLine =                   "│                         │                                                     │                         │              │";
         private string CCDBusStateLineNA =          "│ CCD-BUS MODULES         │ STATE: N/A                                                                                    ";
@@ -1140,6 +1144,18 @@ namespace ChryslerCCDSCIScanner
                                                         Util.UpdateTextBox(USBTextBox, "[RX->] Data received", Packet);
                                                     }
                                                     break;
+                                                case 0x04:
+                                                    if (Payload.Length > 0)
+                                                    {
+                                                        if (Payload[0] == 0x01) Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message set TX started", Packet);
+                                                        else if (Payload[0] == 0x02) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message set TX started", Packet);
+                                                        else if (Payload[0] == 0x03) Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message set TX started", Packet);
+                                                    }
+                                                    else
+                                                    {
+                                                        Util.UpdateTextBox(USBTextBox, "[RX->] Data received", Packet);
+                                                    }
+                                                    break;
                                                 default:
                                                     Util.UpdateTextBox(USBTextBox, "[RX->] Data received", Packet);
                                                     break;
@@ -1517,6 +1533,16 @@ namespace ChryslerCCDSCIScanner
                                                 ccddescriptiontoinsert = "DRB REQUEST";
                                                 ccdvaluetoinsert = String.Empty;
                                                 ccdunittoinsert = String.Empty;
+
+                                                if (RepeatIterate)
+                                                {
+                                                    File.AppendAllText(CCDEPROMTextFilename, Util.ByteToHexString(ccdmessage, 0, ccdmessage.Length) + Environment.NewLine); // save message to text file
+
+                                                    if (ccdmessage.SequenceEqual(CCDBusMessageToSendEnd)) // last request has been made
+                                                    {
+                                                        CCDBusLastB2Request = true;
+                                                    }
+                                                }
                                             }
                                             break;
                                         case 0xBE:
@@ -1663,6 +1689,17 @@ namespace ChryslerCCDSCIScanner
                                                 ccddescriptiontoinsert = "DRB RESPONSE";
                                                 ccdvaluetoinsert = String.Empty;
                                                 ccdunittoinsert = String.Empty;
+
+                                                if (RepeatIterate)
+                                                {
+                                                    File.AppendAllText(CCDEPROMTextFilename, Util.ByteToHexString(ccdmessage, 0, ccdmessage.Length) + Environment.NewLine); // save message to text file
+
+                                                    if (CCDBusLastB2Request)
+                                                    {
+                                                        CCDBusLastB2Request = false;
+                                                        ConvertTextToBinaryDump(CCDEPROMTextFilename);
+                                                    }
+                                                }
                                             }
                                             break;
                                         case 0xFE:
@@ -2424,18 +2461,18 @@ namespace ChryslerCCDSCIScanner
                                                             ConvertTextToBinaryDump(PCMEPROMTextFilename);
                                                         }
 
-                                                        ProgressBar1.BeginInvoke((MethodInvoker)delegate
-                                                        {
-                                                        //if (ProgressBar1.Value < ProgressBar1.Maximum) ProgressBar1.Value += 1;
-                                                        //else ProgressBar1.Value = 0;
-                                                    });
+                                                        //ProgressBar1.BeginInvoke((MethodInvoker)delegate
+                                                        //{
+                                                        //    if (ProgressBar1.Value < ProgressBar1.Maximum) ProgressBar1.Value += 1;
+                                                        //    else ProgressBar1.Value = 0;
+                                                        //});
 
                                                     }
                                                     else
                                                     {
-                                                        ProgressBar1.Value = 0;
-                                                        PercentageLabel.Text = "0.00%";
-                                                        RemainingTimeLabel.Text = "Remaining time: 00:00:00";
+                                                        //ProgressBar1.Value = 0;
+                                                        //PercentageLabel.Text = "0.00%";
+                                                        //RemainingTimeLabel.Text = "Remaining time: 00:00:00";
                                                     }
                                                 }
                                                 else
@@ -2479,18 +2516,18 @@ namespace ChryslerCCDSCIScanner
                                                             ConvertTextToBinaryDump(PCMEEPROMTextFilename);
                                                         }
 
-                                                        ProgressBar1.BeginInvoke((MethodInvoker)delegate
-                                                        {
-                                                        //if (ProgressBar1.Value < ProgressBar1.Maximum) ProgressBar1.Value += 1;
-                                                        //else ProgressBar1.Value = 0;
-                                                    });
+                                                        //ProgressBar1.BeginInvoke((MethodInvoker)delegate
+                                                        //{
+                                                        //    if (ProgressBar1.Value < ProgressBar1.Maximum) ProgressBar1.Value += 1;
+                                                        //    else ProgressBar1.Value = 0;
+                                                        //});
 
                                                     }
                                                     else
                                                     {
-                                                        ProgressBar1.Value = 0;
-                                                        PercentageLabel.Text = "0.00%";
-                                                        RemainingTimeLabel.Text = "Remaining time: 00:00:00";
+                                                        //ProgressBar1.Value = 0;
+                                                        //PercentageLabel.Text = "0.00%";
+                                                        //RemainingTimeLabel.Text = "Remaining time: 00:00:00";
                                                     }
                                                 }
                                                 else
@@ -3850,42 +3887,69 @@ namespace ChryslerCCDSCIScanner
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 case 2: // Repeated message
-                                    if (Param3ComboBox.SelectedIndex == 0) // no iteration
+                                    switch (Param3ComboBox.SelectedIndex)
                                     {
-                                        RepeatIterate = false;
+                                        case 0: // no iteration
+                                            RepeatIterate = false;
 
-                                        PacketLengthHB = (byte)((4 + CCDBusMessageToSendStart.Length) >> 8);
-                                        PacketLengthLB = (byte)((4 + CCDBusMessageToSendStart.Length) & 0xFF);
+                                            PacketLengthHB = (byte)((5 + CCDBusMessageToSendStart.Length) >> 8);
+                                            PacketLengthLB = (byte)((5 + CCDBusMessageToSendStart.Length) & 0xFF);
 
-                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x16, 0x03, 0x00, (byte)CCDBusMessageToSendStart.Length });
-                                        PacketBytes.AddRange(CCDBusMessageToSendStart);
+                                            PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x16, 0x03, 0x00, 0x01, (byte)CCDBusMessageToSendStart.Length });
+                                            PacketBytes.AddRange(CCDBusMessageToSendStart);
 
-                                        for (int i = 1; i < PacketBytes.Count; i++)
-                                        {
-                                            PacketBytesChecksum += PacketBytes[i];
-                                        }
+                                            for (int i = 1; i < PacketBytes.Count; i++)
+                                            {
+                                                PacketBytesChecksum += PacketBytes[i];
+                                            }
 
-                                        PacketBytes.Add(PacketBytesChecksum);
+                                            PacketBytes.Add(PacketBytesChecksum);
+                                            break;
+                                        case 1: // iteration, same message length supposed
+                                            RepeatIterate = true;
+
+                                            PacketLengthHB = (byte)((5 + CCDBusMessageToSendStart.Length + CCDBusMessageToSendEnd.Length) >> 8);
+                                            PacketLengthLB = (byte)((5 + CCDBusMessageToSendStart.Length + CCDBusMessageToSendEnd.Length) & 0xFF);
+
+                                            PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x16, 0x03, 0x01, 0x01, (byte)CCDBusMessageToSendStart.Length });
+                                            PacketBytes.AddRange(CCDBusMessageToSendStart);
+                                            PacketBytes.AddRange(CCDBusMessageToSendEnd);
+
+                                            for (int i = 1; i < PacketBytes.Count; i++)
+                                            {
+                                                PacketBytesChecksum += PacketBytes[i];
+                                            }
+
+                                            PacketBytes.Add(PacketBytesChecksum);
+                                            break;
                                     }
-                                    else if (Param3ComboBox.SelectedIndex == 1) // iteration, same message length supposed
+                                    USBSendComboBoxValue = PacketBytes.ToArray();
+                                    break;
+                                case 3: // Repeated set of messages
+                                    RepeatIterate = false;
+                                    byte MessageByteCount = 0;
+
+                                    foreach (byte[] b in CCDBusRepeatedSetMessages)
                                     {
-                                        RepeatIterate = true;
-                                        
-                                        PacketLengthHB = (byte)((4 + CCDBusMessageToSendStart.Length + CCDBusMessageToSendEnd.Length) >> 8);
-                                        PacketLengthLB = (byte)((4 + CCDBusMessageToSendStart.Length + CCDBusMessageToSendEnd.Length) & 0xFF);
-
-                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x16, 0x03, 0x01, (byte)CCDBusMessageToSendStart.Length });
-                                        PacketBytes.AddRange(CCDBusMessageToSendStart);
-                                        PacketBytes.AddRange(CCDBusMessageToSendEnd);
-
-                                        for (int i = 1; i < PacketBytes.Count; i++)
-                                        {
-                                            PacketBytesChecksum += PacketBytes[i];
-                                        }
-
-                                        PacketBytes.Add(PacketBytesChecksum);
+                                        MessageByteCount += (byte)b.Length;
                                     }
 
+                                    PacketLengthHB = (byte)((3 + MessageByteCount) >> 8);
+                                    PacketLengthLB = (byte)((3 + MessageByteCount) & 0xFF);
+
+                                    PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x16, 0x04, (byte)CCDBusRepeatedSetMessages.Count });
+
+                                    foreach (byte[] b in CCDBusRepeatedSetMessages)
+                                    {
+                                        PacketBytes.AddRange(b);
+                                    }
+
+                                    for (int i = 1; i < PacketBytes.Count; i++)
+                                    {
+                                        PacketBytesChecksum += PacketBytes[i];
+                                    }
+
+                                    PacketBytes.Add(PacketBytesChecksum);
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 default:
@@ -3924,42 +3988,71 @@ namespace ChryslerCCDSCIScanner
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 case 2: // Repeated message
-                                    if (Param3ComboBox.SelectedIndex == 0) // no iteration
+                                    switch (Param3ComboBox.SelectedIndex)
                                     {
-                                        RepeatIterate = false;
+                                        case 0: // no iteration
+                                            RepeatIterate = false;
 
-                                        PacketLengthHB = (byte)((4 + SCIBusPCMMessageToSendStart.Length) >> 8);
-                                        PacketLengthLB = (byte)((4 + SCIBusPCMMessageToSendStart.Length) & 0xFF);
+                                            PacketLengthHB = (byte)((5 + SCIBusPCMMessageToSendStart.Length) >> 8);
+                                            PacketLengthLB = (byte)((5 + SCIBusPCMMessageToSendStart.Length) & 0xFF);
 
-                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x26, 0x03, 0x00, (byte)SCIBusPCMMessageToSendStart.Length });
-                                        PacketBytes.AddRange(SCIBusPCMMessageToSendStart);
+                                            PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x26, 0x03, 0x00, 0x01, (byte)SCIBusPCMMessageToSendStart.Length });
+                                            PacketBytes.AddRange(SCIBusPCMMessageToSendStart);
 
-                                        for (int i = 1; i < PacketBytes.Count; i++)
-                                        {
-                                            PacketBytesChecksum += PacketBytes[i];
-                                        }
+                                            for (int i = 1; i < PacketBytes.Count; i++)
+                                            {
+                                                PacketBytesChecksum += PacketBytes[i];
+                                            }
 
-                                        PacketBytes.Add(PacketBytesChecksum);
+                                            PacketBytes.Add(PacketBytesChecksum);
+                                            break;
+                                        case 1: // iteration, same message length supposed
+                                            RepeatIterate = true;
+
+                                            PacketLengthHB = (byte)((5 + SCIBusPCMMessageToSendStart.Length + SCIBusPCMMessageToSendEnd.Length) >> 8);
+                                            PacketLengthLB = (byte)((5 + SCIBusPCMMessageToSendStart.Length + SCIBusPCMMessageToSendEnd.Length) & 0xFF);
+
+                                            PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x26, 0x03, 0x01, 0x01, (byte)SCIBusPCMMessageToSendStart.Length });
+                                            PacketBytes.AddRange(SCIBusPCMMessageToSendStart);
+                                            PacketBytes.AddRange(SCIBusPCMMessageToSendEnd);
+
+                                            for (int i = 1; i < PacketBytes.Count; i++)
+                                            {
+                                                PacketBytesChecksum += PacketBytes[i];
+                                            }
+
+                                            PacketBytes.Add(PacketBytesChecksum);
+                                            break;
+                                        default:
+                                            break;
                                     }
-                                    else if (Param3ComboBox.SelectedIndex == 1) // iteration, same message length supposed
+                                    USBSendComboBoxValue = PacketBytes.ToArray();
+                                    break;
+                                case 3: // Repeated set of messages
+                                    RepeatIterate = false;
+                                    byte MessageByteCount = 0;
+
+                                    foreach (byte[] b in SCIBusPCMRepeatedSetMessages)
                                     {
-                                        RepeatIterate = true;
-
-                                        PacketLengthHB = (byte)((4 + SCIBusPCMMessageToSendStart.Length + SCIBusPCMMessageToSendEnd.Length) >> 8);
-                                        PacketLengthLB = (byte)((4 + SCIBusPCMMessageToSendStart.Length + SCIBusPCMMessageToSendEnd.Length) & 0xFF);
-
-                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x26, 0x03, 0x01, (byte)SCIBusPCMMessageToSendStart.Length });
-                                        PacketBytes.AddRange(SCIBusPCMMessageToSendStart);
-                                        PacketBytes.AddRange(SCIBusPCMMessageToSendEnd);
-
-                                        for (int i = 1; i < PacketBytes.Count; i++)
-                                        {
-                                            PacketBytesChecksum += PacketBytes[i];
-                                        }
-
-                                        PacketBytes.Add(PacketBytesChecksum);
+                                        MessageByteCount += (byte)b.Length;
                                     }
 
+                                    PacketLengthHB = (byte)((3 + MessageByteCount) >> 8);
+                                    PacketLengthLB = (byte)((3 + MessageByteCount) & 0xFF);
+
+                                    PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x26, 0x04, (byte)SCIBusPCMRepeatedSetMessages.Count });
+
+                                    foreach (byte[] b in SCIBusPCMRepeatedSetMessages)
+                                    {
+                                        PacketBytes.AddRange(b);
+                                    }
+
+                                    for (int i = 1; i < PacketBytes.Count; i++)
+                                    {
+                                        PacketBytesChecksum += PacketBytes[i];
+                                    }
+
+                                    PacketBytes.Add(PacketBytesChecksum);
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 default:
@@ -3998,42 +4091,71 @@ namespace ChryslerCCDSCIScanner
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 case 2: // Repeated message
-                                    if (Param3ComboBox.SelectedIndex == 0) // no iteration
+                                    switch (Param3ComboBox.SelectedIndex)
                                     {
-                                        RepeatIterate = false;
+                                        case 0: // no iteration
+                                            RepeatIterate = false;
 
-                                        PacketLengthHB = (byte)((4 + SCIBusTCMMessageToSendStart.Length) >> 8);
-                                        PacketLengthLB = (byte)((4 + SCIBusTCMMessageToSendStart.Length) & 0xFF);
+                                            PacketLengthHB = (byte)((5 + SCIBusTCMMessageToSendStart.Length) >> 8);
+                                            PacketLengthLB = (byte)((5 + SCIBusTCMMessageToSendStart.Length) & 0xFF);
 
-                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x36, 0x03, 0x00, (byte)SCIBusTCMMessageToSendStart.Length });
-                                        PacketBytes.AddRange(SCIBusTCMMessageToSendStart);
+                                            PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x36, 0x03, 0x00, 0x01, (byte)SCIBusTCMMessageToSendStart.Length });
+                                            PacketBytes.AddRange(SCIBusTCMMessageToSendStart);
 
-                                        for (int i = 1; i < PacketBytes.Count; i++)
-                                        {
-                                            PacketBytesChecksum += PacketBytes[i];
-                                        }
+                                            for (int i = 1; i < PacketBytes.Count; i++)
+                                            {
+                                                PacketBytesChecksum += PacketBytes[i];
+                                            }
 
-                                        PacketBytes.Add(PacketBytesChecksum);
+                                            PacketBytes.Add(PacketBytesChecksum);
+                                            break;
+                                        case 1: // iteration, same message length supposed
+                                            RepeatIterate = true;
+
+                                            PacketLengthHB = (byte)((5 + SCIBusTCMMessageToSendStart.Length + SCIBusTCMMessageToSendEnd.Length) >> 8);
+                                            PacketLengthLB = (byte)((5 + SCIBusTCMMessageToSendStart.Length + SCIBusTCMMessageToSendEnd.Length) & 0xFF);
+
+                                            PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x36, 0x03, 0x01, 0x01, (byte)SCIBusTCMMessageToSendStart.Length });
+                                            PacketBytes.AddRange(SCIBusTCMMessageToSendStart);
+                                            PacketBytes.AddRange(SCIBusTCMMessageToSendEnd);
+
+                                            for (int i = 1; i < PacketBytes.Count; i++)
+                                            {
+                                                PacketBytesChecksum += PacketBytes[i];
+                                            }
+
+                                            PacketBytes.Add(PacketBytesChecksum);
+                                            break;
+                                        default:
+                                            break;
                                     }
-                                    else if (Param3ComboBox.SelectedIndex == 1) // iteration, same message length supposed
+                                    USBSendComboBoxValue = PacketBytes.ToArray();
+                                    break;
+                                case 3: // Repeated set of messages
+                                    RepeatIterate = false;
+                                    byte MessageByteCount = 0;
+
+                                    foreach (byte[] b in SCIBusTCMRepeatedSetMessages)
                                     {
-                                        RepeatIterate = true;
-
-                                        PacketLengthHB = (byte)((4 + SCIBusTCMMessageToSendStart.Length + SCIBusTCMMessageToSendEnd.Length) >> 8);
-                                        PacketLengthLB = (byte)((4 + SCIBusTCMMessageToSendStart.Length + SCIBusTCMMessageToSendEnd.Length) & 0xFF);
-
-                                        PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x36, 0x03, 0x01, (byte)SCIBusTCMMessageToSendStart.Length });
-                                        PacketBytes.AddRange(SCIBusTCMMessageToSendStart);
-                                        PacketBytes.AddRange(SCIBusTCMMessageToSendEnd);
-
-                                        for (int i = 1; i < PacketBytes.Count; i++)
-                                        {
-                                            PacketBytesChecksum += PacketBytes[i];
-                                        }
-
-                                        PacketBytes.Add(PacketBytesChecksum);
+                                        MessageByteCount += (byte)b.Length;
                                     }
 
+                                    PacketLengthHB = (byte)((3 + MessageByteCount) >> 8);
+                                    PacketLengthLB = (byte)((3 + MessageByteCount) & 0xFF);
+
+                                    PacketBytes.AddRange(new byte[] { 0x3D, PacketLengthHB, PacketLengthLB, 0x36, 0x04, (byte)SCIBusTCMRepeatedSetMessages.Count });
+
+                                    foreach (byte[] b in SCIBusTCMRepeatedSetMessages)
+                                    {
+                                        PacketBytes.AddRange(b);
+                                    }
+
+                                    for (int i = 1; i < PacketBytes.Count; i++)
+                                    {
+                                        PacketBytesChecksum += PacketBytes[i];
+                                    }
+
+                                    PacketBytes.Add(PacketBytesChecksum);
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 default:
@@ -4717,7 +4839,7 @@ namespace ChryslerCCDSCIScanner
                                     HintTextBox.Text = Environment.NewLine
                                                      + "Send a message repeatedly to the CCD-bus." + Environment.NewLine
                                                      + "Iteration increment and repeating interval is adjustable" + Environment.NewLine
-                                                     + "in settings (default increment = 1, interval = 100 ms).";
+                                                     + "in settings (default increment = 2, interval = 100 ms).";
                                     break;
                                 case 3: // Repeated set of messages
                                     Param1Label1.Visible = true;
@@ -5160,6 +5282,25 @@ namespace ChryslerCCDSCIScanner
                                     CCDBusMessageToSendStart = Util.HexStringToByte(Param1ComboBox.Text);
                                     CCDBusMessageToSendEnd = Util.HexStringToByte(Param2ComboBox.Text);
                                     break;
+                                case 3: // Repeated set of messages
+                                    CCDBusRepeatedSetMessages.Clear();
+                                    string MessageList = Param1ComboBox.Text;
+                                    MessageList = MessageList.Trim();
+                                    string[] SplittedMessageList = MessageList.Split(new char[] { ',', ';' });
+                                    List<byte> MessageBytes = new List<byte>();
+
+                                    foreach (string s in SplittedMessageList)
+                                    {
+                                        if (SplittedMessageList[SplittedMessageList.Length - 1] != String.Empty) // don't add empty string to the list
+                                        {
+                                            MessageBytes.Clear(); // clear list
+                                            byte[] MessageBytesToAdd = Util.HexStringToByte(s);
+                                            MessageBytes.Add((byte)MessageBytesToAdd.Length); // first element is the message length
+                                            MessageBytes.AddRange(MessageBytesToAdd); // message bytes follow
+                                            CCDBusRepeatedSetMessages.Add(MessageBytes.ToArray());
+                                        }
+                                    }
+                                    break;
                                 default:
                                     break;
                             }
@@ -5191,6 +5332,25 @@ namespace ChryslerCCDSCIScanner
                                     SCIBusPCMMessageToSendStart = Util.HexStringToByte(Param1ComboBox.Text);
                                     SCIBusPCMMessageToSendEnd = Util.HexStringToByte(Param2ComboBox.Text);
                                     break;
+                                case 3: // Repeated set of messages
+                                    SCIBusPCMRepeatedSetMessages.Clear();
+                                    string MessageList = Param1ComboBox.Text;
+                                    MessageList = MessageList.Trim();
+                                    string[] SplittedMessageList = MessageList.Split(new char[] { ',', ';' });
+                                    List<byte> MessageBytes = new List<byte>();
+
+                                    foreach (string s in SplittedMessageList)
+                                    {
+                                        if (SplittedMessageList[SplittedMessageList.Length - 1] != String.Empty) // don't add empty string to the list
+                                        {
+                                            MessageBytes.Clear(); // clear list
+                                            byte[] MessageBytesToAdd = Util.HexStringToByte(s);
+                                            MessageBytes.Add((byte)MessageBytesToAdd.Length); // first element is the message length
+                                            MessageBytes.AddRange(MessageBytesToAdd); // message bytes follow
+                                            SCIBusPCMRepeatedSetMessages.Add(MessageBytes.ToArray());
+                                        }
+                                    }
+                                    break;
                                 default:
                                     break;
                             }
@@ -5221,6 +5381,25 @@ namespace ChryslerCCDSCIScanner
                                     }
                                     SCIBusTCMMessageToSendStart = Util.HexStringToByte(Param1ComboBox.Text);
                                     SCIBusTCMMessageToSendEnd = Util.HexStringToByte(Param2ComboBox.Text);
+                                    break;
+                                case 3: // Repeated set of messages
+                                    SCIBusTCMRepeatedSetMessages.Clear();
+                                    string MessageList = Param1ComboBox.Text;
+                                    MessageList = MessageList.Trim();
+                                    string[] SplittedMessageList = MessageList.Split(new char[] { ',', ';' });
+                                    List<byte> MessageBytes = new List<byte>();
+
+                                    foreach (string s in SplittedMessageList)
+                                    {
+                                        if (SplittedMessageList[SplittedMessageList.Length - 1] != String.Empty) // don't add empty string to the list
+                                        {
+                                            MessageBytes.Clear(); // clear list
+                                            byte[] MessageBytesToAdd = Util.HexStringToByte(s);
+                                            MessageBytes.Add((byte)MessageBytesToAdd.Length); // first element is the message length
+                                            MessageBytes.AddRange(MessageBytesToAdd); // message bytes follow
+                                            SCIBusTCMRepeatedSetMessages.Add(MessageBytes.ToArray());
+                                        }
+                                    }
                                     break;
                                 default:
                                     break;
@@ -5286,14 +5465,12 @@ namespace ChryslerCCDSCIScanner
 
                                 writer.Close();
                             }
-                            
                             MemoryReadError = 0;
                         }
                         else
                         {
                             MemoryReadError = 2; // memory value missing
                         }
-
                     }
                     else
                     {
@@ -5388,6 +5565,9 @@ namespace ChryslerCCDSCIScanner
                         MemoryReadError = 1; // not enough messages
                     }
                     MemoryReadFinished = true;
+                    break;
+                case 0xB2: // CCD-bus module memory dump
+                    // TODO
                     break;
                 default:
                     MemoryReadFinished = true;

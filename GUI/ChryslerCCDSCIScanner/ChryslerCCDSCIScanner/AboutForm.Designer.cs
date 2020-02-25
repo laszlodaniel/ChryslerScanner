@@ -64,7 +64,7 @@
             this.VersionLabel.Name = "VersionLabel";
             this.VersionLabel.Size = new System.Drawing.Size(141, 13);
             this.VersionLabel.TabIndex = 6;
-            this.VersionLabel.Text = "Version: CCDSCI.2020.0007";
+            this.VersionLabel.Text = "Version: CCDSCI.2020.0008";
             // 
             // AboutDescriptionLabel01
             // 
