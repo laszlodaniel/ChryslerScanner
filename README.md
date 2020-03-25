@@ -1,5 +1,5 @@
 # ChryslerCCDSCIScanner
-Hardware and software to receive and transmit messages from and to Chrysler's legacy CCD/SCI-bus.
+Hardware and software for interfacing Chrysler's legacy CCD/SCI-bus.
 
 **Arduino** folder contains the source code and compiled binaries for the scanner written in Arduino IDE 1.8.7.
 
