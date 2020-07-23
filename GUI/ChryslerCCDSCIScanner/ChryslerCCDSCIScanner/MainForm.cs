@@ -296,11 +296,14 @@ namespace ChryslerCCDSCIScanner
                     Units = 1;
                 }
 
+                if ((bool)Properties.Settings.Default["OBD1SCIEngineCableUsed"] == true) OBD1SCIEngineCableUsedToolStripMenuItem.Checked = true;
+                else OBD1SCIEngineCableUsedToolStripMenuItem.Checked = false;
+
                 if ((string)Properties.Settings.Default["TransmissionMethod"] == "hex") HexCommMethodRadioButton.Checked = true;
                 else if ((string)Properties.Settings.Default["TransmissionMethod"] == "ascii") AsciiCommMethodRadioButton.Checked = true;
 
                 if ((bool)Properties.Settings.Default["IncludeTimestamp"] == true) IncludeTimestampInLogFilesToolStripMenuItem.Checked = true;
-                else if ((bool)Properties.Settings.Default["IncludeTimestamp"] == false) IncludeTimestampInLogFilesToolStripMenuItem.Checked = false;
+                else IncludeTimestampInLogFilesToolStripMenuItem.Checked = false;
             }
             catch
             {
@@ -1322,6 +1325,52 @@ namespace ChryslerCCDSCIScanner
                                                 ccdunittoinsert = String.Empty;
                                             }
                                             break;
+                                        case 0x23:
+                                            if (ccdmessage.Length > 3)
+                                            {
+                                                ccddescriptiontoinsert = "COUNTRY CODE";
+
+                                                switch (ccdmessage[1])
+                                                {
+                                                    case 0x00:
+                                                        ccdvaluetoinsert = "USA";
+                                                        break;
+                                                    case 0x01:
+                                                        ccdvaluetoinsert = "GULF COAST";
+                                                        break;
+                                                    case 0x02:
+                                                        ccdvaluetoinsert = "EUROPE";
+                                                        break;
+                                                    case 0x03:
+                                                        ccdvaluetoinsert = "JAPAN";
+                                                        break;
+                                                    case 0x04:
+                                                        ccdvaluetoinsert = "MALAYSIA";
+                                                        break;
+                                                    case 0x05:
+                                                        ccdvaluetoinsert = "INDONESIA";
+                                                        break;
+                                                    case 0x06:
+                                                        ccdvaluetoinsert = "AUSTRALIA";
+                                                        break;
+                                                    case 0x07:
+                                                        ccdvaluetoinsert = "ENGLAND";
+                                                        break;
+                                                    case 0x08:
+                                                        ccdvaluetoinsert = "VENEZUELA";
+                                                        break;
+                                                    case 0x09:
+                                                        ccdvaluetoinsert = "CANADA";
+                                                        break;
+                                                    case 0x0A:
+                                                    default:
+                                                        ccdvaluetoinsert = "UNKNOWN";
+                                                        break;
+                                                }
+
+                                                ccdunittoinsert = String.Empty;
+                                            }
+                                            break;
                                         case 0x24:
                                             if (ccdmessage.Length > 3)
                                             {
@@ -1632,6 +1681,18 @@ namespace ChryslerCCDSCIScanner
                                                 }
                                             }
                                             break;
+                                        case 0xEC:
+                                            if (ccdmessage.Length > 3)
+                                            {
+                                                ccddescriptiontoinsert = "FUEL TYPE";
+                                                if (((ccdmessage[2] & 0x01) == 0x00) && (((ccdmessage[2] >> 2) & 0x03) == 0x00) && (((ccdmessage[2] >> 4) & 0x01) == 0x00)) ccdvaluetoinsert = "CNG";
+                                                else if (((ccdmessage[2] >> 2) & 0x01) == 0x01) ccdvaluetoinsert = "NO LEAD";
+                                                else if (((ccdmessage[2] >> 3) & 0x01) == 0x01) ccdvaluetoinsert = "LEADED FUEL";
+                                                else if (((ccdmessage[2] >> 2) & 0x03) == 0x03) ccdvaluetoinsert = "FLEX FUEL";
+                                                else if (((ccdmessage[2] >> 4) & 0x01) == 0x01) ccdvaluetoinsert = "DIESEL";
+                                                ccdunittoinsert = String.Empty;
+                                            }
+                                            break;
                                         case 0xEE:
                                             if (ccdmessage.Length > 4)
                                             {
@@ -1791,6 +1852,10 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         DiagnosticsTable.RemoveAt(CCDBusB2Start);
                                         DiagnosticsTable.Insert(CCDBusB2Start, ccdlistitem.ToString());
+
+                                        // Blank out the F2 line at the same time indicating that a B2 request has been sent and a new F2 response is expected (remove old response).
+                                        DiagnosticsTable.RemoveAt(CCDBusF2Start);
+                                        DiagnosticsTable.Insert(CCDBusF2Start, "│ F2 -- -- -- -- --       │ DRB RESPONSE                                        │                         │              │");
 
                                         if (IncludeTimestampInLogFilesToolStripMenuItem.Checked)
                                         {
@@ -3752,7 +3817,11 @@ namespace ChryslerCCDSCIScanner
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 case 2: // Set SCI-bus
-                                    PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x03, 0x03, 0x03, SetSCIBus });
+                                    PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x04, 0x03, 0x03, SetSCIBus });
+                                    
+                                    if (OBD1SCIEngineCableUsedToolStripMenuItem.Checked) PacketBytes.Add(0x01);
+                                    else PacketBytes.Add(0x00);
+
                                     for (int i = 1; i < PacketBytes.Count; i++)
                                     {
                                         PacketBytesChecksum += PacketBytes[i];
@@ -5788,6 +5857,22 @@ namespace ChryslerCCDSCIScanner
             {
 
             }
+        }
+
+        private void OBD1SCIEngineCableUsedToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
+        {
+            if (OBD1SCIEngineCableUsedToolStripMenuItem.Checked)
+            {
+                Properties.Settings.Default["OBD1SCIEngineCableUsed"] = true;
+                Properties.Settings.Default.Save(); // Save settings in application configuration file
+            }
+            else
+            {
+                Properties.Settings.Default["OBD1SCIEngineCableUsed"] = false;
+                Properties.Settings.Default.Save(); // Save settings in application configuration file
+            }
+            
+            UpdateUSBSendComboBox();
         }
     }
 }

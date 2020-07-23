@@ -27,7 +27,7 @@ extern LiquidCrystal_I2C lcd;
 
 // Firmware date/time of compilation in 64-bit UNIX time
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005E578752
+#define FW_DATE 0x000000005F19B92A
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -217,10 +217,11 @@ extern LiquidCrystal_I2C lcd;
 #define error_datacode_invalid_command          0x02
 #define error_subdatacode_invalid_value         0x03
 #define error_payload_invalid_values            0x04
-#define error_checksum_invalid_value            0x05
+#define error_packet_checksum_invalid_value     0x05
 #define error_packet_timeout_occured            0x06
 #define error_buffer_overflow                   0x07
-// 0x08-0xF7 reserved
+// 0x08-0xF6 reserved
+#define error_not_enough_mcu_ram                0xF7
 #define error_sci_hs_memory_ptr_no_response     0xF8
 #define error_sci_hs_invalid_memory_ptr         0xF9
 #define error_sci_hs_no_response                0xFA
@@ -278,6 +279,7 @@ volatile uint8_t  TCM_LastRxError;
 
 typedef struct {
     bool enabled = true; // bus state (enabled or disabled)
+    bool obd1 = false; // OBD1 SCI engine adapter cable needs special message handling
     uint8_t sci_settings[1] = { 0xC8 }; // bus settings (SCI-bus only), default settings: SCI-bus PCM "A" configuration, 7812.5 baud, TCM disabled
     uint16_t speed = LOBAUD; // baudrate prescaler - 1023: 976.5625 baud; 127: 7812.5 baud; 15: 62500 baud; 7: 125000 baud; 3: 250000 baud
     volatile bool idle = true; // bus idling (CCD-bus only, IDLE-pin)
@@ -580,7 +582,8 @@ Purpose:  called when the UART2 has received a character
         /* store new index */
         PCM_RxHead = tmphead;
         /* store received data in buffer */
-        PCM_RxBuf[tmphead] = data;
+        if (!pcm.obd1) PCM_RxBuf[tmphead] = data;
+        else PCM_RxBuf[tmphead] = ((data << 4) & 0xF0) | ((data >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
     }
     PCM_LastRxError = lastRxError;
 
@@ -601,7 +604,8 @@ Purpose:  called when the UART2 is ready to transmit the next byte
         tmptail = (PCM_TxTail + 1) & PCM_TX2_BUFFER_MASK;
         PCM_TxTail = tmptail;
         /* get one byte from buffer and write it to UART */
-        PCM_DATA = PCM_TxBuf[tmptail]; /* start transmission */
+        if (!pcm.obd1) PCM_DATA = PCM_TxBuf[tmptail]; /* start transmission */
+        else PCM_DATA = ((PCM_TxBuf[tmptail] << 4) & 0xF0) | ((PCM_TxBuf[tmptail] >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
     }
     else
     {
@@ -641,7 +645,8 @@ Purpose:  called when the UART3 has received a character
         /* store new index */
         TCM_RxHead = tmphead;
         /* store received data in buffer */
-        TCM_RxBuf[tmphead] = data;
+        if (!tcm.obd1) TCM_RxBuf[tmphead] = data;
+        else TCM_RxBuf[tmphead] = ((data << 4) & 0xF0) | ((data >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
     }
     TCM_LastRxError = lastRxError;
 
@@ -662,7 +667,8 @@ Purpose:  called when the UART3 is ready to transmit the next byte
         tmptail = (TCM_TxTail + 1) & TCM_TX3_BUFFER_MASK;
         TCM_TxTail = tmptail;
         /* get one byte from buffer and write it to UART */
-        TCM_DATA = TCM_TxBuf[tmptail]; /* start transmission */
+        if (!tcm.obd1) TCM_DATA = TCM_TxBuf[tmptail]; /* start transmission */
+        else TCM_DATA = ((TCM_TxBuf[tmptail] << 4) & 0xF0) | ((TCM_TxBuf[tmptail] >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
     }
     else
     {
@@ -1798,7 +1804,7 @@ void send_usb_packet(uint8_t source, uint8_t target, uint8_t command, uint8_t su
     // Check if there's enough RAM to store the whole packet
     if (free_ram() < (packet_length + 50)) // require +50 free bytes to be safe
     {
-        uint8_t error[7] = { 0x3D, 0x00, 0x03, 0x8F, 0xF7, 0xFF, 0x8E }; // prepare the "not enough MCU RAM" error message
+        uint8_t error[7] = { 0x3D, 0x00, 0x03, 0x8F, error_not_enough_mcu_ram, 0xFF, 0x8E }; // prepare the "not enough MCU RAM" error message, error_not_enough_mcu_ram = 0xF7
         for (uint16_t i = 0; i < 7; i++)
         {
             usb_putc(error[i]);
@@ -3945,7 +3951,7 @@ void handle_usb_data(void)
                 // Compare calculated checksum to the received CHECKSUM byte
                 if (calculated_checksum != checksum) // if they are not the same
                 {
-                    send_usb_packet(from_usb, to_usb, ok_error, error_checksum_invalid_value, err, 1);
+                    send_usb_packet(from_usb, to_usb, ok_error, error_packet_checksum_invalid_value, err, 1);
                     return; // exit, let the loop call this function again
                 }
 
@@ -4059,13 +4065,19 @@ void handle_usb_data(void)
                                     }
                                     case set_sci_bus: // 0x03 - ON-OFF state, A/B configuration and speed are stored in payload
                                     {
-                                        if (!payload_bytes) // if no payload byte is present
+                                        if (!payload_bytes || (payload_length < 2)) // at least 4 bytes are necessary to change this setting
                                         {
                                             send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
                                             break;
                                         }
                                         
                                         configure_sci_bus(cmd_payload[0]); // pass settings to this function
+                                        
+                                        if (cmd_payload[1] & 0x01) pcm.obd1 = true; // set OBD1 flag for PCM
+                                        else pcm.obd1 = false; // clear OBD1 flag for PCM
+                                        
+                                        if (cmd_payload[1] & 0x10) tcm.obd1 = true; // set OBD1 flag for TCM
+                                        else tcm.obd1 = false; // clear OBD1 flag for TCM
                                         break;
                                     }
                                     case set_repeat_behavior: // 0x04

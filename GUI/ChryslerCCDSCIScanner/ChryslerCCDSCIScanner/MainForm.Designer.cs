@@ -82,6 +82,7 @@
             this.MetricToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ImperialToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.OBD1SCIEngineCableUsedToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.USBCommunicationGroupBox.SuspendLayout();
             this.DiagnosticsGroupBox.SuspendLayout();
             this.ControlPanelGroupBox.SuspendLayout();
@@ -637,7 +638,8 @@
             // 
             this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.IncludeTimestampInLogFilesToolStripMenuItem,
-            this.UnitsToolStripMenuItem});
+            this.UnitsToolStripMenuItem,
+            this.OBD1SCIEngineCableUsedToolStripMenuItem});
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
             this.settingsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.settingsToolStripMenuItem.Text = "Settings";
@@ -663,7 +665,7 @@
             // 
             this.MetricToolStripMenuItem.CheckOnClick = true;
             this.MetricToolStripMenuItem.Name = "MetricToolStripMenuItem";
-            this.MetricToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
+            this.MetricToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.MetricToolStripMenuItem.Text = "Metric";
             this.MetricToolStripMenuItem.Click += new System.EventHandler(this.MetricToolStripMenuItem_Click);
             // 
@@ -671,7 +673,7 @@
             // 
             this.ImperialToolStripMenuItem.CheckOnClick = true;
             this.ImperialToolStripMenuItem.Name = "ImperialToolStripMenuItem";
-            this.ImperialToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
+            this.ImperialToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.ImperialToolStripMenuItem.Text = "Imperial";
             this.ImperialToolStripMenuItem.Click += new System.EventHandler(this.ImperialToolStripMenuItem_Click);
             // 
@@ -681,6 +683,14 @@
             this.aboutToolStripMenuItem.Size = new System.Drawing.Size(52, 20);
             this.aboutToolStripMenuItem.Text = "About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.AboutToolStripMenuItem_Click);
+            // 
+            // OBD1SCIEngineCableUsedToolStripMenuItem
+            // 
+            this.OBD1SCIEngineCableUsedToolStripMenuItem.CheckOnClick = true;
+            this.OBD1SCIEngineCableUsedToolStripMenuItem.Name = "OBD1SCIEngineCableUsedToolStripMenuItem";
+            this.OBD1SCIEngineCableUsedToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
+            this.OBD1SCIEngineCableUsedToolStripMenuItem.Text = "OBD1 SCI engine cable used";
+            this.OBD1SCIEngineCableUsedToolStripMenuItem.CheckedChanged += new System.EventHandler(this.OBD1SCIEngineCableUsedToolStripMenuItem_CheckedChanged);
             // 
             // MainForm
             // 
@@ -768,6 +778,7 @@
         private System.Windows.Forms.Label DiagnosticsTableUpdateIntervalLabel01;
         private System.Windows.Forms.TextBox DiagnosticsTableUpdateIntervalTextBox;
         private System.Windows.Forms.Button DiagnosticsTableUpdateIntervalApplyButton;
+        private System.Windows.Forms.ToolStripMenuItem OBD1SCIEngineCableUsedToolStripMenuItem;
     }
 }
 
