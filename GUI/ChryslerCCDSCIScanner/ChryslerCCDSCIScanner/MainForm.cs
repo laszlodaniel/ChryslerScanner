@@ -154,6 +154,9 @@ namespace ChryslerCCDSCIScanner
         public byte LastCommandIndex = 2; // Status
         public byte LastModeIndex = 0; // None
 
+        public byte DebugBus = 1;
+        public byte DebugBusSpeed = 2;
+
         public byte[] HandshakeRequest = new byte[] { 0x3D, 0x00, 0x02, 0x01, 0x00, 0x03 };
         public byte[] ExpectedHandshake = new byte[] { 0x3D, 0x00, 0x17, 0x01, 0x00, 0x43, 0x48, 0x52, 0x59, 0x53, 0x4C, 0x45, 0x52, 0x43, 0x43, 0x44, 0x53, 0x43, 0x49, 0x53, 0x43, 0x41, 0x4E, 0x4E, 0x45, 0x52, 0x37 };
         public byte[] StatusRequest = new byte[] { 0x3D, 0x00, 0x02, 0x02, 0x00, 0x04 };
@@ -3918,6 +3921,15 @@ namespace ChryslerCCDSCIScanner
                                     USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 case 3: // Set arbitrary UART speed
+                                    PacketBytes.AddRange(new byte[] { 0x3D, 0x00, 0x04, 0x0E, 0x04, DebugBus, DebugBusSpeed });
+
+                                    for (int i = 1; i < PacketBytes.Count; i++)
+                                    {
+                                        PacketBytesChecksum += PacketBytes[i];
+                                    }
+
+                                    PacketBytes.Add(PacketBytesChecksum);
+                                    USBSendComboBoxValue = PacketBytes.ToArray();
                                     break;
                                 default:
                                     USBSendComboBoxValue = new byte[] { 0x3D, 0x00, 0x02, 0x0E, 0x00, 0x10 };
@@ -5318,7 +5330,15 @@ namespace ChryslerCCDSCIScanner
                                     }
                                     break;
                                 case 3: // Set arbitrary UART speed
+                                    try
+                                    {
+                                        DebugBus = (byte)(Param1ComboBox.SelectedIndex + 1);
+                                        DebugBusSpeed = (byte)(Param2ComboBox.SelectedIndex + 1);
+                                    }
+                                    catch
+                                    {
 
+                                    }
                                     break;
                                 default:
                                     break;

@@ -81,8 +81,8 @@
             this.UnitsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.MetricToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ImperialToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.OBD1SCIEngineCableUsedToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.USBCommunicationGroupBox.SuspendLayout();
             this.DiagnosticsGroupBox.SuspendLayout();
             this.ControlPanelGroupBox.SuspendLayout();
@@ -251,6 +251,7 @@
             this.Param3ComboBox.Size = new System.Drawing.Size(200, 23);
             this.Param3ComboBox.TabIndex = 111;
             this.Param3ComboBox.Visible = false;
+            this.Param3ComboBox.SelectedIndexChanged += new System.EventHandler(this.ParamsComboBox_TextChanged);
             this.Param3ComboBox.TextChanged += new System.EventHandler(this.ParamsComboBox_TextChanged);
             this.Param3ComboBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.Param3ComboBox_KeyPress);
             // 
@@ -273,6 +274,7 @@
             this.Param2ComboBox.Size = new System.Drawing.Size(200, 23);
             this.Param2ComboBox.TabIndex = 109;
             this.Param2ComboBox.Visible = false;
+            this.Param2ComboBox.SelectedIndexChanged += new System.EventHandler(this.ParamsComboBox_TextChanged);
             this.Param2ComboBox.TextChanged += new System.EventHandler(this.ParamsComboBox_TextChanged);
             this.Param2ComboBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.Param2ComboBox_KeyPress);
             // 
@@ -295,6 +297,7 @@
             this.Param1ComboBox.Size = new System.Drawing.Size(200, 23);
             this.Param1ComboBox.TabIndex = 107;
             this.Param1ComboBox.Visible = false;
+            this.Param1ComboBox.SelectedIndexChanged += new System.EventHandler(this.ParamsComboBox_TextChanged);
             this.Param1ComboBox.TextChanged += new System.EventHandler(this.ParamsComboBox_TextChanged);
             this.Param1ComboBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.Param1ComboBox_KeyPress);
             // 
@@ -665,7 +668,7 @@
             // 
             this.MetricToolStripMenuItem.CheckOnClick = true;
             this.MetricToolStripMenuItem.Name = "MetricToolStripMenuItem";
-            this.MetricToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.MetricToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
             this.MetricToolStripMenuItem.Text = "Metric";
             this.MetricToolStripMenuItem.Click += new System.EventHandler(this.MetricToolStripMenuItem_Click);
             // 
@@ -673,16 +676,9 @@
             // 
             this.ImperialToolStripMenuItem.CheckOnClick = true;
             this.ImperialToolStripMenuItem.Name = "ImperialToolStripMenuItem";
-            this.ImperialToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.ImperialToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
             this.ImperialToolStripMenuItem.Text = "Imperial";
             this.ImperialToolStripMenuItem.Click += new System.EventHandler(this.ImperialToolStripMenuItem_Click);
-            // 
-            // aboutToolStripMenuItem
-            // 
-            this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(52, 20);
-            this.aboutToolStripMenuItem.Text = "About";
-            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.AboutToolStripMenuItem_Click);
             // 
             // OBD1SCIEngineCableUsedToolStripMenuItem
             // 
@@ -691,6 +687,13 @@
             this.OBD1SCIEngineCableUsedToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
             this.OBD1SCIEngineCableUsedToolStripMenuItem.Text = "OBD1 SCI engine cable used";
             this.OBD1SCIEngineCableUsedToolStripMenuItem.CheckedChanged += new System.EventHandler(this.OBD1SCIEngineCableUsedToolStripMenuItem_CheckedChanged);
+            // 
+            // aboutToolStripMenuItem
+            // 
+            this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(52, 20);
+            this.aboutToolStripMenuItem.Text = "About";
+            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.AboutToolStripMenuItem_Click);
             // 
             // MainForm
             // 
