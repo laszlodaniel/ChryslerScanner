@@ -3952,7 +3952,7 @@ namespace ChryslerCCDSCIScanner
                     }
                 }
 
-                string latestGUIVersionString = line.Substring(28, 5);
+                string latestGUIVersionString = "v" + line.Substring(28, 5);
 
                 if (latestGUIVersionString == GUIVersion)
                 {
@@ -3962,8 +3962,8 @@ namespace ChryslerCCDSCIScanner
                 {
                     if (!Text.Contains("  -  update available!")) Text += "  -  update available!";
 
-                    if (MessageBox.Show("Latest GUI version: v" + latestGUIVersionString + Environment.NewLine +
-                                        "Current GUI version: v" + GUIVersion + Environment.NewLine +
+                    if (MessageBox.Show("Latest GUI version: " + latestGUIVersionString + Environment.NewLine +
+                                        "Current GUI version: " + GUIVersion + Environment.NewLine +
                                         "There is a new GUI version available." + Environment.NewLine +
                                         "Do you want to download it?", "GUI update available", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
                     {
