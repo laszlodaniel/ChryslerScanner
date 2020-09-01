@@ -25,9 +25,16 @@
 extern extEEPROM eep;
 extern LiquidCrystal_I2C lcd;
 
-// Firmware date/time of compilation in 64-bit UNIX time
+// Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
-#define FW_DATE 0x000000005F19B92A
+// Upper 32-bits are used for semantic versioning (hexadecimal format):
+// 00: major
+// 01: minor
+// 00: patch
+// (00: revision)
+// = v0.1.0(.0)
+#define FW_VERSION 0x00010000
+#define FW_DATE 0x000100005F4E7A94
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -107,6 +114,9 @@ extern LiquidCrystal_I2C lcd;
 #define TX_LED        36 // status LED, message sent
 #define ACT_LED       37 // status LED, activity
 #define BATT          A0 // battery voltage sensor
+#define CCDPLUS       A1 // CCD+ analog input
+#define CCDMINUS      A2 // CCD- analog input
+#define TBEN          13 // CCD-bus termination and bias enable pin
 
 #define PA0 22 // SCI-bus configuration selector digital pins on ATmega2560
 #define PA1 23 // |
@@ -164,7 +174,9 @@ extern LiquidCrystal_I2C lcd;
 
 // SUB-DATA CODE byte
 // Command 0x00 (reset)
-// 0x00-0xFF reserved
+#define reset_in_progress   0x00
+#define reset_done          0x01
+// 0x02-0xFF reserved
 
 // SUB-DATA CODE byte
 // Command 0x01 (handshake)
@@ -181,7 +193,7 @@ extern LiquidCrystal_I2C lcd;
 #define set_sci_bus         0x03 // ON-OFF state, A/B configuration and speed are stored in payload
 #define set_repeat_behavior 0x04 // Repeated message behavior settings
 #define set_lcd             0x05 // ON-OFF state
-// 0x03-0xFF reserved 
+// 0x06-0xFF reserved 
 
 // SUB-DATA CODE byte
 // Command 0x04 & 0x05 (request and response)
@@ -189,26 +201,36 @@ extern LiquidCrystal_I2C lcd;
 #define timestamp           0x02 // elapsed milliseconds since system start
 #define battery_voltage     0x03 // flag for battery voltage packet
 #define exteeprom_checksum  0x04
-// 0x02-0xFF reserved
+#define ccd_bus_voltages    0x05
+// 0x06-0xFF reserved
 
 // SUB-DATA CODE byte
 // Command 0x06 (msg_tx)
 #define stop_msg_flow       0x01 // stop message transmission (single and repeated as well)         
 #define single_msg          0x02 // send message to the target bus specified in DATA CODE byte; message is stored in payload 
-#define repeated_msg        0x03 // send message(s) repeatedly to the target bus sepcified in DATA CODE byte
-#define repeated_set_msg    0x04 // send a fixed set of messages repeatedly to the target bus specified in DATA CODE byte
-// 0x03-0xFF reserved
+#define list_msg            0x03 // send a set of messages to the target bus specified in DATA CODE byte; messages are stored in payload
+#define repeated_single_msg 0x04 // send message(s) repeatedly to the target bus sepcified in DATA CODE byte
+#define repeated_list_msg   0x05 // send a fixed set of messages repeatedly to the target bus specified in DATA CODE byte
+// 0x06-0xFF reserved
 
 // SUB-DATA CODE byte
 // Command 0x07 (msg_rx)
-#define sci_ls_bytes            0x01 // flag
-#define sci_hs_request_bytes    0x02 // flag
-#define sci_hs_response_bytes   0x03 // flag
-// 0x02-0xFF reserved
+#define sci_ls_bytes        0x01 // low-speed SCI-bus message
+#define sci_hs_bytes        0x02 // high-speed SCI-bus message
+// 0x03-0xFF reserved
 
 // SUB-DATA CODE byte
 // Command 0x0E (debug)
-// 0x00-0xFF reserved
+#define random_ccd_msg            0x01
+#define read_inteeprom_byte       0x02
+#define read_inteeprom_block      0x03
+#define read_exteeprom_byte       0x04
+#define read_exteeprom_block      0x05
+#define write_inteeprom_byte      0x06
+#define write_inteeprom_block     0x07
+#define write_exteeprom_byte      0x08
+#define write_exteeprom_block     0x09
+// 0x0A-0xFF reserved
 
 // SUB-DATA CODE byte
 // Command 0x0F (ok_error)
@@ -218,7 +240,7 @@ extern LiquidCrystal_I2C lcd;
 #define error_subdatacode_invalid_value         0x03
 #define error_payload_invalid_values            0x04
 #define error_packet_checksum_invalid_value     0x05
-#define error_packet_timeout_occured            0x06
+#define error_packet_timeout_occurred           0x06
 #define error_buffer_overflow                   0x07
 // 0x08-0xF6 reserved
 #define error_not_enough_mcu_ram                0xF7
@@ -279,11 +301,14 @@ volatile uint8_t  TCM_LastRxError;
 
 typedef struct {
     bool enabled = true; // bus state (enabled or disabled)
-    bool obd1 = false; // OBD1 SCI engine adapter cable needs special message handling
-    uint8_t sci_settings[1] = { 0xC8 }; // bus settings (SCI-bus only), default settings: SCI-bus PCM "A" configuration, 7812.5 baud, TCM disabled
+    bool termination_bias_enabled = false;
+    bool invert_logic = false; // OBD1 SCI engine adapter cable needs special message handling
+    uint8_t bus_settings = 0;
     uint16_t speed = LOBAUD; // baudrate prescaler - 1023: 976.5625 baud; 127: 7812.5 baud; 15: 62500 baud; 7: 125000 baud; 3: 250000 baud
     volatile bool idle = true; // bus idling (CCD-bus only, IDLE-pin)
     volatile bool busy = false; // there's a byte being transmitted on the bus (CCD-bus only, CTRL-pin)
+    uint8_t last_message[16];
+    uint8_t last_message_length = 0;
     volatile uint8_t message_length = 0; // current message length
     volatile uint8_t message_count = 0; // number of messages in the buffer
     uint8_t msg_buffer[BUFFER_SIZE]; // temporary buffer to store outgoing or current repeated messages
@@ -299,6 +324,8 @@ typedef struct {
     bool repeat = false;
     bool repeat_next = false;
     bool repeat_iterate = false;
+    bool repeat_iterate_continue = false;
+    bool repeat_list_once = false;
     bool repeat_stop = true;
     uint8_t repeated_msg_length = 0;
     uint32_t repeated_msg_raw_start = 0; // iteration start, 4-bytes max
@@ -316,7 +343,7 @@ typedef struct {
     volatile uint32_t msg_tx_count = 0; // total transmitted messages
 } bus;
 
-bus ccd, pcm, tcm;
+bus ccd, pcm;
 
 uint8_t sci_hi_speed_memarea[] = { 0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF };
 
@@ -326,24 +353,28 @@ uint8_t command_timeout = 100; // milliseconds
 uint16_t command_purge_timeout = 200; // milliseconds, if a command isn't complete within this time then delete the usb receive buffer
 uint8_t ack[1] = { 0x00 }; // acknowledge payload array
 uint8_t err[1] = { 0xFF }; // error payload array
-uint8_t ret[1]; // general array to store arbitrary bytes
 
-uint8_t scanner_status[67];
+uint8_t scanner_status[43];
 
 uint8_t avr_signature[3];
 uint16_t free_ram_available = 0;
 
 // Battery voltage detector
 uint16_t adc_supply_voltage = 500; // supply voltage multiplied by 100: 5.00V -> 500
-uint16_t battery_rd1 = 27000; // high resistor value in the divider (R19): 27 kOhm = 27000
-uint16_t battery_rd2 = 5000;  // low resistor value in the divider (R20): 5 kOhm = 5000
+uint16_t r19_value = 27000; // high resistor value in the divider (R19): 27 kOhm = 27000
+uint16_t r20_value = 5000;  // low resistor value in the divider (R20): 5 kOhm = 5000
 uint16_t adc_max_value = 1023; // 1023 for 10-bit resolution
 uint32_t battery_adc = 0;   // raw analog reading is stored here
 uint16_t battery_volts = 0; // converted to battery voltage and multiplied by 100: 12.85V -> 1285
 uint8_t battery_volts_array[2]; // battery_volts is separated to byte components here
+uint32_t ccdplus_adc = 0;   // raw analog reading is stored here
+uint16_t ccdplus_volts = 0; // converted to battery voltage and multiplied by 100: 2.51V -> 251
+uint32_t ccdminus_adc = 0;   // raw analog reading is stored here
+uint16_t ccdminus_volts = 0; // converted to battery voltage and multiplied by 100: 2.51V -> 251
+uint8_t ccd_volts_array[4]; // ccdplus_volts and ccdminus_volts is separated to byte components here
 
 bool connected_to_vehicle = false;
-char vin_characters[17] = "-----------------";
+char vin_characters[] = "-----------------"; // 17 character
 String vin_string;
 uint8_t handshake_array[21];
 
@@ -371,6 +402,14 @@ bool    eep_checksum_ok = false;
 uint8_t hw_version[2];
 uint8_t hw_date[8];
 uint8_t assembly_date[8];
+
+uint8_t lcd_char_width = 0;
+uint8_t lcd_char_height = 0;
+uint8_t lcd_refresh_rate = 0;
+uint8_t lcd_units = 0; // 0-imperial, 1-metric
+uint8_t lcd_data_source = 1; // 1: CCD-bus, 2: SCI-bus (PCM), 3: SCI-bus (TCM)
+uint32_t lcd_last_update = 0;
+uint16_t lcd_update_interval = 0;
 
 // CLI (Command Line Interface) related variables
 bool cli_error = false;
@@ -490,66 +529,66 @@ Purpose:  called when the UART0 is ready to transmit the next byte
     }
 }
 
-ISR(CCD_RECEIVE_INTERRUPT)
-/*************************************************************************
-Function: UART1 Receive Complete interrupt
-Purpose:  called when the UART1 has received a character
-**************************************************************************/
-{
-    uint16_t tmphead;
-    uint8_t data;
-    uint8_t usr;
-    uint8_t lastRxError;
- 
-    /* read UART status register and UART data register */ 
-    usr  = CCD_STATUS;
-    data = CCD_DATA;
-    
-    /* get error bits from status register */
-    lastRxError = (usr & (_BV(FE1)|_BV(DOR1)));
+//ISR(CCD_RECEIVE_INTERRUPT)
+///*************************************************************************
+//Function: UART1 Receive Complete interrupt
+//Purpose:  called when the UART1 has received a character
+//**************************************************************************/
+//{
+//    uint16_t tmphead;
+//    uint8_t data;
+//    uint8_t usr;
+//    uint8_t lastRxError;
+// 
+//    /* read UART status register and UART data register */ 
+//    usr  = CCD_STATUS;
+//    data = CCD_DATA;
+//    
+//    /* get error bits from status register */
+//    lastRxError = (usr & (_BV(FE1)|_BV(DOR1)));
+//
+//    /* calculate buffer index */ 
+//    tmphead = (CCD_RxHead + 1) & CCD_RX1_BUFFER_MASK;
+//    
+//    if (tmphead == CCD_RxTail)
+//    {
+//        /* error: receive buffer overflow */
+//        lastRxError = UART_BUFFER_OVERFLOW >> 8;
+//    }
+//    else
+//    {
+//        /* store new index */
+//        CCD_RxHead = tmphead;
+//        /* store received data in buffer */
+//        CCD_RxBuf[tmphead] = data;
+//    }
+//    CCD_LastRxError = lastRxError;
+//
+//    ccd.last_byte_millis = millis();
+//}
 
-    /* calculate buffer index */ 
-    tmphead = (CCD_RxHead + 1) & CCD_RX1_BUFFER_MASK;
-    
-    if (tmphead == CCD_RxTail)
-    {
-        /* error: receive buffer overflow */
-        lastRxError = UART_BUFFER_OVERFLOW >> 8;
-    }
-    else
-    {
-        /* store new index */
-        CCD_RxHead = tmphead;
-        /* store received data in buffer */
-        CCD_RxBuf[tmphead] = data;
-    }
-    CCD_LastRxError = lastRxError;
-
-    ccd.last_byte_millis = millis();
-}
-
-ISR(CCD_TRANSMIT_INTERRUPT)
-/*************************************************************************
-Function: UART1 Data Register Empty interrupt
-Purpose:  called when the UART1 is ready to transmit the next byte
-**************************************************************************/
-{
-    uint16_t tmptail;
-
-    if (CCD_TxHead != CCD_TxTail)
-    {
-        /* calculate and store new buffer index */
-        tmptail = (CCD_TxTail + 1) & CCD_TX1_BUFFER_MASK;
-        CCD_TxTail = tmptail;
-        /* get one byte from buffer and write it to UART */
-        CCD_DATA = CCD_TxBuf[tmptail]; /* start transmission */
-    }
-    else
-    {
-        /* tx buffer empty, disable UDRE interrupt */
-        CCD_CONTROL &= ~_BV(CCD_UDRIE);
-    }
-}
+//ISR(CCD_TRANSMIT_INTERRUPT)
+///*************************************************************************
+//Function: UART1 Data Register Empty interrupt
+//Purpose:  called when the UART1 is ready to transmit the next byte
+//**************************************************************************/
+//{
+//    uint16_t tmptail;
+//
+//    if (CCD_TxHead != CCD_TxTail)
+//    {
+//        /* calculate and store new buffer index */
+//        tmptail = (CCD_TxTail + 1) & CCD_TX1_BUFFER_MASK;
+//        CCD_TxTail = tmptail;
+//        /* get one byte from buffer and write it to UART */
+//        CCD_DATA = CCD_TxBuf[tmptail]; /* start transmission */
+//    }
+//    else
+//    {
+//        /* tx buffer empty, disable UDRE interrupt */
+//        CCD_CONTROL &= ~_BV(CCD_UDRIE);
+//    }
+//}
 
 ISR(PCM_RECEIVE_INTERRUPT)
 /*************************************************************************
@@ -582,7 +621,7 @@ Purpose:  called when the UART2 has received a character
         /* store new index */
         PCM_RxHead = tmphead;
         /* store received data in buffer */
-        if (!pcm.obd1) PCM_RxBuf[tmphead] = data;
+        if (!pcm.invert_logic) PCM_RxBuf[tmphead] = data;
         else PCM_RxBuf[tmphead] = ((data << 4) & 0xF0) | ((data >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
     }
     PCM_LastRxError = lastRxError;
@@ -604,7 +643,7 @@ Purpose:  called when the UART2 is ready to transmit the next byte
         tmptail = (PCM_TxTail + 1) & PCM_TX2_BUFFER_MASK;
         PCM_TxTail = tmptail;
         /* get one byte from buffer and write it to UART */
-        if (!pcm.obd1) PCM_DATA = PCM_TxBuf[tmptail]; /* start transmission */
+        if (!pcm.invert_logic) PCM_DATA = PCM_TxBuf[tmptail]; /* start transmission */
         else PCM_DATA = ((PCM_TxBuf[tmptail] << 4) & 0xF0) | ((PCM_TxBuf[tmptail] >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
     }
     else
@@ -614,68 +653,68 @@ Purpose:  called when the UART2 is ready to transmit the next byte
     }
 }
 
-ISR(TCM_RECEIVE_INTERRUPT)
-/*************************************************************************
-Function: UART3 Receive Complete interrupt
-Purpose:  called when the UART3 has received a character
-**************************************************************************/
-{
-    uint16_t tmphead;
-    uint8_t data;
-    uint8_t usr;
-    uint8_t lastRxError;
- 
-    /* read UART status register and UART data register */ 
-    usr  = TCM_STATUS;
-    data = TCM_DATA;
-    
-    /* get error bits from status register */
-    lastRxError = (usr & (_BV(FE3)|_BV(DOR3)));
-
-    /* calculate buffer index */ 
-    tmphead = (TCM_RxHead + 1) & TCM_RX3_BUFFER_MASK;
-    
-    if (tmphead == TCM_RxTail)
-    {
-        /* error: receive buffer overflow */
-        lastRxError = UART_BUFFER_OVERFLOW >> 8;
-    }
-    else
-    {
-        /* store new index */
-        TCM_RxHead = tmphead;
-        /* store received data in buffer */
-        if (!tcm.obd1) TCM_RxBuf[tmphead] = data;
-        else TCM_RxBuf[tmphead] = ((data << 4) & 0xF0) | ((data >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
-    }
-    TCM_LastRxError = lastRxError;
-
-    tcm.last_byte_millis = millis();
-}
-
-ISR(TCM_TRANSMIT_INTERRUPT)
-/*************************************************************************
-Function: UART3 Data Register Empty interrupt
-Purpose:  called when the UART3 is ready to transmit the next byte
-**************************************************************************/
-{
-    uint16_t tmptail;
-
-    if (TCM_TxHead != TCM_TxTail)
-    {
-        /* calculate and store new buffer index */
-        tmptail = (TCM_TxTail + 1) & TCM_TX3_BUFFER_MASK;
-        TCM_TxTail = tmptail;
-        /* get one byte from buffer and write it to UART */
-        if (!tcm.obd1) TCM_DATA = TCM_TxBuf[tmptail]; /* start transmission */
-        else TCM_DATA = ((TCM_TxBuf[tmptail] << 4) & 0xF0) | ((TCM_TxBuf[tmptail] >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
-    }
-    else
-    {
-        /* tx buffer empty, disable UDRE interrupt */
-        TCM_CONTROL &= ~_BV(TCM_UDRIE);
-    }
-}
+//ISR(TCM_RECEIVE_INTERRUPT)
+///*************************************************************************
+//Function: UART3 Receive Complete interrupt
+//Purpose:  called when the UART3 has received a character
+//**************************************************************************/
+//{
+//    uint16_t tmphead;
+//    uint8_t data;
+//    uint8_t usr;
+//    uint8_t lastRxError;
+// 
+//    /* read UART status register and UART data register */ 
+//    usr  = TCM_STATUS;
+//    data = TCM_DATA;
+//    
+//    /* get error bits from status register */
+//    lastRxError = (usr & (_BV(FE3)|_BV(DOR3)));
+//
+//    /* calculate buffer index */ 
+//    tmphead = (TCM_RxHead + 1) & TCM_RX3_BUFFER_MASK;
+//    
+//    if (tmphead == TCM_RxTail)
+//    {
+//        /* error: receive buffer overflow */
+//        lastRxError = UART_BUFFER_OVERFLOW >> 8;
+//    }
+//    else
+//    {
+//        /* store new index */
+//        TCM_RxHead = tmphead;
+//        /* store received data in buffer */
+//        if (!tcm.invert_logic) TCM_RxBuf[tmphead] = data;
+//        else TCM_RxBuf[tmphead] = ((data << 4) & 0xF0) | ((data >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
+//    }
+//    TCM_LastRxError = lastRxError;
+//
+//    tcm.last_byte_millis = millis();
+//}
+//
+//ISR(TCM_TRANSMIT_INTERRUPT)
+///*************************************************************************
+//Function: UART3 Data Register Empty interrupt
+//Purpose:  called when the UART3 is ready to transmit the next byte
+//**************************************************************************/
+//{
+//    uint16_t tmptail;
+//
+//    if (TCM_TxHead != TCM_TxTail)
+//    {
+//        /* calculate and store new buffer index */
+//        tmptail = (TCM_TxTail + 1) & TCM_TX3_BUFFER_MASK;
+//        TCM_TxTail = tmptail;
+//        /* get one byte from buffer and write it to UART */
+//        if (!tcm.invert_logic) TCM_DATA = TCM_TxBuf[tmptail]; /* start transmission */
+//        else TCM_DATA = ((TCM_TxBuf[tmptail] << 4) & 0xF0) | ((TCM_TxBuf[tmptail] >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
+//    }
+//    else
+//    {
+//        /* tx buffer empty, disable UDRE interrupt */
+//        TCM_CONTROL &= ~_BV(TCM_UDRIE);
+//    }
+//}
 
 
 // Functions
@@ -918,224 +957,233 @@ Returns:  none
 **************************************************************************/
 void ccd_init(uint16_t ubrr)
 {
-    /* reset ringbuffer */
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
+//    /* reset ringbuffer */
+//    ATOMIC_BLOCK(ATOMIC_FORCEON)
+//    {
+//        CCD_RxHead = 0;
+//        CCD_RxTail = 0;
+//        CCD_TxHead = 0;
+//        CCD_TxTail = 0;
+//    }
+//  
+//    /* set baud rate */
+//    UBRR1H = (ubrr >> 8) & 0x0F;
+//    UBRR1L = ubrr & 0xFF;
+//
+//    /* enable USART receiver and transmitter and receive complete interrupt */
+//    CCD_CONTROL |= (1 << RXCIE1) | (1 << RXEN1) | (1 << TXEN1);
+//
+//    /* set frame format: asynchronous, 8 data bit, no parity, 1 stop bit */
+//    UCSR1C |= (1 << UCSZ10) | (1 << UCSZ11);
+
+    if ((((hw_version[0] << 8) & 0xFF) + (hw_version[1])) >= 144) // hardware version V1.44 and up
     {
-        CCD_RxHead = 0;
-        CCD_RxTail = 0;
-        CCD_TxHead = 0;
-        CCD_TxTail = 0;
+        CCD.begin(CCD_DEFAULT_SPEED, CUSTOM_TRANSCEIVER, IDLE_BITS_10, ENABLE_RX_CHECKSUM, ENABLE_TX_CHECKSUM);
     }
-  
-    /* set baud rate */
-    UBRR1H = (ubrr >> 8) & 0x0F;
-    UBRR1L = ubrr & 0xFF;
-
-    /* enable USART receiver and transmitter and receive complete interrupt */
-    CCD_CONTROL |= (1 << RXCIE1) | (1 << RXEN1) | (1 << TXEN1);
-
-    /* set frame format: asynchronous, 8 data bit, no parity, 1 stop bit */
-    UCSR1C |= (1 << UCSZ10) | (1 << UCSZ11);
+    else // hardware version below 1.44
+    {
+        CCD.begin(); // CDP68HC68S1
+    }
     
 } /* ccd_init */
 
 
-/*************************************************************************
-Function: ccd_getc()
-Purpose:  return byte from the receive buffer and remove it
-Returns:  low byte:  next byte in the receive buffer
-          high byte: error flags
-**************************************************************************/
-uint16_t ccd_getc(void)
-{
-    uint16_t tmptail;
-    uint8_t data;
-
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-        if (CCD_RxHead == CCD_RxTail)
-        {
-            return UART_RX_NO_DATA; /* no data available */
-        }
-    }
-  
-    /* calculate / store buffer index */
-    tmptail = (CCD_RxTail + 1) & CCD_RX1_BUFFER_MASK;
-  
-    CCD_RxTail = tmptail;
-  
-    /* get data from receive buffer */
-    data = CCD_RxBuf[tmptail];
-
-    return (CCD_LastRxError << 8 ) + data;
-    
-} /* ccd_getc */
-
-
-/*************************************************************************
-Function: ccd_peek()
-Purpose:  return byte waiting in the receive buffer at index
-          without removing it (by default the next byte available to read)
-Input:    index number in the buffer (default = 0 = next available byte)
-Returns:  low byte:  next byte in the receive buffer
-          high byte: error flags
-**************************************************************************/
-uint16_t ccd_peek(uint16_t index = 0)
-{
-    uint16_t tmptail;
-    uint8_t data;
-
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-        if (CCD_RxHead == CCD_RxTail)
-        {
-            return UART_RX_NO_DATA; /* no data available */
-        }
-    }
-    
-    tmptail = (CCD_RxTail + 1 + index) & CCD_RX1_BUFFER_MASK;
-
-    /* get data from receive buffer */
-    data = CCD_RxBuf[tmptail];
-
-    return (CCD_LastRxError << 8 ) + data;
-
-} /* ccd_peek */
-
-
-/*************************************************************************
-Function: ccd_putc()
-Purpose:  transmit byte to the CCD-bus
-Input:    byte to be transmitted
-Returns:  none
-**************************************************************************/
-void ccd_putc(uint8_t data)
-{
-    uint16_t tmphead;
-    uint16_t txtail_tmp;
-
-    tmphead = (CCD_TxHead + 1) & CCD_TX1_BUFFER_MASK;
-
-    do
-    {
-        ATOMIC_BLOCK(ATOMIC_FORCEON)
-        {
-            txtail_tmp = CCD_TxTail;
-        }
-    }
-    while (tmphead == txtail_tmp); /* wait for free space in buffer */
-
-    CCD_TxBuf[tmphead] = data;
-    CCD_TxHead = tmphead;
-
-    /* enable UDRE interrupt */
-    CCD_CONTROL |= _BV(CCD_UDRIE);
-
-} /* ccd_putc */
-
-
-/*************************************************************************
-Function: ccd_puts()
-Purpose:  transmit string to the CCD-bus
-Input:    pointer to the string to be transmitted
-Returns:  none
-**************************************************************************/
-void ccd_puts(const char *s)
-{
-    while(*s)
-    {
-        ccd_putc(*s++);
-    }
-
-} /* ccd_puts */
-
-
-/*************************************************************************
-Function: ccd_puts_p()
-Purpose:  transmit string from program memory to the CCD-bus
-Input:    pointer to the program memory string to be transmitted
-Returns:  none
-**************************************************************************/
-void ccd_puts_p(const char *progmem_s)
-{
-    register char c;
-
-    while ((c = pgm_read_byte(progmem_s++)))
-    {
-        ccd_putc(c);
-    }
-
-} /* ccd_puts_p */
-
-
-/*************************************************************************
-Function: ccd_rx_available()
-Purpose:  determine the number of bytes waiting in the receive buffer
-Input:    none
-Returns:  integer number of bytes in the receive buffer
-**************************************************************************/
-uint8_t ccd_rx_available(void)
-{
-    uint8_t ret;
-  
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-        ret = (CCD_RX1_BUFFER_SIZE + CCD_RxHead - CCD_RxTail) & CCD_RX1_BUFFER_MASK;
-    }
-    return ret;
-    
-} /* ccd_rx_available */
-
-
-/*************************************************************************
-Function: ccd_tx_available()
-Purpose:  determine the number of bytes waiting in the transmit buffer
-Input:    none
-Returns:  integer number of bytes in the transmit buffer
-**************************************************************************/
-uint8_t ccd_tx_available(void)
-{
-    uint8_t ret;
-  
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-        ret = (CCD_TX1_BUFFER_SIZE + CCD_TxHead - CCD_TxTail) & CCD_TX1_BUFFER_MASK;
-    }
-    return ret;
-    
-} /* ccd_tx_available */
-
-
-/*************************************************************************
-Function: ccd_rx_flush()
-Purpose:  flush bytes waiting in the receive buffer, actually ignores them
-Input:    none
-Returns:  none
-**************************************************************************/
-void ccd_rx_flush(void)
-{
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-        CCD_RxHead = CCD_RxTail;
-    }
-    
-} /* ccd_rx_flush */
-
-
-/*************************************************************************
-Function: ccd_tx_flush()
-Purpose:  flush bytes waiting in the transmit buffer, actually ignores them
-Input:    none
-Returns:  none
-**************************************************************************/
-void ccd_tx_flush(void)
-{
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-        CCD_TxHead = CCD_TxTail;
-    }
-    
-} /* ccd_tx_flush */
+///*************************************************************************
+//Function: ccd_getc()
+//Purpose:  return byte from the receive buffer and remove it
+//Returns:  low byte:  next byte in the receive buffer
+//          high byte: error flags
+//**************************************************************************/
+//uint16_t ccd_getc(void)
+//{
+//    uint16_t tmptail;
+//    uint8_t data;
+//
+//    ATOMIC_BLOCK(ATOMIC_FORCEON)
+//    {
+//        if (CCD_RxHead == CCD_RxTail)
+//        {
+//            return UART_RX_NO_DATA; /* no data available */
+//        }
+//    }
+//  
+//    /* calculate / store buffer index */
+//    tmptail = (CCD_RxTail + 1) & CCD_RX1_BUFFER_MASK;
+//  
+//    CCD_RxTail = tmptail;
+//  
+//    /* get data from receive buffer */
+//    data = CCD_RxBuf[tmptail];
+//
+//    return (CCD_LastRxError << 8 ) + data;
+//    
+//} /* ccd_getc */
+//
+//
+///*************************************************************************
+//Function: ccd_peek()
+//Purpose:  return byte waiting in the receive buffer at index
+//          without removing it (by default the next byte available to read)
+//Input:    index number in the buffer (default = 0 = next available byte)
+//Returns:  low byte:  next byte in the receive buffer
+//          high byte: error flags
+//**************************************************************************/
+//uint16_t ccd_peek(uint16_t index = 0)
+//{
+//    uint16_t tmptail;
+//    uint8_t data;
+//
+//    ATOMIC_BLOCK(ATOMIC_FORCEON)
+//    {
+//        if (CCD_RxHead == CCD_RxTail)
+//        {
+//            return UART_RX_NO_DATA; /* no data available */
+//        }
+//    }
+//    
+//    tmptail = (CCD_RxTail + 1 + index) & CCD_RX1_BUFFER_MASK;
+//
+//    /* get data from receive buffer */
+//    data = CCD_RxBuf[tmptail];
+//
+//    return (CCD_LastRxError << 8 ) + data;
+//
+//} /* ccd_peek */
+//
+//
+///*************************************************************************
+//Function: ccd_putc()
+//Purpose:  transmit byte to the CCD-bus
+//Input:    byte to be transmitted
+//Returns:  none
+//**************************************************************************/
+//void ccd_putc(uint8_t data)
+//{
+//    uint16_t tmphead;
+//    uint16_t txtail_tmp;
+//
+//    tmphead = (CCD_TxHead + 1) & CCD_TX1_BUFFER_MASK;
+//
+//    do
+//    {
+//        ATOMIC_BLOCK(ATOMIC_FORCEON)
+//        {
+//            txtail_tmp = CCD_TxTail;
+//        }
+//    }
+//    while (tmphead == txtail_tmp); /* wait for free space in buffer */
+//
+//    CCD_TxBuf[tmphead] = data;
+//    CCD_TxHead = tmphead;
+//
+//    /* enable UDRE interrupt */
+//    CCD_CONTROL |= _BV(CCD_UDRIE);
+//
+//} /* ccd_putc */
+//
+//
+///*************************************************************************
+//Function: ccd_puts()
+//Purpose:  transmit string to the CCD-bus
+//Input:    pointer to the string to be transmitted
+//Returns:  none
+//**************************************************************************/
+//void ccd_puts(const char *s)
+//{
+//    while(*s)
+//    {
+//        ccd_putc(*s++);
+//    }
+//
+//} /* ccd_puts */
+//
+//
+///*************************************************************************
+//Function: ccd_puts_p()
+//Purpose:  transmit string from program memory to the CCD-bus
+//Input:    pointer to the program memory string to be transmitted
+//Returns:  none
+//**************************************************************************/
+//void ccd_puts_p(const char *progmem_s)
+//{
+//    register char c;
+//
+//    while ((c = pgm_read_byte(progmem_s++)))
+//    {
+//        ccd_putc(c);
+//    }
+//
+//} /* ccd_puts_p */
+//
+//
+///*************************************************************************
+//Function: ccd_rx_available()
+//Purpose:  determine the number of bytes waiting in the receive buffer
+//Input:    none
+//Returns:  integer number of bytes in the receive buffer
+//**************************************************************************/
+//uint8_t ccd_rx_available(void)
+//{
+//    uint8_t ret;
+//  
+//    ATOMIC_BLOCK(ATOMIC_FORCEON)
+//    {
+//        ret = (CCD_RX1_BUFFER_SIZE + CCD_RxHead - CCD_RxTail) & CCD_RX1_BUFFER_MASK;
+//    }
+//    return ret;
+//    
+//} /* ccd_rx_available */
+//
+//
+///*************************************************************************
+//Function: ccd_tx_available()
+//Purpose:  determine the number of bytes waiting in the transmit buffer
+//Input:    none
+//Returns:  integer number of bytes in the transmit buffer
+//**************************************************************************/
+//uint8_t ccd_tx_available(void)
+//{
+//    uint8_t ret;
+//  
+//    ATOMIC_BLOCK(ATOMIC_FORCEON)
+//    {
+//        ret = (CCD_TX1_BUFFER_SIZE + CCD_TxHead - CCD_TxTail) & CCD_TX1_BUFFER_MASK;
+//    }
+//    return ret;
+//    
+//} /* ccd_tx_available */
+//
+//
+///*************************************************************************
+//Function: ccd_rx_flush()
+//Purpose:  flush bytes waiting in the receive buffer, actually ignores them
+//Input:    none
+//Returns:  none
+//**************************************************************************/
+//void ccd_rx_flush(void)
+//{
+//    ATOMIC_BLOCK(ATOMIC_FORCEON)
+//    {
+//        CCD_RxHead = CCD_RxTail;
+//    }
+//    
+//} /* ccd_rx_flush */
+//
+//
+///*************************************************************************
+//Function: ccd_tx_flush()
+//Purpose:  flush bytes waiting in the transmit buffer, actually ignores them
+//Input:    none
+//Returns:  none
+//**************************************************************************/
+//void ccd_tx_flush(void)
+//{
+//    ATOMIC_BLOCK(ATOMIC_FORCEON)
+//    {
+//        CCD_TxHead = CCD_TxTail;
+//    }
+//    
+//} /* ccd_tx_flush */
 
 
 // SCI-bus functions (for PCM)
@@ -1369,261 +1417,261 @@ void pcm_tx_flush(void)
 
 
 // SCI-bus functions (for TCM)
-/*************************************************************************
-Function: tcm_init()
-Purpose:  initialize UART3 and set baudrate to conform SCI-bus requirements,
-          frame format is fixed
-Input:    direct ubrr value
-Returns:  none
-**************************************************************************/
-void tcm_init(uint16_t ubrr)
-{
-    /* reset ringbuffer */
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-        TCM_RxHead = 0;
-        TCM_RxTail = 0;
-        TCM_TxHead = 0;
-        TCM_TxTail = 0;
-    }
-  
-    /* set baud rate */
-    UBRR3H = (ubrr >> 8) & 0x0F;
-    UBRR3L = ubrr & 0xFF;
-
-    /* enable USART receiver and transmitter and receive complete interrupt */
-    TCM_CONTROL |= (1 << RXCIE3) | (1 << RXEN3) | (1 << TXEN3);
-
-    /* set frame format: asynchronous, 8 data bit, no parity, 1 stop bit */
-    UCSR3C |= (1 << UCSZ30) | (1 << UCSZ31);
-    
-} /* tcm_init */
-
-
-/*************************************************************************
-Function: tcm_getc()
-Purpose:  return byte from the receive buffer and remove it
-Returns:  low byte:  next byte in the receive buffer
-          high byte: error flags
-**************************************************************************/
-uint16_t tcm_getc(void)
-{
-    uint16_t tmptail;
-    uint8_t data;
-
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-        if (TCM_RxHead == TCM_RxTail)
-        {
-            return UART_RX_NO_DATA; /* no data available */
-        }
-    }
-  
-    /* calculate / store buffer index */
-    tmptail = (TCM_RxTail + 1) & TCM_RX3_BUFFER_MASK;
-  
-    TCM_RxTail = tmptail;
-  
-    /* get data from receive buffer */
-    data = TCM_RxBuf[tmptail];
-
-    return (TCM_LastRxError << 8 ) + data;
-    
-} /* tcm_getc */
-
-
-/*************************************************************************
-Function: tcm_peek()
-Purpose:  return the next byte waiting in the receive buffer
-          without removing it
-Input:    index number in the buffer (default = 0 = next available byte)
-Returns:  low byte:  next byte in the receive buffer
-          high byte: error flags
-**************************************************************************/
-uint16_t tcm_peek(uint16_t index = 0)
-{
-    uint16_t tmptail;
-    uint8_t data;
-
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-        if (TCM_RxHead == TCM_RxTail)
-        {
-            return UART_RX_NO_DATA;   /* no data available */
-        }
-    }
-  
-    tmptail = (TCM_RxTail + 1 + index) & TCM_RX3_BUFFER_MASK;
-
-    /* get data from receive buffer */
-    data = TCM_RxBuf[tmptail];
-
-    return (TCM_LastRxError << 8 ) + data;
-
-} /* tcm_peek */
-
-
-/*************************************************************************
-Function: tcm_putc()
-Purpose:  transmit byte to the SCI-bus (TCM)
-Input:    byte to be transmitted
-Returns:  none
-**************************************************************************/
-void tcm_putc(uint8_t data)
-{
-    uint16_t tmphead;
-    uint16_t txtail_tmp;
-
-    tmphead = (TCM_TxHead + 1) & TCM_TX3_BUFFER_MASK;
-
-    do
-    {
-        ATOMIC_BLOCK(ATOMIC_FORCEON)
-        {
-            txtail_tmp = TCM_TxTail;
-        }
-    }
-    while (tmphead == txtail_tmp); /* wait for free space in buffer */
-
-    TCM_TxBuf[tmphead] = data;
-    TCM_TxHead = tmphead;
-
-    /* enable UDRE interrupt */
-    TCM_CONTROL |= _BV(TCM_UDRIE);
-
-} /* tcm_putc */
-
-
-/*************************************************************************
-Function: tcm_puts()
-Purpose:  transmit string to the SCI-bus (TCM)
-Input:    pointer to the string to be transmitted
-Returns:  none
-**************************************************************************/
-void tcm_puts(const char *s)
-{
-    while(*s)
-    {
-        tcm_putc(*s++);
-    }
-
-} /* tcm_puts */
-
-
-/*************************************************************************
-Function: tcm_puts_p()
-Purpose:  transmit string from program memory to the SCI-bus (TCM)
-Input:    pointer to the program memory string to be transmitted
-Returns:  none
-**************************************************************************/
-void tcm_puts_p(const char *progmem_s)
-{
-    register char c;
-
-    while ((c = pgm_read_byte(progmem_s++)))
-    {
-        tcm_putc(c);
-    }
-
-} /* tcm_puts_p */
-
-
-/*************************************************************************
-Function: tcm_rx_available()
-Purpose:  determine the number of bytes waiting in the receive buffer
-Input:    none
-Returns:  integer number of bytes in the receive buffer
-**************************************************************************/
-uint8_t tcm_rx_available(void)
-{
-    uint8_t ret;
-  
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-        ret = (TCM_RX3_BUFFER_SIZE + TCM_RxHead - TCM_RxTail) & TCM_RX3_BUFFER_MASK;
-    }
-    return ret;
-    
-} /* tcm_rx_available */
-
-
-/*************************************************************************
-Function: tcm_tx_available()
-Purpose:  determine the number of bytes waiting in the transmit buffer
-Input:    none
-Returns:  integer number of bytes in the transmit buffer
-**************************************************************************/
-uint8_t tcm_tx_available(void)
-{
-    uint8_t ret;
-  
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-        ret = (TCM_TX3_BUFFER_SIZE + TCM_TxHead - TCM_TxTail) & TCM_TX3_BUFFER_MASK;
-    }
-    return ret;
-    
-} /* tcm_tx_available */
-
-
-/*************************************************************************
-Function: tcm_rx_flush()
-Purpose:  flush bytes waiting in the receive buffer, actually ignores them
-Input:    none
-Returns:  none
-**************************************************************************/
-void tcm_rx_flush(void)
-{
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-        TCM_RxHead = TCM_RxTail;
-    }
-    
-} /* tcm_rx_flush */
-
-
-/*************************************************************************
-Function: tcm_tx_flush()
-Purpose:  flush bytes waiting in the transmit buffer, actually ignores them
-Input:    none
-Returns:  none
-**************************************************************************/
-void tcm_tx_flush(void)
-{
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-        TCM_TxHead = TCM_TxTail;
-    }
-    
-} /* tcm_tx_flush */
-
-
-/*************************************************************************
-Function: ccd_eom()
-Purpose:  called when the CCD-chip's IDLE pin is going low,
-          the last byte received was the end of the message (EOM)
-          and the next byte going to be the new message's ID byte
-**************************************************************************/
-void ccd_eom(void)
-{
-    ccd.idle = true; // set idle flag
-    ccd.busy = false; // clear ctrl flag
-    ccd.message_length = ccd_rx_available();
-    ccd.message_count++;
-    
-} // end of ccd_eom
+///*************************************************************************
+//Function: tcm_init()
+//Purpose:  initialize UART3 and set baudrate to conform SCI-bus requirements,
+//          frame format is fixed
+//Input:    direct ubrr value
+//Returns:  none
+//**************************************************************************/
+//void tcm_init(uint16_t ubrr)
+//{
+//    /* reset ringbuffer */
+//    ATOMIC_BLOCK(ATOMIC_FORCEON)
+//    {
+//        TCM_RxHead = 0;
+//        TCM_RxTail = 0;
+//        TCM_TxHead = 0;
+//        TCM_TxTail = 0;
+//    }
+//  
+//    /* set baud rate */
+//    UBRR3H = (ubrr >> 8) & 0x0F;
+//    UBRR3L = ubrr & 0xFF;
+//
+//    /* enable USART receiver and transmitter and receive complete interrupt */
+//    TCM_CONTROL |= (1 << RXCIE3) | (1 << RXEN3) | (1 << TXEN3);
+//
+//    /* set frame format: asynchronous, 8 data bit, no parity, 1 stop bit */
+//    UCSR3C |= (1 << UCSZ30) | (1 << UCSZ31);
+//    
+//} // end of tcm_init
+//
+//
+///*************************************************************************
+//Function: tcm_getc()
+//Purpose:  return byte from the receive buffer and remove it
+//Returns:  low byte:  next byte in the receive buffer
+//          high byte: error flags
+//**************************************************************************/
+//uint16_t tcm_getc(void)
+//{
+//    uint16_t tmptail;
+//    uint8_t data;
+//
+//    ATOMIC_BLOCK(ATOMIC_FORCEON)
+//    {
+//        if (TCM_RxHead == TCM_RxTail)
+//        {
+//            return UART_RX_NO_DATA; /* no data available */
+//        }
+//    }
+//  
+//    /* calculate / store buffer index */
+//    tmptail = (TCM_RxTail + 1) & TCM_RX3_BUFFER_MASK;
+//  
+//    TCM_RxTail = tmptail;
+//  
+//    /* get data from receive buffer */
+//    data = TCM_RxBuf[tmptail];
+//
+//    return (TCM_LastRxError << 8 ) + data;
+//    
+//} // end of tcm_getc
+//
+//
+///*************************************************************************
+//Function: tcm_peek()
+//Purpose:  return the next byte waiting in the receive buffer
+//          without removing it
+//Input:    index number in the buffer (default = 0 = next available byte)
+//Returns:  low byte:  next byte in the receive buffer
+//          high byte: error flags
+//**************************************************************************/
+//uint16_t tcm_peek(uint16_t index = 0)
+//{
+//    uint16_t tmptail;
+//    uint8_t data;
+//
+//    ATOMIC_BLOCK(ATOMIC_FORCEON)
+//    {
+//        if (TCM_RxHead == TCM_RxTail)
+//        {
+//            return UART_RX_NO_DATA;   /* no data available */
+//        }
+//    }
+//  
+//    tmptail = (TCM_RxTail + 1 + index) & TCM_RX3_BUFFER_MASK;
+//
+//    /* get data from receive buffer */
+//    data = TCM_RxBuf[tmptail];
+//
+//    return (TCM_LastRxError << 8 ) + data;
+//
+//} // end of tcm_peek
+//
+//
+///*************************************************************************
+//Function: tcm_putc()
+//Purpose:  transmit byte to the SCI-bus (TCM)
+//Input:    byte to be transmitted
+//Returns:  none
+//**************************************************************************/
+//void tcm_putc(uint8_t data)
+//{
+//    uint16_t tmphead;
+//    uint16_t txtail_tmp;
+//
+//    tmphead = (TCM_TxHead + 1) & TCM_TX3_BUFFER_MASK;
+//
+//    do
+//    {
+//        ATOMIC_BLOCK(ATOMIC_FORCEON)
+//        {
+//            txtail_tmp = TCM_TxTail;
+//        }
+//    }
+//    while (tmphead == txtail_tmp); /* wait for free space in buffer */
+//
+//    TCM_TxBuf[tmphead] = data;
+//    TCM_TxHead = tmphead;
+//
+//    /* enable UDRE interrupt */
+//    TCM_CONTROL |= _BV(TCM_UDRIE);
+//
+//} // end of tcm_putc
+//
+//
+///*************************************************************************
+//Function: tcm_puts()
+//Purpose:  transmit string to the SCI-bus (TCM)
+//Input:    pointer to the string to be transmitted
+//Returns:  none
+//**************************************************************************/
+//void tcm_puts(const char *s)
+//{
+//    while(*s)
+//    {
+//        tcm_putc(*s++);
+//    }
+//
+//} // end of tcm_puts
+//
+//
+///*************************************************************************
+//Function: tcm_puts_p()
+//Purpose:  transmit string from program memory to the SCI-bus (TCM)
+//Input:    pointer to the program memory string to be transmitted
+//Returns:  none
+//**************************************************************************/
+//void tcm_puts_p(const char *progmem_s)
+//{
+//    register char c;
+//
+//    while ((c = pgm_read_byte(progmem_s++)))
+//    {
+//        tcm_putc(c);
+//    }
+//
+//} // end of tcm_puts_p
+//
+//
+///*************************************************************************
+//Function: tcm_rx_available()
+//Purpose:  determine the number of bytes waiting in the receive buffer
+//Input:    none
+//Returns:  integer number of bytes in the receive buffer
+//**************************************************************************/
+//uint8_t tcm_rx_available(void)
+//{
+//    uint8_t ret;
+//  
+//    ATOMIC_BLOCK(ATOMIC_FORCEON)
+//    {
+//        ret = (TCM_RX3_BUFFER_SIZE + TCM_RxHead - TCM_RxTail) & TCM_RX3_BUFFER_MASK;
+//    }
+//    return ret;
+//    
+//} // end of tcm_rx_available
+//
+//
+///*************************************************************************
+//Function: tcm_tx_available()
+//Purpose:  determine the number of bytes waiting in the transmit buffer
+//Input:    none
+//Returns:  integer number of bytes in the transmit buffer
+//**************************************************************************/
+//uint8_t tcm_tx_available(void)
+//{
+//    uint8_t ret;
+//  
+//    ATOMIC_BLOCK(ATOMIC_FORCEON)
+//    {
+//        ret = (TCM_TX3_BUFFER_SIZE + TCM_TxHead - TCM_TxTail) & TCM_TX3_BUFFER_MASK;
+//    }
+//    return ret;
+//    
+//} // end of tcm_tx_available
+//
+//
+///*************************************************************************
+//Function: tcm_rx_flush()
+//Purpose:  flush bytes waiting in the receive buffer, actually ignores them
+//Input:    none
+//Returns:  none
+//**************************************************************************/
+//void tcm_rx_flush(void)
+//{
+//    ATOMIC_BLOCK(ATOMIC_FORCEON)
+//    {
+//        TCM_RxHead = TCM_RxTail;
+//    }
+//    
+//} // end of tcm_rx_flush
+//
+//
+///*************************************************************************
+//Function: tcm_tx_flush()
+//Purpose:  flush bytes waiting in the transmit buffer, actually ignores them
+//Input:    none
+//Returns:  none
+//**************************************************************************/
+//void tcm_tx_flush(void)
+//{
+//    ATOMIC_BLOCK(ATOMIC_FORCEON)
+//    {
+//        TCM_TxHead = TCM_TxTail;
+//    }
+//    
+//} // end of tcm_tx_flush
 
 
-/*************************************************************************
-Function: ccd_active_byte()
-Purpose:  called when the CCD-chip's CTRL pin is going low
-**************************************************************************/
-void ccd_active_byte(void)
-{
-    ccd.busy = true; // set ctrl flag
-    ccd.idle = false; // clear idle flag
-    
-} // end of ccd_active_byte
+///*************************************************************************
+//Function: ccd_eom()
+//Purpose:  called when the CCD-chip's IDLE pin is going low,
+//          the last byte received was the end of the message (EOM)
+//          and the next byte going to be the new message's ID byte
+//**************************************************************************/
+//void ccd_eom(void)
+//{
+//    ccd.idle = true; // set idle flag
+//    ccd.busy = false; // clear ctrl flag
+//    ccd.message_length = ccd_rx_available();
+//    ccd.message_count++;
+//    
+//} // end of ccd_eom
+//
+//
+///*************************************************************************
+//Function: ccd_active_byte()
+//Purpose:  called when the CCD-chip's CTRL pin is going low
+//**************************************************************************/
+//void ccd_active_byte(void)
+//{
+//    ccd.busy = true; // set ctrl flag
+//    ccd.idle = false; // clear idle flag
+//    
+//} // end of ccd_active_byte
 
 
 /*************************************************************************
@@ -1804,7 +1852,7 @@ void send_usb_packet(uint8_t source, uint8_t target, uint8_t command, uint8_t su
     // Check if there's enough RAM to store the whole packet
     if (free_ram() < (packet_length + 50)) // require +50 free bytes to be safe
     {
-        uint8_t error[7] = { 0x3D, 0x00, 0x03, 0x8F, error_not_enough_mcu_ram, 0xFF, 0x8E }; // prepare the "not enough MCU RAM" error message, error_not_enough_mcu_ram = 0xF7
+        uint8_t error[7] = { 0x3D, 0x00, 0x03, ok_error, error_not_enough_mcu_ram, 0xFF, 0x08 }; // prepare the "not enough MCU RAM" error message
         for (uint16_t i = 0; i < 7; i++)
         {
             usb_putc(error[i]);
@@ -1851,202 +1899,248 @@ void send_usb_packet(uint8_t source, uint8_t target, uint8_t command, uint8_t su
         usb_putc(packet[k]); // write every byte in the packet to the usb-serial port
     }
     
-} /* send_usb_packet */
+} // end of send_usb_packet
 
 
 /*************************************************************************
 Function: configure_sci_bus()
 Purpose:  as the name says
-Note:     Input data bits description:
-          PCM: B7:B4
-            B7: change settings bit
-              0: leave settings
-              1: change settings
-            B6: enable bit
-              0: disable SCI-bus for PCM
-              1: enable SCI-bus for PCM
-            B5: configuration bit
-              0: SCI-bus A-configuration
-              1: SCI-bus B-configuration
-            B4: speed bit
-              0: 7812.5 baud (low speed)
-              1: 62500 baud (high speed)
-          
-          TCM: B3:B0
-            B3: change settings bit
-              0: leave settings
-              1: change settings
-            B2: enable bit
-              0: disable SCI-bus for TCM
-              1: enable SCI-bus for TCM
-            B1: configuration bit
-              0: SCI-bus A-configuration
-              1: SCI-bus B-configuration
-            B0: speed bit
-              0: 7812.5 baud (low speed)
-              1: 62500 baud (high speed)
+Input:    data: SCI-bus channel, configuration and speed settings
+          obd1: OBD1 SCI engine cable enable or disable setting
+Note:     data bits description:
+          B7:6: module bits: 10: PCM
+                             11: TCM
+                             00: USB (not used here)
+                             01: CCD (not used here)
+          B5: change bit:     0: leave settings
+                              1: change settings
+          B4: state bit:      0: disabled
+                              1: enabled
+          B3: logic bit:      0: non-inverted
+                              1: inverted (OBD1 SCI engine cable used)
+          B2: config bits:    0: "A" configuration
+                              1: "B" configuration
+          B1:0 speed bits:   00: 976.5 baud
+                             01: 7812.5 baud
+                             10: 62500 baud
+                             11: 125000 baud
 **************************************************************************/
 void configure_sci_bus(uint8_t data)
 {
-    // Check SCI-bus (PCM) change settings bit
-    if (data & 0x80) // if change settings bit is set
+    if (data == 0x00)
     {
-        cbi(pcm.sci_settings[0], 7); // clear change settings bit
-        
-        if (data & 0x40) // if enable bit is set
+        send_usb_packet(from_usb, to_usb, settings, set_sci_bus, err, 1); // error
+        return;
+    }
+
+    if (((data >> 6) & 0x03) == 0x02) // PCM
+    {
+        if ((data >> 5) & 0x01) // change settings
         {
-            sbi(pcm.sci_settings[0], 6); // set enable bit
-            
-            if (data & 0x20) // if configuration bit is true
+            if ((data >> 4) & 0x01) // enable PCM
             {
-                // SCI-bus (PCM) B-configuration is selected
-                // Disable all A-configuration pins first
-                digitalWrite(PA0, LOW);  // SCI-BUS_A_PCM_RX disabled
-                digitalWrite(PA1, LOW);  // SCI-BUS_A_PCM_TX disabled
-                digitalWrite(PA2, LOW);  // SCI-BUS_A_TCM_RX disabled
-                digitalWrite(PA3, LOW);  // SCI-BUS_A_TCM_TX disabled
-                // Enable B-configuration pins for PCM (TCM pins don't interfere here)
-                digitalWrite(PA4, HIGH); // SCI-BUS_B_PCM_RX enabled
-                digitalWrite(PA5, HIGH); // SCI-BUS_B_PCM_TX enabled
-                pcm.enabled = true;
-                
-                sbi(pcm.sci_settings[0], 5); // set configuration bit ("B")
+                if ((data >> 3) & 0x01) // inverted logic signal
+                {
+                    pcm.invert_logic = true;
+                }
+                else // non-inverted logic signal
+                {
+                    pcm.invert_logic = false;
+                }
+
+                if ((data >> 2) & 0x01) // configuration "B"
+                {
+                    pcm.enabled = true;
+                    
+                    // Disable all A-configuration pins first
+                    digitalWrite(PA0, LOW);  // SCI-BUS_A_PCM_RX disabled
+                    digitalWrite(PA1, LOW);  // SCI-BUS_A_PCM_TX disabled
+                    digitalWrite(PA2, LOW);  // SCI-BUS_A_TCM_RX disabled
+                    digitalWrite(PA3, LOW);  // SCI-BUS_A_TCM_TX disabled
+                    // Enable B-configuration pins for PCM (TCM pins don't interfere here)
+                    digitalWrite(PA4, HIGH); // SCI-BUS_B_PCM_RX enabled
+                    digitalWrite(PA5, HIGH); // SCI-BUS_B_PCM_TX enabled
+                }
+                else // configuration "A"
+                {
+                    pcm.enabled = true;
+                    //tcm.enabled = false; // TCM pins interfere with PCM pins in configuration "A"
+                    
+                    // Disable all B-configuration pins first
+                    digitalWrite(PA4, LOW);  // SCI-BUS_B_PCM_RX disabled
+                    digitalWrite(PA5, LOW);  // SCI-BUS_B_PCM_TX disabled
+                    digitalWrite(PA6, LOW);  // SCI-BUS_B_TCM_RX disabled
+                    digitalWrite(PA7, LOW);  // SCI-BUS_B_TCM_TX disabled
+                    // Disable A-configuration pins for TCM first, they interfere
+                    digitalWrite(PA2, LOW);  // SCI-BUS_A_TCM_RX disabled
+                    digitalWrite(PA3, LOW);  // SCI-BUS_A_TCM_TX disabled
+                    // Enable A-configuration pins for PCM
+                    digitalWrite(PA0, HIGH); // SCI-BUS_A_PCM_RX enabled
+                    digitalWrite(PA1, HIGH); // SCI-BUS_A_PCM_TX enabled
+                }
+
+                if ((data & 0x03) == 0x00) // 976.5 baud
+                {
+                    pcm_init(ELBAUD);
+                    //pcm_rx_flush();
+                    //pcm_tx_flush();
+                    pcm.speed = ELBAUD;
+                }
+                else if ((data & 0x03) == 0x01) // 7812.5 baud
+                {
+                    pcm_init(LOBAUD);
+                    //pcm_rx_flush();
+                    //pcm_tx_flush();
+                    pcm.speed = LOBAUD;
+                }
+                else if ((data & 0x03) == 0x02) // 62500 baud
+                {
+                    pcm_init(HIBAUD);
+                    //pcm_rx_flush();
+                    //pcm_tx_flush();
+                    pcm.speed = HIBAUD;
+                }
+                else if ((data & 0x03) == 0x03) // 125000 baud
+                {
+                    pcm_init(EHBAUD);
+                    //pcm_rx_flush();
+                    //pcm_tx_flush();
+                    pcm.speed = EHBAUD;
+                }
+                else // 7812.5 baud
+                {
+                    pcm_init(LOBAUD);
+                    //pcm_rx_flush();
+                    //pcm_tx_flush();
+                    pcm.speed = LOBAUD;
+                }
             }
-            else
+            else // disable PCM
             {
-                // SCI-bus (PCM) A-configuration is selected
-                // Disable all B-configuration pins first
-                digitalWrite(PA4, LOW);  // SCI-BUS_B_PCM_RX disabled
-                digitalWrite(PA5, LOW);  // SCI-BUS_B_PCM_TX disabled
-                digitalWrite(PA6, LOW);  // SCI-BUS_B_TCM_RX disabled
-                digitalWrite(PA7, LOW);  // SCI-BUS_B_TCM_TX disabled
-                // Disable A-configuration pins for TCM first, they interfere
-                digitalWrite(PA2, LOW);  // SCI-BUS_A_TCM_RX disabled
-                digitalWrite(PA3, LOW);  // SCI-BUS_A_TCM_TX disabled
-                // Enable A-configuration pins for PCM
-                digitalWrite(PA0, HIGH); // SCI-BUS_A_PCM_RX enabled
-                digitalWrite(PA1, HIGH); // SCI-BUS_A_PCM_TX enabled
-                pcm.enabled = true;
+                pcm.enabled = false;
+                
+                digitalWrite(PA0, LOW); // SCI-BUS_A_PCM_RX disabled
+                digitalWrite(PA1, LOW); // SCI-BUS_A_PCM_TX disabled
+                digitalWrite(PA4, LOW); // SCI-BUS_B_PCM_RX disabled
+                digitalWrite(PA5, LOW); // SCI-BUS_B_PCM_TX disabled
+            }
+
+            pcm.bus_settings = data; // copy settings to the PCM bus settings variable
+            cbi(pcm.bus_settings, 5); // clear 5th change bit, it's only applicable for this function
+        }
+        else
+        {
+            // don't change anything
+        }
+
+        uint8_t ret[2] = { 0x00, pcm.bus_settings };
+        send_usb_packet(from_usb, to_usb, settings, set_sci_bus, ret, 2); // acknowledge
+    }
+/*
+    else if (((data >> 6) & 0x03) == 0x03) // TCM
+    {
+        if ((data >> 5) & 0x01) // change settings
+        {
+            if ((data >> 4) & 0x01) // enable TCM
+            {
+                if ((data >> 3) & 0x01) // inverted logic signal
+                {
+                    tcm.invert_logic = true;
+                }
+                else // non-inverted logic signal
+                {
+                    tcm.invert_logic = false;
+                }
+
+                if ((data >> 2) & 0x01) // configuration "B"
+                {
+                    tcm.enabled = true;
+                    
+                    // Disable all A-configuration pins first
+                    digitalWrite(PA0, LOW);  // SCI-BUS_A_PCM_RX disabled
+                    digitalWrite(PA1, LOW);  // SCI-BUS_A_PCM_TX disabled
+                    digitalWrite(PA2, LOW);  // SCI-BUS_A_TCM_RX disabled
+                    digitalWrite(PA3, LOW);  // SCI-BUS_A_TCM_TX disabled
+                    // Enable B-configuration pins for TCM (PCM pins don't interfere here)
+                    digitalWrite(PA6, HIGH); // SCI-BUS_B_TCM_RX enabled
+                    digitalWrite(PA7, HIGH); // SCI-BUS_B_TCM_TX enabled
+                }
+                else // configuration "A"
+                {
+                    pcm.enabled = false; // PCM pins interfere with TCM pins in configuration "A"
+                    tcm.enabled = true;
+                    
+                    // Disable all B-configuration pins first
+                    digitalWrite(PA4, LOW);  // SCI-BUS_B_PCM_RX disabled
+                    digitalWrite(PA5, LOW);  // SCI-BUS_B_PCM_TX disabled
+                    digitalWrite(PA6, LOW);  // SCI-BUS_B_TCM_RX disabled
+                    digitalWrite(PA7, LOW);  // SCI-BUS_B_TCM_TX disabled
+                    // Disable A-configuration pins for PCM first, they interfere
+                    digitalWrite(PA0, LOW);  // SCI-BUS_A_PCM_RX disabled
+                    digitalWrite(PA1, LOW);  // SCI-BUS_A_PCM_TX disabled
+                    // Enable A-configuration pins for TCM
+                    digitalWrite(PA2, HIGH); // SCI-BUS_A_TCM_RX enabled
+                    digitalWrite(PA3, HIGH); // SCI-BUS_A_TCM_TX enabled
+                }
+
+                if ((data & 0x03) == 0x00) // 976.5 baud
+                {
+                    tcm_init(ELBAUD);
+                    tcm_rx_flush();
+                    tcm_tx_flush();
+                    tcm.speed = ELBAUD;
+                }
+                else if ((data & 0x03) == 0x01) // 7812.5 baud
+                {
+                    tcm_init(LOBAUD);
+                    tcm_rx_flush();
+                    tcm_tx_flush();
+                    tcm.speed = LOBAUD;
+                }
+                else if ((data & 0x03) == 0x02) // 62500 baud
+                {
+                    tcm_init(HIBAUD);
+                    tcm_rx_flush();
+                    tcm_tx_flush();
+                    tcm.speed = HIBAUD;
+                }
+                else if ((data & 0x03) == 0x03) // 125000 baud
+                {
+                    tcm_init(EHBAUD);
+                    tcm_rx_flush();
+                    tcm_tx_flush();
+                    tcm.speed = EHBAUD;
+                }
+                else // 7812.5 baud
+                {
+                    tcm_init(LOBAUD);
+                    tcm_rx_flush();
+                    tcm_tx_flush();
+                    tcm.speed = LOBAUD;
+                }
+            }
+            else // disable TCM
+            {
                 tcm.enabled = false;
                 
-                cbi(pcm.sci_settings[0], 5); // clear configuration bit ("A")
+                digitalWrite(PA2, LOW); // SCI-BUS_A_TCM_RX disabled
+                digitalWrite(PA3, LOW); // SCI-BUS_A_TCM_TX disabled
+                digitalWrite(PA6, LOW); // SCI-BUS_B_TCM_RX disabled
+                digitalWrite(PA7, LOW); // SCI-BUS_B_TCM_TX disabled
+            }
 
-                if (pcm.sci_settings[0] & 0x04) // check if TCM is enabled (it interferes with PCM)
-                {
-                    cbi(pcm.sci_settings[0], 2); // clear enable bit (TCM)
-                }
-            }
-            if (data & 0x10) // if speed bit is true
-            {
-                if (pcm.speed == LOBAUD) // don't re-init if speed is unchanged
-                {
-                    pcm_init(HIBAUD); // 62500 baud
-                    pcm.speed = HIBAUD;
-                    sbi(pcm.sci_settings[0], 4); // set speed bit (62500 baud)
-                }
-            }
-            else
-            {
-                if (pcm.speed == HIBAUD) // don't re-init if speed is unchanged
-                {
-                    pcm_init(LOBAUD); // 7812.5 baud
-                    pcm.speed = LOBAUD;
-                    cbi(pcm.sci_settings[0], 4); // clear speed bit (7812.5 baud)
-                }
-            }
+            tcm.bus_settings = data; // copy settings to the TCM bus settings variable
+            cbi(tcm.bus_settings, 5); // clear 5th change bit, it's only applicable for this function
         }
         else
         {
-            cbi(pcm.sci_settings[0], 6); // clear PCM enable bit
-            pcm.enabled = false;
-            digitalWrite(PA0, LOW); // SCI-BUS_A_PCM_RX disabled
-            digitalWrite(PA1, LOW); // SCI-BUS_A_PCM_TX disabled
-            digitalWrite(PA4, LOW); // SCI-BUS_B_PCM_RX disabled
-            digitalWrite(PA5, LOW); // SCI-BUS_B_PCM_TX disabled
+            // don't change anything
         }
+
+        uint8_t ret[2] = { 0x00, tcm.bus_settings };
+        send_usb_packet(from_usb, to_usb, settings, set_sci_bus, ret, 2); // acknowledge
     }
-
-    // Check SCI-bus (TCM) change settings bit
-    if (data & 0x08) // if change settings bit is set
-    {
-        cbi(tcm.sci_settings[0], 3); // clear change settings bit
-        
-        if (data & 0x04) // if enable bit is true
-        {
-            sbi(tcm.sci_settings[0], 2); // set enable bit
-            
-            if (data & 0x02) // if configuration bit is true
-            {
-                // SCI-bus (TCM) B-configuration is selected
-                // Disable all A-configuration pins first
-                digitalWrite(PA0, LOW);  // SCI-BUS_A_PCM_RX disabled
-                digitalWrite(PA1, LOW);  // SCI-BUS_A_PCM_TX disabled
-                digitalWrite(PA2, LOW);  // SCI-BUS_A_TCM_RX disabled
-                digitalWrite(PA3, LOW);  // SCI-BUS_A_TCM_TX disabled
-                // Enable B-configuration pins for TCM (PCM pins don't interfere here)
-                digitalWrite(PA6, HIGH); // SCI-BUS_B_TCM_RX enabled
-                digitalWrite(PA7, HIGH); // SCI-BUS_B_TCM_TX enabled
-                tcm.enabled = true;
-
-                sbi(tcm.sci_settings[0], 1); // set configuration bit ("B")
-            }
-            else
-            {
-                // SCI-bus (TCM) A-configuration is selected
-                // Disable all B-configuration pins first
-                digitalWrite(PA4, LOW);  // SCI-BUS_B_PCM_RX disabled
-                digitalWrite(PA5, LOW);  // SCI-BUS_B_PCM_TX disabled
-                digitalWrite(PA6, LOW);  // SCI-BUS_B_TCM_RX disabled
-                digitalWrite(PA7, LOW);  // SCI-BUS_B_TCM_TX disabled
-                // Disable A-configuration pins for PCM first, they interfere
-                digitalWrite(PA0, LOW);  // SCI-BUS_A_PCM_RX disabled
-                digitalWrite(PA1, LOW);  // SCI-BUS_A_PCM_TX disabled
-                // Enable A-configuration pins for TCM
-                digitalWrite(PA2, HIGH); // SCI-BUS_A_TCM_RX enabled
-                digitalWrite(PA3, HIGH); // SCI-BUS_A_TCM_TX enabled
-                tcm.enabled = true;
-                pcm.enabled = false;
-
-                cbi(tcm.sci_settings[0], 1); // clear configuration bit ("A")
-
-                if (tcm.sci_settings[0] & 0x40) // check if PCM is enabled (it interferes with TCM)
-                {
-                    cbi(tcm.sci_settings[0], 6); // clear enable bit (PCM)
-                }
-            }
-            if (data & 0x01) // if speed bit is true
-            {
-                if (tcm.speed == LOBAUD) // don't re-init if speed is unchanged
-                {
-                    tcm_init(HIBAUD); // 62500 baud
-                    tcm.speed = HIBAUD;
-                    sbi(tcm.sci_settings[0], 0); // set speed bit (62500 baud)
-                }
-            }
-            else
-            {
-                if (tcm.speed == HIBAUD) // don't re-init if speed is unchanged
-                {
-                    tcm_init(LOBAUD); // 7812.5 baud
-                    tcm.speed = LOBAUD;
-                    cbi(tcm.sci_settings[0], 0); // clear speed bit (7812.5 baud)
-                }
-            }
-        }
-        else
-        {
-            cbi(tcm.sci_settings[0], 2); // clear TCM enable bit
-            tcm.enabled = false;
-            digitalWrite(PA2, LOW); // SCI-BUS_A_TCM_RX disabled
-            digitalWrite(PA3, LOW); // SCI-BUS_A_TCM_TX disabled
-            digitalWrite(PA6, LOW); // SCI-BUS_B_TCM_RX disabled
-            digitalWrite(PA7, LOW); // SCI-BUS_B_TCM_TX disabled
-        }
-    }
-
-    uint8_t combined_settings[1] = { (pcm.sci_settings[0] & 0xF0) | (tcm.sci_settings[0] & 0x0F) };
-    send_usb_packet(from_usb, to_usb, settings, set_sci_bus, combined_settings, 1); // acknowledge
-
+*/
 } // end of configure_sci_bus
 
 
@@ -2076,7 +2170,7 @@ void exteeprom_init(void)
     { 
         eep_present = false;
         hw_version[0] = 0; // zero out values
-        hw_version[1] = 0;
+        hw_version[1] = 0x90;
         hw_date[0] = 0; // zero out values
         hw_date[1] = 0;
         hw_date[2] = 0;
@@ -2094,8 +2188,13 @@ void exteeprom_init(void)
         assembly_date[6] = 0;
         assembly_date[7] = 0;
         adc_supply_voltage = 500;
-        battery_rd1 = 27000;
-        battery_rd2 = 5000;
+        r19_value = 27000;
+        r20_value = 5000;
+        lcd_enabled = false;
+        lcd_char_width = 20;
+        lcd_char_height = 4;
+        lcd_refresh_rate = 1; // Hz
+        lcd_units = 0; // 0-imperial, 1-metric
         eep_checksum[0] = 0; // zero out value
         eep_calculated_checksum = 0;
         send_usb_packet(from_usb, to_usb, ok_error, error_eep_not_found, err, 1);
@@ -2153,25 +2252,128 @@ void exteeprom_init(void)
         eep_result = eep.read(0x14, data, 2); // read R19 resistor value (for calibration)
         if (eep_result)
         {
-            battery_rd1 = 27000; // default value
+            r19_value = 27000; // default value
             send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
         }
         else
         {
-            battery_rd1 = to_uint16(data[0], data[1]); // stored value
-            if (battery_rd1 == 0) battery_rd1 = 27000; // default value
+            r19_value = to_uint16(data[0], data[1]); // stored value
+            if (r19_value == 0) r19_value = 27000; // default value
         }
         
         eep_result = eep.read(0x16, data, 2); // read R20 resistor value (for calibration)
         if (eep_result)
         {
-            battery_rd2 = 5100; // default value
+            r20_value = 5100; // default value
             send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
         }
         else
         {
-            battery_rd2 = to_uint16(data[0], data[1]); // stored value
-            if (battery_rd2 == 0) battery_rd2 = 5100; // default value
+            r20_value = to_uint16(data[0], data[1]); // stored value
+            if (r20_value == 0) r20_value = 5100; // default value
+        }
+
+        eep_result = eep.read(0x18, data, 1); // read LCD enabled / disabled state
+        if (eep_result) // error
+        {
+            lcd_enabled = false; // default value
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+        }
+        else
+        {
+            if (data[0] & 0x01) lcd_enabled = true;
+            else lcd_enabled = false;
+        }
+
+        eep_result = eep.read(0x19, data, 1); // read LCD width
+        if (eep_result)
+        {
+            lcd_char_width = 20; // default value
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+        }
+        else
+        {
+            lcd_char_width = data[0]; // stored value
+            if (lcd_char_width == 0) lcd_char_width = 20; // default value
+        }
+
+        eep_result = eep.read(0x1A, data, 1); // read LCD height
+        if (eep_result)
+        {
+            lcd_char_height = 4; // default value
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+        }
+        else
+        {
+            lcd_char_height = data[0]; // stored value
+            if (lcd_char_height == 0) lcd_char_height = 4; // default value
+        }
+
+        eep_result = eep.read(0x1B, data, 1); // read LCD refresh rate
+        if (eep_result)
+        {
+            lcd_refresh_rate = 20; // Hz,m default value
+            lcd_update_interval = 50; // ms
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+        }
+        else
+        {
+            lcd_refresh_rate = data[0]; // stored value
+            lcd_update_interval = 1000 / lcd_refresh_rate; // ms
+            if (lcd_refresh_rate == 0)
+            {
+                lcd_refresh_rate = 20; // Hz, default value
+                lcd_update_interval = 50; // ms
+            }
+        }
+
+        eep_result = eep.read(0x1C, data, 1); // read LCD units
+        if (eep_result)
+        {
+            lcd_units = 0; // default value (imperial)
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+        }
+        else
+        {
+            lcd_units = data[0]; // stored value
+            if (lcd_units > 1) lcd_units = 0; // default value (imperial)
+        }
+
+        eep_result = eep.read(0x1D, data, 1); // read LCD data source
+        if (eep_result)
+        {
+            lcd_data_source = 1; // default value (CCD-bus)
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+        }
+        else
+        {
+            lcd_data_source = data[0]; // stored value
+            if ((lcd_data_source == 0) || (lcd_data_source > 3)) lcd_data_source = 1; // default value (imperial)
+        }
+
+        eep_result = eep.read(0x1E, data, 2); // read LED heartbeat interval
+        if (eep_result)
+        {
+            heartbeat_interval = 5000; // ms, default value
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+        }
+        else
+        {
+            heartbeat_interval = (data[0] << 8) + data[1]; // stored value
+            if (heartbeat_interval > 0) heartbeat_enabled = true;
+            else heartbeat_enabled = false;
+        }
+
+        eep_result = eep.read(0x20, data, 2); // read LED blink duration
+        if (eep_result)
+        {
+            led_blink_duration = 50; // default value
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+        }
+        else
+        {
+            led_blink_duration = (data[0] << 8) + data[1]; // stored value
+            if (led_blink_duration == 0) led_blink_duration = 50; // ms
         }
         
         eep_result = eep.read(0xFF, eep_checksum, 1); // read 255th byte for the checksum byte (total of 256 bytes are reserved for hardware description)
@@ -2226,7 +2428,7 @@ Purpose:  gather hardware version/date, assembly date and firmware date
 **************************************************************************/
 void send_hwfw_info(void)
 {
-    uint8_t ret[26];
+    uint8_t ret[30];
                                     
     ret[0] = hw_version[0];
     ret[1] = hw_version[1];
@@ -2258,26 +2460,31 @@ void send_hwfw_info(void)
     ret[24] = (FW_DATE >> 8) & 0xFF;
     ret[25] = FW_DATE & 0xFF;
 
-    send_usb_packet(from_usb, to_usb, response, hwfw_info, ret, 26);
+    ret[26] = (FW_VERSION >> 24) & 0xFF;
+    ret[27] = (FW_VERSION >> 16) & 0xFF;
+    ret[28] = (FW_VERSION >> 8) & 0xFF;
+    ret[29] = FW_VERSION & 0xFF;
+
+    send_usb_packet(from_usb, to_usb, response, hwfw_info, ret, 30);
     
 } // end of evaluate_eep_checksum
 
 
 /*************************************************************************
 Function: check_battery_volts()
-Purpose:  measure battery voltage through the OBD16 pin
+Purpose:  measure battery voltage on the OBD16 pin through a resistor divider
 **************************************************************************/
 void check_battery_volts(void)
 {
     battery_adc = 0;
     
-    for (uint16_t i = 0; i < 1000; i++) // get 1000 samples in quick succession
+    for (uint16_t i = 0; i < 200; i++) // get 200 samples in quick succession
     {
         battery_adc += analogRead(BATT);
     }
     
-    battery_adc /= 1000; // divide the sum by 1000 to get average value
-    battery_volts = (uint16_t)(battery_adc*(adc_supply_voltage/100.0)/adc_max_value*((double)battery_rd1+(double)battery_rd2)/(double)battery_rd2*100.0); // resistor divider equation
+    battery_adc /= 200; // divide the sum by 200 to get average value
+    battery_volts = (uint16_t)(battery_adc*(adc_supply_voltage/100.0)/adc_max_value*((double)r19_value+(double)r20_value)/(double)r20_value*100.0); // resistor divider equation
     
     if (battery_volts < 600) // battery_volts < 6V
     {
@@ -2293,6 +2500,39 @@ void check_battery_volts(void)
     }
     
 } // end of check_battery_volts
+
+
+/*************************************************************************
+Function: check_ccd_volts()
+Purpose:  measure CCD-bus pin voltages on OBD3 and OBD11 pins
+**************************************************************************/
+void check_ccd_volts(void)
+{
+    ccdplus_adc = 0;
+    ccdminus_adc = 0;
+    
+    for (uint16_t i = 0; i < 200; i++) // get 200 samples in quick succession
+    {
+        ccdplus_adc += analogRead(CCDPLUS);
+    }
+
+    for (uint16_t i = 0; i < 200; i++) // get 200 samples in quick succession
+    {
+        ccdminus_adc += analogRead(CCDMINUS);
+    }
+    
+    ccdplus_adc /= 200; // divide the sum by 100 to get average value
+    ccdminus_adc /= 200; // divide the sum by 100 to get average value
+    ccdplus_volts = (uint16_t)(ccdplus_adc*(adc_supply_voltage/100.0)/adc_max_value*100.0);
+    ccdminus_volts = (uint16_t)(ccdminus_adc*(adc_supply_voltage/100.0)/adc_max_value*100.0);
+    
+    ccd_volts_array[0] = (ccdplus_volts >> 8) & 0xFF;
+    ccd_volts_array[1] = ccdplus_volts & 0xFF;
+    ccd_volts_array[2] = (ccdminus_volts >> 8) & 0xFF;
+    ccd_volts_array[3] = ccdminus_volts & 0xFF;
+    connected_to_vehicle = true;
+    
+} // end of check_ccd_volts
 
 
 /*************************************************************************
@@ -2345,6 +2585,7 @@ int cli_execute(void)
             return (*commands_func[i])();
         }
     }
+    
     return 0;
     
 } // end of cli_execute
@@ -2379,6 +2620,8 @@ int cmd_help(void)
     {
         usb_puts(ascii_autoreply);
     }
+
+    return 0;
     
 } // end of cmd_help
 
@@ -2389,7 +2632,7 @@ Purpose:  puts the scanner in an infinite loop and forces watchdog-reset
 **************************************************************************/
 int cmd_reset(void)
 {
-    send_usb_packet(from_usb, to_usb, reset, ok, ack, 1); // RX LED is on by now and this function lights up TX LED
+    send_usb_packet(from_usb, to_usb, reset, reset_in_progress, ack, 1); // RX LED is on by now and this function lights up TX LED
     digitalWrite(ACT_LED, LOW); // blink all LEDs including this, good way to test if LEDs are working or not
     while (true); // enter into an infinite loop; watchdog timer doesn't get reset this way so it restarts the program eventually
     
@@ -2404,6 +2647,7 @@ int cmd_handshake(void)
 {
     uint8_t handshake_array[] = { 0x43, 0x48, 0x52, 0x59, 0x53, 0x4C, 0x45, 0x52, 0x43, 0x43, 0x44, 0x53, 0x43, 0x49, 0x53, 0x43, 0x41, 0x4E, 0x4E, 0x45, 0x52 }; // CHRYSLERCCDSCISCANNER
     send_usb_packet(from_usb, to_usb, handshake, ok, handshake_array, 21);
+    return 0;
     
 } // end of cmd_handshake
 
@@ -2418,95 +2662,187 @@ int cmd_status(void)
     scanner_status[1] = avr_signature[1];
     scanner_status[2] = avr_signature[2];
 
-    scanner_status[3] = hw_version[0];
-    scanner_status[4] = hw_version[1];
-
-    scanner_status[5] = hw_date[0];
-    scanner_status[6] = hw_date[1];
-    scanner_status[7] = hw_date[2];
-    scanner_status[8] = hw_date[3];
-    scanner_status[9] = hw_date[4];
-    scanner_status[10] = hw_date[5];
-    scanner_status[11] = hw_date[6];
-    scanner_status[12] = hw_date[7];
-
-    scanner_status[13] = assembly_date[0];
-    scanner_status[14] = assembly_date[1];
-    scanner_status[15] = assembly_date[2];
-    scanner_status[16] = assembly_date[3];
-    scanner_status[17] = assembly_date[4];
-    scanner_status[18] = assembly_date[5];
-    scanner_status[19] = assembly_date[6];
-    scanner_status[20] = assembly_date[7];
-
-    scanner_status[21] = (FW_DATE >> 56) & 0xFF;
-    scanner_status[22] = (FW_DATE >> 48) & 0xFF;
-    scanner_status[23] = (FW_DATE >> 40) & 0xFF;
-    scanner_status[24] = (FW_DATE >> 32) & 0xFF;
-    scanner_status[25] = (FW_DATE >> 24) & 0xFF;
-    scanner_status[26] = (FW_DATE >> 16) & 0xFF;
-    scanner_status[27] = (FW_DATE >> 8) & 0xFF;
-    scanner_status[28] = FW_DATE & 0xFF;
-
-    if (eep_present) scanner_status[29] = 0x01;
-    else scanner_status[29] = 0x00;
-    scanner_status[30] = eep_checksum[0];
-    scanner_status[31] = eep_calculated_checksum;
+    if (eep_present) scanner_status[3] = 0x01;
+    else scanner_status[3] = 0x00;
+    scanner_status[4] = eep_checksum[0];
+    scanner_status[5] = eep_calculated_checksum;
 
     update_timestamp(current_timestamp);
-    scanner_status[32] = current_timestamp[0];
-    scanner_status[33] = current_timestamp[1];
-    scanner_status[34] = current_timestamp[2];
-    scanner_status[35] = current_timestamp[3];
+    scanner_status[6] = current_timestamp[0];
+    scanner_status[7] = current_timestamp[1];
+    scanner_status[8] = current_timestamp[2];
+    scanner_status[9] = current_timestamp[3];
 
     free_ram_available = free_ram();
-    scanner_status[36] = (free_ram_available >> 8) & 0xFF;
-    scanner_status[37] = free_ram_available & 0xFF;
+    scanner_status[10] = (free_ram_available >> 8) & 0xFF;
+    scanner_status[11] = free_ram_available & 0xFF;
 
     check_battery_volts();
-    if (connected_to_vehicle) scanner_status[38] = 0x01;
-    else scanner_status[38] = 0x00;
-    scanner_status[39] = battery_volts_array[0];
-    scanner_status[40] = battery_volts_array[1];
+    if (connected_to_vehicle) scanner_status[12] = 0x01;
+    else scanner_status[12] = 0x00;
+    scanner_status[13] = battery_volts_array[0];
+    scanner_status[14] = battery_volts_array[1];
+    
+    scanner_status[15] = (ccd.bus_settings);
+    scanner_status[16] = (ccd.msg_rx_count >> 24) & 0xFF;
+    scanner_status[17] = (ccd.msg_rx_count >> 16) & 0xFF;
+    scanner_status[18] = (ccd.msg_rx_count >> 8) & 0xFF;
+    scanner_status[19] = ccd.msg_rx_count & 0xFF;
+    scanner_status[20] = (ccd.msg_tx_count >> 24) & 0xFF;
+    scanner_status[21] = (ccd.msg_tx_count >> 16) & 0xFF;
+    scanner_status[22] = (ccd.msg_tx_count >> 8) & 0xFF;
+    scanner_status[23] = ccd.msg_tx_count & 0xFF;
 
-    if (ccd.enabled) scanner_status[41] = 0x01;
-    else scanner_status[41] = 0x00;
+    scanner_status[24] = (pcm.bus_settings);
+    scanner_status[25] = (pcm.msg_rx_count >> 24) & 0xFF;
+    scanner_status[26] = (pcm.msg_rx_count >> 16) & 0xFF;
+    scanner_status[27] = (pcm.msg_rx_count >> 8) & 0xFF;
+    scanner_status[28] = pcm.msg_rx_count & 0xFF;
+    scanner_status[29] = (pcm.msg_tx_count >> 24) & 0xFF;
+    scanner_status[30] = (pcm.msg_tx_count >> 16) & 0xFF;
+    scanner_status[31] = (pcm.msg_tx_count >> 8) & 0xFF;
+    scanner_status[32] = pcm.msg_tx_count & 0xFF;
 
-    scanner_status[42] = (ccd.msg_rx_count >> 24) & 0xFF;
-    scanner_status[43] = (ccd.msg_rx_count >> 16) & 0xFF;
-    scanner_status[44] = (ccd.msg_rx_count >> 8) & 0xFF;
-    scanner_status[45] = ccd.msg_rx_count & 0xFF;
+    if (lcd_enabled) scanner_status[33] = 0x01;
+    else scanner_status[33] = 0x00;
 
-    scanner_status[46] = (ccd.msg_tx_count >> 24) & 0xFF;
-    scanner_status[47] = (ccd.msg_tx_count >> 16) & 0xFF;
-    scanner_status[48] = (ccd.msg_tx_count >> 8) & 0xFF;
-    scanner_status[49] = ccd.msg_tx_count & 0xFF;
+    scanner_status[34] = lcd_char_width;
+    scanner_status[35] = lcd_char_height;
+    scanner_status[36] = lcd_refresh_rate;
+    scanner_status[37] = lcd_units;
+    scanner_status[38] = lcd_data_source;
 
-    scanner_status[50] = (pcm.sci_settings[0] & 0xF0) | (tcm.sci_settings[0] & 0x0F); // combine the upper 4 bits of the PCM settings with the lower 4 bits of the TCM settings, workaround...
+    scanner_status[39] = (heartbeat_interval >> 8) & 0xFF;
+    scanner_status[40] = heartbeat_interval & 0xFF;
+    scanner_status[41] = (led_blink_duration >> 8) & 0xFF;
+    scanner_status[42] = led_blink_duration & 0xFF;
 
-    scanner_status[51] = (pcm.msg_rx_count >> 24) & 0xFF;
-    scanner_status[52] = (pcm.msg_rx_count >> 16) & 0xFF;
-    scanner_status[53] = (pcm.msg_rx_count >> 8) & 0xFF;
-    scanner_status[54] = pcm.msg_rx_count & 0xFF;
-
-    scanner_status[55] = (pcm.msg_tx_count >> 24) & 0xFF;
-    scanner_status[56] = (pcm.msg_tx_count >> 16) & 0xFF;
-    scanner_status[57] = (pcm.msg_tx_count >> 8) & 0xFF;
-    scanner_status[58] = pcm.msg_tx_count & 0xFF;
-
-    scanner_status[59] = (tcm.msg_rx_count >> 24) & 0xFF;
-    scanner_status[60] = (tcm.msg_rx_count >> 16) & 0xFF;
-    scanner_status[61] = (tcm.msg_rx_count >> 8) & 0xFF;
-    scanner_status[62] = tcm.msg_rx_count & 0xFF;
-
-    scanner_status[63] = (tcm.msg_tx_count >> 24) & 0xFF;
-    scanner_status[64] = (tcm.msg_tx_count >> 16) & 0xFF;
-    scanner_status[65] = (tcm.msg_tx_count >> 8) & 0xFF;
-    scanner_status[66] = tcm.msg_tx_count & 0xFF;
-
-    send_usb_packet(from_usb, to_usb, status, ok, scanner_status, 67);
+    send_usb_packet(from_usb, to_usb, status, ok, scanner_status, 43);
+    return 0;
     
 } // end of cmd_status
+
+
+/*************************************************************************
+Function: lcd_init()
+Purpose:  initialize LCD
+**************************************************************************/
+void lcd_init(void)
+{
+    lcd.begin(lcd_char_width, lcd_char_height);
+    lcd.backlight();  // backlight on
+    lcd.clear();      // clear display
+    lcd.home();       // set cursor in home position (0, 0)
+        
+    if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
+    {
+        lcd.print(F("--------------------")); // F(" ") makes the compiler store the string inside flash memory instead of RAM, good practice if system is low on RAM
+        lcd.setCursor(0, 1);
+        lcd.print(F("  CHRYSLER CCD/SCI  "));
+        lcd.setCursor(0, 2);
+        lcd.print(F("   SCANNER V1.4X    "));
+        lcd.setCursor(0, 3);
+        lcd.print(F("--------------------"));
+    }
+    else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
+    {
+        lcd.print(F("CHRYSLER CCD/SCI")); // F(" ") makes the compiler store the string inside flash memory instead of RAM, good practice if system is low on RAM
+        lcd.setCursor(0, 1);
+        lcd.print(F(" SCANNER V1.4X  "));
+    }
+    else
+    {
+        lcd.print(F("CCD/SCI"));
+    }
+
+    lcd.createChar(0, up_symbol); // custom character from "upsymbol" variable with id number 0
+    lcd.createChar(1, down_symbol);
+    lcd.createChar(2, left_symbol);
+    lcd.createChar(3, right_symbol);
+    lcd.createChar(4, enter_symbol);
+    lcd.createChar(5, degree_symbol);
+    
+} // end of lcd_init
+
+
+/*************************************************************************
+Function: print_display_layout_1_metric()
+Purpose:  printing default metric display layout to LCD (km/h, km...)
+Note:     prints when switching between different layouts
+**************************************************************************/
+void print_display_layout_1_metric(void)
+{
+    lcd.clear();
+    
+    if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
+    {
+        lcd.setCursor(0, 0);
+        lcd.print(F("  0km/h    0rpm   0%")); // 1st line
+        lcd.setCursor(0, 1);
+        lcd.print(F("  0/  0 C     0.0kPa")); // 2nd line 
+        lcd.setCursor(0, 2);
+        lcd.print(F(" 0.0/ 0.0V          ")); // 3rd line
+        lcd.setCursor(0, 3);
+        lcd.print(F("     0.000km        ")); // 4th line
+        lcd.setCursor(7, 1);
+        lcd.write((uint8_t)5); // print degree symbol
+    }
+    else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
+    {
+        lcd.setCursor(0, 0);
+        lcd.print(F("  0km/h     0rpm")); // 1st line
+        lcd.setCursor(0, 1);
+        lcd.print(F("  0 C     0.0kPa")); // 2nd line 
+        lcd.setCursor(3, 1);
+        lcd.write((uint8_t)5); // print degree symbol
+    }
+    else
+    {
+        lcd.setCursor(0, 0);
+        lcd.print(F("    0rpm")); // 1st line
+    }
+
+} // end of print_display_layout_1_metric
+
+
+/*************************************************************************
+Function: print_display_layout_1_imperial()
+Purpose:  printing default metric display layout to LCD (mph, mi...)
+Note:     prints when switching between different layouts
+**************************************************************************/
+void print_display_layout_1_imperial(void)
+{
+    lcd.clear();
+    
+    if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
+    {
+        lcd.setCursor(0, 0);
+        lcd.print(F("  0mph     0rpm   0%")); // 1st line
+        lcd.setCursor(0, 1);
+        lcd.print(F("  0/  0 F     0.0psi")); // 2nd line 
+        lcd.setCursor(0, 2);
+        lcd.print(F(" 0.0/ 0.0V          ")); // 3rd line
+        lcd.setCursor(0, 3);
+        lcd.print(F("     0.000mi        ")); // 4th line
+        lcd.setCursor(7, 1);
+        lcd.write((uint8_t)5); // print degree symbol
+    }
+    else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
+    {
+        lcd.setCursor(0, 0);
+        lcd.print(F("  0mph      0rpm")); // 1st line
+        lcd.setCursor(0, 1);
+        lcd.print(F("  0 F     0.0psi")); // 2nd line 
+        lcd.setCursor(3, 1);
+        lcd.write((uint8_t)5); // print degree symbol
+    }
+    else
+    {
+        lcd.setCursor(0, 0);
+        lcd.print(F("    0rpm")); // 1st line
+    }
+  
+} // end of print_display_layout_1_imperial
 
 
 /*************************************************************************
@@ -2515,1322 +2851,644 @@ Purpose:  write stuff to LCD
 Note:     uncomment cases when necessary
 **************************************************************************/
 void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
-{  
+{
     if (lcd_enabled)
     {
-        uint8_t message[datalength-index];
-    
-        for (uint8_t i = index; i < datalength; i++)
-        {
-            message[i-index] = data[i]; // make a local copy of the source array
-        }
+//        current_millis = millis(); // check current time
+//        if ((current_millis - lcd_last_update ) > lcd_update_interval) // refresh rate
+//        {
+//            lcd_last_update = current_millis;
+            
+            uint8_t message_length = datalength-index;
+            uint8_t message[message_length];
+
+            if (message_length == 0) return;
         
-        switch (bus)
-        {
-            case from_ccd: // 0x01 - CCD-bus
+            for (uint8_t i = index; i < datalength; i++)
             {
-                switch (message[0]) // check ID-byte
+                message[i-index] = data[i]; // make a local copy of the source array
+            }
+
+            switch (lcd_data_source)
+            {
+                case from_ccd:
                 {
-//                    case 0x00: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x01: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x02: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x03: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x04: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x05: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x06: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x07: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x08: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x09: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x0A: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x0B: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x0C: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0x0D: // ???
+                    if (bus == from_ccd)
                     {
-                        // TODO
-                        break;
+                        switch (message[0]) // check ID-byte
+                        {
+                            case 0x24: // VEHICLE SPEED
+                            {
+                                if (message_length > 3)
+                                {
+                                    uint8_t vehicle_speed = 0;
+                                    
+                                    if (lcd_units == 0) // imperial
+                                    {
+                                        vehicle_speed = message[1];
+                                    }
+                                    else if (lcd_units == 1) // metric
+                                    {
+                                        vehicle_speed = message[2];
+                                    }
+        
+                                    if (((lcd_char_width == 20) && (lcd_char_height == 4)) || ((lcd_char_width == 16) && (lcd_char_height == 2))) // 20x4 / 16x2 LCD
+                                    {
+                                        if (vehicle_speed < 10)
+                                        {
+                                            lcd.setCursor(0, 0);
+                                            lcd.print("  ");
+                                            lcd.print(vehicle_speed);
+                                        }
+                                        else if ((vehicle_speed >= 10) && (vehicle_speed < 100))
+                                        {
+                                            lcd.setCursor(0, 0);
+                                            lcd.print(" ");
+                                            lcd.print(vehicle_speed);
+                                        }
+                                        else if (vehicle_speed >= 100)
+                                        {
+                                            lcd.setCursor(0, 0);
+                                            lcd.print(vehicle_speed);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        
+                                    }
+                                }
+                                break;
+                            }
+                            case 0x42: // THROTTLE POSITION SENSOR | CRUISE CONTROL
+                            {
+                                if (message_length > 3)
+                                {
+                                    float tps_position_float = roundf(message[1] * 0.65);
+                                    uint8_t tps_position = (uint8_t)tps_position_float;
+            
+                                    if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
+                                    {
+                                        if (tps_position < 10)
+                                        {
+                                            lcd.setCursor(16, 0);
+                                            lcd.print("  ");
+                                            lcd.print(tps_position);
+                                        }
+                                        else if ((tps_position >= 10) && (tps_position < 100))
+                                        {
+                                            lcd.setCursor(16, 0);
+                                            lcd.print(" ");
+                                            lcd.print(tps_position);
+                                        }
+                                        else if (tps_position >= 100)
+                                        {
+                                            lcd.setCursor(16, 0);
+                                            lcd.print(tps_position);
+                                        }
+                                    }
+                                    else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
+                                    {
+                                        
+                                    }
+                                    else
+                                    {
+                                        
+                                    }
+                                }
+                                break;
+                            }
+                            case 0x8C: // ENGINE COOLANT TEMPERATURE | INTAKE AIR TEMPERATURE
+                            {
+                                if (message_length > 3)
+                                {
+                                    float coolant_temp = 0;
+                                    float intake_temp = 0;
+                                    
+                                    if (lcd_units == 0) // imperial
+                                    {
+                                        coolant_temp = roundf((message[1] * 1.8) - 198.4);
+                                        intake_temp = roundf((message[2] * 1.8) - 198.4);
+                                    }
+                                    else if (lcd_units == 1) // metric
+                                    {
+                                        coolant_temp = roundf((((message[1] * 1.8) - 198.4) * 0.555556) - 17.77778);
+                                        intake_temp = roundf((((message[2] * 1.8) - 198.4) * 0.555556) - 17.77778);
+                                    }
+        
+                                    if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
+                                    {
+                                        if (coolant_temp <= -100)
+                                        {
+                                            lcd.setCursor(0, 1);
+                                            lcd.print("-99");
+                                        }
+                                        else if ((coolant_temp > -100) && (coolant_temp <= -10))
+                                        {
+                                            lcd.setCursor(0, 1);
+                                            lcd.print(coolant_temp, 0);
+                                        }
+                                        else if ((coolant_temp > -10) && (coolant_temp < 0))
+                                        {
+                                            lcd.setCursor(0, 1);
+                                            lcd.print(" ");
+                                            lcd.print(coolant_temp, 0);
+                                        }
+                                        else if ((coolant_temp >= 0) && (coolant_temp < 10))
+                                        {
+                                            lcd.setCursor(0, 1);
+                                            lcd.print("  ");
+                                            lcd.print(coolant_temp, 0);
+                                        }
+                                        else if ((coolant_temp >= 10) && (coolant_temp < 100))
+                                        {
+                                            lcd.setCursor(0, 1);
+                                            lcd.print(" ");
+                                            lcd.print(coolant_temp, 0);
+                                        }
+                                        else if (coolant_temp >= 100)
+                                        {
+                                            lcd.setCursor(0, 1);
+                                            lcd.print(coolant_temp, 0);
+                                        }
+        
+                                        if (intake_temp <= -100)
+                                        {
+                                            lcd.setCursor(4, 1);
+                                            lcd.print("-99");
+                                        }
+                                        else if ((intake_temp > -100.0) && (intake_temp <= -10.0))
+                                        {
+                                            lcd.setCursor(4, 1);
+                                            lcd.print(intake_temp, 0);
+                                        }
+                                        else if ((intake_temp > -10.0) && (intake_temp < 0.0))
+                                        {
+                                            lcd.setCursor(4, 1);
+                                            lcd.print(" ");
+                                            lcd.print(intake_temp, 0);
+                                        }
+                                        else if ((intake_temp >= 0.0) && (intake_temp < 10.0))
+                                        {
+                                            lcd.setCursor(4, 1);
+                                            lcd.print("  ");
+                                            lcd.print(intake_temp, 0);
+                                        }
+                                        else if ((intake_temp >= 10) && (intake_temp < 100))
+                                        {
+                                            lcd.setCursor(4, 1);
+                                            lcd.print(" ");
+                                            lcd.print(intake_temp, 0);
+                                        }
+                                        else if (intake_temp >= 100)
+                                        {
+                                            lcd.setCursor(4, 1);
+                                            lcd.print(intake_temp, 0);
+                                        }
+                                    }
+                                    else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
+                                    {
+                                        if (coolant_temp <= -100.0)
+                                        {
+                                            lcd.setCursor(0, 1);
+                                            lcd.print("-99");
+                                        }
+                                        else if ((coolant_temp > -100.0) && (coolant_temp <= -10.0))
+                                        {
+                                            lcd.setCursor(0, 1);
+                                            lcd.print(coolant_temp, 0);
+                                        }
+                                        else if ((coolant_temp > -10.0) && (coolant_temp < 0.0))
+                                        {
+                                            lcd.setCursor(0, 1);
+                                            lcd.print(" ");
+                                            lcd.print(coolant_temp, 0);
+                                        }
+                                        else if ((coolant_temp >= 0.0) && (coolant_temp < 10.0))
+                                        {
+                                            lcd.setCursor(0, 1);
+                                            lcd.print("  ");
+                                            lcd.print(coolant_temp, 0);
+                                        }
+                                        else if ((coolant_temp >= 10) && (coolant_temp < 100))
+                                        {
+                                            lcd.setCursor(0, 1);
+                                            lcd.print(" ");
+                                            lcd.print(coolant_temp, 0);
+                                        }
+                                        else if (coolant_temp >= 100)
+                                        {
+                                            lcd.setCursor(0, 1);
+                                            lcd.print(coolant_temp, 0);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        
+                                    }
+                                }
+                                break;
+                            }
+                            case 0x0C: // ENGINE COOLANT TEMPERATURE | INTAKE AIR TEMPERATURE + BATTERY VOLTAGE (+ OIL PRESSURE)
+                            {
+                                // TODO
+                                break;
+                            }
+                            case 0xCE: // VEHICLE DISTANCE / ODOMETER VALUE
+                            {
+                                if (message_length > 5)
+                                {
+                                    uint32_t odometer_raw = ((uint32_t)message[1] << 24) + ((uint32_t)message[2] << 16) + ((uint32_t)message[3] << 8) + ((uint32_t)message[4]);
+                                    double odometer = 0;
+                                    
+                                    if (lcd_units == 0) // imperial
+                                    {
+                                        odometer = roundf(odometer_raw / 8.0);
+                                        odometer = odometer / 1000.0;
+                                    }
+                                    else if (lcd_units == 1) // metric
+                                    {
+                                        odometer = roundf(odometer_raw * 1609.334138 / 8000.0);
+                                        odometer = odometer / 1000.0;
+                                    }
+        
+                                    if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
+                                    {
+                                        if (odometer < 10.0)
+                                        {
+                                            lcd.setCursor(0, 3);
+                                            lcd.print("     ");
+                                            lcd.print(odometer, 3);
+                                        }
+                                        else if ((odometer >= 10.0) && (odometer < 100.0))
+                                        {
+                                            lcd.setCursor(0, 3);
+                                            lcd.print("    ");
+                                            lcd.print(odometer, 3);
+                                        }
+                                        else if ((odometer >= 100.0) && (odometer < 1000.0))
+                                        {
+                                            lcd.setCursor(0, 3);
+                                            lcd.print("   ");
+                                            lcd.print(odometer, 3);
+                                        }
+                                        else if ((odometer >= 1000.0) && (odometer < 10000.0))
+                                        {
+                                            lcd.setCursor(0, 3);
+                                            lcd.print("  ");
+                                            lcd.print(odometer, 3);
+                                        }
+                                        else if ((odometer >= 10000) && (odometer < 100000))
+                                        {
+                                            lcd.setCursor(0, 3);
+                                            lcd.print(" ");
+                                            lcd.print(odometer, 3);
+                                        }
+                                        else if (odometer >= 100000)
+                                        {
+                                            lcd.setCursor(0, 3);
+                                            lcd.print(odometer, 3);
+                                        }
+                                    }
+                                    else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
+                                    {
+                                        
+                                    }
+                                    else
+                                    {
+                                        
+                                    }
+                                }
+                                break;
+                            }
+                            case 0xD4: // BATTERY VOLTAGE | CALCULATED CHARGING VOLTAGE
+                            {
+                                if (message_length > 3)
+                                {
+                                    float batt_volts = roundf(message[1] * 10.0 * 0.0592);
+                                    batt_volts = batt_volts / 10.0;
+                                    
+                                    float charge_volts = roundf(message[2] * 10.0 * 0.0592);
+                                    charge_volts = charge_volts / 10.0;
+                                    
+                                    if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
+                                    {
+                                        if (batt_volts < 10.0)
+                                        {
+                                            lcd.setCursor(0, 2);
+                                            lcd.print(" ");
+                                            lcd.print(batt_volts, 1);
+                                        }
+                                        else if (batt_volts >= 10.0)
+                                        {
+                                            lcd.setCursor(0, 2);
+                                            lcd.print(batt_volts, 1);
+                                        }
+        
+                                        if (charge_volts < 10.0)
+                                        {
+                                            lcd.setCursor(5, 2);
+                                            lcd.print(" ");
+                                            lcd.print(charge_volts, 1);
+                                        }
+                                        else if (charge_volts >= 10.0)
+                                        {
+                                            lcd.setCursor(5, 2);
+                                            lcd.print(charge_volts, 1);
+                                        }
+                                    }
+                                    else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
+                                    {
+                                        
+                                    }
+                                    else
+                                    {
+                                        
+                                    }
+                                }
+                                break;
+                            }
+                            case 0xE4: // ENGINE SPEED | INTAKE MANIFOLD ABS. PRESSURE
+                            {
+                                if (message_length > 3)
+                                {
+                                    uint16_t engine_speed = 0;
+                                    float map_value = 0;
+                                    
+                                    if (lcd_units == 0) // imperial
+                                    {
+                                        engine_speed = message[1] * 32;
+                                        map_value = roundf(message[2] * 100.0 * 0.059756);
+                                        map_value = map_value / 100.0;
+                                    }
+                                    else if (lcd_units == 1) // metric
+                                    {
+                                        engine_speed = message[1] * 32;
+                                        map_value = roundf(message[2] * 100.0 * 6.894757 * 0.059756);
+                                        map_value = map_value / 100.0;
+                                    }
+        
+                                    if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
+                                    {
+                                        if (engine_speed < 10)
+                                        {
+                                            lcd.setCursor(8, 0);
+                                            lcd.print("   ");
+                                            lcd.print(engine_speed);
+                                        }
+                                        else if ((engine_speed >= 10) && (engine_speed < 100))
+                                        {
+                                            lcd.setCursor(8, 0);
+                                            lcd.print("  ");
+                                            lcd.print(engine_speed);
+                                        }
+                                        else if ((engine_speed >= 100) && (engine_speed < 1000))
+                                        {
+                                            lcd.setCursor(8, 0);
+                                            lcd.print(" ");
+                                            lcd.print(engine_speed);
+                                        }
+                                        else if (engine_speed >= 1000)
+                                        {
+                                            lcd.setCursor(8, 0);
+                                            lcd.print(engine_speed);
+                                        }
+                                        else
+                                        {
+                                            lcd.setCursor(7, 0);
+                                            lcd.print(engine_speed);
+                                        }
+                                        
+                                        if (map_value < 10.0)
+                                        {
+                                            lcd.setCursor(13, 1);
+                                            lcd.print(" ");
+                                            lcd.print(map_value, 1);
+                                        }
+                                        else if ((map_value >= 10.0) && (map_value < 100.0))
+                                        {
+                                            lcd.setCursor(13, 1);
+                                            lcd.print(map_value, 1);
+                                        }
+                                        else if (map_value >= 100.0)
+                                        {
+                                            lcd.setCursor(13, 1);
+                                            lcd.print(" ");
+                                            lcd.print(map_value, 0);
+                                        }
+                                        
+                                    }
+                                    else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
+                                    {
+                                        if (engine_speed < 10)
+                                        {
+                                            lcd.setCursor(9, 0);
+                                            lcd.print("   ");
+                                            lcd.print(engine_speed);
+                                        }
+                                        else if ((engine_speed >= 10) && (engine_speed < 100))
+                                        {
+                                            lcd.setCursor(9, 0);
+                                            lcd.print("  ");
+                                            lcd.print(engine_speed);
+                                        }
+                                        else if ((engine_speed >= 100) && (engine_speed < 1000))
+                                        {
+                                            lcd.setCursor(9, 0);
+                                            lcd.print(" ");
+                                            lcd.print(engine_speed);
+                                        }
+                                        else if (engine_speed >= 1000)
+                                        {
+                                            lcd.setCursor(9, 0);
+                                            lcd.print(engine_speed);
+                                        }
+                                        else
+                                        {
+                                            lcd.setCursor(8, 0);
+                                            lcd.print(engine_speed);
+                                        }
+                                        
+                                        if (map_value < 10.0)
+                                        {
+                                            lcd.setCursor(9, 1);
+                                            lcd.print(" ");
+                                            lcd.print(map_value, 1);
+                                        }
+                                        else if ((map_value >= 10.0) && (map_value < 100.0))
+                                        {
+                                            lcd.setCursor(9, 1);
+                                            lcd.print(map_value, 1);
+                                        }
+                                        else if (map_value >= 100.0)
+                                        {
+                                            lcd.setCursor(9, 1);
+                                            lcd.print(" ");
+                                            lcd.print(map_value, 0);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (engine_speed < 10)
+                                        {
+                                            lcd.setCursor(1, 0);
+                                            lcd.print("   ");
+                                            lcd.print(engine_speed);
+                                        }
+                                        else if ((engine_speed >= 10) && (engine_speed < 100))
+                                        {
+                                            lcd.setCursor(1, 0);
+                                            lcd.print("  ");
+                                            lcd.print(engine_speed);
+                                        }
+                                        else if ((engine_speed >= 100) && (engine_speed < 1000))
+                                        {
+                                            lcd.setCursor(1, 0);
+                                            lcd.print(" ");
+                                            lcd.print(engine_speed);
+                                        }
+                                        else if (engine_speed >= 1000)
+                                        {
+                                            lcd.setCursor(1, 0);
+                                            lcd.print(engine_speed);
+                                        }
+                                        else
+                                        {
+                                            lcd.setCursor(0, 0);
+                                            lcd.print(engine_speed);
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                            default:
+                            {
+                                break;
+                            }
+                        }
                     }
-//                    case 0x0E: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x0F: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x10: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0x11: // ???
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0x12: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x13: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x14: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x15: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x16: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x17: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x18: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x19: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x1A: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x1B: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x1C: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x1D: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x1E: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x1F: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x20: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x21: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x22: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x23: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0x24: // VEHICLE SPEED
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0x25: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x26: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x27: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x28: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0x29: // LAST ENGINE SHUTDOWN
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0x2A: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x2B: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x2C: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x2D: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x2E: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x2F: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x30: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x31: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x32: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x33: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x34: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x35: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0x36: // ???
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0x37: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x38: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x39: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0x3A: // INSTRUMENT PANEL LAMP STATES (AIRBAG LAMP)
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0x3B: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x3C: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x3D: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x3E: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x3F: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x40: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x41: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0x42: // THROTTLE POSITION SENSOR | CRUISE CONTROL
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0x43: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x44: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x45: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x46: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x47: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x48: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x49: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x4A: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x4B: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x4C: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0x4D: // ???
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0x4E: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x4F: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0x50: // AIRBAG LAMP STATE
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0x51: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x52: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x53: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0x54: // ???
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0x55: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x56: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x57: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x58: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x59: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x5A: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x5B: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x5C: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x5D: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x5E: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x5F: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x60: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x61: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x62: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x63: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x64: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x65: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x66: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x67: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x68: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x69: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x6A: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x6B: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x6C: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0x6D: // VEHICLE IDENTIFICATION NUMBER (VIN)
-                    {
-                        vin_characters[message[1]-1] = char(message[2]); // store current character
-                        //vin_string = String(vin_characters); // convert available characters to a string
-                        break;
-                    }
-//                    case 0x6E: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x6F: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x70: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x71: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x72: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x73: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x74: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0x75: // A/C HIGH SIDE PRESSURE
-                    {
-                        // TODO
-                        break;
-                    }
-                    case 0x76: // ???
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0x77: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x78: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x79: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x7A: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x7B: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x7C: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x7D: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0x7E: // ???
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0x7F: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x80: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x81: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x82: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x83: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0x84: // INCREMENT ODOMETER AND TRIPMETER
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0x85: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x86: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x87: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x88: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x89: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x8A: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x8B: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0x8C: // ENGINE COOLANT TEMPERATURE | AMBIENT TEMP.
-                    {
-                        // TODO
-                        break;
-                    }
-                    case 0x8D: // ???
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0x8E: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x8F: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x90: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x91: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x92: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x93: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0x94: // INSTRUMENT PANEL GAUGE VALUE
-                    {
-                        // TODO
-                        break;
-                    }
-                    case 0x95: // ???
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0x96: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x97: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x98: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x99: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x9A: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x9B: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x9C: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x9D: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x9E: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0x9F: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xA0: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xA1: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xA2: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xA3: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0xA4: // INSTRUMENT PANEL LAMP STATES
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0xA5: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xA6: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xA7: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xA8: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0xA9: // LAST ENGINE SHUTDOWN
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0xAA: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xAB: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0xAC: // VEHICLE INFORMATION / BODY TYPE
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0xAD: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xAE: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xAF: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xB0: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xB1: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0xB2: // DIAGNOSTIC REQUEST MESSAGE
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0xB3: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0xB4: // ???
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0xB5: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0xB6: // ???
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0xB7: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xB8: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xB9: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xBA: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xBB: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xBC: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xBD: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0xBE: // IGNITION SWITCH POSITION
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0xBF: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xC0: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xC1: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xC2: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xC3: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xC4: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xC5: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xC6: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xC7: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xC8: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xC9: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xCA: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xCB: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0xCC: // ACCUMULATED MILEAGE
-                    {
-                        // TODO
-                        break;
-                    }
-                    case 0xCD: // ???
-                    {
-                        // TODO
-                        break;
-                    }
-                    case 0xCE: // VEHICLE DISTANCE / ODOMETER VALUE
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0xCF: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xD0: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xD1: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xD2: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xD3: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0xD4: // BATTERY VOLTAGE | CALCULATED CHARGING VOLTAGE
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0xD5: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xD6: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xD7: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xD8: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xD9: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0xDA: // INSTRUMENT PANEL LAMP STATES (CHECK ENGINE)
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0xDB: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xDC: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xDD: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xDE: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xDF: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xE0: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xE1: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xE2: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xE3: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0xE4: // ENGINE SPEED | INTAKE MANIFOLD ABS. PRESSURE
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0xE5: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xE6: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xE7: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xE8: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xE9: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xEA: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xEB: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0xEC: // VEHICLE INFORMATION / LIMP STATES / FUEL TYPE
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0xED: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0xEE: // TRIP DISTANCE / TRIPMETER VALUE
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0xEF: // ???
-//                    {
-//                      // TODO
-//                      break;
-//                    }
-//                    case 0xF0: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xF1: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0xF2: // DIAGNOSTIC RESPONSE MESSAGE
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0xF3: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xF4: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xF5: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0xF6: // ???
-                    {
-                        // TODO
-                        break;
-                    }
-//                    case 0xF7: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xF8: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xF9: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xFA: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xFB: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xFC: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-//                    case 0xFD: // ???
-//                    {
-//                        // TODO
-//                        break;
-//                    }
-                    case 0xFE: // INTERIOR LAMP DIMMING
-                    {
-                        // TODO
-                        break;
-                    }
-                    case 0xFF: // CCD-BUS WAKING UP
-                    {
-                        // TODO
-                        break;
-                    }
+                    break;
                 }
-                break;
+                case from_pcm:
+                {
+                    if (bus == from_pcm)
+                    {
+                        switch (message[0]) // check ID-byte
+                        {
+                            case 0x14: // diagnostic reponse message
+                            {
+                                if (message_length > 2)
+                                {
+                                    switch (message[1]) // parameter
+                                    {
+                                        case 0x05: // engine coolant temperature
+                                        {
+                                            float coolant_temp = 0;
+                                            
+                                            if (lcd_units == 0) // imperial
+                                            {
+                                                coolant_temp = roundf((message[2] * 1.8039215686) - 83.2);
+                                            }
+                                            else if (lcd_units == 1) // metric
+                                            {
+                                                coolant_temp = roundf((((message[2] * 1.8039215686) - 83.2) * 0.555556) - 17.77778);
+                                            }
+                
+                                            if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
+                                            {
+                                                if (coolant_temp <= -100)
+                                                {
+                                                    lcd.setCursor(0, 1);
+                                                    lcd.print("-99");
+                                                }
+                                                else if ((coolant_temp > -100) && (coolant_temp <= -10))
+                                                {
+                                                    lcd.setCursor(0, 1);
+                                                    lcd.print(coolant_temp, 0);
+                                                }
+                                                else if ((coolant_temp > -10) && (coolant_temp < 0))
+                                                {
+                                                    lcd.setCursor(0, 1);
+                                                    lcd.print(" ");
+                                                    lcd.print(coolant_temp, 0);
+                                                }
+                                                else if ((coolant_temp >= 0) && (coolant_temp < 10))
+                                                {
+                                                    lcd.setCursor(0, 1);
+                                                    lcd.print("  ");
+                                                    lcd.print(coolant_temp, 0);
+                                                }
+                                                else if ((coolant_temp >= 10) && (coolant_temp < 100))
+                                                {
+                                                    lcd.setCursor(0, 1);
+                                                    lcd.print(" ");
+                                                    lcd.print(coolant_temp, 0);
+                                                }
+                                                else if (coolant_temp >= 100)
+                                                {
+                                                    lcd.setCursor(0, 1);
+                                                    lcd.print(coolant_temp, 0);
+                                                }
+                                            }
+                                            else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
+                                            {
+                                                if (coolant_temp <= -100.0)
+                                                {
+                                                    lcd.setCursor(0, 1);
+                                                    lcd.print("-99");
+                                                }
+                                                else if ((coolant_temp > -100.0) && (coolant_temp <= -10.0))
+                                                {
+                                                    lcd.setCursor(0, 1);
+                                                    lcd.print(coolant_temp, 0);
+                                                }
+                                                else if ((coolant_temp > -10.0) && (coolant_temp < 0.0))
+                                                {
+                                                    lcd.setCursor(0, 1);
+                                                    lcd.print(" ");
+                                                    lcd.print(coolant_temp, 0);
+                                                }
+                                                else if ((coolant_temp >= 0.0) && (coolant_temp < 10.0))
+                                                {
+                                                    lcd.setCursor(0, 1);
+                                                    lcd.print("  ");
+                                                    lcd.print(coolant_temp, 0);
+                                                }
+                                                else if ((coolant_temp >= 10) && (coolant_temp < 100))
+                                                {
+                                                    lcd.setCursor(0, 1);
+                                                    lcd.print(" ");
+                                                    lcd.print(coolant_temp, 0);
+                                                }
+                                                else if (coolant_temp >= 100)
+                                                {
+                                                    lcd.setCursor(0, 1);
+                                                    lcd.print(coolant_temp, 0);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                            default:
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                }
+                default:
+                {
+                    break;
+                }
             }
-            case from_pcm: // 0x02 - SCI-bus (PCM)
-            {
-                // TODO
-                break;
-            }
-            case from_tcm: // 0x03 - SCI-bus (TCM)
-            {
-                // TODO
-                break;
-            }
-            default:
-            {
-                // TODO
-                break;
-            }
-        }
+//        }
     }
     
 } // end of handle_lcd
@@ -3873,7 +3531,7 @@ void handle_usb_data(void)
                 }
                 if (command_timeout_reached)
                 {
-                    send_usb_packet(from_usb, to_usb, ok_error, error_packet_timeout_occured, err, 1);
+                    send_usb_packet(from_usb, to_usb, ok_error, error_packet_timeout_occurred, err, 1);
                     return;
                 }
 
@@ -3885,9 +3543,6 @@ void handle_usb_data(void)
                 
                 // Calculate the exact size of the payload.
                 payload_length = bytes_to_read - 3; // in this case we have to be careful not to count data code byte, sub-data code byte and checksum byte
-        
-                // Do not let this variable sink below zero.
-                if (payload_length < 0) payload_length = 0; // !!!
         
                 // Maximum packet length is 1024 bytes; can't accept larger packets 
                 // and can't accept packet without datacode and subdatacode.
@@ -3905,7 +3560,7 @@ void handle_usb_data(void)
                 }
                 if (command_timeout_reached)
                 {
-                    send_usb_packet(from_usb, to_usb, ok_error, error_packet_timeout_occured, err, 1);
+                    send_usb_packet(from_usb, to_usb, ok_error, error_packet_timeout_occurred, err, 1);
                     return; // exit, let the loop call this function again
                 }
         
@@ -4017,22 +3672,49 @@ void handle_usb_data(void)
                                         }
                                         
                                         uint16_t flashing_interval = to_uint16(cmd_payload[0], cmd_payload[1]); // 0-65535 milliseconds
-                                        if (flashing_interval == 0) heartbeat_enabled = false; // zero value is allowed, meaning no heartbeat
-                                        else
-                                        {
-                                            heartbeat_interval = flashing_interval;
-                                            heartbeat_enabled = true;
-                                        }
+                                        heartbeat_interval = flashing_interval;
+                                        if (heartbeat_interval == 0) heartbeat_enabled = false; // zero value is allowed, meaning no heartbeat
+                                        else heartbeat_enabled = true;
                                         
                                         uint16_t blink_duration = to_uint16(cmd_payload[2], cmd_payload[3]); // 0-65535 milliseconds
                                         if (blink_duration > 0) led_blink_duration = blink_duration; // zero value is not allowed, this applies to all 3 status leds! (rx, tx, act)
-                                        
-                                        send_usb_packet(from_usb, to_usb, settings, heartbeat, cmd_payload, 4); // acknowledge
+                                        else
+                                        {
+                                            led_blink_duration = 50; // ms, default value
+                                            cmd_payload[2] = 0x00;
+                                            cmd_payload[3] = 0x32;
+                                        }
+
+                                        DDRE |= (1 << PE2); // set PE2 pin as output (this pin can't be reached by pinMode and digitalWrite commands)
+                                        PORTE &= ~(1 << PE2); // pull PE2 pin low to disable write protection
+
+                                        eep.write(0x1E, cmd_payload[0]); // write LED heartbeat interval high byte
+                                        eep.write(0x1F, cmd_payload[1]); // write LED heartbeat interval low byte
+                                        eep.write(0x20, cmd_payload[2]); // write LED blink duration high byte
+                                        eep.write(0x21, cmd_payload[3]); // write LED blink duration low byte
+
+                                        uint8_t temp_checksum = 0; // re-calculate checksum
+
+                                        for (uint8_t i = 0; i < 255; i++) // add the first 255 bytes together
+                                        {
+                                            temp_checksum += eep.read(i);
+                                        }
+                                            
+                                        eep.write(255, temp_checksum); // write checksum byte at the last position of the settings block
+
+                                        PORTE |= (1 << PE2); // pull PE2 pin high to enable write protection
+
+                                        eep_checksum[0] = temp_checksum;
+                                        eep_calculated_checksum = temp_checksum;
+                                        eep_checksum_ok = true;
+
+                                        uint8_t ret[5] = { 0x00, cmd_payload[0], cmd_payload[1], cmd_payload[2], cmd_payload[3] };
+                                        send_usb_packet(from_usb, to_usb, settings, heartbeat, ret, 5); // acknowledge
                                         break;
                                     }
-                                    case set_ccd_bus: // 0x02 - ON-OFF state is stored in payload
+                                    case set_ccd_bus: // 0x02 - bus state and termination/bias setting
                                     {
-                                        if (!payload_bytes)
+                                        if (!payload_bytes || (payload_length < 2))
                                         {
                                             send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
                                             break;
@@ -4042,42 +3724,62 @@ void handle_usb_data(void)
                                             case 0x00: // disable ccd-bus transceiver
                                             {
                                                 ccd.enabled = false;
-                                                ccd_clock_generator(STOP);
-                                                ccd_rx_flush();
-                                                ccd_tx_flush();
-                                                send_usb_packet(from_usb, to_usb, settings, set_ccd_bus, cmd_payload, 1); // acknowledge
+                                                cbi(ccd.bus_settings, 4); // clear enabled bit
+                                                //ccd_clock_generator(STOP);
+                                                //ccd_rx_flush();
+                                                //ccd_tx_flush();
                                                 break;
                                             }
                                             case 0x01: // enable ccd-bus transceiver
                                             {
                                                 ccd.enabled = true;
-                                                ccd_clock_generator(START);
-                                                send_usb_packet(from_usb, to_usb, settings, set_ccd_bus, cmd_payload, 1); // acknowledge
+                                                sbi(ccd.bus_settings, 4); // set enabled bit
+                                                //ccd_clock_generator(START);
                                                 break;
                                             }
                                             default: // other values are not valid
                                             {
-                                                send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, already enabled
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error
                                                 break;
                                             }
                                         }
+
+                                        switch (cmd_payload[1])
+                                        {
+                                            case 0x00:
+                                            {
+                                                ccd.termination_bias_enabled = false;
+                                                cbi(ccd.bus_settings, 2); // clear TB bit
+                                                digitalWrite(TBEN, HIGH);
+                                                break;
+                                            }
+                                            case 0x01:
+                                            {
+                                                ccd.termination_bias_enabled = true;
+                                                sbi(ccd.bus_settings, 2); // set TB bit
+                                                digitalWrite(TBEN, LOW);
+                                                break;
+                                            }
+                                            default:
+                                            {
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error
+                                                break;
+                                            }
+                                        }
+
+                                        uint8_t ret[3] = { 0x00, cmd_payload[0], cmd_payload[1] };
+                                        send_usb_packet(from_usb, to_usb, settings, set_ccd_bus, ret, 3); // acknowledge
                                         break;
                                     }
                                     case set_sci_bus: // 0x03 - ON-OFF state, A/B configuration and speed are stored in payload
                                     {
-                                        if (!payload_bytes || (payload_length < 2)) // at least 4 bytes are necessary to change this setting
+                                        if (!payload_bytes) // at least 1 byte is necessary to change this setting
                                         {
                                             send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
                                             break;
                                         }
                                         
-                                        configure_sci_bus(cmd_payload[0]); // pass settings to this function
-                                        
-                                        if (cmd_payload[1] & 0x01) pcm.obd1 = true; // set OBD1 flag for PCM
-                                        else pcm.obd1 = false; // clear OBD1 flag for PCM
-                                        
-                                        if (cmd_payload[1] & 0x10) tcm.obd1 = true; // set OBD1 flag for TCM
-                                        else tcm.obd1 = false; // clear OBD1 flag for TCM
+                                        configure_sci_bus(cmd_payload[0]); // pass settings to this function, it handles both PCM and TCM but only one at a time!
                                         break;
                                     }
                                     case set_repeat_behavior: // 0x04
@@ -4100,29 +3802,101 @@ void handle_usb_data(void)
                                             {
                                                 pcm.repeated_msg_interval = to_uint16(cmd_payload[1], cmd_payload[2]); // 0-65535 milliseconds
                                                 pcm.repeated_msg_increment = to_uint16(cmd_payload[3], cmd_payload[4]); // 0-65535
+                                                break;
                                             }
-                                            case 0x03: // SCI-bus (TCM)
+                                            default:
                                             {
-                                                tcm.repeated_msg_interval = to_uint16(cmd_payload[1], cmd_payload[2]); // 0-65535 milliseconds
-                                                tcm.repeated_msg_increment = to_uint16(cmd_payload[3], cmd_payload[4]); // 0-65535
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, already enabled
+                                                break;
                                             }
                                         }
 
-                                        send_usb_packet(from_usb, to_usb, settings, set_repeat_behavior, cmd_payload, 5); // acknowledge
+                                        uint8_t ret[6] = { 0x00, cmd_payload[0], cmd_payload[1], cmd_payload[2], cmd_payload[3], cmd_payload[4] };
+                                        send_usb_packet(from_usb, to_usb, settings, set_repeat_behavior, ret, 6); // acknowledge
                                         break;
                                     }
-                                    case set_lcd: // 0x05 - LCD ON/OFF
+                                    case set_lcd: // 0x05 - LCD settings
                                     {
-                                        if (!payload_bytes)
+                                        if (!payload_bytes || (payload_length < 6))
                                         {
                                             send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
                                             break;
                                         }
                                         
-                                        if (cmd_payload[0] == 0x00) lcd_enabled = false;
-                                        else lcd_enabled = true;
+                                        switch (cmd_payload[0])
+                                        {
+                                            case 0x00:
+                                            {
+                                                lcd_enabled = false;
+                                                break;
+                                            }
+                                            case 0x01:
+                                            {
+                                                lcd_enabled = true;
+                                                break;
+                                            }
+                                            default:
+                                            {
+                                                lcd_enabled = false;
+                                                break;
+                                            }
+                                        }
 
-                                        send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
+                                        lcd_char_width = cmd_payload[1];
+                                        lcd_char_height = cmd_payload[2];
+                                        lcd_refresh_rate = cmd_payload[3];
+                                        lcd_update_interval = 1000 / lcd_refresh_rate; // ms
+                                        lcd_units = cmd_payload[4];
+                                        lcd_data_source = cmd_payload[5];
+
+                                        DDRE |= (1 << PE2); // set PE2 pin as output (this pin can't be reached by pinMode and digitalWrite commands)
+                                        PORTE &= ~(1 << PE2); // pull PE2 pin low to disable write protection
+
+                                        eep.write(0x18, cmd_payload[0]); // write LCD enabled/disabled state
+                                        eep.write(0x19, lcd_char_width); // write LCD width
+                                        eep.write(0x1A, lcd_char_height); // write LCD height
+                                        eep.write(0x1B, lcd_refresh_rate); // write LCD refresh rate
+                                        eep.write(0x1C, lcd_units); // write LCD units
+                                        eep.write(0x1D, lcd_data_source); // write LCD units
+
+                                        uint8_t temp_checksum = 0; // re-calculate checksum
+
+                                        for (uint8_t i = 0; i < 255; i++) // add the first 255 bytes together
+                                        {
+                                            temp_checksum += eep.read(i);
+                                        }
+                                            
+                                        eep.write(255, temp_checksum); // write checksum byte at the last position of the settings block
+
+                                        PORTE |= (1 << PE2); // pull PE2 pin high to enable write protection
+
+                                        eep_checksum[0] = temp_checksum;
+                                        eep_calculated_checksum = temp_checksum;
+                                        eep_checksum_ok = true;
+
+                                        if (lcd_enabled)
+                                        {
+                                            switch (lcd_units)
+                                            {
+                                                case 0:
+                                                {
+                                                    print_display_layout_1_imperial();
+                                                    break;
+                                                }
+                                                case 1:
+                                                {
+                                                    print_display_layout_1_metric();
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            lcd_init();
+                                        }
+                                        
+                                        uint8_t ret[7] = { 0x00, cmd_payload[0], lcd_char_width, lcd_char_height, lcd_refresh_rate, lcd_units, lcd_data_source };
+                                        send_usb_packet(from_usb, to_usb, settings, set_lcd, ret, 7); // acknowledge
                                         break;
                                     }
                                     default: // other values are not used
@@ -4159,6 +3933,12 @@ void handle_usb_data(void)
                                         evaluate_eep_checksum();
                                         break;
                                     }
+                                    case ccd_bus_voltages: // 0x05
+                                    {
+                                        check_ccd_volts();
+                                        send_usb_packet(from_usb, to_usb, response, ccd_bus_voltages, ccd_volts_array, 4);
+                                        break;
+                                    }
                                     default: // other values are not used
                                     {
                                         send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
@@ -4171,7 +3951,7 @@ void handle_usb_data(void)
                             {
                                 switch (subdatacode)
                                 {
-                                    case 0x01: // broadcast random CCD-bus messages
+                                    case random_ccd_msg: // 0x01 - broadcast random CCD-bus messages
                                     {
                                         if (!payload_bytes || (payload_length < 5))
                                         {
@@ -4188,7 +3968,9 @@ void handle_usb_data(void)
                                                 ccd.random_msg_interval_min = 0;
                                                 ccd.random_msg_interval_max = 0;
                                                 ccd.random_msg_interval = 0;
-                                                send_usb_packet(from_usb, to_usb, debug, 0x01, ack, 1); // acknowledge
+
+                                                uint8_t ret[2] = { 0x00, cmd_payload[0] };
+                                                send_usb_packet(from_usb, to_usb, debug, random_ccd_msg, ret, 2); // acknowledge
                                                 break;
                                             }
                                             case 0x01:
@@ -4198,7 +3980,9 @@ void handle_usb_data(void)
                                                 ccd.random_msg_interval_min = to_uint16(cmd_payload[1], cmd_payload[2]);
                                                 ccd.random_msg_interval_max = to_uint16(cmd_payload[3], cmd_payload[4]);
                                                 ccd.random_msg_interval = random(ccd.random_msg_interval_min, ccd.random_msg_interval_max);
-                                                send_usb_packet(from_usb, to_usb, debug, 0x01, ack, 1); // acknowledge
+
+                                                uint8_t ret[2] = { 0x00, cmd_payload[0] };
+                                                send_usb_packet(from_usb, to_usb, debug, random_ccd_msg, ret, 2); // acknowledge
                                                 break;
                                             }
                                             default:
@@ -4209,7 +3993,66 @@ void handle_usb_data(void)
                                         }
                                         break;
                                     }
-                                    case 0x02: // read external EEPROM
+                                    case read_inteeprom_byte: // 0x02 - read internal EEPROM byte
+                                    {
+                                        if (!payload_bytes || (payload_length < 2))
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            break;
+                                        }
+
+                                        uint8_t offset_hb = cmd_payload[0];
+                                        uint8_t offset_lb = cmd_payload[1];
+                                        uint16_t offset = to_uint16(offset_hb, offset_lb);
+
+                                        if (offset > 4095)
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                                            break;
+                                        }
+                                        
+                                        uint8_t value = eeprom_read_byte(offset);
+                                        uint8_t payload[4] = { 0x00, offset_hb, offset_lb, value };
+                                        send_usb_packet(from_usb, to_usb, debug, read_inteeprom_byte, payload, 4); // send external EEPROM value back to the laptop
+                                        break;
+                                    }
+                                    case read_inteeprom_block: // 0x03 - read internal EEPROM block
+                                    {
+                                        if (!payload_bytes || (payload_length < 4))
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            break;
+                                        }
+                                        
+                                        uint8_t offset_hb = cmd_payload[0];
+                                        uint8_t offset_lb = cmd_payload[1];
+                                        uint16_t offset = to_uint16(offset_hb, offset_lb);
+                                        uint8_t count_hb = cmd_payload[2];
+                                        uint8_t count_lb = cmd_payload[3];
+                                        uint16_t count = to_uint16(count_hb, count_lb);
+
+                                        if ((offset + (count - 1)) > 4095)
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                                            break;
+                                        }
+
+                                        uint8_t values[count];
+
+                                        eeprom_read_block(values, offset, count);
+
+                                        uint16_t p_length = count + 3;
+                                        uint8_t payload[p_length] = { 0x00, offset_hb, offset_lb };
+                                        
+                                        for (uint16_t i = 0; i < count; i++)
+                                        {
+                                            payload[3 + i] = values[i];
+                                        }
+
+                                        send_usb_packet(from_usb, to_usb, debug, read_inteeprom_block, payload, p_length); // send external EEPROM block back to the laptop
+                                        break;
+                                    }
+                                    case read_exteeprom_byte: // 0x04 - read external EEPROM byte
                                     {
                                         if (!payload_bytes || (payload_length < 2))
                                         {
@@ -4219,12 +4062,19 @@ void handle_usb_data(void)
                                         
                                         if (eep_present)
                                         {
-                                            uint8_t address_hb = cmd_payload[0];
-                                            uint8_t address_lb = cmd_payload[1];
-                                            uint16_t address = to_uint16(address_hb, address_lb);
-                                            uint8_t value = eep.read(address);
-                                            uint8_t data[3] = { address_hb, address_lb, value };
-                                            send_usb_packet(from_usb, to_usb, debug, 0x02, data, 3); // send external EEPROM value back to the laptop
+                                            uint8_t offset_hb = cmd_payload[0];
+                                            uint8_t offset_lb = cmd_payload[1];
+                                            uint16_t offset = to_uint16(offset_hb, offset_lb);
+
+                                            if (offset > 4095)
+                                            {
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+                                                break;
+                                            }
+                                            
+                                            uint8_t value = eep.read(offset);
+                                            uint8_t payload[4] = { 0x00, offset_hb, offset_lb, value };
+                                            send_usb_packet(from_usb, to_usb, debug, read_exteeprom_byte, payload, 4); // send external EEPROM value back to the laptop
                                         }
                                         else
                                         {
@@ -4232,7 +4082,121 @@ void handle_usb_data(void)
                                         }
                                         break;
                                     }
-                                    case 0x03: // write external EEPROM
+                                    case read_exteeprom_block: // 0x05 - read external EEPROM block
+                                    {
+                                        if (!payload_bytes || (payload_length < 4))
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            break;
+                                        }
+                                        
+                                        if (eep_present)
+                                        {
+                                            uint8_t offset_hb = cmd_payload[0];
+                                            uint8_t offset_lb = cmd_payload[1];
+                                            uint16_t offset = to_uint16(offset_hb, offset_lb);
+                                            uint8_t count_hb = cmd_payload[2];
+                                            uint8_t count_lb = cmd_payload[3];
+                                            uint16_t count = to_uint16(count_hb, count_lb);
+
+                                            if ((offset + (count - 1)) > 4095)
+                                            {
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+                                                break;
+                                            }
+
+                                            uint8_t values[count];
+                                            uint8_t success = eep.read(offset, values, count);
+
+                                            if (success != 0)
+                                            {
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+                                                break;
+                                            }
+
+                                            uint16_t p_length = count + 3;
+                                            uint8_t payload[payload_length] = { 0x00, offset_hb, offset_lb };
+                                            
+                                            for (uint16_t i = 0; i < count; i++)
+                                            {
+                                                payload[3 + i] = values[i];
+                                            }
+
+                                            send_usb_packet(from_usb, to_usb, debug, read_exteeprom_block, payload, p_length); // send external EEPROM block back to the laptop
+                                        }
+                                        else
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_eep_not_found, err, 1);
+                                        }
+                                        break;
+                                    }
+                                    case write_inteeprom_byte: // 0x06 - write internal EEPROM byte
+                                    {
+                                        if (!payload_bytes || (payload_length < 3))
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            break;
+                                        }
+                                        
+                                        uint8_t offset_hb = cmd_payload[0];
+                                        uint8_t offset_lb = cmd_payload[1];
+                                        uint16_t offset = to_uint16(offset_hb, offset_lb);
+
+                                        if (offset > 4095)
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                                            break;
+                                        }
+                                        
+                                        uint8_t value = cmd_payload[2];
+                                        eeprom_update_byte(offset, value);
+
+                                        uint8_t reading = eeprom_read_byte(offset);
+                                        uint8_t payload[4] = { 0x00, offset_hb, offset_lb, reading };
+                                        send_usb_packet(from_usb, to_usb, debug, write_inteeprom_byte, payload, 4); // send external EEPROM value back to the laptop for confirmation
+                                        break;
+                                    }
+                                    case write_inteeprom_block: // 0x07 - write internal EEPROM block
+                                    {
+                                        if (!payload_bytes || (payload_length < 4))
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            break;
+                                        }
+                                        
+                                        uint8_t offset_hb = cmd_payload[0];
+                                        uint8_t offset_lb = cmd_payload[1];
+                                        uint16_t offset = to_uint16(offset_hb, offset_lb);
+                                        uint16_t count = payload_length - 2;
+
+                                        if ((offset + (count - 1)) > 4095)
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                                            break;
+                                        }
+
+                                        uint8_t values[count];
+
+                                        for (uint16_t i = 0; i < count; i++)
+                                        {
+                                            values[i] = cmd_payload[2 + i];
+                                        }
+
+                                        eeprom_update_block(values, offset, count);
+                                        eeprom_read_block(values, offset, count); // overwrite array with read values;
+                                        
+                                        uint16_t p_length = count + 3;
+                                        uint8_t payload[p_length] = { 0x00, offset_hb, offset_lb };
+
+                                        for (uint16_t i = 0; i < count; i++)
+                                        {
+                                            payload[3 + i] = values[i];
+                                        }
+
+                                        send_usb_packet(from_usb, to_usb, debug, write_inteeprom_block, payload, p_length); // send external EEPROM block back to the laptop
+                                        break;
+                                    }
+                                    case write_exteeprom_byte: // 0x08 - write external EEPROM byte
                                     {
                                         if (!payload_bytes || (payload_length < 3))
                                         {
@@ -4242,16 +4206,23 @@ void handle_usb_data(void)
                                         
                                         if (eep_present)
                                         {
-                                            uint8_t address_hb = cmd_payload[0];
-                                            uint8_t address_lb = cmd_payload[1];
-                                            uint16_t address = to_uint16(address_hb, address_lb);
+                                            uint8_t offset_hb = cmd_payload[0];
+                                            uint8_t offset_lb = cmd_payload[1];
+                                            uint16_t offset = to_uint16(offset_hb, offset_lb);
+
+                                            if (offset > 4095)
+                                            {
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_eep_write, err, 1);
+                                                break;
+                                            }
+                                            
                                             uint8_t value = cmd_payload[2];
 
                                             // Disable hardware write protection (EEPROM chip has a pullup resistor on its WP-pin!)
                                             DDRE |= (1 << PE2); // set PE2 pin as output (this pin can't be reached by pinMode and digitalWrite commands)
                                             PORTE &= ~(1 << PE2); // pull PE2 pin low to disable write protection
 
-                                            eep_result = eep.write(address, value);
+                                            eep_result = eep.write(offset, value);
 
                                             if (eep_result) // error
                                             {
@@ -4261,7 +4232,7 @@ void handle_usb_data(void)
                                             {
                                                 uint8_t temp_checksum = 0;
 
-                                                for (uint8_t i = 0; i < 255; i++) // add all 255 bytes together and skip last byte (where the result of this calculation goes) by setting the second parameter to 255 instead of 256
+                                                for (uint8_t i = 0; i < 255; i++) // add the first 255 bytes together and skip last byte (where the result of this calculation goes) by setting the second parameter to 255 instead of 256
                                                 {
                                                     temp_checksum += eep.read(i); // checksum variable will roll over several times but it's okay, this is its purpose
                                                 }
@@ -4276,9 +4247,9 @@ void handle_usb_data(void)
 
                                             PORTE |= (1 << PE2); // pull PE2 pin high to enable write protection
 
-                                            uint8_t reading = eep.read(address);
-                                            uint8_t data[3] = { address_hb, address_lb, reading };
-                                            send_usb_packet(from_usb, to_usb, debug, 0x03, data, 3); // send external EEPROM value back to the laptop for confirmation
+                                            uint8_t reading = eep.read(offset);
+                                            uint8_t payload[4] = { 0x00, offset_hb, offset_lb, reading };
+                                            send_usb_packet(from_usb, to_usb, debug, write_exteeprom_byte, payload, 4); // send external EEPROM value back to the laptop for confirmation
                                         }
                                         else
                                         {
@@ -4286,165 +4257,85 @@ void handle_usb_data(void)
                                         }
                                         break;
                                     }
-                                    case 0x04: // set arbitrary UART-speed on different channels
+                                    case write_exteeprom_block: // 0x0A - write external EEPROM block
                                     {
-                                        if (!payload_bytes || (payload_length < 2))
+                                        if (!payload_bytes || (payload_length < 4))
                                         {
                                             send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
                                             break;
                                         }
-
-                                        switch (cmd_payload[0])
+                                        
+                                        if (eep_present)
                                         {
-                                            case 0x01: // CCD-bus
+                                            uint8_t offset_hb = cmd_payload[0];
+                                            uint8_t offset_lb = cmd_payload[1];
+                                            uint16_t offset = to_uint16(offset_hb, offset_lb);
+                                            uint16_t count = payload_length - 2;
+    
+                                            if ((offset + (count - 1)) > 4095)
                                             {
-                                                switch (cmd_payload[1])
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_eep_write, err, 1);
+                                                break;
+                                            }
+    
+                                            uint8_t values[count];
+    
+                                            for (uint16_t i = 0; i < count; i++)
+                                            {
+                                                values[i] = cmd_payload[2 + i];
+                                            }
+
+                                            // Disable hardware write protection (EEPROM chip has a pullup resistor on its WP-pin!)
+                                            DDRE |= (1 << PE2); // set PE2 pin as output (this pin can't be reached by pinMode and digitalWrite commands)
+                                            PORTE &= ~(1 << PE2); // pull PE2 pin low to disable write protection
+    
+                                            eep_result = eep.write(offset, values, count);
+
+                                            if (eep_result) // error
+                                            {
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_eep_write, err, 1); // send error packet back to the laptop
+                                            }
+                                            else // ok, calculate checksum again
+                                            {
+                                                uint8_t temp_checksum = 0;
+
+                                                for (uint8_t i = 0; i < 255; i++) // add the first 255 bytes together and skip last byte (where the result of this calculation goes) by setting the second parameter to 255 instead of 256
                                                 {
-                                                    case 0x01: // 976.5 baud
-                                                    {
-                                                        ccd_init(ELBAUD);
-                                                        ccd.speed = ELBAUD;
-                                                        ccd_rx_flush();
-                                                        ccd_tx_flush();
-                                                        send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
-                                                        break;
-                                                    }
-                                                    case 0x02: // 7812.5 baud
-                                                    {
-                                                        ccd_init(LOBAUD);
-                                                        ccd.speed = LOBAUD;
-                                                        ccd_rx_flush();
-                                                        ccd_tx_flush();
-                                                        send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
-                                                        break;
-                                                    }
-                                                    case 0x03: // 62500 baud
-                                                    {
-                                                        ccd_init(HIBAUD);
-                                                        ccd.speed = HIBAUD;
-                                                        ccd_rx_flush();
-                                                        ccd_tx_flush();
-                                                        send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
-                                                        break;
-                                                    }
-                                                    case 0x04: // 125000 baud
-                                                    {
-                                                        ccd_init(EHBAUD);
-                                                        ccd.speed = EHBAUD;
-                                                        ccd_rx_flush();
-                                                        ccd_tx_flush();
-                                                        send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
-                                                        break;
-                                                    }
-                                                    default:
-                                                    {
-                                                        send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
-                                                        break;
-                                                    }
+                                                    temp_checksum += eep.read(i); // checksum variable will roll over several times but it's okay, this is its purpose
                                                 }
-                                                break;
-                                            }
-                                            case 0x02: // SCI-bus (PCM)
-                                            {
-                                                switch (cmd_payload[1])
+                                                
+                                                eep_result = eep.write(255, temp_checksum); // place checksum byte at the last position of the array
+
+                                                if (eep_result) // error
                                                 {
-                                                    case 0x01: // 976.5 baud
-                                                    {
-                                                        pcm_init(ELBAUD);
-                                                        pcm.speed = ELBAUD;
-                                                        pcm_rx_flush();
-                                                        pcm_tx_flush();
-                                                        send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
-                                                        break;
-                                                    }
-                                                    case 0x02: // 7812.5 baud
-                                                    {
-                                                        pcm_init(LOBAUD);
-                                                        pcm.speed = LOBAUD;
-                                                        pcm_rx_flush();
-                                                        pcm_tx_flush();
-                                                        send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
-                                                        break;
-                                                    }
-                                                    case 0x03: // 62500 baud
-                                                    {
-                                                        pcm_init(HIBAUD);
-                                                        pcm.speed = HIBAUD;
-                                                        pcm_rx_flush();
-                                                        pcm_tx_flush();
-                                                        send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
-                                                        break;
-                                                    }
-                                                    case 0x04: // 125000 baud
-                                                    {
-                                                        pcm_init(EHBAUD);
-                                                        pcm.speed = EHBAUD;
-                                                        pcm_rx_flush();
-                                                        pcm_tx_flush();
-                                                        send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
-                                                        break;
-                                                    }
-                                                    default:
-                                                    {
-                                                        send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
-                                                        break;
-                                                    }
+                                                    send_usb_packet(from_usb, to_usb, ok_error, error_eep_write, err, 1); // send error packet back to the laptop
                                                 }
-                                                break;
                                             }
-                                            case 0x03: // SCI-bus (TCM)
+
+                                            PORTE |= (1 << PE2); // pull PE2 pin high to enable write protection
+                                            
+                                            eep_result = eep.read(offset, values, count); // overwrite array with read values;
+
+                                            if (eep_result) // error
                                             {
-                                                switch (cmd_payload[1])
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1); // send error packet back to the laptop
+                                            }
+                                            else
+                                            {
+                                                uint16_t p_length = count + 3;
+                                                uint8_t payload[p_length] = { 0x00, offset_hb, offset_lb };
+        
+                                                for (uint16_t i = 0; i < count; i++)
                                                 {
-                                                    case 0x01: // 976.5 baud
-                                                    {
-                                                        tcm_init(ELBAUD);
-                                                        tcm.speed = ELBAUD;
-                                                        tcm_rx_flush();
-                                                        tcm_tx_flush();
-                                                        send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
-                                                        break;
-                                                    }
-                                                    case 0x02: // 7812.5 baud
-                                                    {
-                                                        tcm_init(LOBAUD);
-                                                        tcm.speed = LOBAUD;
-                                                        tcm_rx_flush();
-                                                        tcm_tx_flush();
-                                                        send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
-                                                        break;
-                                                    }
-                                                    case 0x03: // 62500 baud
-                                                    {
-                                                        tcm_init(HIBAUD);
-                                                        tcm.speed = HIBAUD;
-                                                        tcm_rx_flush();
-                                                        tcm_tx_flush();
-                                                        send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
-                                                        break;
-                                                    }
-                                                    case 0x04: // 125000 baud
-                                                    {
-                                                        tcm_init(EHBAUD);
-                                                        tcm.speed = EHBAUD;
-                                                        tcm_rx_flush();
-                                                        tcm_tx_flush();
-                                                        send_usb_packet(from_usb, to_usb, ok_error, ok, ack, 1); // acknowledge
-                                                        break;
-                                                    }
-                                                    default:
-                                                    {
-                                                        send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
-                                                        break;
-                                                    }
+                                                    payload[3 + i] = values[i];
                                                 }
-                                                break;
+        
+                                                send_usb_packet(from_usb, to_usb, debug, write_exteeprom_block, payload, p_length); // send external EEPROM block back to the laptop
                                             }
-                                            default:
-                                            {
-                                                send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
-                                                break;
-                                            }
+                                        }
+                                        else
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_eep_not_found, err, 1);
                                         }
                                         break;
                                     }
@@ -4480,10 +4371,10 @@ void handle_usb_data(void)
                                 {
                                     case stop_msg_flow: // 0x01 - stop message transmission (single and repeated as well)
                                     {
-                                        ccd.msg_buffer_ptr = 0;
                                         ccd.repeat = false;
                                         ccd.repeat_next = false;
                                         ccd.repeat_iterate = false;
+                                        ccd.repeat_list_once = false;
                                         ccd.repeat_stop = true;
                                         ccd.msg_to_transmit_count = 0;
                                         ccd.msg_to_transmit_count_ptr = 0;
@@ -4491,11 +4382,11 @@ void handle_usb_data(void)
                                         ccd.repeated_msg_last_millis = 0;
                                         ccd.msg_buffer_ptr = 0;
 
-                                        ret[0] = to_ccd; // improvised payload array with only 1 element which is the target bus
-                                        send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 1);
+                                        uint8_t ret[2] = { 0x00, to_ccd }; // improvised payload array with only 1 element which is the target bus
+                                        send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 2);
                                         break;
                                     }
-                                    case single_msg: // 0x02 - send message to the CCD-bus, message is stored in payload 
+                                    case single_msg: // 0x02 - send message to the CCD-bus once
                                     {
                                         if (!payload_bytes || (payload_length > CCD_RX1_BUFFER_SIZE))
                                         {
@@ -4504,7 +4395,7 @@ void handle_usb_data(void)
                                         }
 
                                         // Fill the pending buffer with the message to be sent
-                                        for (uint8_t i = 0; i < payload_length; i++)
+                                        for (uint16_t i = 0; i < payload_length; i++)
                                         {
                                             ccd.msg_buffer[i] = cmd_payload[i];
                                         }
@@ -4517,13 +4408,16 @@ void handle_usb_data(void)
                                             uint8_t checksum_position = ccd.msg_buffer_ptr - 1;
                                             ccd.msg_buffer[checksum_position] = calculate_checksum(ccd.msg_buffer, 0, checksum_position); // overwrite last checksum byte with the correct one
                                         }
-                                        
+
                                         ccd.msg_buffer_ptr = payload_length;
                                         ccd.msg_to_transmit_count = 1;
                                         ccd.msg_tx_pending  = true; // set flag so the main loop knows there's something to do
+
+                                        uint8_t ret[2] = { 0x00, to_ccd }; // improvised payload array with only 1 element which is the target bus
+                                        send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 2);
                                         break;
                                     }
-                                    case repeated_msg: // 0x03 - send repeated message(s) to the CCD-bus
+                                    case repeated_single_msg: // 0x04 - send a message to the CCD-bus repeatedly forever
                                     {
                                         if ((payload_length < 4) || (payload_length > CCD_RX1_BUFFER_SIZE))
                                         {
@@ -4562,10 +4456,11 @@ void handle_usb_data(void)
                                                 ccd.repeat = true; // set flag
                                                 ccd.repeat_next = true; // set flag
                                                 ccd.repeat_iterate = false; // set flag
+                                                ccd.repeat_list_once = false;
                                                 ccd.repeat_stop = false;
 
-                                                ret[0] = to_ccd;
-                                                send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
+                                                uint8_t ret[2] = { 0x00, to_ccd };
+                                                send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
                                                 break;
                                             }
                                             case 0x01: // message iteration needed, 1 message only (with B2 ID-byte)!
@@ -4602,11 +4497,12 @@ void handle_usb_data(void)
                                                     ccd.repeat = true; // set flag
                                                     ccd.repeat_next = true; // set flag
                                                     ccd.repeat_iterate = true; // set flag
+                                                    ccd.repeat_list_once = false;
                                                     ccd.repeat_stop = false;
                                                     ccd.msg_to_transmit_count = 1;
 
-                                                    ret[0] = to_ccd;
-                                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
+                                                    uint8_t ret[2] = { 0x00, to_ccd };
+                                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
                                                 }
                                                 else
                                                 {
@@ -4622,17 +4518,19 @@ void handle_usb_data(void)
                                         }
                                         break;
                                     }
-                                    case repeated_set_msg: // 0x04 - send a set of messages repeatedly to the CCD-bus
+                                    case list_msg: // 0x03 - send a set of messages to the CCD-bus once
+                                    case repeated_list_msg: // 0x05 - send a set of messages to the CCD-bus repeatedly forever
                                     {
-                                        if (payload_length < 3)
+                                        if (payload_length < 4)
                                         {
                                             send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error
                                             break;
                                         }
 
                                         // Payload structure example:
-                                        // 02 04 E4 00 00 E4 04 24 00 00 24
-                                        // --------------------------------
+                                        // 00 02 04 E4 00 00 E4 04 24 00 00 24
+                                        // -----------------------------------
+                                        // 00: message iteration not supported, reads always zero
                                         // 02: number of messages
                                         // 04: 1st message length
                                         // E4 00 00 E4: message #1
@@ -4641,14 +4539,14 @@ void handle_usb_data(void)
                                         // XX: n-th message length
                                         // XX XX...: message #n
 
-                                        for (uint8_t i = 1; i < payload_length; i++)
+                                        for (uint8_t i = 2; i < payload_length; i++)
                                         {
-                                            ccd.msg_buffer[i-1] = cmd_payload[i]; // copy and save all the message bytes for this session
+                                            ccd.msg_buffer[i-2] = cmd_payload[i]; // copy and save all the message bytes for this session
                                         }
 
-                                        ccd.msg_to_transmit_count = cmd_payload[0]; // save number of messages
+                                        ccd.msg_to_transmit_count = cmd_payload[1]; // save number of messages
                                         ccd.msg_to_transmit_count_ptr = 0; // current message to transmit
-                                        ccd.repeated_msg_length = cmd_payload[1]; // first message length is saved
+                                        ccd.repeated_msg_length = cmd_payload[2]; // first message length is saved
                                         ccd.msg_buffer_ptr = 0;
 
                                         for (uint8_t i = 0; i < ccd.msg_to_transmit_count; i++)
@@ -4666,10 +4564,15 @@ void handle_usb_data(void)
                                         ccd.repeat = true; // set flag
                                         ccd.repeat_next = true; // set flag
                                         ccd.repeat_iterate = false;
+                                        
+                                        if (subdatacode == list_msg) ccd.repeat_list_once = true;
+                                        else if (subdatacode == repeated_list_msg) ccd.repeat_list_once = false;
+                                        
                                         ccd.repeat_stop = false;
 
-                                        ret[0] = to_ccd;
-                                        send_usb_packet(from_usb, to_usb, msg_tx, repeated_set_msg, ret, 1); // acknowledge
+                                        uint8_t ret[2] = { 0x00, to_ccd };
+                                        if (subdatacode == list_msg) send_usb_packet(from_usb, to_usb, msg_tx, list_msg, ret, 2); // acknowledge
+                                        else if (subdatacode == repeated_list_msg) send_usb_packet(from_usb, to_usb, msg_tx, repeated_list_msg, ret, 2); // acknowledge
                                         break;
                                     }
                                     default:
@@ -4702,6 +4605,7 @@ void handle_usb_data(void)
                                         pcm.repeat = false;
                                         pcm.repeat_next = false;
                                         pcm.repeat_iterate = false;
+                                        pcm.repeat_list_once = false;
                                         pcm.repeat_stop = true;
                                         pcm.msg_to_transmit_count = 0;
                                         pcm.msg_to_transmit_count_ptr = 0;
@@ -4709,11 +4613,11 @@ void handle_usb_data(void)
                                         pcm.repeated_msg_last_millis = 0;
                                         pcm.msg_buffer_ptr = 0;
                                         
-                                        ret[0] = to_pcm;
-                                        send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 1);
+                                        uint8_t ret[2] = { 0x00, to_pcm };
+                                        send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 2);
                                         break;
                                     }
-                                    case single_msg: // 0x02 - send message to the SCI-bus, message is stored in payload 
+                                    case single_msg: // 0x02 - send message to the SCI-bus once
                                     {
                                         if (!payload_bytes || (payload_length > PCM_RX2_BUFFER_SIZE))
                                         {
@@ -4730,9 +4634,12 @@ void handle_usb_data(void)
                                         pcm.msg_buffer_ptr = payload_length;
                                         pcm.msg_to_transmit_count = 1;
                                         pcm.msg_tx_pending  = true; // set flag so the main loop knows there's something to do
+
+                                        uint8_t ret[2] = { 0x00, to_pcm };
+                                        send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 2);
                                         break;
                                     }
-                                    case repeated_msg: // 0x03 - send repeated message(s) to the SCI-bus (PCM)
+                                    case repeated_single_msg: // 0x04 - send repeated message(s) to the SCI-bus (PCM)
                                     {
                                         if ((payload_length < 4) || (payload_length > PCM_RX2_BUFFER_SIZE))
                                         {
@@ -4763,10 +4670,11 @@ void handle_usb_data(void)
                                                 pcm.repeat = true; // set flag
                                                 pcm.repeat_next = true; // set flag
                                                 pcm.repeat_iterate = false; // set flag
+                                                pcm.repeat_list_once = false;
                                                 pcm.repeat_stop = false;
 
-                                                ret[0] = to_pcm;
-                                                send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
+                                                uint8_t ret[2] = { 0x00, to_pcm };
+                                                send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
                                                 break;
                                             }
                                             case 0x01: // message iteration needed, 1 message only!
@@ -4789,6 +4697,7 @@ void handle_usb_data(void)
                                                     pcm.repeat = true; // set flag
                                                     pcm.repeat_next = true; // set flag
                                                     pcm.repeat_iterate = true; // set flag
+                                                    pcm.repeat_list_once = false;
                                                     pcm.repeat_stop = false;
 
                                                     if (pcm.repeated_msg_length == 0x04) // 4-bytes length
@@ -4812,8 +4721,8 @@ void handle_usb_data(void)
                                                         pcm.repeated_msg_raw_end = cmd_payload[4];
                                                     }
 
-                                                    ret[0] = to_pcm;
-                                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_msg, ret, 1); // acknowledge
+                                                    uint8_t ret[2] = { 0x00, to_pcm };
+                                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
                                                 }
                                                 else
                                                 {
@@ -4829,7 +4738,8 @@ void handle_usb_data(void)
                                         }
                                         break;
                                     }
-                                    case repeated_set_msg: // 0x04 - send a set of messages repeatedly to the SCI-bus (PCM)
+                                    case list_msg: // 0x03 - send a set of messages to the SCI-bus (PCM) once
+                                    case repeated_list_msg: // 0x05 - send a set of messages repeatedly to the SCI-bus (PCM)
                                     {
                                         if (payload_length < 3)
                                         {
@@ -4838,8 +4748,9 @@ void handle_usb_data(void)
                                         }
 
                                         // Payload structure example:
-                                        // 02 02 14 07 02 14 08
+                                        // 00 02 02 14 07 02 14 08
                                         // --------------------------------
+                                        // 00: message iteration not supported, reads always zero
                                         // 02: number of messages
                                         // 02: 1st message length
                                         // 14 07: message #1
@@ -4848,22 +4759,28 @@ void handle_usb_data(void)
                                         // XX: n-th message length
                                         // XX XX...: message #n
 
-                                        for (uint8_t i = 1; i < payload_length; i++)
+                                        for (uint8_t i = 2; i < payload_length; i++)
                                         {
-                                            pcm.msg_buffer[i-1] = cmd_payload[i]; // copy and save all the message bytes for this session
+                                            pcm.msg_buffer[i-2] = cmd_payload[i]; // copy and save all the message bytes for this session
                                         }
 
-                                        pcm.msg_to_transmit_count = cmd_payload[0]; // save number of messages
+                                        pcm.msg_to_transmit_count = cmd_payload[1]; // save number of messages
                                         pcm.msg_to_transmit_count_ptr = 0; // current message to transmit
-                                        pcm.repeated_msg_length = cmd_payload[1]; // first message length is saved
+                                        pcm.repeated_msg_length = cmd_payload[2]; // first message length is saved
                                         pcm.msg_buffer_ptr = 0; // set the pointer in the main buffer at the beginning
                                         pcm.repeat = true; // set flag
                                         pcm.repeat_next = true; // set flag
                                         pcm.repeat_iterate = false;
+
+                                        if (subdatacode == list_msg) pcm.repeat_list_once = true;
+                                        else if (subdatacode == repeated_list_msg) pcm.repeat_list_once = false;
+                                        
                                         pcm.repeat_stop = false;
 
-                                        ret[0] = to_pcm;
-                                        send_usb_packet(from_usb, to_usb, msg_tx, repeated_set_msg, ret, 1); // acknowledge
+                                        uint8_t ret[2] = { 0x00, to_pcm };
+
+                                        if (subdatacode == list_msg) send_usb_packet(from_usb, to_usb, msg_tx, list_msg, ret, 2); // acknowledge
+                                        else if (subdatacode == repeated_list_msg) send_usb_packet(from_usb, to_usb, msg_tx, repeated_list_msg, ret, 2); // acknowledge
                                         break;
                                     }
                                     default:
@@ -4922,7 +4839,7 @@ void handle_usb_data(void)
                     cli_error = true;
                 }
 
-                // If no error occured so far
+                // If no error occurred so far
                 if (!cli_error)
                 {
                     cli_parse(); // parse command
@@ -4956,46 +4873,48 @@ Purpose:  handle CCD-bus messages
 **************************************************************************/
 void handle_ccd_data(void)
 {
-    if (ccd.enabled) // when clock signal is fed into the ccd-chip
+    if (ccd.enabled)
     {
-        if (ccd.idle) // CCD-bus is idling, find out if there's a message in the circular buffer
+        if (CCD.available())
         {
-            if ((ccd.message_length > 0) && (ccd.message_count == 1)) // the exact message length is recorded in the CCD-bus idle ISR so it's pretty accurate
+            ccd.last_message_length = CCD.read(ccd.last_message);
+
+            if (ccd.last_message_length > 0) // valid message length is always greater than 0
             {
-                uint8_t usb_msg[TIMESTAMP_LENGTH+ccd.message_length]; // create local array which will hold the timestamp and the CCD-bus message
+                uint8_t usb_msg[TIMESTAMP_LENGTH + ccd.last_message_length]; // create local array which will hold the timestamp and the CCD-bus message
                 update_timestamp(current_timestamp); // get current time for the timestamp
                 
                 for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
                 {
                     usb_msg[i] = current_timestamp[i];
                 }
-                for (uint8_t i = 0; i < ccd.message_length; i++) // put every byte in the CCD-bus message after the timestamp
+                for (uint8_t i = 0; i < ccd.last_message_length; i++) // put every byte in the CCD-bus message after the timestamp
                 {
-                    usb_msg[TIMESTAMP_LENGTH+i] = ccd_getc() & 0xFF; // new message bytes may arrive in the circular buffer but this way only one message is removed
+                    usb_msg[TIMESTAMP_LENGTH + i] = ccd.last_message[i]; // new message bytes may arrive in the circular buffer but this way only one message is removed
                 }
                 
                 // TODO: check here if echo is expected from a pending message, otherwise good to know if a custom message is heard by the other modules
-                send_usb_packet(from_ccd, to_usb, msg_rx, single_msg, usb_msg, TIMESTAMP_LENGTH+ccd.message_length); // send CCD-bus message back to the laptop
+                send_usb_packet(from_ccd, to_usb, msg_rx, single_msg, usb_msg, TIMESTAMP_LENGTH + ccd.last_message_length); // send CCD-bus message back to the laptop
                 
-                //handle_lcd(from_ccd, usb_msg, 4, TIMESTAMP_LENGTH+ccd_bytes_count); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                handle_lcd(from_ccd, usb_msg, 4, TIMESTAMP_LENGTH + ccd.last_message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
 
                 if (ccd.repeat && !ccd.repeat_iterate)
                 {
                     if (ccd.msg_to_transmit_count == 1) // if there's only one message in the buffer
                     {
                         bool match = true;
-                        for (uint8_t i = 0; i < ccd.message_length; i++)
+                        for (uint8_t i = 0; i < ccd.last_message_length; i++)
                         {
-                            if (ccd.msg_buffer[i] != usb_msg[TIMESTAMP_LENGTH+i]) match = false; // compare received bytes with message sent
+                            if (ccd.msg_buffer[i] != usb_msg[TIMESTAMP_LENGTH + i]) match = false; // compare received bytes with message sent
                         }
                         if (match) ccd.repeat_next = true; // if echo is correct prepare next message
                     }
                     else if (ccd.msg_to_transmit_count > 1) // multiple messages
                     {
                         bool match = true;
-                        for (uint8_t i = 0; i < ccd.message_length; i++)
+                        for (uint8_t i = 0; i < ccd.last_message_length; i++)
                         {
-                            if (ccd.msg_buffer[ccd.msg_buffer_ptr + 1 + i] != usb_msg[TIMESTAMP_LENGTH+i]) match = false; // compare received bytes with message sent
+                            if (ccd.msg_buffer[ccd.msg_buffer_ptr + 1 + i] != usb_msg[TIMESTAMP_LENGTH + i]) match = false; // compare received bytes with message sent
                         }
                         if (match)
                         {
@@ -5012,122 +4931,132 @@ void handle_ccd_data(void)
                                 ccd.msg_to_transmit_count_ptr = 0;
                                 ccd.msg_buffer_ptr = 0;
                                 ccd.repeated_msg_length = ccd.msg_buffer[ccd.msg_buffer_ptr]; // re-calculate new message length
+
+                                if (ccd.repeat_list_once) ccd.repeat_stop = true;
                             }
                         }
                     }
-                }
-                else if (ccd.repeat && ccd.repeat_iterate)
-                {
-                    if (usb_msg[4] == 0xF2) ccd.repeat_next = true; // response received, prepare next request
                     
-                    if (ccd.repeat_stop) // don't request more data
+                    if (ccd.repeat_stop) // one-shot message list is terminated here
                     {
                         ccd.msg_buffer_ptr = 0;
                         ccd.repeat = false;
                         ccd.repeat_next = false;
                         ccd.repeat_iterate = false;
+                        ccd.repeat_list_once = false;
+                    }
+                }
+                else if (ccd.repeat && ccd.repeat_iterate)
+                {
+                    if (usb_msg[4] == 0xF2) ccd.repeat_next = true; // response received, prepare next request
+                    //if (usb_msg[4] == 0xB2) ccd.repeat_next = true; // DEBUG
+                    
+                    if (ccd.repeat_stop) // don't request more data if the list ends
+                    {
+                        ccd.msg_buffer_ptr = 0;
+                        ccd.repeat = false;
+                        ccd.repeat_next = false;
+                        ccd.repeat_iterate = false;
+                        ccd.repeat_list_once = false;
+
+                        uint8_t ret[2] = { 0x00, to_ccd }; // improvised payload array with only 1 element which is the target bus
+                        send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 2);
                     }
                 }
                 
-                ccd.message_length = 0; // force ISR to update this value again so we don't end up here in the next program loop
+                ccd.last_message_length = 0; // force ISR to update this value again so we don't end up here in the next program loop
                 ccd.message_count = 0;
                 ccd.msg_rx_count++;
             }
-            else // there are multiple ccd-bus messages in the buffer
+        }
+
+        if (ccd.random_msg && (ccd.random_msg_interval > 0))
+        {
+            current_millis = millis(); // check current time
+            if ((current_millis - ccd.random_msg_last_millis) > ccd.random_msg_interval)
             {
-                // TODO
-                // For now just trash the whole buffer and wait for another message
-                ccd_rx_flush();
-                ccd.message_length = 0;
-                ccd.message_count = 0;
+                ccd.random_msg_last_millis = current_millis;
+                ccd.msg_buffer_ptr = random(3, 7); // random message length between 3 and 6 bytes
+                for (uint8_t i = 0; i < ccd.msg_buffer_ptr - 2; i++)
+                {
+                    ccd.msg_buffer[i] = random(256); // generate random bytes
+                }
+                uint8_t checksum_position = ccd.msg_buffer_ptr - 1;
+                ccd.msg_buffer[checksum_position] = calculate_checksum(ccd.msg_buffer, 0, checksum_position);
+                ccd.msg_tx_pending = true;
+                ccd.random_msg_interval = random(ccd.random_msg_interval_min, ccd.random_msg_interval_max); // generate new delay value between random messages
             }
+        }
 
-            if (ccd.random_msg && (ccd.random_msg_interval > 0))
+        // Repeated messages are prepared here
+        if (ccd.repeat)
+        {
+            current_millis = millis(); // check current time
+            if ((current_millis - ccd.repeated_msg_last_millis) > ccd.repeated_msg_interval) // wait between messages
             {
-                current_millis = millis(); // check current time
-                if ((current_millis - ccd.random_msg_last_millis) > ccd.random_msg_interval)
+                ccd.repeated_msg_last_millis = current_millis;
+                if (ccd.repeat_next && !ccd.repeat_iterate) // no iteration, same message over and over again
                 {
-                    ccd.random_msg_last_millis = current_millis;
-                    ccd.msg_buffer_ptr = random(3, 7); // random message length between 3 and 6 bytes
-                    for (uint8_t i = 0; i < ccd.msg_buffer_ptr - 2; i++)
+                    // The message is already in the ccd.msg_buffer array, just set flags
+                    ccd.msg_tx_pending = true; // set flag
+                    ccd.repeat_next = false;
+                }
+                else if (ccd.repeat_next && ccd.repeat_iterate) // iteration, message is incremented for every repeat according to settings
+                {
+                    if (ccd.msg_buffer_ptr == 0) // no existing message in the buffer yet, lets load the first one
                     {
-                        ccd.msg_buffer[i] = random(256); // generate random bytes
+                        ccd.msg_buffer_ptr = 6;
+                        ccd.msg_buffer[0] = 0xB2; // this byte is fixed and not included in the "raw" variable
+                        ccd.msg_buffer[1] = (ccd.repeated_msg_raw_start >> 24) & 0xFF; // decompose raw message from its integer form to byte components
+                        ccd.msg_buffer[2] = (ccd.repeated_msg_raw_start >> 16) & 0xFF;
+                        ccd.msg_buffer[3] = (ccd.repeated_msg_raw_start >> 8) & 0xFF;
+                        ccd.msg_buffer[4] = ccd.repeated_msg_raw_start & 0xFF;
+                        ccd.msg_buffer[5] = calculate_checksum(ccd.msg_buffer, 0, ccd.msg_buffer_ptr - 1); // last checksum byte automatically calculated
                     }
-                    uint8_t checksum_position = ccd.msg_buffer_ptr - 1;
-                    ccd.msg_buffer[checksum_position] = calculate_checksum(ccd.msg_buffer, 0, checksum_position);
-                    ccd.msg_tx_pending = true;
-                    ccd.random_msg_interval = random(ccd.random_msg_interval_min, ccd.random_msg_interval_max); // generate new delay value between fake messages
+                    else // increment existing message
+                    {
+                        // First combine bytes into a single integer
+                        ccd.msg_buffer_ptr = 6;
+                        uint32_t message = to_uint32(ccd.msg_buffer[1], ccd.msg_buffer[2], ccd.msg_buffer[3], ccd.msg_buffer[4]);
+                        message += ccd.repeated_msg_increment; // add increment
+                        ccd.msg_buffer[0] = 0xB2; // this byte is fixed and not included in the "raw" variable
+                        ccd.msg_buffer[1] = (message >> 24) & 0xFF; // decompose raw message from its integer form to byte components
+                        ccd.msg_buffer[2] = (message >> 16) & 0xFF;
+                        ccd.msg_buffer[3] = (message >> 8) & 0xFF;
+                        ccd.msg_buffer[4] = message & 0xFF;
+                        ccd.msg_buffer[5] = calculate_checksum(ccd.msg_buffer, 0, ccd.msg_buffer_ptr - 1); // last checksum byte automatically calculated
+                        
+                        if ((message + ccd.repeated_msg_increment) > ccd.repeated_msg_raw_end) ccd.repeat_stop = true; // don't prepare another message, it's the end
+                    }
+
+                    ccd.msg_tx_pending = true; // set flag
+                    ccd.repeat_next = false;
                 }
             }
+        }
 
-            // Repeated messages are prepared here
-            if (ccd.repeat && (ccd_rx_available() == 0))
+        if (ccd.msg_tx_pending) // received over usb connection, checksum corrected there (if wrong)
+        {     
+            if (ccd.msg_to_transmit_count == 1) // if there's only one message in the buffer
             {
-                current_millis = millis(); // check current time
-                if ((current_millis - ccd.repeated_msg_last_millis) > ccd.repeated_msg_interval) // wait between messages
-                {
-                    ccd.repeated_msg_last_millis = current_millis;
-                    if (ccd.repeat_next && !ccd.repeat_iterate) // no iteration, same message over and over again
-                    {
-                        // The message is already in the ccd.msg_buffer array, just set flags
-                        ccd.msg_tx_pending = true; // set flag
-                        ccd.repeat_next = false;
-                    }
-                    else if (ccd.repeat_next && ccd.repeat_iterate) // iteration, message is incremented for every repeat according to settings
-                    {
-                        if (ccd.msg_buffer_ptr == 0) // no existing message in the buffer yet, lets load the first one
-                        {
-                            ccd.msg_buffer_ptr = 6;
-                            ccd.msg_buffer[0] = 0xB2; // this byte is fixed and not included in the "raw" variable
-                            ccd.msg_buffer[1] = (ccd.repeated_msg_raw_start >> 24) & 0xFF; // decompose raw message from its integer form to byte components
-                            ccd.msg_buffer[2] = (ccd.repeated_msg_raw_start >> 16) & 0xFF;
-                            ccd.msg_buffer[3] = (ccd.repeated_msg_raw_start >> 8) & 0xFF;
-                            ccd.msg_buffer[4] = ccd.repeated_msg_raw_start & 0xFF;
-                            ccd.msg_buffer[5] = calculate_checksum(ccd.msg_buffer, 0, ccd.msg_buffer_ptr - 1); // last checksum byte automatically calculated
-                        }
-                        else // increment existing message
-                        {
-                            // First combine bytes into a single integer
-                            ccd.msg_buffer_ptr = 6;
-                            uint32_t message = to_uint32(ccd.msg_buffer[1], ccd.msg_buffer[2], ccd.msg_buffer[3], ccd.msg_buffer[4]);
-                            message += ccd.repeated_msg_increment; // add increment
-                            ccd.msg_buffer[0] = 0xB2; // this byte is fixed and not included in the "raw" variable
-                            ccd.msg_buffer[1] = (message >> 24) & 0xFF; // decompose raw message from its integer form to byte components
-                            ccd.msg_buffer[2] = (message >> 16) & 0xFF;
-                            ccd.msg_buffer[3] = (message >> 8) & 0xFF;
-                            ccd.msg_buffer[4] = message & 0xFF;
-                            ccd.msg_buffer[5] = calculate_checksum(ccd.msg_buffer, 0, ccd.msg_buffer_ptr - 1); // last checksum byte automatically calculated
-                            
-                            if ((message + ccd.repeated_msg_increment) > ccd.repeated_msg_raw_end) ccd.repeat_stop = true; // don't prepare another message, it's the end
-                        }
-
-                        ccd.msg_tx_pending = true; // set flag
-                        ccd.repeat_next = false;
-                    }
-                }
+                CCD.write(ccd.msg_buffer, ccd.msg_buffer_ptr); // send message on the CCD-bus
             }
+            else if (ccd.msg_to_transmit_count > 1) // multiple messages, send one at a time
+            {
+                // Make a local copy of the current message.
+                uint8_t current_message[ccd.repeated_msg_length];
+                uint8_t j = 0;
+                for (uint8_t i = (ccd.msg_buffer_ptr + 1); i < (ccd.msg_buffer_ptr + 1 + ccd.repeated_msg_length); i++)
+                {
+                    current_message[j] = ccd.msg_buffer[i];
+                    j++;
+                }
 
-            if (ccd.msg_tx_pending) // received over usb connection, checksum corrected there (if wrong)
-            {     
-                if (ccd.msg_to_transmit_count == 1) // if there's only one message in the buffer
-                {
-                    for (uint8_t i = 0; i < ccd.msg_buffer_ptr; i++) // since the bus is already idling start filling the transmit buffer with bytes right away
-                    {
-                        ccd_putc(ccd.msg_buffer[i]); // transmission occurs automatically if the "putc" function senses at least 1 byte in the main transmit buffer
-                    }
-                }
-                else if (ccd.msg_to_transmit_count > 1) // multiple messages, send one at a time
-                {
-                    // Navigate in the main buffer after the message length byte and start sending those bytes
-                    for (uint8_t i = (ccd.msg_buffer_ptr + 1); i < (ccd.msg_buffer_ptr + 1 + ccd.repeated_msg_length); i++)
-                    {
-                        ccd_putc(ccd.msg_buffer[i]);
-                    }
-                }
-                
-                ccd.msg_tx_pending = false; // re-arm, make it possible to send a message again, TODO: same as above
-                ccd.msg_tx_count++;
+                CCD.write(current_message, ccd.repeated_msg_length); // send message on the CCD-bus
             }
+            
+            ccd.msg_tx_pending = false; // re-arm, make it possible to send a message again, TODO: same as above
+            ccd.msg_tx_count++;
         }
     }
 
@@ -5225,13 +5154,15 @@ void handle_sci_data(void)
                     }
 
                     send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, TIMESTAMP_LENGTH+pcm.message_length); // send message to laptop
+                    handle_lcd(from_pcm, usb_msg, 4, TIMESTAMP_LENGTH+pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
                     
                     if (usb_msg[4] == 0x12) // pay attention to special bytes (speed change)
                     {
-                        sbi(pcm.sci_settings[0], 7); // set change settings bit
-                        sbi(pcm.sci_settings[0], 6); // set enable bit
-                        sbi(pcm.sci_settings[0], 4); // set speed bit (62500 baud)
-                        configure_sci_bus(pcm.sci_settings[0]);
+                        sbi(pcm.bus_settings, 5); // set change settings bit
+                        sbi(pcm.bus_settings, 4); // set enable bit
+                        sbi(pcm.bus_settings, 1); // set/clear speed bits (62500 baud)
+                        cbi(pcm.bus_settings, 0); // set/clear speed bits (62500 baud)
+                        configure_sci_bus(pcm.bus_settings);
                     }
 
                     if (pcm.repeat && !pcm.repeat_iterate) // prepare next repeated message
@@ -5267,24 +5198,35 @@ void handle_sci_data(void)
                                     pcm.msg_to_transmit_count_ptr = 0;
                                     pcm.msg_buffer_ptr = 0;
                                     pcm.repeated_msg_length = pcm.msg_buffer[pcm.msg_buffer_ptr]; // re-calculate new message length
+
+                                    if (pcm.repeat_list_once) pcm.repeat_stop = true;
                                 }
                             }
+                        }
+
+                        if (pcm.repeat_stop) // one-shot message list is terminated here
+                        {
+                            pcm.msg_buffer_ptr = 0;
+                            pcm.repeat = false;
+                            pcm.repeat_next = false;
+                            pcm.repeat_iterate = false;
+                            pcm.repeat_list_once = false;
                         }
                     }
                     else if (pcm.repeat && pcm.repeat_iterate)
                     {
-                        if (pcm.message_length > pcm.repeated_msg_length)
+                        if (pcm.message_length == (pcm.repeated_msg_length + 1)) // received message has to be 1 byte bigger than what was sent
                         {
-                            pcm.repeat_next = true; // received message has to be 1 byte bigger than what was sent
+                            pcm.repeat_next = true;
                             pcm.repeat_retry_counter = 0;
                         }
                         else
                         {
-                            pcm.msg_tx_pending = true; // send the same message again if no answer
+                            pcm.msg_tx_pending = true; // send the same message again if no answer is received
                             pcm.repeat_retry_counter++;
-                            if (pcm.repeat_retry_counter > 18)
+                            if (pcm.repeat_retry_counter > 10)
                             {
-                                pcm.repeat = false; // don't repeat after 20 failed attempts
+                                pcm.repeat = false; // don't repeat after 10 failed attempts
                                 pcm.repeat_retry_counter = 0;
                             }
                             delay(500);
@@ -5297,10 +5239,13 @@ void handle_sci_data(void)
                             pcm.repeat = false;
                             pcm.repeat_next = false;
                             pcm.repeat_iterate = false;
+                            pcm.repeat_list_once = false;
+
+                            uint8_t ret[2] = { 0x00, to_pcm }; // improvised payload array with only 1 element which is the target bus
+                            send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 2);
                         }
                     }
                     
-                    //handle_lcd(from_pcm, usb_msg, 4, TIMESTAMP_LENGTH+pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
                     pcm_rx_flush();
                     pcm.msg_rx_count++;
                 }
@@ -5328,6 +5273,7 @@ void handle_sci_data(void)
                         }
                         
                         send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, TIMESTAMP_LENGTH+pcm.message_length);
+                        handle_lcd(from_pcm, usb_msg, 4, TIMESTAMP_LENGTH+pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
                     }
                     // Stop broadcasting request bytes command is accepted
                     else if ((pcm_peek(0) == 0x2A) && (pcm_peek(1) == 0x00)) // The 0x00 byte is not echoed back by the PCM so don't look for a third byte
@@ -5348,6 +5294,7 @@ void handle_sci_data(void)
                         }
 
                         send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, TIMESTAMP_LENGTH+pcm.message_length);
+                        handle_lcd(from_pcm, usb_msg, 4, TIMESTAMP_LENGTH+pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
                     }
                     else // only ID-bytes are received, the beginning of the messages must be supplemented so that the GUI understands what it is about
                     {
@@ -5374,9 +5321,9 @@ void handle_sci_data(void)
 
                         usb_msg[6] = pcm_getc() & 0xFF; // BUG: this byte is different at first when the PCM begins to broadcast a single byte repeatedly, but it should be overwritten very soon after
                         send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 7); // the message length is fixed by the nature of the active commands
+                        handle_lcd(from_pcm, usb_msg, 4, TIMESTAMP_LENGTH+pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
                     }
-                    
-                    //handle_lcd(from_pcm, usb_msg, 4, TIMESTAMP_LENGTH+pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+
                     pcm_rx_flush();
                     pcm.msg_rx_count++;
                 }
@@ -5387,50 +5334,101 @@ void handle_sci_data(void)
             if (pcm_rx_available() > 0)
             {
                 pcm.message_length = pcm_rx_available();
-                uint8_t usb_msg[TIMESTAMP_LENGTH+pcm.message_length]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
+                uint16_t packet_length = TIMESTAMP_LENGTH + (2*pcm.message_length) - 1;
+                uint8_t usb_msg[packet_length]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
                 update_timestamp(current_timestamp); // get current time for the timestamp
 
-                // Send the request bytes first
-                for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
-                {
-                    usb_msg[i] = current_timestamp[i];
-                }
-                for (uint8_t i = 0; i < pcm.msg_buffer_ptr ; i++) // put original request message after the timestamp
-                {
-                    usb_msg[TIMESTAMP_LENGTH+i] = pcm.msg_buffer[i];
-                }
-                send_usb_packet(from_pcm, to_usb, msg_rx, sci_hs_request_bytes, usb_msg, TIMESTAMP_LENGTH+pcm.msg_buffer_ptr);
+                // Request and response bytes are mixed together in a single message:
+                // 00 00 00 00 F4 0A 00 0B 00 0C 00 0D 00...
+                // 00 00 00 00: timestamp
+                // F4: RAM table
+                // 0A: RAM address
+                // 00: RAM value at 0A
+                // 0B: RAM address
+                // 00: RAM value at 0B
 
-                // Then send the response bytes
-                for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+                for (uint8_t i = 0; i < TIMESTAMP_LENGTH; i++) // put 4 timestamp bytes in the front
                 {
                     usb_msg[i] = current_timestamp[i];
                 }
-                for (uint8_t i = 0; i < pcm.message_length; i++) // put every byte in the SCI-bus message after the timestamp
+
+                if (pcm.msg_to_transmit_count == 1)
                 {
-                    usb_msg[TIMESTAMP_LENGTH+i] = pcm_getc() & 0xFF;
+                    usb_msg[4] = pcm.msg_buffer[0]; // put RAM table byte first
+                    pcm_getc(); // get rid of the first byte in the receive buffer, it's the RAM table byte
+                    
+                    for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) 
+                    {
+                        usb_msg[5+(i*2)] = pcm.msg_buffer[i+1]; // put original request message byte next
+                        usb_msg[5+(i*2)+1] = pcm_getc() & 0xFF; // put response byte after the request byte
+                    }
+                    
+                    send_usb_packet(from_pcm, to_usb, msg_rx, sci_hs_bytes, usb_msg, packet_length);
                 }
-                send_usb_packet(from_pcm, to_usb, msg_rx, sci_hs_response_bytes, usb_msg, TIMESTAMP_LENGTH+pcm.message_length);
+                else if (pcm.msg_to_transmit_count > 1)
+                {
+                    usb_msg[4] = pcm.msg_buffer[pcm.msg_buffer_ptr + 1]; // put RAM table byte first
+                    pcm_getc(); // get rid of the first byte in the receive buffer, it's the RAM table byte
+                    
+                    for (uint8_t i = 0; i < pcm.repeated_msg_length; i++) 
+                    {
+                        usb_msg[5+(i*2)] = pcm.msg_buffer[pcm.msg_buffer_ptr+i+2]; // put original request message byte next
+                        usb_msg[5+(i*2)+1] = pcm_getc() & 0xFF; // put response byte after the request byte
+                    }
+                    
+                    send_usb_packet(from_pcm, to_usb, msg_rx, sci_hs_bytes, usb_msg, packet_length);
+                }
 
                 if (usb_msg[4] == 0xFE) // pay attention to special bytes (speed change)
                 {
-                    sbi(pcm.sci_settings[0], 7); // set change settings bit
-                    sbi(pcm.sci_settings[0], 6); // set enable bit
-                    cbi(pcm.sci_settings[0], 4); // clear speed bit (7812.5 baud)
-                    configure_sci_bus(pcm.sci_settings[0]);
+                    sbi(pcm.bus_settings, 5); // set change settings bit
+                    sbi(pcm.bus_settings, 4); // set enable bit
+                    cbi(pcm.bus_settings, 1); // set/clear speed bits (7812.5 baud)
+                    sbi(pcm.bus_settings, 0); // set/clear speed bits (7812.5 baud)
+                    configure_sci_bus(pcm.bus_settings);
                 }
 
                 if (pcm.repeat && !pcm.repeat_iterate)
                 {
-                    // TODO, for now assume a proper answer
-                    pcm.repeat_next = true;
+                    if (pcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
+                    {
+                        pcm.repeat_next = true; // accept echo without verification...
+                    }
+                    else if (pcm.msg_to_transmit_count > 1) // multiple messages
+                    {
+                        pcm.repeat_next = true; // accept echo without verification...
+
+                        // Increase the current message counter and set the buffer pointer to the next message length
+                        pcm.msg_to_transmit_count_ptr++;
+                        pcm.msg_buffer_ptr += pcm.repeated_msg_length + 1;
+                        pcm.repeated_msg_length = pcm.msg_buffer[pcm.msg_buffer_ptr]; // re-calculate new message length
+    
+                        // After the last message reset everything to zero to start at the beginning
+                        if (pcm.msg_to_transmit_count_ptr == pcm.msg_to_transmit_count)
+                        {
+                            pcm.msg_to_transmit_count_ptr = 0;
+                            pcm.msg_buffer_ptr = 0;
+                            pcm.repeated_msg_length = pcm.msg_buffer[pcm.msg_buffer_ptr]; // re-calculate new message length
+
+                            if (pcm.repeat_list_once) pcm.repeat_stop = true;
+                        }
+                    }
+
+                    if (pcm.repeat_stop) // one-shot message list is terminated here
+                    {
+                        pcm.msg_buffer_ptr = 0;
+                        pcm.repeat = false;
+                        pcm.repeat_next = false;
+                        pcm.repeat_iterate = false;
+                        pcm.repeat_list_once = false;
+                    }
                 }
                 else if (pcm.repeat && pcm.repeat_iterate)
                 {
                     // TODO
                     if (true) // check proper echo
                     {
-                        pcm.repeat_next = true;
+                        pcm.repeat_next = true; // accept echo without verification...
                     }
                     else
                     {
@@ -5444,10 +5442,11 @@ void handle_sci_data(void)
                         pcm.repeat = false;
                         pcm.repeat_next = false;
                         pcm.repeat_iterate = false;
+                        pcm.repeat_list_once = false;
                     }
                 }
 
-                //handle_lcd(from_pcm, usb_msg, 4, TIMESTAMP_LENGTH+pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                handle_lcd(from_pcm, usb_msg, 4, TIMESTAMP_LENGTH+pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
                 pcm_rx_flush();
                 pcm.msg_rx_count++;
             }
@@ -5471,9 +5470,67 @@ void handle_sci_data(void)
 
                 send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, TIMESTAMP_LENGTH+pcm.message_length); // send message to laptop
 
-                // No automatic speed change!
+                // No automatic speed change for 976.5 and 125000 baud!
+
+                if (pcm.repeat && !pcm.repeat_iterate)
+                {
+                    if (pcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
+                    {
+                        pcm.repeat_next = true; // accept echo without verification...
+                    }
+                    else if (pcm.msg_to_transmit_count > 1) // multiple messages
+                    {
+                        pcm.repeat_next = true; // accept echo without verification...
+
+                        // Increase the current message counter and set the buffer pointer to the next message length
+                        pcm.msg_to_transmit_count_ptr++;
+                        pcm.msg_buffer_ptr += pcm.repeated_msg_length + 1;
+                        pcm.repeated_msg_length = pcm.msg_buffer[pcm.msg_buffer_ptr]; // re-calculate new message length
+    
+                        // After the last message reset everything to zero to start at the beginning
+                        if (pcm.msg_to_transmit_count_ptr == pcm.msg_to_transmit_count)
+                        {
+                            pcm.msg_to_transmit_count_ptr = 0;
+                            pcm.msg_buffer_ptr = 0;
+                            pcm.repeated_msg_length = pcm.msg_buffer[pcm.msg_buffer_ptr]; // re-calculate new message length
+
+                            if (pcm.repeat_list_once) pcm.repeat_stop = true;
+                        }
+                    }
+
+                    if (pcm.repeat_stop) // one-shot message list is terminated here
+                    {
+                        pcm.msg_buffer_ptr = 0;
+                        pcm.repeat = false;
+                        pcm.repeat_next = false;
+                        pcm.repeat_iterate = false;
+                        pcm.repeat_list_once = false;
+                    }
+                }
+                else if (pcm.repeat && pcm.repeat_iterate)
+                {
+                    // TODO
+                    if (true) // check proper echo
+                    {
+                        pcm.repeat_next = true; // accept echo without verification...
+                    }
+                    else
+                    {
+                        pcm.msg_tx_pending = true; // send the same message again
+                    }
+                    
+                    if (pcm.repeat_stop)
+                    {
+                        pcm.msg_buffer_ptr = 0;
+                        pcm.repeated_msg_length = 0;
+                        pcm.repeat = false;
+                        pcm.repeat_next = false;
+                        pcm.repeat_iterate = false;
+                        pcm.repeat_list_once = false;
+                    }
+                }
                 
-                //handle_lcd(from_pcm, usb_msg, 4, TIMESTAMP_LENGTH+pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                handle_lcd(from_pcm, usb_msg, 4, TIMESTAMP_LENGTH+pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
                 pcm_rx_flush();
                 pcm.msg_rx_count++;
             }
@@ -5736,56 +5793,48 @@ void handle_sci_data(void)
                 else if (pcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
                 {
                     // Navigate in the main buffer after the message length byte and start sending those bytes
-                    for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++)
+                    if (array_contains(sci_hi_speed_memarea, 16, pcm.msg_buffer[pcm.msg_buffer_ptr + 1])) // make sure that the memory table select byte is approved by the PCM before sending the full message
                     {
-                        if (array_contains(sci_hi_speed_memarea, 16, pcm.msg_buffer[0])) // make sure that the memory table select byte is approved by the PCM before sending the full message
+                        uint8_t j = 0;
+                        
+                        for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++) // repeat for the length of the message
                         {
-                            if ((pcm.msg_buffer_ptr > 1) && (pcm.msg_buffer[1] == 0xFF)) // return full RAM-table if the first address is an invalid 0xFF
+                            pcm_again_02:
+                            timeout_reached = false;
+                            timeout_start = millis(); // save current time
+                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
+                           
+                            while ((pcm_rx_available() <= j) && !timeout_reached)
                             {
-                                // Prepare message buffer as if it was filled with data beforehand
-                                for (uint8_t i = 0; i < 240; i++)
-                                {
-                                    pcm.msg_buffer[1 + i] = i; // put the address byte after the memory table pointer
-                                }
-                                pcm.msg_buffer_ptr = 241;
+                                // wait here for response (echo in case of F0...FF)
+                                if ((millis() - timeout_start) > SCI_HS_T3_DELAY) timeout_reached = true;
                             }
-                            
-                            for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
+                            if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                             {
-                                pcm_again_02:
                                 timeout_reached = false;
-                                timeout_start = millis(); // save current time
-                                pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
-                                while ((pcm_rx_available() <= i) && !timeout_reached)
+                                uint8_t ret[2] = { pcm.msg_buffer[pcm.msg_buffer_ptr + 1], pcm.msg_buffer[pcm.msg_buffer_ptr + 1 + j] };
+                                send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_no_response, ret, 2); // return two bytes to determine which table and which address is unresponsive
+                                break;
+                            }
+                            if (pcm_peek(0) != pcm.msg_buffer[pcm.msg_buffer_ptr + 1]) // make sure the first RAM-table byte is echoed back correctly
+                            {
+                                pcm_rx_flush();
+                                echo_retry_counter++;
+                                if (echo_retry_counter < 10) goto pcm_again_02;
+                                else
                                 {
-                                    // wait here for response (echo in case of F0...FF)
-                                    if ((millis() - timeout_start) > SCI_HS_T3_DELAY) timeout_reached = true;
-                                }
-                                if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
-                                {
-                                    timeout_reached = false;
-                                    uint8_t ret[2] = { pcm.msg_buffer[0], pcm.msg_buffer[i] };
-                                    send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_no_response, ret, 2); // return two bytes to determine which table and which address is unresponsive
+                                    send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_memory_ptr_no_response, pcm.msg_buffer, 1); // send error packet back to the laptop
                                     break;
                                 }
-                                if (pcm_peek(0) != pcm.msg_buffer[0]) // make sure the first RAM-table byte is echoed back correctly
-                                {
-                                    pcm_rx_flush();
-                                    echo_retry_counter++;
-                                    if (echo_retry_counter < 10) goto pcm_again_02;
-                                    else
-                                    {
-                                        send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_memory_ptr_no_response, pcm.msg_buffer, 1); // send error packet back to the laptop
-                                        break;
-                                    }
-                                }
                             }
+                            
+                            j++;
                         }
-                        else
-                        {
-                            // Messsage doesn't start with a RAM-table value, invalid
-                            send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_invalid_memory_ptr, pcm.msg_buffer, 1); // send error packet back to the laptop
-                        }
+                    }
+                    else
+                    {
+                        // Messsage doesn't start with a RAM-table value, invalid
+                        send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_invalid_memory_ptr, pcm.msg_buffer, 1); // send error packet back to the laptop
                     }
                 }
             }
@@ -5813,23 +5862,29 @@ void handle_sci_data(void)
                 }
                 else if (pcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
                 {
-                    // Navigate in the main buffer after the message length byte and start sending those bytes
-                    for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++)
+                    uint8_t j = 0;
+                    
+                    // Navigate in the main buffer after the message length byte and start sending those bytes 
+                    for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++) // repeat for the length of the message
                     {
                         timeout_reached = false;
                         timeout_start = millis(); // save current time
                         pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
-                        while ((pcm_rx_available() <= (i - pcm.msg_buffer_ptr - 1)) && !timeout_reached)
+                       
+                        while ((pcm_rx_available() <= j) && !timeout_reached)
                         {
-                            // wait here for echo (half-duplex mode)
+                            // wait here for response (echo in case of F0...FF)
                             if ((millis() - timeout_start) > SCI_LS_T1_DELAY) timeout_reached = true;
                         }
                         if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                         {
                             timeout_reached = false;
-                            send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                            uint8_t ret[2] = { pcm.msg_buffer[pcm.msg_buffer_ptr + 1], pcm.msg_buffer[pcm.msg_buffer_ptr + 1 + j] };
+                            send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_no_response, ret, 2); // return two bytes to determine which table and which address is unresponsive
                             break;
                         }
+                        
+                        j++;
                     }
                 }
             }
@@ -5839,10 +5894,10 @@ void handle_sci_data(void)
         }
     }
     
-    if (tcm.enabled)
-    {
-        // TODO LATER
-    }
+//    if (tcm.enabled)
+//    {
+//        // TODO LATER
+//    }
         
 } // end of handle_sci_data
 
@@ -5883,85 +5938,5 @@ void handle_leds(void)
     }
     
 } // end of handle_leds
-
-
-/*************************************************************************
-Function: lcd_init()
-Purpose:  initialize LCD
-**************************************************************************/
-void lcd_init(void)
-{
-    lcd.begin(20, 4); // start LCD with 20 columns and 4 rows
-    lcd.backlight();  // backlight on
-    lcd.clear();      // clear display
-    lcd.home();       // set cursor in home position (0, 0)
-    lcd.print(F("--------------------")); // F(" ") makes the compiler store the string inside flash memory instead of RAM, good practice if system is low on RAM
-    lcd.setCursor(0, 1);
-    lcd.print(F("  CHRYSLER CCD/SCI  "));
-    lcd.setCursor(0, 2);
-    lcd.print(F(" SCANNER V1.40 2018 "));
-    lcd.setCursor(0, 3);
-    lcd.print(F("--------------------"));
-    lcd.createChar(0, up_symbol); // custom character from "upsymbol" variable with id number 0
-    lcd.createChar(1, down_symbol);
-    lcd.createChar(2, left_symbol);
-    lcd.createChar(3, right_symbol);
-    lcd.createChar(4, enter_symbol);
-    lcd.createChar(5, degree_symbol);
-    
-} // end of lcd_init
-
-
-/*************************************************************************
-Function: print_display_layout_1_metric()
-Purpose:  printing default metric display layout to LCD (km/h, km...)
-Note:     prints when switching between different layouts
-**************************************************************************/
-void print_display_layout_1_metric(void)
-{
-//    lcd.setCursor(0, 0);
-//    lcd.print(F("S:  0km/h  E:   0rpm")); // 1st line
-//    lcd.setCursor(0, 1);
-//    lcd.print(F("M: 0kPa B: 0.0/ 0.0V")); // 2nd line
-//    lcd.setCursor(0, 2);
-//    lcd.print(F("G:-  T:  0.0/  0.0 C")); // 3rd line
-//    lcd.setCursor(0, 3);
-//    lcd.print(F("P: 0% O:     0.000km")); // 4th line
-//    lcd.setCursor(18, 2);
-//    lcd.write((uint8_t)5); // print degree symbol
-
-    lcd.setCursor(0, 0);
-    lcd.print(F("  0km/h    0rpm   0%")); // 1st line
-    lcd.setCursor(0, 1);
-    lcd.print(F(" 0.0kPa    0.0/ 0.0V")); // 2nd line 
-    lcd.setCursor(0, 2);
-    lcd.print(F("  0.0/  0.0 C       ")); // 3rd line
-    lcd.setCursor(0, 3);
-    lcd.print(F("     0.000km        ")); // 4th line
-    lcd.setCursor(11, 2);
-    lcd.write((uint8_t)5); // print degree symbol
-
-} // end of print_display_layout_1_metric
-
-
-/*************************************************************************
-Function: print_display_layout_1_imperial()
-Purpose:  printing default metric display layout to LCD (mph, mi...)
-Note:     prints when switching between different layouts
-**************************************************************************/
-void print_display_layout_1_imperial(void)
-{
-    lcd.setCursor(0, 0);
-    lcd.print(F("S:  0mph   E:   0rpm")); // 1st line
-    lcd.setCursor(0, 1);
-    lcd.print(F("M: 0psi B: 0.0/ 0.0V")); // 2nd line
-    lcd.setCursor(0, 2);
-    lcd.print(F("G:-  T:  0.0/  0.0 F")); // 3rd line
-    lcd.setCursor(0, 3);
-    lcd.print(F("P: 0% O:     0.000mi")); // 4th line
-    lcd.setCursor(18, 2);
-    lcd.write((uint8_t)5); // print degree symbol
-  
-} // end of print_display_layout_1_imperial
 
 #endif // MAIN_H

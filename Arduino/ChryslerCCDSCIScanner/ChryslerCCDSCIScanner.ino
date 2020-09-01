@@ -17,22 +17,24 @@
  * 
  * UART code is based on original library by Andy Gock:
  * https://github.com/andygock/avr-uart
+ *
+ * Board: Arduino/Genuino Mega or Mega 2560
+ * Processor: ATmega2560 (Mega 2560)
+ * Fuse bytes:
+ * - LF: 0xFF
+ * - HF: 0xD0
+ * - EF: 0xFD
+ * - Lock: 0x3F
  */
 
-// Board: Arduino/Genuino Mega or Mega 2560
-// Processor: ATmega2560 (Mega 2560)
-// Fuse bytes:
-// - LF: 0xFF
-// - HF: 0xD0
-// - EF: 0xFD
-// - Lock: 0x3F
-
-#include <avr/io.h>
 #include <avr/boot.h>
-#include <avr/pgmspace.h>
+#include <avr/eeprom.h>
 #include <avr/interrupt.h>
+#include <avr/io.h>
+#include <avr/pgmspace.h>
 #include <avr/wdt.h>
 #include <util/atomic.h>
+#include <CCDLibrary.h>        // https://github.com/laszlodaniel/CCDLibrary
 #include <extEEPROM.h>         // https://github.com/JChristensen/extEEPROM
 #include <LiquidCrystal_I2C.h> // https://bitbucket.org/fmalpartida/new-liquidcrystal/downloads/
 #include <Wire.h>
@@ -51,13 +53,17 @@ LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 void setup()
 {
     // Define digital pin states
-    pinMode(INT4, INPUT_PULLUP); // D2 (INT4), CCD-bus idle detector
-    pinMode(INT5, INPUT_PULLUP); // D3 (INT5), CCD-bus active byte detector
+    //pinMode(INT4, INPUT_PULLUP); // D2 (INT4), CCD-bus idle detector
+    //pinMode(INT5, INPUT_PULLUP); // D3 (INT5), CCD-bus active byte detector
     pinMode(RX_LED, OUTPUT);     // Data received LED
     pinMode(TX_LED, OUTPUT);     // Data transmitted LED
     // PWR LED is tied to +5V directly, stays on when the scanner has power, draws about 2mA current
     pinMode(ACT_LED, OUTPUT);    // Activity (heartbeat) LED
     pinMode(BATT, INPUT);        // This analog input pin measures battery voltage through a resistor divider (it tolerates 24V batteries!)
+    pinMode(CCDPLUS, INPUT);     // 
+    pinMode(CCDMINUS, INPUT);    // 
+    pinMode(TBEN, OUTPUT);       // 
+    digitalWrite(TBEN, HIGH);    // disable CCD-bus termination and bias
     blink_led(RX_LED);           // 
     blink_led(TX_LED);           // 
     blink_led(ACT_LED);          // 
@@ -72,46 +78,67 @@ void setup()
     pinMode(PA6, OUTPUT);
     pinMode(PA7, OUTPUT);
 
-    attachInterrupt(digitalPinToInterrupt(INT4), ccd_eom, FALLING); // execute "ccd_eom" function if the CCD-transceiver pulls D2 pin low indicating an "End of Message" condition
-    attachInterrupt(digitalPinToInterrupt(INT5), ccd_active_byte, FALLING); // execute "ccd_active_byte" function if the CCD-transceiver pulls D3 pin low indicating a byte being transmitted on the CCD-bus
+    exteeprom_init(); // initialize external EEPROM chip (24LC32A)
     
     // Initialize serial interfaces with default speeds
     usb_init(USBBAUD);// 250000 baud, an external serial monitor should have the same speed
     ccd_init(LOBAUD); // 7812.5 baud
     pcm_init(LOBAUD); // 7812.5 baud
-    tcm_init(LOBAUD); // 7812.5 baud
+    //tcm_init(LOBAUD); // 7812.5 baud
     
-    exteeprom_init(); // initialize external EEPROM chip (24LC32A)
-    lcd_init();       // initialize external LCD (optional)
-
     analogReference(DEFAULT);   // use default voltage reference applied to AVCC (+5V)
-    check_battery_volts();      // calculate battery voltage from OBD16 pin
-    ccd_clock_generator(START); // start listening to the CCD-bus; the transceiver chip only works if it receives this continuos clock signal; clever way to turn it on/off
-    randomSeed(analogRead(1));  // use A1 analog input pin's floatling noise to generate random numbers
+    check_battery_volts();      // measure battery voltage from OBD16 pin
+    check_ccd_volts();          // measure CCD-bus wire voltages
+    randomSeed(analogRead(3));  // use A3 analog input pin's floatling noise to generate random numbers
 
     read_avr_signature(avr_signature); // read AVR signature bytes that identifies the microcontroller
 
     usb_rx_flush(); // flush all uart buffers
     usb_tx_flush();
-    ccd_rx_flush();
-    ccd_tx_flush();
+    //ccd_rx_flush();
+    //ccd_tx_flush();
     pcm_rx_flush();
     pcm_tx_flush();
-    tcm_rx_flush();
-    tcm_tx_flush();
+    //tcm_rx_flush();
+    //tcm_tx_flush();
 
-    ccd.repeated_msg_interval = 100; // let other modules talk on the CCD-bus while repeating messages on it
-    ccd.repeated_msg_increment = 2; // assume two returned byte by each request, so it's enough to request every second memory address
-
+    lcd_init(); // initialize external LCD
     delay(2000);
-    //print_display_layout_1_metric();
-
-    uint8_t scanner_ready[1];
-    scanner_ready[0] = 0x01;
-    send_usb_packet(from_usb, to_usb, reset, ok, scanner_ready, 1); // Scanner ready
     
-    configure_sci_bus(0xC8); // default SCI-bus setting: A-configuration, 7812.5 baud, PCM only (TCM disabled)
+    if (lcd_enabled)
+    {
+        switch (lcd_units)
+        {
+            case 0:
+            {
+                print_display_layout_1_imperial();
+                break;
+            }
+            case 1:
+            {
+                print_display_layout_1_metric();
+                break;
+            }
+            default:
+            {
+                print_display_layout_1_imperial();
+                break;
+            }
+        }
+    }
+
+    ccd.bus_settings = 0x51; // enabled, non-inverted, termination/bias disabled, 7812.5 baud
+    configure_sci_bus(0xB1); // PCM enabled, non-inverted, configuration "A", 7812.5 baud
+    //configure_sci_bus(0xE1); // TCM disabled, non-inverted, configuration "A", 7812.5 baud
+    ccd.repeated_msg_interval = 100; // ms
+    ccd.repeated_msg_increment = 2;
+    pcm.repeated_msg_interval = 100; // ms
+    pcm.repeated_msg_increment = 1;
+
+    send_usb_packet(from_usb, to_usb, reset, reset_done, ack, 1); // scanner ready
     send_hwfw_info(); // send hardware/firmware information to laptop
+    cmd_status(); // send status
+    
     wdt_enable(WDTO_2S); // enable watchdog timer that resets program if its timer reaches 2 seconds (useful if the code hangs for some reason and needs auto-reset)
 }
 
