@@ -1152,7 +1152,7 @@ namespace ChryslerCCDSCIScanner
                     case 0x25: // fuel tank level
                         if (message.Length >= minLength)
                         {
-                            valueToInsert = (payload[0] * 0.3922D).ToString("0.0").Replace(",", ".");
+                            valueToInsert = Math.Round(payload[0] * 0.3922D, 1).ToString("0.0").Replace(",", ".");
                             unitToInsert = "%";
                         }
                         else

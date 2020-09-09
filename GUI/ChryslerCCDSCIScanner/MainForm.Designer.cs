@@ -152,8 +152,13 @@
             this.DiagnosticsTabControl = new System.Windows.Forms.TabControl();
             this.CCDBusDiagnosticsTabPage = new System.Windows.Forms.TabPage();
             this.SCIBusDiagnosticsTabPage = new System.Windows.Forms.TabPage();
+            this.LCDI2CAddressTextBox = new System.Windows.Forms.TextBox();
+            this.LCDI2CAddressLabel = new System.Windows.Forms.Label();
+            this.LCDI2CAddressHexLabel = new System.Windows.Forms.Label();
             this.CCDBusDiagnosticsListBox = new ChryslerCCDSCIScanner.FlickerFreeListBox();
             this.SCIBusPCMDiagnosticsListBox = new ChryslerCCDSCIScanner.FlickerFreeListBox();
+            this.SCIBusEraseFaultCodesButton = new System.Windows.Forms.Button();
+            this.SCIBusFaultCodesLabel = new System.Windows.Forms.Label();
             this.MenuStrip.SuspendLayout();
             this.USBCommunicationGroupBox.SuspendLayout();
             this.ControlPanelGroupBox.SuspendLayout();
@@ -192,7 +197,7 @@
             // UpdateToolStripMenuItem
             // 
             this.UpdateToolStripMenuItem.Name = "UpdateToolStripMenuItem";
-            this.UpdateToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.UpdateToolStripMenuItem.Size = new System.Drawing.Size(130, 22);
             this.UpdateToolStripMenuItem.Text = "Update";
             this.UpdateToolStripMenuItem.Click += new System.EventHandler(this.UpdateToolStripMenuItem_Click);
             // 
@@ -200,7 +205,7 @@
             // 
             this.ReadROMToolStripMenuItem.Enabled = false;
             this.ReadROMToolStripMenuItem.Name = "ReadROMToolStripMenuItem";
-            this.ReadROMToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.ReadROMToolStripMenuItem.Size = new System.Drawing.Size(130, 22);
             this.ReadROMToolStripMenuItem.Text = "Read ROM";
             this.ReadROMToolStripMenuItem.Click += new System.EventHandler(this.ReadROMToolStripMenuItem_Click);
             // 
@@ -966,6 +971,8 @@
             // SCIBusControlTabPage
             // 
             this.SCIBusControlTabPage.BackColor = System.Drawing.Color.Transparent;
+            this.SCIBusControlTabPage.Controls.Add(this.SCIBusFaultCodesLabel);
+            this.SCIBusControlTabPage.Controls.Add(this.SCIBusEraseFaultCodesButton);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusOBDConfigurationComboBox);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusOBDConfigurationLabel);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusOBD1EngineCableUsedCheckBox);
@@ -1006,7 +1013,7 @@
             this.SCIBusOBDConfigurationComboBox.Location = new System.Drawing.Point(75, 192);
             this.SCIBusOBDConfigurationComboBox.Name = "SCIBusOBDConfigurationComboBox";
             this.SCIBusOBDConfigurationComboBox.Size = new System.Drawing.Size(78, 21);
-            this.SCIBusOBDConfigurationComboBox.TabIndex = 15;
+            this.SCIBusOBDConfigurationComboBox.TabIndex = 16;
             // 
             // SCIBusOBDConfigurationLabel
             // 
@@ -1023,7 +1030,7 @@
             this.SCIBusOBD1EngineCableUsedCheckBox.Location = new System.Drawing.Point(200, 195);
             this.SCIBusOBD1EngineCableUsedCheckBox.Name = "SCIBusOBD1EngineCableUsedCheckBox";
             this.SCIBusOBD1EngineCableUsedCheckBox.Size = new System.Drawing.Size(145, 17);
-            this.SCIBusOBD1EngineCableUsedCheckBox.TabIndex = 17;
+            this.SCIBusOBD1EngineCableUsedCheckBox.TabIndex = 18;
             this.SCIBusOBD1EngineCableUsedCheckBox.Text = "OBD1 engine cable used";
             this.SCIBusOBD1EngineCableUsedCheckBox.UseVisualStyleBackColor = true;
             // 
@@ -1032,7 +1039,7 @@
             this.SCIBusModuleConfigSpeedApplyButton.Location = new System.Drawing.Point(293, 166);
             this.SCIBusModuleConfigSpeedApplyButton.Name = "SCIBusModuleConfigSpeedApplyButton";
             this.SCIBusModuleConfigSpeedApplyButton.Size = new System.Drawing.Size(53, 23);
-            this.SCIBusModuleConfigSpeedApplyButton.TabIndex = 18;
+            this.SCIBusModuleConfigSpeedApplyButton.TabIndex = 19;
             this.SCIBusModuleConfigSpeedApplyButton.Text = "Apply";
             this.SCIBusModuleConfigSpeedApplyButton.UseVisualStyleBackColor = true;
             this.SCIBusModuleConfigSpeedApplyButton.Click += new System.EventHandler(this.SCIBusModuleConfigSpeedApplyButton_Click);
@@ -1050,7 +1057,7 @@
             this.SCIBusSpeedComboBox.Location = new System.Drawing.Point(200, 167);
             this.SCIBusSpeedComboBox.Name = "SCIBusSpeedComboBox";
             this.SCIBusSpeedComboBox.Size = new System.Drawing.Size(86, 21);
-            this.SCIBusSpeedComboBox.TabIndex = 16;
+            this.SCIBusSpeedComboBox.TabIndex = 17;
             // 
             // SCIBusSpeedLabel
             // 
@@ -1071,7 +1078,7 @@
             this.SCIBusModuleComboBox.Location = new System.Drawing.Point(51, 167);
             this.SCIBusModuleComboBox.Name = "SCIBusModuleComboBox";
             this.SCIBusModuleComboBox.Size = new System.Drawing.Size(102, 21);
-            this.SCIBusModuleComboBox.TabIndex = 14;
+            this.SCIBusModuleComboBox.TabIndex = 15;
             this.SCIBusModuleComboBox.SelectedIndexChanged += new System.EventHandler(this.SCIBusModuleComboBox_SelectedIndexChanged);
             // 
             // SCIBusModuleLabel
@@ -1096,11 +1103,11 @@
             // 
             // SCIBusReadFaultCodesButton
             // 
-            this.SCIBusReadFaultCodesButton.Location = new System.Drawing.Point(160, 137);
+            this.SCIBusReadFaultCodesButton.Location = new System.Drawing.Point(234, 137);
             this.SCIBusReadFaultCodesButton.Name = "SCIBusReadFaultCodesButton";
-            this.SCIBusReadFaultCodesButton.Size = new System.Drawing.Size(127, 23);
+            this.SCIBusReadFaultCodesButton.Size = new System.Drawing.Size(53, 23);
             this.SCIBusReadFaultCodesButton.TabIndex = 13;
-            this.SCIBusReadFaultCodesButton.Text = "Read fault code(s)";
+            this.SCIBusReadFaultCodesButton.Text = "Read";
             this.SCIBusReadFaultCodesButton.UseVisualStyleBackColor = true;
             this.SCIBusReadFaultCodesButton.Click += new System.EventHandler(this.SCIBusReadFaultCodesButton_Click);
             // 
@@ -1250,6 +1257,9 @@
             // LCDControlTabPage
             // 
             this.LCDControlTabPage.BackColor = System.Drawing.Color.Transparent;
+            this.LCDControlTabPage.Controls.Add(this.LCDI2CAddressHexLabel);
+            this.LCDControlTabPage.Controls.Add(this.LCDI2CAddressTextBox);
+            this.LCDControlTabPage.Controls.Add(this.LCDI2CAddressLabel);
             this.LCDControlTabPage.Controls.Add(this.LCDPreviewLabel);
             this.LCDControlTabPage.Controls.Add(this.LCDDataSourceComboBox);
             this.LCDControlTabPage.Controls.Add(this.LCDDataSourceLabel);
@@ -1289,7 +1299,7 @@
             "CCD",
             "PCM",
             "TCM"});
-            this.LCDDataSourceComboBox.Location = new System.Drawing.Point(279, 120);
+            this.LCDDataSourceComboBox.Location = new System.Drawing.Point(279, 147);
             this.LCDDataSourceComboBox.Name = "LCDDataSourceComboBox";
             this.LCDDataSourceComboBox.Size = new System.Drawing.Size(62, 21);
             this.LCDDataSourceComboBox.TabIndex = 5;
@@ -1298,7 +1308,7 @@
             // LCDDataSourceLabel
             // 
             this.LCDDataSourceLabel.AutoSize = true;
-            this.LCDDataSourceLabel.Location = new System.Drawing.Point(210, 124);
+            this.LCDDataSourceLabel.Location = new System.Drawing.Point(210, 151);
             this.LCDDataSourceLabel.Name = "LCDDataSourceLabel";
             this.LCDDataSourceLabel.Size = new System.Drawing.Size(68, 13);
             this.LCDDataSourceLabel.TabIndex = 0;
@@ -1328,7 +1338,7 @@
             // LCDRowLabel
             // 
             this.LCDRowLabel.AutoSize = true;
-            this.LCDRowLabel.Location = new System.Drawing.Point(301, 70);
+            this.LCDRowLabel.Location = new System.Drawing.Point(301, 97);
             this.LCDRowLabel.Name = "LCDRowLabel";
             this.LCDRowLabel.Size = new System.Drawing.Size(24, 13);
             this.LCDRowLabel.TabIndex = 0;
@@ -1337,7 +1347,7 @@
             // LCDHeightTextBox
             // 
             this.LCDHeightTextBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
-            this.LCDHeightTextBox.Location = new System.Drawing.Point(279, 66);
+            this.LCDHeightTextBox.Location = new System.Drawing.Point(279, 93);
             this.LCDHeightTextBox.Name = "LCDHeightTextBox";
             this.LCDHeightTextBox.Size = new System.Drawing.Size(21, 21);
             this.LCDHeightTextBox.TabIndex = 3;
@@ -1346,7 +1356,7 @@
             // LCDColumnLabel
             // 
             this.LCDColumnLabel.AutoSize = true;
-            this.LCDColumnLabel.Location = new System.Drawing.Point(301, 43);
+            this.LCDColumnLabel.Location = new System.Drawing.Point(301, 70);
             this.LCDColumnLabel.Name = "LCDColumnLabel";
             this.LCDColumnLabel.Size = new System.Drawing.Size(41, 13);
             this.LCDColumnLabel.TabIndex = 0;
@@ -1355,7 +1365,7 @@
             // LCDWidthTextBox
             // 
             this.LCDWidthTextBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
-            this.LCDWidthTextBox.Location = new System.Drawing.Point(279, 39);
+            this.LCDWidthTextBox.Location = new System.Drawing.Point(279, 66);
             this.LCDWidthTextBox.Name = "LCDWidthTextBox";
             this.LCDWidthTextBox.Size = new System.Drawing.Size(21, 21);
             this.LCDWidthTextBox.TabIndex = 2;
@@ -1364,7 +1374,7 @@
             // LCDSizeLabel
             // 
             this.LCDSizeLabel.AutoSize = true;
-            this.LCDSizeLabel.Location = new System.Drawing.Point(248, 43);
+            this.LCDSizeLabel.Location = new System.Drawing.Point(248, 70);
             this.LCDSizeLabel.Name = "LCDSizeLabel";
             this.LCDSizeLabel.Size = new System.Drawing.Size(30, 13);
             this.LCDSizeLabel.TabIndex = 0;
@@ -1372,7 +1382,7 @@
             // 
             // LCDApplySettingsButton
             // 
-            this.LCDApplySettingsButton.Location = new System.Drawing.Point(278, 146);
+            this.LCDApplySettingsButton.Location = new System.Drawing.Point(278, 173);
             this.LCDApplySettingsButton.Name = "LCDApplySettingsButton";
             this.LCDApplySettingsButton.Size = new System.Drawing.Size(64, 25);
             this.LCDApplySettingsButton.TabIndex = 6;
@@ -1384,7 +1394,7 @@
             // 
             this.LCDRefreshRateLabel.AutoSize = true;
             this.LCDRefreshRateLabel.Enabled = false;
-            this.LCDRefreshRateLabel.Location = new System.Drawing.Point(210, 97);
+            this.LCDRefreshRateLabel.Location = new System.Drawing.Point(210, 124);
             this.LCDRefreshRateLabel.Name = "LCDRefreshRateLabel";
             this.LCDRefreshRateLabel.Size = new System.Drawing.Size(68, 13);
             this.LCDRefreshRateLabel.TabIndex = 0;
@@ -1394,7 +1404,7 @@
             // 
             this.HzLabel01.AutoSize = true;
             this.HzLabel01.Enabled = false;
-            this.HzLabel01.Location = new System.Drawing.Point(301, 97);
+            this.HzLabel01.Location = new System.Drawing.Point(301, 124);
             this.HzLabel01.Name = "HzLabel01";
             this.HzLabel01.Size = new System.Drawing.Size(20, 13);
             this.HzLabel01.TabIndex = 0;
@@ -1404,7 +1414,7 @@
             // 
             this.LCDRefreshRateTextBox.Enabled = false;
             this.LCDRefreshRateTextBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
-            this.LCDRefreshRateTextBox.Location = new System.Drawing.Point(279, 93);
+            this.LCDRefreshRateTextBox.Location = new System.Drawing.Point(279, 120);
             this.LCDRefreshRateTextBox.Name = "LCDRefreshRateTextBox";
             this.LCDRefreshRateTextBox.Size = new System.Drawing.Size(21, 21);
             this.LCDRefreshRateTextBox.TabIndex = 4;
@@ -1529,6 +1539,33 @@
             this.SCIBusDiagnosticsTabPage.TabIndex = 1;
             this.SCIBusDiagnosticsTabPage.Text = "SCI-bus (PCM)";
             // 
+            // LCDI2CAddressTextBox
+            // 
+            this.LCDI2CAddressTextBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.LCDI2CAddressTextBox.Location = new System.Drawing.Point(279, 39);
+            this.LCDI2CAddressTextBox.Name = "LCDI2CAddressTextBox";
+            this.LCDI2CAddressTextBox.Size = new System.Drawing.Size(21, 21);
+            this.LCDI2CAddressTextBox.TabIndex = 9;
+            this.LCDI2CAddressTextBox.Text = "27";
+            // 
+            // LCDI2CAddressLabel
+            // 
+            this.LCDI2CAddressLabel.AutoSize = true;
+            this.LCDI2CAddressLabel.Location = new System.Drawing.Point(225, 43);
+            this.LCDI2CAddressLabel.Name = "LCDI2CAddressLabel";
+            this.LCDI2CAddressLabel.Size = new System.Drawing.Size(53, 13);
+            this.LCDI2CAddressLabel.TabIndex = 8;
+            this.LCDI2CAddressLabel.Text = "I2C addr.:";
+            // 
+            // LCDI2CAddressHexLabel
+            // 
+            this.LCDI2CAddressHexLabel.AutoSize = true;
+            this.LCDI2CAddressHexLabel.Location = new System.Drawing.Point(301, 43);
+            this.LCDI2CAddressHexLabel.Name = "LCDI2CAddressHexLabel";
+            this.LCDI2CAddressHexLabel.Size = new System.Drawing.Size(24, 13);
+            this.LCDI2CAddressHexLabel.TabIndex = 7;
+            this.LCDI2CAddressHexLabel.Text = "hex";
+            // 
             // CCDBusDiagnosticsListBox
             // 
             this.CCDBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
@@ -1551,6 +1588,25 @@
             this.SCIBusPCMDiagnosticsListBox.SelectionMode = System.Windows.Forms.SelectionMode.None;
             this.SCIBusPCMDiagnosticsListBox.Size = new System.Drawing.Size(873, 484);
             this.SCIBusPCMDiagnosticsListBox.TabIndex = 0;
+            // 
+            // SCIBusEraseFaultCodesButton
+            // 
+            this.SCIBusEraseFaultCodesButton.Location = new System.Drawing.Point(293, 137);
+            this.SCIBusEraseFaultCodesButton.Name = "SCIBusEraseFaultCodesButton";
+            this.SCIBusEraseFaultCodesButton.Size = new System.Drawing.Size(53, 23);
+            this.SCIBusEraseFaultCodesButton.TabIndex = 14;
+            this.SCIBusEraseFaultCodesButton.Text = "Erase";
+            this.SCIBusEraseFaultCodesButton.UseVisualStyleBackColor = true;
+            this.SCIBusEraseFaultCodesButton.Click += new System.EventHandler(this.SCIBusEraseFaultCodesButton_Click);
+            // 
+            // SCIBusFaultCodesLabel
+            // 
+            this.SCIBusFaultCodesLabel.AutoSize = true;
+            this.SCIBusFaultCodesLabel.Location = new System.Drawing.Point(158, 142);
+            this.SCIBusFaultCodesLabel.Name = "SCIBusFaultCodesLabel";
+            this.SCIBusFaultCodesLabel.Size = new System.Drawing.Size(71, 13);
+            this.SCIBusFaultCodesLabel.TabIndex = 0;
+            this.SCIBusFaultCodesLabel.Text = "Fault code(s):";
             // 
             // MainForm
             // 
@@ -1717,6 +1773,11 @@
         private System.Windows.Forms.Label LCDDataSourceLabel;
         private System.Windows.Forms.ToolStripMenuItem ReadROMToolStripMenuItem;
         private System.Windows.Forms.Label LCDPreviewLabel;
+        private System.Windows.Forms.Label LCDI2CAddressHexLabel;
+        private System.Windows.Forms.TextBox LCDI2CAddressTextBox;
+        private System.Windows.Forms.Label LCDI2CAddressLabel;
+        private System.Windows.Forms.Label SCIBusFaultCodesLabel;
+        private System.Windows.Forms.Button SCIBusEraseFaultCodesButton;
     }
 }
 

@@ -2152,7 +2152,7 @@ namespace ChryslerCCDSCIScanner
                                         valueToInsert = Math.Round(payload[1] * 0.0627451, 3).ToString("0.000");
                                         unitToInsert = "V";
                                         break;
-                                    case 0x25: // target battery charging voltage
+                                    case 0x25: // over 5 psi boost timer
                                         descriptionToInsert = "OVER 5 PSI BOOST TIMER";
                                         valueToInsert = payload[1].ToString("0");
                                         unitToInsert = string.Empty;
@@ -2275,7 +2275,7 @@ namespace ChryslerCCDSCIScanner
                                         valueToInsert = (payload[1] * 20).ToString("0.0");
                                         unitToInsert = "RPM";
                                         break;
-                                    case 0x5B: // governing pressure duty cycle
+                                    case 0x5B: // governor pressure duty cycle
                                         descriptionToInsert = "GOVERNOR PRESSURE DUTY CYCLE";
                                         valueToInsert = Math.Round(payload[1] * 0.3922, 1).ToString("0.0");
                                         unitToInsert = "%";

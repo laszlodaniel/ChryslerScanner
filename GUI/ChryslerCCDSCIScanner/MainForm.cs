@@ -352,7 +352,7 @@ namespace ChryslerCCDSCIScanner
                             }
                             break;
                         case (byte)Packet.Command.status:
-                            if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 42))
+                            if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 43))
                             {
                                 string AVRSignature = Util.ByteToHexString(Packet.rx.payload, 0, 3);
                                 if ((Packet.rx.payload[0] == 0x1E) && (Packet.rx.payload[1] == 0x98) && (Packet.rx.payload[2] == 0x01)) AVRSignature += " (ATmega2560)";
@@ -485,26 +485,31 @@ namespace ChryslerCCDSCIScanner
                                             SCIBusPCMSpeedString = "976.5 baud";
                                             SCIBusSpeedComboBox.SelectedIndex = 1;
                                             SCIBusReadFaultCodesButton.Enabled = true;
+                                            SCIBusEraseFaultCodesButton.Enabled = true;
                                             break;
                                         case 0x01:
                                             SCIBusPCMSpeedString = "7812.5 baud";
                                             SCIBusSpeedComboBox.SelectedIndex = 2;
                                             SCIBusReadFaultCodesButton.Enabled = true;
+                                            SCIBusEraseFaultCodesButton.Enabled = true;
                                             break;
                                         case 0x02:
                                             SCIBusPCMSpeedString = "62500 baud";
                                             SCIBusSpeedComboBox.SelectedIndex = 3;
                                             SCIBusReadFaultCodesButton.Enabled = false;
+                                            SCIBusEraseFaultCodesButton.Enabled = false;
                                             break;
                                         case 0x03:
                                             SCIBusPCMSpeedString = "125000 baud";
                                             SCIBusSpeedComboBox.SelectedIndex = 4;
                                             SCIBusReadFaultCodesButton.Enabled = true;
+                                            SCIBusEraseFaultCodesButton.Enabled = true;
                                             break;
                                         default:
                                             SCIBusPCMSpeedString = "unknown";
                                             SCIBusSpeedComboBox.SelectedIndex = 0;
                                             SCIBusReadFaultCodesButton.Enabled = true;
+                                            SCIBusEraseFaultCodesButton.Enabled = true;
                                             break;
                                     }
                                 }
@@ -523,6 +528,7 @@ namespace ChryslerCCDSCIScanner
                                 SCIBusPCMMsgTxCountString = ((Packet.rx.payload[29] << 24) + (Packet.rx.payload[30] << 16) + (Packet.rx.payload[31] << 8) + Packet.rx.payload[32]).ToString();
 
                                 string LCDStatusString = string.Empty;
+                                string LCDI2CAddressString = string.Empty;
                                 string LCDSizeString = string.Empty;
                                 string LCDRefreshRateString = string.Empty;
                                 string LCDUnitsString = string.Empty;
@@ -539,14 +545,17 @@ namespace ChryslerCCDSCIScanner
                                     LCDStatusString = "enabled";
                                 }
 
-                                LCDWidthTextBox.Text = Packet.rx.payload[34].ToString("0");
-                                LCDHeightTextBox.Text = Packet.rx.payload[35].ToString("0");
-                                LCDSizeString = Packet.rx.payload[34].ToString("0") + "x" + Packet.rx.payload[35].ToString("0") + " characters";
+                                LCDI2CAddressTextBox.Text = Util.ByteToHexString(Packet.rx.payload, 34, 1);
+                                LCDI2CAddressString = Util.ByteToHexString(Packet.rx.payload, 34, 1) + " (hex)";
 
-                                LCDRefreshRateTextBox.Text = Packet.rx.payload[36].ToString("0");
-                                LCDRefreshRateString = Packet.rx.payload[36].ToString("0") + " Hz";
+                                LCDWidthTextBox.Text = Packet.rx.payload[35].ToString("0");
+                                LCDHeightTextBox.Text = Packet.rx.payload[36].ToString("0");
+                                LCDSizeString = Packet.rx.payload[35].ToString("0") + "x" + Packet.rx.payload[36].ToString("0") + " characters";
 
-                                if (Packet.rx.payload[37] == 0x00)
+                                LCDRefreshRateTextBox.Text = Packet.rx.payload[37].ToString("0");
+                                LCDRefreshRateString = Packet.rx.payload[37].ToString("0") + " Hz";
+
+                                if (Packet.rx.payload[38] == 0x00)
                                 {
                                     LCDUnitsString = "imperial";
                                 }
@@ -555,7 +564,7 @@ namespace ChryslerCCDSCIScanner
                                     LCDUnitsString = "metric";
                                 }
 
-                                switch (Packet.rx.payload[38])
+                                switch (Packet.rx.payload[39])
                                 {
                                     case 0x01:
                                         LCDDataSourceString = "CCD-bus";
@@ -575,8 +584,8 @@ namespace ChryslerCCDSCIScanner
                                         break;
                                 }
 
-                                ushort LEDHeartbeatInterval = (ushort)((Packet.rx.payload[39] << 8) + Packet.rx.payload[40]);
-                                ushort LEDBlinkDuration = (ushort)((Packet.rx.payload[41] << 8) + Packet.rx.payload[42]);
+                                ushort LEDHeartbeatInterval = (ushort)((Packet.rx.payload[40] << 8) + Packet.rx.payload[41]);
+                                ushort LEDBlinkDuration = (ushort)((Packet.rx.payload[42] << 8) + Packet.rx.payload[43]);
 
                                 string LEDHeartbeatStateString = string.Empty;
                                 if (LEDHeartbeatInterval > 0) LEDHeartbeatStateString = "enabled";
@@ -612,6 +621,7 @@ namespace ChryslerCCDSCIScanner
                                                                "       Messages sent: " + SCIBusPCMMsgTxCountString + Environment.NewLine +
                                                                "       ---------------LCD status---------------" + Environment.NewLine +
                                                                "       State: " + LCDStatusString + Environment.NewLine +
+                                                               "       I2C address: " + LCDI2CAddressString + Environment.NewLine +
                                                                "       Size: " + LCDSizeString + Environment.NewLine +
                                                                "       Refresh rate: " + LCDRefreshRateString + Environment.NewLine +
                                                                "       Units: " + LCDUnitsString + Environment.NewLine +
@@ -759,30 +769,35 @@ namespace ChryslerCCDSCIScanner
                                                     SCIBusSpeedString = "976.5 baud";
                                                     SCIBusSpeedComboBox.SelectedIndex = 1;
                                                     SCIBusReadFaultCodesButton.Enabled = true;
+                                                    SCIBusEraseFaultCodesButton.Enabled = true;
                                                 }
                                                 else if ((Packet.rx.payload[1] & 0x03) == 0x01)
                                                 {
                                                     SCIBusSpeedString = "7812.5 baud";
                                                     SCIBusSpeedComboBox.SelectedIndex = 2;
                                                     SCIBusReadFaultCodesButton.Enabled = true;
+                                                    SCIBusEraseFaultCodesButton.Enabled = true;
                                                 }
                                                 else if ((Packet.rx.payload[1] & 0x03) == 0x02)
                                                 {
                                                     SCIBusSpeedString = "62500 baud";
                                                     SCIBusSpeedComboBox.SelectedIndex = 3;
                                                     SCIBusReadFaultCodesButton.Enabled = false;
+                                                    SCIBusEraseFaultCodesButton.Enabled = false;
                                                 }
                                                 else if ((Packet.rx.payload[1] & 0x03) == 0x03)
                                                 {
                                                     SCIBusSpeedString = "125000 baud";
                                                     SCIBusSpeedComboBox.SelectedIndex = 4;
                                                     SCIBusReadFaultCodesButton.Enabled = true;
+                                                    SCIBusEraseFaultCodesButton.Enabled = true;
                                                 }
                                                 else
                                                 {
                                                     SCIBusSpeedString = "unknown";
                                                     SCIBusSpeedComboBox.SelectedIndex = 0;
                                                     SCIBusReadFaultCodesButton.Enabled = true;
+                                                    SCIBusEraseFaultCodesButton.Enabled = true;
                                                 }
                                             }
 
@@ -876,7 +891,7 @@ namespace ChryslerCCDSCIScanner
                                     }
                                     break;
                                 case (byte)Packet.SettingsMode.setLCD:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 6))
+                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 7))
                                     {
                                         if (Packet.rx.payload[0] == 0x00) // OK
                                         {
@@ -895,16 +910,17 @@ namespace ChryslerCCDSCIScanner
                                                     break;
                                             }
 
-                                            string LCDSize = Packet.rx.payload[2].ToString("0") + "x" + Packet.rx.payload[3].ToString("0") + " characters";
-                                            string LCDRefreshRate = Packet.rx.payload[4].ToString("0") + " Hz";
+                                            string LCDI2CAddress = Util.ByteToHexString(Packet.rx.payload, 2, 1) + " (hex)";
+                                            string LCDSize = Packet.rx.payload[3].ToString("0") + "x" + Packet.rx.payload[4].ToString("0") + " characters";
+                                            string LCDRefreshRate = Packet.rx.payload[5].ToString("0") + " Hz";
                                             string LCDUnits = string.Empty;
 
-                                            if (Packet.rx.payload[5] == 0) LCDUnits = "imperial";
-                                            else if (Packet.rx.payload[5] == 1) LCDUnits = "metric";
+                                            if (Packet.rx.payload[6] == 0) LCDUnits = "imperial";
+                                            else if (Packet.rx.payload[6] == 1) LCDUnits = "metric";
                                             else LCDUnits = "imperial";
 
                                             string LCDDataSource = string.Empty;
-                                            switch (Packet.rx.payload[6])
+                                            switch (Packet.rx.payload[7])
                                             {
                                                 case 0x01:
                                                     LCDDataSource = "CCD-bus";
@@ -923,6 +939,7 @@ namespace ChryslerCCDSCIScanner
                                             Util.UpdateTextBox(USBTextBox, "[RX->] LCD settings changed:", Packet.rx.buffer);
                                             Util.UpdateTextBox(USBTextBox, "[INFO] LCD information:" + Environment.NewLine +
                                                                            "       State: " + LCDState + Environment.NewLine +
+                                                                           "       I2C address: " + LCDI2CAddress + Environment.NewLine +
                                                                            "       Size: " + LCDSize + Environment.NewLine +
                                                                            "       Refresh rate: " + LCDRefreshRate + Environment.NewLine +
                                                                            "       Units: " + LCDUnits + Environment.NewLine +
@@ -1387,17 +1404,18 @@ namespace ChryslerCCDSCIScanner
                                                 if (Util.IsBitSet(Packet.rx.payload[27], 0)) LCDStateString = "enabled";
                                                 else LCDStateString = "disabled";
 
-                                                string LCDWidthString = Packet.rx.payload[28].ToString("0") + " characters";
-                                                string LCDHeightString = Packet.rx.payload[29].ToString("0") + " characters";
-                                                string LCDRefreshRateString = Packet.rx.payload[30].ToString("0") + " Hz";
+                                                string LCDI2CAddressString = Util.ByteToHexString(Packet.rx.payload, 28, 1) + " (hex)";
+                                                string LCDWidthString = Packet.rx.payload[29].ToString("0") + " characters";
+                                                string LCDHeightString = Packet.rx.payload[30].ToString("0") + " characters";
+                                                string LCDRefreshRateString = Packet.rx.payload[31].ToString("0") + " Hz";
                                                 string LCDUnitsString = string.Empty;
                                                 string LCDDataSourceString = string.Empty;
 
-                                                if (Packet.rx.payload[31] == 0x00) LCDUnitsString = "imperial";
-                                                else if (Packet.rx.payload[31] == 0x01) LCDUnitsString = "metric";
+                                                if (Packet.rx.payload[32] == 0x00) LCDUnitsString = "imperial";
+                                                else if (Packet.rx.payload[32] == 0x01) LCDUnitsString = "metric";
                                                 else LCDUnitsString = "imperial";
 
-                                                switch (Packet.rx.payload[32])
+                                                switch (Packet.rx.payload[33])
                                                 {
                                                     case 0x01:
                                                         LCDDataSourceString = "CCD-bus";
@@ -1413,8 +1431,8 @@ namespace ChryslerCCDSCIScanner
                                                         break;
                                                 }
 
-                                                string LEDHeartbeatInterval = ((Packet.rx.payload[33] << 8) + Packet.rx.payload[34]).ToString() + " ms";
-                                                string LEDBlinkDuration = ((Packet.rx.payload[35] << 8) + Packet.rx.payload[36]).ToString() + " ms";
+                                                string LEDHeartbeatInterval = ((Packet.rx.payload[34] << 8) + Packet.rx.payload[35]).ToString() + " ms";
+                                                string LEDBlinkDuration = ((Packet.rx.payload[36] << 8) + Packet.rx.payload[37]).ToString() + " ms";
 
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM settings:" + Environment.NewLine +
                                                                                "       Hardware ver.: " + Util.ByteToHexString(Packet.rx.payload, 3, 2) + " | " + HardwareVersionString + Environment.NewLine +
@@ -1426,13 +1444,14 @@ namespace ChryslerCCDSCIScanner
                                                                                "       R19 resistor:  " + Util.ByteToHexString(Packet.rx.payload, 23, 2) + " | " + R19ResistanceString + Environment.NewLine +
                                                                                "       R20 resistor:  " + Util.ByteToHexString(Packet.rx.payload, 25, 2) + " | " + R20ResistanceString + Environment.NewLine +
                                                                                "       LCD state:     " + Util.ByteToHexString(Packet.rx.payload, 27, 1) + " | " + LCDStateString + Environment.NewLine +
-                                                                               "       LCD width:     " + Util.ByteToHexString(Packet.rx.payload, 28, 1) + " | " + LCDWidthString + Environment.NewLine +
-                                                                               "       LCD height:    " + Util.ByteToHexString(Packet.rx.payload, 29, 1) + " | " + LCDHeightString + Environment.NewLine +
-                                                                               "       LCD refresh:   " + Util.ByteToHexString(Packet.rx.payload, 30, 1) + " | " + LCDRefreshRateString + Environment.NewLine +
-                                                                               "       LCD units:     " + Util.ByteToHexString(Packet.rx.payload, 31, 1) + " | " + LCDUnitsString + Environment.NewLine +
-                                                                               "       LCD data src:  " + Util.ByteToHexString(Packet.rx.payload, 32, 1) + " | " + LCDDataSourceString + Environment.NewLine +
-                                                                               "       LED heartbeat: " + Util.ByteToHexString(Packet.rx.payload, 33, 2) + " | " + LEDHeartbeatInterval + Environment.NewLine +
-                                                                               "       LED blink:     " + Util.ByteToHexString(Packet.rx.payload, 35, 2) + " | " + LEDBlinkDuration + Environment.NewLine +
+                                                                               "       LCD I2C addr.: " + Util.ByteToHexString(Packet.rx.payload, 28, 1) + " | " + LCDI2CAddressString + Environment.NewLine +
+                                                                               "       LCD width:     " + Util.ByteToHexString(Packet.rx.payload, 29, 1) + " | " + LCDWidthString + Environment.NewLine +
+                                                                               "       LCD height:    " + Util.ByteToHexString(Packet.rx.payload, 30, 1) + " | " + LCDHeightString + Environment.NewLine +
+                                                                               "       LCD refresh:   " + Util.ByteToHexString(Packet.rx.payload, 31, 1) + " | " + LCDRefreshRateString + Environment.NewLine +
+                                                                               "       LCD units:     " + Util.ByteToHexString(Packet.rx.payload, 32, 1) + " | " + LCDUnitsString + Environment.NewLine +
+                                                                               "       LCD data src:  " + Util.ByteToHexString(Packet.rx.payload, 33, 1) + " | " + LCDDataSourceString + Environment.NewLine +
+                                                                               "       LED heartbeat: " + Util.ByteToHexString(Packet.rx.payload, 34, 2) + " | " + LEDHeartbeatInterval + Environment.NewLine +
+                                                                               "       LED blink:     " + Util.ByteToHexString(Packet.rx.payload, 36, 2) + " | " + LEDBlinkDuration + Environment.NewLine +
                                                                                "       Checksum:      " + Util.ByteToHexString(Packet.rx.payload, 258, 1));
                                             }
                                         }
@@ -1773,7 +1792,7 @@ namespace ChryslerCCDSCIScanner
                         case (byte)Packet.SCISpeedMode.lowSpeed:
                             switch (Packet.rx.payload[4]) // ID byte
                             {
-                                case 0x10:
+                                case 0x10: // fault code list request
                                     if (Packet.rx.payload.Length > 6)
                                     {
                                         byte checksum = 0;
@@ -1827,9 +1846,22 @@ namespace ChryslerCCDSCIScanner
                                             Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) fault code checksum error:", Packet.rx.buffer);
                                         }
                                     }
-                                    else
+                                    else // error
                                     {
                                         Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) fault code list:", Packet.rx.buffer);
+                                    }
+                                    break;
+                                case 0x17: // erase fault codes
+                                    if (Packet.rx.payload.Length > 5)
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) erase fault code list:", Packet.rx.buffer);
+
+                                        if (Packet.rx.payload[5] == 0xE0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) erase fault code list success.");
+                                        else Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) erase fault code list error.");
+                                    }
+                                    else // error
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) erase fault code list response:", Packet.rx.buffer);
                                     }
                                     break;
                                 default:
@@ -3561,6 +3593,18 @@ namespace ChryslerCCDSCIScanner
             await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
         }
 
+        private async void SCIBusEraseFaultCodesButton_Click(object sender, EventArgs e)
+        {
+            Packet.tx.source = (byte)Packet.Source.device;
+            Packet.tx.target = (byte)Packet.Target.pcm;
+            Packet.tx.command = (byte)Packet.Command.msgTx;
+            Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+            Packet.tx.payload = new byte[1] { 0x17 };
+            Packet.GeneratePacket();
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Erase PCM fault code(s) request:", Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+        }
+
         private void SCIBusTxMessagesListBox_DoubleClick(object sender, EventArgs e)
         {
             if (SCIBusTxMessageRepeatIncrementCheckBox.Checked)
@@ -3789,7 +3833,14 @@ namespace ChryslerCCDSCIScanner
         {
             byte LCDState = (byte)LCDStateComboBox.SelectedIndex;
 
-            bool success = byte.TryParse(LCDWidthTextBox.Text, out byte LCDWidth);
+            bool success = byte.TryParse(Util.HexStringToByte(LCDI2CAddressTextBox.Text)[0].ToString(), out byte LCDI2CAddress);
+            if (!success)
+            {
+                LCDI2CAddress = 0x27;
+                LCDI2CAddressTextBox.Text = "27";
+            }
+
+            success = byte.TryParse(LCDWidthTextBox.Text, out byte LCDWidth);
             if (!success)
             {
                 LCDWidth = 20;
@@ -3821,7 +3872,7 @@ namespace ChryslerCCDSCIScanner
             Packet.tx.target = (byte)Packet.Target.device;
             Packet.tx.command = (byte)Packet.Command.settings;
             Packet.tx.mode = (byte)Packet.SettingsMode.setLCD;
-            Packet.tx.payload = new byte[6] { LCDState, LCDWidth, LCDHeight, LCDRefreshRate, LCDUnits, LCDDataSource };
+            Packet.tx.payload = new byte[7] { LCDState, LCDI2CAddress, LCDWidth, LCDHeight, LCDRefreshRate, LCDUnits, LCDDataSource };
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Change LCD settings:", Packet.tx.buffer);
             await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
@@ -3960,8 +4011,6 @@ namespace ChryslerCCDSCIScanner
                 }
                 else
                 {
-                    if (!Text.Contains("  -  update available!")) Text += "  -  update available!";
-
                     if (MessageBox.Show("Latest GUI version: " + latestGUIVersionString + Environment.NewLine +
                                         "Current GUI version: " + GUIVersion + Environment.NewLine +
                                         "There is a new GUI version available." + Environment.NewLine +
@@ -4045,8 +4094,6 @@ namespace ChryslerCCDSCIScanner
                 }
                 else
                 {
-                    if (!Text.Contains("  -  update available!")) Text += "  -  update available!";
-
                     if (MessageBox.Show("Latest firmware version: " + latestFWVersionString + Environment.NewLine +
                                         "Current firmware version: " + FWVersion + Environment.NewLine +
                                         "There is a new device firmware version available." + Environment.NewLine +

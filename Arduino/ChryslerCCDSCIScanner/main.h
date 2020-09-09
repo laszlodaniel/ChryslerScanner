@@ -33,8 +33,8 @@ extern LiquidCrystal_I2C lcd;
 // 00: patch
 // (00: revision)
 // = v0.1.0(.0)
-#define FW_VERSION 0x00010100
-#define FW_DATE 0x000101005F4E80AD
+#define FW_VERSION 0x00020000
+#define FW_DATE 0x000200005F592E81
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -354,7 +354,7 @@ uint16_t command_purge_timeout = 200; // milliseconds, if a command isn't comple
 uint8_t ack[1] = { 0x00 }; // acknowledge payload array
 uint8_t err[1] = { 0xFF }; // error payload array
 
-uint8_t scanner_status[43];
+uint8_t scanner_status[44];
 
 uint8_t avr_signature[3];
 uint16_t free_ram_available = 0;
@@ -403,6 +403,8 @@ uint8_t hw_version[2];
 uint8_t hw_date[8];
 uint8_t assembly_date[8];
 
+bool lcd_enabled = false;
+uint8_t lcd_i2c_address = 0;
 uint8_t lcd_char_width = 0;
 uint8_t lcd_char_height = 0;
 uint8_t lcd_refresh_rate = 0;
@@ -466,8 +468,6 @@ uint8_t left_symbol[8]   = { 0x00, 0x04, 0x08, 0x1F, 0x08, 0x04, 0x00, 0x00 }; /
 uint8_t right_symbol[8]  = { 0x00, 0x04, 0x02, 0x1F, 0x02, 0x04, 0x00, 0x00 }; // →
 uint8_t enter_symbol[8]  = { 0x00, 0x01, 0x05, 0x09, 0x1F, 0x08, 0x04, 0x00 }; // 
 uint8_t degree_symbol[8] = { 0x06, 0x09, 0x09, 0x06, 0x00, 0x00, 0x00, 0x00 }; // °
-
-bool lcd_enabled = false;
 
 // Interrupt Service Routines
 ISR(USB_RECEIVE_INTERRUPT)
@@ -2191,6 +2191,7 @@ void exteeprom_init(void)
         r19_value = 27000;
         r20_value = 5000;
         lcd_enabled = false;
+        lcd_i2c_address = 0x27;
         lcd_char_width = 20;
         lcd_char_height = 4;
         lcd_refresh_rate = 1; // Hz
@@ -2285,7 +2286,19 @@ void exteeprom_init(void)
             else lcd_enabled = false;
         }
 
-        eep_result = eep.read(0x19, data, 1); // read LCD width
+        eep_result = eep.read(0x19, data, 1); // read LCD I2C address
+        if (eep_result)
+        {
+            lcd_i2c_address = 0x27; // default value
+            send_usb_packet(from_usb, to_usb, ok_error, error_eep_read, err, 1);
+        }
+        else
+        {
+            lcd_i2c_address = data[0]; // stored value
+            if (lcd_i2c_address == 0) lcd_i2c_address = 0x27; // default value
+        }
+
+        eep_result = eep.read(0x1A, data, 1); // read LCD width
         if (eep_result)
         {
             lcd_char_width = 20; // default value
@@ -2297,7 +2310,7 @@ void exteeprom_init(void)
             if (lcd_char_width == 0) lcd_char_width = 20; // default value
         }
 
-        eep_result = eep.read(0x1A, data, 1); // read LCD height
+        eep_result = eep.read(0x1B, data, 1); // read LCD height
         if (eep_result)
         {
             lcd_char_height = 4; // default value
@@ -2309,7 +2322,7 @@ void exteeprom_init(void)
             if (lcd_char_height == 0) lcd_char_height = 4; // default value
         }
 
-        eep_result = eep.read(0x1B, data, 1); // read LCD refresh rate
+        eep_result = eep.read(0x1C, data, 1); // read LCD refresh rate
         if (eep_result)
         {
             lcd_refresh_rate = 20; // Hz,m default value
@@ -2327,7 +2340,7 @@ void exteeprom_init(void)
             }
         }
 
-        eep_result = eep.read(0x1C, data, 1); // read LCD units
+        eep_result = eep.read(0x1D, data, 1); // read LCD units
         if (eep_result)
         {
             lcd_units = 0; // default value (imperial)
@@ -2339,7 +2352,7 @@ void exteeprom_init(void)
             if (lcd_units > 1) lcd_units = 0; // default value (imperial)
         }
 
-        eep_result = eep.read(0x1D, data, 1); // read LCD data source
+        eep_result = eep.read(0x1E, data, 1); // read LCD data source
         if (eep_result)
         {
             lcd_data_source = 1; // default value (CCD-bus)
@@ -2351,7 +2364,7 @@ void exteeprom_init(void)
             if ((lcd_data_source == 0) || (lcd_data_source > 3)) lcd_data_source = 1; // default value (imperial)
         }
 
-        eep_result = eep.read(0x1E, data, 2); // read LED heartbeat interval
+        eep_result = eep.read(0x1F, data, 2); // read LED heartbeat interval
         if (eep_result)
         {
             heartbeat_interval = 5000; // ms, default value
@@ -2364,7 +2377,7 @@ void exteeprom_init(void)
             else heartbeat_enabled = false;
         }
 
-        eep_result = eep.read(0x20, data, 2); // read LED blink duration
+        eep_result = eep.read(0x21, data, 2); // read LED blink duration
         if (eep_result)
         {
             led_blink_duration = 50; // default value
@@ -2706,18 +2719,19 @@ int cmd_status(void)
     if (lcd_enabled) scanner_status[33] = 0x01;
     else scanner_status[33] = 0x00;
 
-    scanner_status[34] = lcd_char_width;
-    scanner_status[35] = lcd_char_height;
-    scanner_status[36] = lcd_refresh_rate;
-    scanner_status[37] = lcd_units;
-    scanner_status[38] = lcd_data_source;
+    scanner_status[34] = lcd_i2c_address;
+    scanner_status[35] = lcd_char_width;
+    scanner_status[36] = lcd_char_height;
+    scanner_status[37] = lcd_refresh_rate;
+    scanner_status[38] = lcd_units;
+    scanner_status[39] = lcd_data_source;
 
-    scanner_status[39] = (heartbeat_interval >> 8) & 0xFF;
-    scanner_status[40] = heartbeat_interval & 0xFF;
-    scanner_status[41] = (led_blink_duration >> 8) & 0xFF;
-    scanner_status[42] = led_blink_duration & 0xFF;
+    scanner_status[40] = (heartbeat_interval >> 8) & 0xFF;
+    scanner_status[41] = heartbeat_interval & 0xFF;
+    scanner_status[42] = (led_blink_duration >> 8) & 0xFF;
+    scanner_status[43] = led_blink_duration & 0xFF;
 
-    send_usb_packet(from_usb, to_usb, status, ok, scanner_status, 43);
+    send_usb_packet(from_usb, to_usb, status, ok, scanner_status, 44);
     return 0;
     
 } // end of cmd_status
@@ -2729,7 +2743,8 @@ Purpose:  initialize LCD
 **************************************************************************/
 void lcd_init(void)
 {
-    lcd.begin(lcd_char_width, lcd_char_height);
+    lcd = LiquidCrystal_I2C(lcd_i2c_address, lcd_char_width, lcd_char_height);
+    lcd.begin();
     lcd.backlight();  // backlight on
     lcd.clear();      // clear display
     lcd.home();       // set cursor in home position (0, 0)
@@ -3217,14 +3232,14 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                     if (lcd_units == 0) // imperial
                                     {
                                         engine_speed = message[1] * 32;
-                                        map_value = roundf(message[2] * 100.0 * 0.059756);
-                                        map_value = map_value / 100.0;
+                                        map_value = roundf(message[2] * 10.0 * 0.059756);
+                                        map_value = map_value / 10.0;
                                     }
                                     else if (lcd_units == 1) // metric
                                     {
                                         engine_speed = message[1] * 32;
-                                        map_value = roundf(message[2] * 100.0 * 6.894757 * 0.059756);
-                                        map_value = map_value / 100.0;
+                                        map_value = roundf(message[2] * 10.0 * 6.894757 * 0.059756);
+                                        map_value = map_value / 10.0;
                                     }
         
                                     if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
@@ -3275,7 +3290,6 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                             lcd.print(" ");
                                             lcd.print(map_value, 0);
                                         }
-                                        
                                     }
                                     else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
                                     {
@@ -3380,6 +3394,97 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                 {
                                     switch (message[1]) // parameter
                                     {
+                                        case 0x01: // ambient air temperature
+                                        {
+                                            float ambient_temp = 0;
+                                            
+                                            if (lcd_units == 0) // imperial
+                                            {
+                                                ambient_temp = roundf((message[2] * 1.8039215686) - 83.2);
+                                            }
+                                            else if (lcd_units == 1) // metric
+                                            {
+                                                ambient_temp = roundf((((message[2] * 1.8039215686) - 83.2) * 0.555556) - 17.77778);
+                                            }
+                
+                                            if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
+                                            {
+                                                if (ambient_temp <= -100)
+                                                {
+                                                    lcd.setCursor(4, 1);
+                                                    lcd.print("-99");
+                                                }
+                                                else if ((ambient_temp > -100) && (ambient_temp <= -10))
+                                                {
+                                                    lcd.setCursor(4, 1);
+                                                    lcd.print(ambient_temp, 0);
+                                                }
+                                                else if ((ambient_temp > -10) && (ambient_temp < 0))
+                                                {
+                                                    lcd.setCursor(4, 1);
+                                                    lcd.print(" ");
+                                                    lcd.print(ambient_temp, 0);
+                                                }
+                                                else if ((ambient_temp >= 0) && (ambient_temp < 10))
+                                                {
+                                                    lcd.setCursor(4, 1);
+                                                    lcd.print("  ");
+                                                    lcd.print(ambient_temp, 0);
+                                                }
+                                                else if ((ambient_temp >= 10) && (ambient_temp < 100))
+                                                {
+                                                    lcd.setCursor(4, 1);
+                                                    lcd.print(" ");
+                                                    lcd.print(ambient_temp, 0);
+                                                }
+                                                else if (ambient_temp >= 100)
+                                                {
+                                                    lcd.setCursor(4, 1);
+                                                    lcd.print(ambient_temp, 0);
+                                                }
+                                            }
+                                            else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
+                                            {
+                                                if (ambient_temp <= -100.0)
+                                                {
+                                                    lcd.setCursor(4, 1);
+                                                    lcd.print("-99");
+                                                }
+                                                else if ((ambient_temp > -100.0) && (ambient_temp <= -10.0))
+                                                {
+                                                    lcd.setCursor(4, 1);
+                                                    lcd.print(ambient_temp, 0);
+                                                }
+                                                else if ((ambient_temp > -10.0) && (ambient_temp < 0.0))
+                                                {
+                                                    lcd.setCursor(4, 1);
+                                                    lcd.print(" ");
+                                                    lcd.print(ambient_temp, 0);
+                                                }
+                                                else if ((ambient_temp >= 0.0) && (ambient_temp < 10.0))
+                                                {
+                                                    lcd.setCursor(4, 1);
+                                                    lcd.print("  ");
+                                                    lcd.print(ambient_temp, 0);
+                                                }
+                                                else if ((ambient_temp >= 10) && (ambient_temp < 100))
+                                                {
+                                                    lcd.setCursor(4, 1);
+                                                    lcd.print(" ");
+                                                    lcd.print(ambient_temp, 0);
+                                                }
+                                                else if (ambient_temp >= 100)
+                                                {
+                                                    lcd.setCursor(4, 1);
+                                                    lcd.print(ambient_temp, 0);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                
+                                            }
+                                            break;
+                                        }
                                         case 0x05: // engine coolant temperature
                                         {
                                             float coolant_temp = 0;
@@ -3464,6 +3569,330 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                                     lcd.setCursor(0, 1);
                                                     lcd.print(coolant_temp, 0);
                                                 }
+                                            }
+                                            else
+                                            {
+                                                
+                                            }
+                                            break;
+                                        }
+                                        case 0x0A: // battery voltage
+                                        {
+                                            float batt_volts = roundf(message[2] * 10.0 * 0.0627451);
+                                            batt_volts = batt_volts / 10.0;
+                                            
+                                            if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
+                                            {
+                                                if (batt_volts < 10.0)
+                                                {
+                                                    lcd.setCursor(0, 2);
+                                                    lcd.print(" ");
+                                                    lcd.print(batt_volts, 1);
+                                                }
+                                                else if (batt_volts >= 10.0)
+                                                {
+                                                    lcd.setCursor(0, 2);
+                                                    lcd.print(batt_volts, 1);
+                                                }
+                                            }
+                                            else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
+                                            {
+                                                
+                                            }
+                                            else
+                                            {
+                                                
+                                            }
+                                            break;
+                                        }
+                                        case 0x0B: // intake manifold absolute pressure
+                                        {
+                                            float map_value = 0;
+                                            
+                                            if (lcd_units == 0) // imperial
+                                            {
+                                                map_value = roundf(((message[2] * 0.115294117) - 14.7) * 10.0);
+                                                map_value = map_value / 10.0;
+                                            }
+                                            else if (lcd_units == 1) // metric
+                                            {
+                                                map_value = roundf((((message[2] * 0.115294117) - 14.7) * 6.89475729) * 10.0);
+                                                map_value = map_value / 10.0;
+                                            }
+                
+                                            if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
+                                            {
+                                                if (map_value <= -99.0)
+                                                {
+                                                    lcd.setCursor(13, 1);
+                                                    lcd.print(" -99");
+                                                }
+                                                else if ((map_value > -99.0) && (map_value <= -10.0))
+                                                {
+                                                    lcd.setCursor(13, 1);
+                                                    lcd.print(" ");
+                                                    lcd.print(map_value, 0);
+                                                }
+                                                else if ((map_value > -10.0) && (map_value < 0.0))
+                                                {
+                                                    lcd.setCursor(13, 1);
+                                                    lcd.print(map_value, 1);
+                                                }
+                                                else if ((map_value >= 0.0) && (map_value < 10.0))
+                                                {
+                                                    lcd.setCursor(13, 1);
+                                                    lcd.print(" ");
+                                                    lcd.print(map_value, 1);
+                                                }
+                                                else if ((map_value >= 10.0) && (map_value < 100.0))
+                                                {
+                                                    lcd.setCursor(13, 1);
+                                                    lcd.print(map_value, 1);
+                                                }
+                                                else if (map_value >= 100.0)
+                                                {
+                                                    lcd.setCursor(13, 1);
+                                                    lcd.print(" ");
+                                                    lcd.print(map_value, 0);
+                                                }
+                                            }
+                                            else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
+                                            {
+                                                if (map_value <= -99.0)
+                                                {
+                                                    lcd.setCursor(9, 1);
+                                                    lcd.print(" -99");
+                                                }
+                                                else if ((map_value > -99.0) && (map_value <= -10.0))
+                                                {
+                                                    lcd.setCursor(9, 1);
+                                                    lcd.print(" ");
+                                                    lcd.print(map_value, 0);
+                                                }
+                                                else if ((map_value > -10.0) && (map_value < 0.0))
+                                                {
+                                                    lcd.setCursor(9, 1);
+                                                    lcd.print(map_value, 1);
+                                                }
+                                                else if ((map_value >= 0.0) && (map_value < 10.0))
+                                                {
+                                                    lcd.setCursor(9, 1);
+                                                    lcd.print(" ");
+                                                    lcd.print(map_value, 1);
+                                                }
+                                                else if ((map_value >= 10.0) && (map_value < 100.0))
+                                                {
+                                                    lcd.setCursor(9, 1);
+                                                    lcd.print(map_value, 1);
+                                                }
+                                                else if (map_value >= 100.0)
+                                                {
+                                                    lcd.setCursor(9, 1);
+                                                    lcd.print(" ");
+                                                    lcd.print(map_value, 0);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                
+                                            }
+                                            break;
+                                        }
+                                        case 0x11: // engine speed
+                                        {
+                                            uint16_t engine_speed = message[2] * 32;
+
+                                            if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
+                                            {
+                                                if (engine_speed < 10)
+                                                {
+                                                    lcd.setCursor(8, 0);
+                                                    lcd.print("   ");
+                                                    lcd.print(engine_speed);
+                                                }
+                                                else if ((engine_speed >= 10) && (engine_speed < 100))
+                                                {
+                                                    lcd.setCursor(8, 0);
+                                                    lcd.print("  ");
+                                                    lcd.print(engine_speed);
+                                                }
+                                                else if ((engine_speed >= 100) && (engine_speed < 1000))
+                                                {
+                                                    lcd.setCursor(8, 0);
+                                                    lcd.print(" ");
+                                                    lcd.print(engine_speed);
+                                                }
+                                                else if (engine_speed >= 1000)
+                                                {
+                                                    lcd.setCursor(8, 0);
+                                                    lcd.print(engine_speed);
+                                                }
+                                                else
+                                                {
+                                                    lcd.setCursor(7, 0);
+                                                    lcd.print(engine_speed);
+                                                }
+                                            }
+                                            else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
+                                            {
+                                                if (engine_speed < 10)
+                                                {
+                                                    lcd.setCursor(9, 0);
+                                                    lcd.print("   ");
+                                                    lcd.print(engine_speed);
+                                                }
+                                                else if ((engine_speed >= 10) && (engine_speed < 100))
+                                                {
+                                                    lcd.setCursor(9, 0);
+                                                    lcd.print("  ");
+                                                    lcd.print(engine_speed);
+                                                }
+                                                else if ((engine_speed >= 100) && (engine_speed < 1000))
+                                                {
+                                                    lcd.setCursor(9, 0);
+                                                    lcd.print(" ");
+                                                    lcd.print(engine_speed);
+                                                }
+                                                else if (engine_speed >= 1000)
+                                                {
+                                                    lcd.setCursor(9, 0);
+                                                    lcd.print(engine_speed);
+                                                }
+                                                else
+                                                {
+                                                    lcd.setCursor(8, 0);
+                                                    lcd.print(engine_speed);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                if (engine_speed < 10)
+                                                {
+                                                    lcd.setCursor(1, 0);
+                                                    lcd.print("   ");
+                                                    lcd.print(engine_speed);
+                                                }
+                                                else if ((engine_speed >= 10) && (engine_speed < 100))
+                                                {
+                                                    lcd.setCursor(1, 0);
+                                                    lcd.print("  ");
+                                                    lcd.print(engine_speed);
+                                                }
+                                                else if ((engine_speed >= 100) && (engine_speed < 1000))
+                                                {
+                                                    lcd.setCursor(1, 0);
+                                                    lcd.print(" ");
+                                                    lcd.print(engine_speed);
+                                                }
+                                                else if (engine_speed >= 1000)
+                                                {
+                                                    lcd.setCursor(1, 0);
+                                                    lcd.print(engine_speed);
+                                                }
+                                                else
+                                                {
+                                                    lcd.setCursor(0, 0);
+                                                    lcd.print(engine_speed);
+                                                }
+                                            }
+                                            break;
+                                        }
+                                        case 0x24: // battery charging voltage
+                                        {
+                                            float charge_volts = roundf(message[2] * 10.0 * 0.0627451);
+                                            charge_volts = charge_volts / 10.0;
+                                            
+                                            if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
+                                            {
+                                                if (charge_volts < 10.0)
+                                                {
+                                                    lcd.setCursor(5, 2);
+                                                    lcd.print(" ");
+                                                    lcd.print(charge_volts, 1);
+                                                }
+                                                else if (charge_volts >= 10.0)
+                                                {
+                                                    lcd.setCursor(5, 2);
+                                                    lcd.print(charge_volts, 1);
+                                                }
+                                            }
+                                            else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
+                                            {
+                                                
+                                            }
+                                            else
+                                            {
+                                                
+                                            }
+                                            break;
+                                        }
+                                        case 0x41: // vehicle speed
+                                        {
+                                            uint8_t vehicle_speed = 0;
+                                            
+                                            if (lcd_units == 0) // imperial
+                                            {
+                                                vehicle_speed = roundf(message[2] / 2.0);
+                                            }
+                                            else if (lcd_units == 1) // metric
+                                            {
+                                                vehicle_speed = roundf(message[2] * 1.609344 / 2.0 );
+                                            }
+                
+                                            if (((lcd_char_width == 20) && (lcd_char_height == 4)) || ((lcd_char_width == 16) && (lcd_char_height == 2))) // 20x4 / 16x2 LCD
+                                            {
+                                                if (vehicle_speed < 10)
+                                                {
+                                                    lcd.setCursor(0, 0);
+                                                    lcd.print("  ");
+                                                    lcd.print(vehicle_speed);
+                                                }
+                                                else if ((vehicle_speed >= 10) && (vehicle_speed < 100))
+                                                {
+                                                    lcd.setCursor(0, 0);
+                                                    lcd.print(" ");
+                                                    lcd.print(vehicle_speed);
+                                                }
+                                                else if (vehicle_speed >= 100)
+                                                {
+                                                    lcd.setCursor(0, 0);
+                                                    lcd.print(vehicle_speed);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                
+                                            }
+                                            break;
+                                        }
+                                        case 0x46: // throttle position sensor
+                                        {
+                                            float tps_position_float = roundf(message[2] * 0.3922);
+                                            uint8_t tps_position = (uint8_t)tps_position_float;
+                    
+                                            if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
+                                            {
+                                                if (tps_position < 10)
+                                                {
+                                                    lcd.setCursor(16, 0);
+                                                    lcd.print("  ");
+                                                    lcd.print(tps_position);
+                                                }
+                                                else if ((tps_position >= 10) && (tps_position < 100))
+                                                {
+                                                    lcd.setCursor(16, 0);
+                                                    lcd.print(" ");
+                                                    lcd.print(tps_position);
+                                                }
+                                                else if (tps_position >= 100)
+                                                {
+                                                    lcd.setCursor(16, 0);
+                                                    lcd.print(tps_position);
+                                                }
+                                            }
+                                            else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
+                                            {
+                                                
                                             }
                                             else
                                             {
@@ -3688,10 +4117,10 @@ void handle_usb_data(void)
                                         DDRE |= (1 << PE2); // set PE2 pin as output (this pin can't be reached by pinMode and digitalWrite commands)
                                         PORTE &= ~(1 << PE2); // pull PE2 pin low to disable write protection
 
-                                        eep.write(0x1E, cmd_payload[0]); // write LED heartbeat interval high byte
-                                        eep.write(0x1F, cmd_payload[1]); // write LED heartbeat interval low byte
-                                        eep.write(0x20, cmd_payload[2]); // write LED blink duration high byte
-                                        eep.write(0x21, cmd_payload[3]); // write LED blink duration low byte
+                                        eep.write(0x1F, cmd_payload[0]); // write LED heartbeat interval high byte
+                                        eep.write(0x20, cmd_payload[1]); // write LED heartbeat interval low byte
+                                        eep.write(0x21, cmd_payload[2]); // write LED blink duration high byte
+                                        eep.write(0x22, cmd_payload[3]); // write LED blink duration low byte
 
                                         uint8_t temp_checksum = 0; // re-calculate checksum
 
@@ -3817,7 +4246,7 @@ void handle_usb_data(void)
                                     }
                                     case set_lcd: // 0x05 - LCD settings
                                     {
-                                        if (!payload_bytes || (payload_length < 6))
+                                        if (!payload_bytes || (payload_length < 7))
                                         {
                                             send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
                                             break;
@@ -3842,22 +4271,24 @@ void handle_usb_data(void)
                                             }
                                         }
 
-                                        lcd_char_width = cmd_payload[1];
-                                        lcd_char_height = cmd_payload[2];
-                                        lcd_refresh_rate = cmd_payload[3];
+                                        lcd_i2c_address = cmd_payload[1];
+                                        lcd_char_width = cmd_payload[2];
+                                        lcd_char_height = cmd_payload[3];
+                                        lcd_refresh_rate = cmd_payload[4];
                                         lcd_update_interval = 1000 / lcd_refresh_rate; // ms
-                                        lcd_units = cmd_payload[4];
-                                        lcd_data_source = cmd_payload[5];
+                                        lcd_units = cmd_payload[5];
+                                        lcd_data_source = cmd_payload[6];
 
                                         DDRE |= (1 << PE2); // set PE2 pin as output (this pin can't be reached by pinMode and digitalWrite commands)
                                         PORTE &= ~(1 << PE2); // pull PE2 pin low to disable write protection
 
                                         eep.write(0x18, cmd_payload[0]); // write LCD enabled/disabled state
-                                        eep.write(0x19, lcd_char_width); // write LCD width
-                                        eep.write(0x1A, lcd_char_height); // write LCD height
-                                        eep.write(0x1B, lcd_refresh_rate); // write LCD refresh rate
-                                        eep.write(0x1C, lcd_units); // write LCD units
-                                        eep.write(0x1D, lcd_data_source); // write LCD units
+                                        eep.write(0x19, lcd_i2c_address); // write LCD I2C address
+                                        eep.write(0x1A, lcd_char_width); // write LCD width
+                                        eep.write(0x1B, lcd_char_height); // write LCD height
+                                        eep.write(0x1C, lcd_refresh_rate); // write LCD refresh rate
+                                        eep.write(0x1D, lcd_units); // write LCD units
+                                        eep.write(0x1E, lcd_data_source); // write LCD units
 
                                         uint8_t temp_checksum = 0; // re-calculate checksum
 
@@ -3873,6 +4304,8 @@ void handle_usb_data(void)
                                         eep_checksum[0] = temp_checksum;
                                         eep_calculated_checksum = temp_checksum;
                                         eep_checksum_ok = true;
+
+                                        lcd_init();
 
                                         if (lcd_enabled)
                                         {
@@ -3890,13 +4323,9 @@ void handle_usb_data(void)
                                                 }
                                             }
                                         }
-                                        else
-                                        {
-                                            lcd_init();
-                                        }
                                         
-                                        uint8_t ret[7] = { 0x00, cmd_payload[0], lcd_char_width, lcd_char_height, lcd_refresh_rate, lcd_units, lcd_data_source };
-                                        send_usb_packet(from_usb, to_usb, settings, set_lcd, ret, 7); // acknowledge
+                                        uint8_t ret[8] = { 0x00, cmd_payload[0], lcd_i2c_address, lcd_char_width, lcd_char_height, lcd_refresh_rate, lcd_units, lcd_data_source };
+                                        send_usb_packet(from_usb, to_usb, settings, set_lcd, ret, 8); // acknowledge
                                         break;
                                     }
                                     default: // other values are not used

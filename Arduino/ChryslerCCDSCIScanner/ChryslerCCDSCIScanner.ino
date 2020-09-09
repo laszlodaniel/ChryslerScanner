@@ -36,7 +36,7 @@
 #include <util/atomic.h>
 #include <CCDLibrary.h>        // https://github.com/laszlodaniel/CCDLibrary
 #include <extEEPROM.h>         // https://github.com/JChristensen/extEEPROM
-#include <LiquidCrystal_I2C.h> // https://bitbucket.org/fmalpartida/new-liquidcrystal/downloads/
+#include <LiquidCrystal_I2C.h> // https://github.com/fdebrabander/Arduino-LiquidCrystal-I2C-library
 #include <Wire.h>
 #include "main.h"
 
@@ -44,20 +44,20 @@
 #define F_CPU 16000000UL // 16 MHz system clock
 #endif
 
-// Construct an object called "eep" for the external 24LC32A EEPROM chip
+// Construct an object called "eep" for the external 24LC32A EEPROM chip.
 extEEPROM eep(kbits_32, 1, 32, 0x50); // device size: 32 kilobits = 4 kilobytes, number of devices: 1, page size: 32 bytes (from datasheet), device address: 0x50 by default
 
-// Construct an object called "lcd" for the external display (optional)
-LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
+// Construct an object called "lcd" for the external display.
+LiquidCrystal_I2C lcd(0x27, 20, 4);
 
 void setup()
 {
-    // Define digital pin states
+    // Define digital pin states.
     //pinMode(INT4, INPUT_PULLUP); // D2 (INT4), CCD-bus idle detector
     //pinMode(INT5, INPUT_PULLUP); // D3 (INT5), CCD-bus active byte detector
     pinMode(RX_LED, OUTPUT);     // Data received LED
     pinMode(TX_LED, OUTPUT);     // Data transmitted LED
-    // PWR LED is tied to +5V directly, stays on when the scanner has power, draws about 2mA current
+    // PWR LED is tied to +5V directly, stays on when the scanner has power, draws about 2mA current.
     pinMode(ACT_LED, OUTPUT);    // Activity (heartbeat) LED
     pinMode(BATT, INPUT);        // This analog input pin measures battery voltage through a resistor divider (it tolerates 24V batteries!)
     pinMode(CCDPLUS, INPUT);     // 
@@ -68,7 +68,7 @@ void setup()
     blink_led(TX_LED);           // 
     blink_led(ACT_LED);          // 
 
-    // SCI-bus A/B-configuration selector outputs
+    // SCI-bus A/B-configuration selector outputs.
     pinMode(PA0, OUTPUT);
     pinMode(PA1, OUTPUT);
     pinMode(PA2, OUTPUT);
@@ -80,7 +80,7 @@ void setup()
 
     exteeprom_init(); // initialize external EEPROM chip (24LC32A)
     
-    // Initialize serial interfaces with default speeds
+    // Initialize serial interfaces with default speeds.
     usb_init(USBBAUD);// 250000 baud, an external serial monitor should have the same speed
     ccd_init(LOBAUD); // 7812.5 baud
     pcm_init(LOBAUD); // 7812.5 baud
