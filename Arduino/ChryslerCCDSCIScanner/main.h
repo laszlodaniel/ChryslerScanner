@@ -33,8 +33,8 @@ extern LiquidCrystal_I2C lcd;
 // 00: patch
 // (00: revision)
 // = v0.1.0(.0)
-#define FW_VERSION 0x00020000
-#define FW_DATE 0x000200005F592E81
+#define FW_VERSION 0x00020100
+#define FW_DATE 0x000201005F5B72C7
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -5656,6 +5656,7 @@ void handle_sci_data(void)
                             if (pcm.repeat_retry_counter > 10)
                             {
                                 pcm.repeat = false; // don't repeat after 10 failed attempts
+                                pcm.repeat_stop = true;
                                 pcm.repeat_retry_counter = 0;
                             }
                             delay(500);
