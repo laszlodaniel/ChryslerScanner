@@ -33,8 +33,8 @@ extern LiquidCrystal_I2C lcd;
 // 00: patch
 // (00: revision)
 // = v0.1.0(.0)
-#define FW_VERSION 0x00020100
-#define FW_DATE 0x000201005F5B72C7
+#define FW_VERSION 0x00020200
+#define FW_DATE 0x000202005F5F2EDB
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -3400,11 +3400,11 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                             
                                             if (lcd_units == 0) // imperial
                                             {
-                                                ambient_temp = roundf((message[2] * 1.8039215686) - 83.2);
+                                                ambient_temp = message[2];
                                             }
                                             else if (lcd_units == 1) // metric
                                             {
-                                                ambient_temp = roundf((((message[2] * 1.8039215686) - 83.2) * 0.555556) - 17.77778);
+                                                ambient_temp = roundf((message[2] * 0.555556) - 17.77778);
                                             }
                 
                                             if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
@@ -3491,11 +3491,11 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                             
                                             if (lcd_units == 0) // imperial
                                             {
-                                                coolant_temp = roundf((message[2] * 1.8039215686) - 83.2);
+                                                coolant_temp = roundf((message[2] * 1.8) - 198.4);
                                             }
                                             else if (lcd_units == 1) // metric
                                             {
-                                                coolant_temp = roundf((((message[2] * 1.8039215686) - 83.2) * 0.555556) - 17.77778);
+                                                coolant_temp = roundf((((message[2] * 1.8) - 198.4) * 0.555556) - 17.77778);
                                             }
                 
                                             if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
@@ -3578,7 +3578,7 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                         }
                                         case 0x0A: // battery voltage
                                         {
-                                            float batt_volts = roundf(message[2] * 10.0 * 0.0627451);
+                                            float batt_volts = roundf(message[2] * 10.0 * 0.0592);
                                             batt_volts = batt_volts / 10.0;
                                             
                                             if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
@@ -3611,12 +3611,12 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                             
                                             if (lcd_units == 0) // imperial
                                             {
-                                                map_value = roundf(((message[2] * 0.115294117) - 14.7) * 10.0);
+                                                map_value = roundf(message[2] * 0.059756 * 10.0);
                                                 map_value = map_value / 10.0;
                                             }
                                             else if (lcd_units == 1) // metric
                                             {
-                                                map_value = roundf((((message[2] * 0.115294117) - 14.7) * 6.89475729) * 10.0);
+                                                map_value = roundf(message[2] * 0.059756 * 6.894757 * 10.0);
                                                 map_value = map_value / 10.0;
                                             }
                 
@@ -3799,7 +3799,7 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                         }
                                         case 0x24: // battery charging voltage
                                         {
-                                            float charge_volts = roundf(message[2] * 10.0 * 0.0627451);
+                                            float charge_volts = roundf(message[2] * 10.0 * 0.0592);
                                             charge_volts = charge_volts / 10.0;
                                             
                                             if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
