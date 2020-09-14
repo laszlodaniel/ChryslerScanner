@@ -114,8 +114,8 @@ extern LiquidCrystal_I2C lcd;
 #define TX_LED        36 // status LED, message sent
 #define ACT_LED       37 // status LED, activity
 #define BATT          A0 // battery voltage sensor
-#define CCDPLUS       A1 // CCD+ analog input
-#define CCDMINUS      A2 // CCD- analog input
+#define CCD_POSITIVE  A1 // CCD+ analog input
+#define CCD_NEGATIVE  A2 // CCD- analog input
 #define TBEN          13 // CCD-bus termination and bias enable pin
 
 #define PA0 22 // SCI-bus configuration selector digital pins on ATmega2560
@@ -367,11 +367,11 @@ uint16_t adc_max_value = 1023; // 1023 for 10-bit resolution
 uint32_t battery_adc = 0;   // raw analog reading is stored here
 uint16_t battery_volts = 0; // converted to battery voltage and multiplied by 100: 12.85V -> 1285
 uint8_t battery_volts_array[2]; // battery_volts is separated to byte components here
-uint32_t ccdplus_adc = 0;   // raw analog reading is stored here
-uint16_t ccdplus_volts = 0; // converted to battery voltage and multiplied by 100: 2.51V -> 251
-uint32_t ccdminus_adc = 0;   // raw analog reading is stored here
-uint16_t ccdminus_volts = 0; // converted to battery voltage and multiplied by 100: 2.51V -> 251
-uint8_t ccd_volts_array[4]; // ccdplus_volts and ccdminus_volts is separated to byte components here
+uint32_t ccd_positive_adc = 0;   // raw analog reading is stored here
+uint16_t ccd_positive_volts = 0; // converted to CCD+ voltage and multiplied by 100: 2.51V -> 251
+uint32_t ccd_negative_adc = 0;   // raw analog reading is stored here
+uint16_t ccd_negative_volts = 0; // converted to CCD- voltage and multiplied by 100: 2.51V -> 251
+uint8_t ccd_volts_array[4]; // ccd_positive_volts and ccd_negative_volts is separated to byte components here
 
 bool connected_to_vehicle = false;
 char vin_characters[] = "-----------------"; // 17 character
@@ -2521,29 +2521,28 @@ Purpose:  measure CCD-bus pin voltages on OBD3 and OBD11 pins
 **************************************************************************/
 void check_ccd_volts(void)
 {
-    ccdplus_adc = 0;
-    ccdminus_adc = 0;
+    ccd_positive_adc = 0;
+    ccd_negative_adc = 0;
     
     for (uint16_t i = 0; i < 200; i++) // get 200 samples in quick succession
     {
-        ccdplus_adc += analogRead(CCDPLUS);
+        ccd_positive_adc += analogRead(CCD_POSITIVE);
     }
 
     for (uint16_t i = 0; i < 200; i++) // get 200 samples in quick succession
     {
-        ccdminus_adc += analogRead(CCDMINUS);
+        ccd_negative_adc += analogRead(CCD_NEGATIVE);
     }
     
-    ccdplus_adc /= 200; // divide the sum by 100 to get average value
-    ccdminus_adc /= 200; // divide the sum by 100 to get average value
-    ccdplus_volts = (uint16_t)(ccdplus_adc*(adc_supply_voltage/100.0)/adc_max_value*100.0);
-    ccdminus_volts = (uint16_t)(ccdminus_adc*(adc_supply_voltage/100.0)/adc_max_value*100.0);
+    ccd_positive_adc /= 200; // divide the sum by 100 to get average value
+    ccd_negative_adc /= 200; // divide the sum by 100 to get average value
+    ccd_positive_volts = (uint16_t)(ccd_positive_adc*(adc_supply_voltage/100.0)/adc_max_value*100.0);
+    ccd_negative_volts = (uint16_t)(ccd_negative_adc*(adc_supply_voltage/100.0)/adc_max_value*100.0);
     
-    ccd_volts_array[0] = (ccdplus_volts >> 8) & 0xFF;
-    ccd_volts_array[1] = ccdplus_volts & 0xFF;
-    ccd_volts_array[2] = (ccdminus_volts >> 8) & 0xFF;
-    ccd_volts_array[3] = ccdminus_volts & 0xFF;
-    connected_to_vehicle = true;
+    ccd_volts_array[0] = (ccd_positive_volts >> 8) & 0xFF;
+    ccd_volts_array[1] = ccd_positive_volts & 0xFF;
+    ccd_volts_array[2] = (ccd_negative_volts >> 8) & 0xFF;
+    ccd_volts_array[3] = ccd_negative_volts & 0xFF;
     
 } // end of check_ccd_volts
 

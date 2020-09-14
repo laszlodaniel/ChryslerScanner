@@ -53,20 +53,20 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 void setup()
 {
     // Define digital pin states.
-    //pinMode(INT4, INPUT_PULLUP); // D2 (INT4), CCD-bus idle detector
-    //pinMode(INT5, INPUT_PULLUP); // D3 (INT5), CCD-bus active byte detector
-    pinMode(RX_LED, OUTPUT);     // Data received LED
-    pinMode(TX_LED, OUTPUT);     // Data transmitted LED
+    //pinMode(INT4, INPUT_PULLUP);  // D2 (INT4), CCD-bus idle detector
+    //pinMode(INT5, INPUT_PULLUP);  // D3 (INT5), CCD-bus active byte detector
+    pinMode(RX_LED, OUTPUT);      // Data received LED
+    pinMode(TX_LED, OUTPUT);      // Data transmitted LED
     // PWR LED is tied to +5V directly, stays on when the scanner has power, draws about 2mA current.
-    pinMode(ACT_LED, OUTPUT);    // Activity (heartbeat) LED
-    pinMode(BATT, INPUT);        // This analog input pin measures battery voltage through a resistor divider (it tolerates 24V batteries!)
-    pinMode(CCDPLUS, INPUT);     // 
-    pinMode(CCDMINUS, INPUT);    // 
-    pinMode(TBEN, OUTPUT);       // 
-    digitalWrite(TBEN, HIGH);    // disable CCD-bus termination and bias
-    blink_led(RX_LED);           // 
-    blink_led(TX_LED);           // 
-    blink_led(ACT_LED);          // 
+    pinMode(ACT_LED, OUTPUT);     // Activity (heartbeat) LED
+    pinMode(BATT, INPUT);         // This analog input pin measures battery voltage through a resistor divider (it tolerates 24V batteries!)
+    pinMode(CCD_POSITIVE, INPUT); // 
+    pinMode(CCD_NEGATIVE, INPUT); // 
+    pinMode(TBEN, OUTPUT);        // 
+    digitalWrite(TBEN, HIGH);     // disable CCD-bus termination and bias
+    blink_led(RX_LED);            // 
+    blink_led(TX_LED);            // 
+    blink_led(ACT_LED);           // 
 
     // SCI-bus A/B-configuration selector outputs.
     pinMode(PA0, OUTPUT);
