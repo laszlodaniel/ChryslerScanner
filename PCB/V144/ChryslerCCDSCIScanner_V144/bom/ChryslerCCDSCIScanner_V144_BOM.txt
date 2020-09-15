@@ -3,8 +3,8 @@ ChryslerCCDSCIScanner_V144_BOM
 Part  Value           Device                                       Package
 -------------------------------------------------------------------------------------------
 C1    10uF            C-EU                                         1206
-C2    100uF           C_POL-EU                                     8X8X10.5
-C3    100uF           C_POL-EU                                     8X8X10.5
+C2    100uF           C_POL-EU                                     8X8X10.5-SMD
+C3    100uF           C_POL-EU                                     8X8X10.5-SMD
 C4    0.1uF           C-EU                                         1206
 C5    1uF             C-EU                                         1206
 C6    0.1uF           C-EU                                         1206
