@@ -2706,8 +2706,8 @@ namespace ChryslerCCDSCIScanner
                     Packet.tx.payload = message;
                     Packet.GeneratePacket();
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Send a CCD-bus message once:", Packet.tx.buffer);
-                    Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine +
-                                                   "       " + Util.ByteToHexStringSimple(message));
+                    if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine +
+                                                                           "       " + Util.ByteToHexStringSimple(message));
                     await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
                 }
                 else // list of messages once
@@ -2746,7 +2746,7 @@ namespace ChryslerCCDSCIScanner
                     }
                     messageList.Replace(Environment.NewLine, string.Empty, messageList.Length - 2, 2); // remove last newline character
 
-                    Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine + messageList.ToString());
+                    if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine + messageList.ToString());
 
                     await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
                 }
@@ -2783,8 +2783,8 @@ namespace ChryslerCCDSCIScanner
                     Packet.tx.payload = payloadList.ToArray();
                     Packet.GeneratePacket();
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Send a repeated CCD-bus message:", Packet.tx.buffer);
-                    Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine +
-                                                   "       " + Util.ByteToHexStringSimple(message));
+                    if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine +
+                                                                           "       " + Util.ByteToHexStringSimple(message));
                     await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
 
                 }
@@ -2829,7 +2829,7 @@ namespace ChryslerCCDSCIScanner
                         }
                         messageList.Replace(Environment.NewLine, string.Empty, messageList.Length - 2, 2); // remove last newline character
 
-                        Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine + messageList.ToString());
+                        if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine + messageList.ToString());
 
                         await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
                     }
@@ -3135,8 +3135,8 @@ namespace ChryslerCCDSCIScanner
                     Packet.tx.payload = message;
                     Packet.GeneratePacket();
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Send a CCD-bus message once:", Packet.tx.buffer);
-                    Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine +
-                                                   "       " + Util.ByteToHexStringSimple(message));
+                    if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine +
+                                                                           "       " + Util.ByteToHexStringSimple(message));
                     await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
                 }
                 else
@@ -3306,8 +3306,8 @@ namespace ChryslerCCDSCIScanner
                     Packet.tx.payload = message;
                     Packet.GeneratePacket();
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Send a SCI-bus (PCM) message once:", Packet.tx.buffer);
-                    Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
-                                                   "       " + Util.ByteToHexStringSimple(message));
+                    if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
+                                                                           "       " + Util.ByteToHexStringSimple(message));
                     await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
                 }
                 else // list of messages once
@@ -3346,7 +3346,7 @@ namespace ChryslerCCDSCIScanner
                     }
                     messageList.Replace(Environment.NewLine, string.Empty, messageList.Length - 2, 2); // remove last newline character
 
-                    Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine + messageList.ToString());
+                    if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine + messageList.ToString());
 
                     await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
                 }
@@ -3383,8 +3383,8 @@ namespace ChryslerCCDSCIScanner
                     Packet.tx.payload = payloadList.ToArray();
                     Packet.GeneratePacket();
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Send a repeated SCI-bus (PCM) message:", Packet.tx.buffer);
-                    Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
-                                                   "       " + Util.ByteToHexStringSimple(message));
+                    if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
+                                                                           "       " + Util.ByteToHexStringSimple(message));
                     await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
 
                 }
@@ -3429,7 +3429,7 @@ namespace ChryslerCCDSCIScanner
                         }
                         messageList.Replace(Environment.NewLine, string.Empty, messageList.Length - 2, 2); // remove last newline character
 
-                        Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine + messageList.ToString());
+                        if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine + messageList.ToString());
 
                         await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
                     }
@@ -3727,8 +3727,8 @@ namespace ChryslerCCDSCIScanner
                     Packet.tx.payload = message;
                     Packet.GeneratePacket();
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (PCM) message once:", Packet.tx.buffer);
-                    Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
-                                                   "       " + Util.ByteToHexStringSimple(message));
+                    if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
+                                                                           "       " + Util.ByteToHexStringSimple(message));
                     await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
                 }
                 else

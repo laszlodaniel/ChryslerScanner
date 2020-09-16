@@ -1452,17 +1452,9 @@ namespace ChryslerCCDSCIScanner
                                     descriptionToInsert = "MIC GAUGE POSITION: TACHOMETER";
                                     valueToInsert = Util.ByteToHexString(payload, 0, 1);
                                     break;
-                                case 0x04: // unknown gauge
-                                    descriptionToInsert = "MIC LAMP STATE: UNKNOWN";
-                                    valueToInsert = Util.ByteToHexString(payload, 0, 1);
-                                    break;
-                                case 0x05: // unknown gauge
-                                    descriptionToInsert = "MIC LAMP STATE: UNKNOWN";
-                                    valueToInsert = Util.ByteToHexString(payload, 0, 1);
-                                    break;
                                 default:
                                     descriptionToInsert = "MIC GAUGE/LAMP STATE";
-                                    valueToInsert = string.Empty;
+                                    valueToInsert = Convert.ToString(payload[0], 2).PadLeft(8, '0');
                                     break;
                             }
 
@@ -1576,7 +1568,7 @@ namespace ChryslerCCDSCIScanner
                                     descriptionToInsert += s + " | ";
                                 }
 
-                                if (descriptionToInsert.Length > 9) descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
+                                descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
                                 unitToInsert = string.Empty;
                             }
                         }
@@ -2495,7 +2487,7 @@ namespace ChryslerCCDSCIScanner
                                     descriptionToInsert += s + " | ";
                                 }
 
-                                if (descriptionToInsert.Length > 9) descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
+                                descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
                             }
                             else
                             {
@@ -2579,7 +2571,7 @@ namespace ChryslerCCDSCIScanner
                                     descriptionToInsert += s + " | ";
                                 }
 
-                                if (descriptionToInsert.Length > 9) descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
+                                descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
                                 unitToInsert = string.Empty;
                             }
                         }
@@ -2653,13 +2645,21 @@ namespace ChryslerCCDSCIScanner
                                                     if (Util.IsBitClear(payload[3], 5)) flags.Add("OUTAGE");
                                                     if (Util.IsBitClear(payload[3], 6)) flags.Add("TURN");
 
-                                                    foreach (string s in flags)
+                                                    if (flags.Count > 0)
                                                     {
-                                                        valueToInsert += s + " | ";
-                                                    }
+                                                        foreach (string s in flags)
+                                                        {
+                                                            valueToInsert += s + " | ";
+                                                        }
 
-                                                    valueToInsert = valueToInsert.Remove(valueToInsert.Length - 3); // remove last "|" character
-                                                    valueToInsert += " LAMP";
+                                                        valueToInsert = valueToInsert.Remove(valueToInsert.Length - 3); // remove last "|" character
+                                                        valueToInsert += " LAMP";
+                                                    }
+                                                    else
+                                                    {
+                                                        valueToInsert = string.Empty;
+                                                    }
+                                                    
                                                     break;
                                                 default:
                                                     descriptionToInsert = "RESPONSE | VIC | DIGITAL READ";
@@ -2673,17 +2673,17 @@ namespace ChryslerCCDSCIScanner
                                             {
                                                 case 0x00:
                                                     descriptionToInsert = "RESPONSE | VIC | WASHER LEVEL SENSOR VOLTAGE";
-                                                    valueToInsert = Math.Round(payload[3] * 0.019607843, 3).ToString("0.000");
+                                                    valueToInsert = Math.Round(payload[3] * 0.019607843, 3).ToString("0.000").Replace(",", ".");
                                                     unitToInsert = "V";
                                                     break;
                                                 case 0x01:
                                                     descriptionToInsert = "RESPONSE | VIC | COOLANT LEVEL SENSOR VOLTAGE";
-                                                    valueToInsert = Math.Round(payload[3] * 0.019607843, 3).ToString("0.000");
+                                                    valueToInsert = Math.Round(payload[3] * 0.019607843, 3).ToString("0.000").Replace(",", ".");
                                                     unitToInsert = "V";
                                                     break;
                                                 case 0x02:
                                                     descriptionToInsert = "RESPONSE | VIC | IGNITION VOLTAGE";
-                                                    valueToInsert = Math.Round(payload[3] * 0.099, 3).ToString("0.000");
+                                                    valueToInsert = Math.Round(payload[3] * 0.099, 3).ToString("0.000").Replace(",", ".");
                                                     unitToInsert = "V";
                                                     break;
                                                 default:

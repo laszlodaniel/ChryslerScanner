@@ -1588,53 +1588,48 @@ namespace ChryslerCCDSCIScanner
                                     if (faultCodeList.Count > 0)
                                     {
                                         valueToInsert = Util.ByteToHexStringSimple(faultCodeList.ToArray());
-                                        unitToInsert = string.Empty;
                                         faultCodesSaved = false;
                                     }
                                     else
                                     {
                                         valueToInsert = "NO FAULT CODES";
-                                        unitToInsert = string.Empty;
                                         faultCodesSaved = false;
                                     }
                                 }
                                 else
                                 {
                                     valueToInsert = "CHECKSUM ERROR";
-                                    unitToInsert = string.Empty;
                                     faultCodesSaved = true;
                                 }
                             }
                             else // error
                             {
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                                 faultCodesSaved = true;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0x11: // fault bit list
                             if (message.Length >= minLength)
                             {
                                 valueToInsert = Util.ByteToHexStringSimple(payload);
-                                unitToInsert = string.Empty;
                             }
                             else // error
                             {
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0x12: // select high-speed mode
                             if (message.Length >= minLength)
                             {
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
                             else // error
                             {
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0x13: // actuator test
                             if (message.Length >= minLength)
@@ -1648,314 +1643,252 @@ namespace ChryslerCCDSCIScanner
                                             {
                                                 descriptionToInsert = "ACTUATOR TEST";
                                                 valueToInsert = "STOPPED";
-                                                unitToInsert = string.Empty;
                                             }
                                         }
                                         break;
                                     case 0x01:
                                         descriptionToInsert = "ACTUATOR TEST | IGNITION COIL BANK #1";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x02:
                                         descriptionToInsert = "ACTUATOR TEST | IGNITION COIL BANK #2";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x03:
                                         descriptionToInsert = "ACTUATOR TEST | IGNITION COIL BANK #3";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x04:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #1";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x05:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #2";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x06:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #3";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x07:
                                         descriptionToInsert = "ACTUATOR TEST | IDLE AIR CONTROL (IAC) STEPPER MOTOR";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x08:
                                         descriptionToInsert = "ACTUATOR TEST | RADIATOR FAN RELAY";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x09:
                                         descriptionToInsert = "ACTUATOR TEST | A/C CLUTCH RELAY";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x0A:
                                         descriptionToInsert = "ACTUATOR TEST | AUTOMATIC SHUTDOWN (ASD) RELAY";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x0B:
                                         descriptionToInsert = "ACTUATOR TEST | EVAP PURGE SOLENOID";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x0C:
                                         descriptionToInsert = "ACTUATOR TEST | SPEED CONTROL SOLENOID";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x0D:
                                         descriptionToInsert = "ACTUATOR TEST | GENERATOR / ALTERNATOR FIELD";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x0E:
                                         descriptionToInsert = "ACTUATOR TEST | TACHOMETER OUTPUT";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x0F:
                                         descriptionToInsert = "ACTUATOR TEST | TORQUE CONVERTER CLUTCH";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x10:
                                         descriptionToInsert = "ACTUATOR TEST | EGR SOLENOID";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x11:
                                         descriptionToInsert = "ACTUATOR TEST | WASTEGATE SOLENOID";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x12:
                                         descriptionToInsert = "ACTUATOR TEST | BAROMETER SOLENOID";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x14:
                                         descriptionToInsert = "ACTUATOR TEST | ALL SOLENOIDS / RELAYS";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x16:
                                         descriptionToInsert = "ACTUATOR TEST | TRANSMISSION O/D SOLENOID";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x17:
                                         descriptionToInsert = "ACTUATOR TEST | SHIFT INDICATOR LAMP";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x19:
                                         descriptionToInsert = "ACTUATOR TEST | SURGE VALVE SOLENOID";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x1A:
                                         descriptionToInsert = "ACTUATOR TEST | SPEED CONTROL VENT SOLENOID";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x1B:
                                         descriptionToInsert = "ACTUATOR TEST | SPEED CONTROL VACUUM SOLENOID";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x1C:
                                         descriptionToInsert = "ACTUATOR TEST | ASD FUEL SYSTEM";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x1D:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #4";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x1E:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #5";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x1F:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #6";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x23:
                                         descriptionToInsert = "ACTUATOR TEST | IGNITION COIL BANK #4";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x24:
                                         descriptionToInsert = "ACTUATOR TEST | IGNITION COIL BANK #5";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x25:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #7";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x26:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #8";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x28:
                                         descriptionToInsert = "ACTUATOR TEST | INTAKE HEATER BANK #1";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x29:
                                         descriptionToInsert = "ACTUATOR TEST | INTAKE HEATER BANK #2";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x2C:
                                         descriptionToInsert = "ACTUATOR TEST | SPEED CONTROL 12 VOLT FEED";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x2D:
                                         descriptionToInsert = "ACTUATOR TEST | INTAKE MANIFOLD TUNE VALVE";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x2E:
                                         descriptionToInsert = "ACTUATOR TEST | LOW SPEED RADIATOR FAN RELAY";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x2F:
                                         descriptionToInsert = "ACTUATOR TEST | HIGH SPEED RADIATOR FAN RELAY";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x30:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #9";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x31:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #10";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x32:
                                         descriptionToInsert = "ACTUATOR TEST | 2-3 LOCKOUT SOLENOID";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x33:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL PUMP RELAY";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x3B:
                                         descriptionToInsert = "ACTUATOR TEST | IAC STEPPER MOTOR STEP UP";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x3C:
                                         descriptionToInsert = "ACTUATOR TEST | IAC STEPPER MOTOR STEP DOWN";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x3D:
                                         descriptionToInsert = "ACTUATOR TEST | LEAK DETECTION PUMP SOLENOID";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x40:
                                         descriptionToInsert = "ACTUATOR TEST | O2 SENSOR HEATER RELAY";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x41:
                                         descriptionToInsert = "ACTUATOR TEST | OVERDRIVE LAMP";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x43:
                                         descriptionToInsert = "ACTUATOR TEST | TRANSMISSION 12 VOLT RELAY";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x44:
                                         descriptionToInsert = "ACTUATOR TEST | REVERSE LOCKOUT SOLENOID";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x46:
                                         descriptionToInsert = "ACTUATOR TEST | SHORT RUNNER VALVE";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x49:
                                         descriptionToInsert = "ACTUATOR TEST | WAIT TO START LAMP";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x52:
                                         descriptionToInsert = "ACTUATOR TEST | 1/1 2/1 O2 SENSOR HEATER RELAY";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x53:
                                         descriptionToInsert = "ACTUATOR TEST | 1/2 2/2 O2 SENSOR HEATER RELAY";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x56:
                                         descriptionToInsert = "ACTUATOR TEST | 1/1 O2 SENSOR HEATER RELAY";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x57:
                                         descriptionToInsert = "ACTUATOR TEST | O2 SENSOR HEATER RELAY";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x5A:
                                         descriptionToInsert = "ACTUATOR TEST | RADIATOR FAN SOLENOID";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x5B:
                                         descriptionToInsert = "ACTUATOR TEST | 1/2 O2 SENSOR HEATER RELAY";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x5D:
                                         descriptionToInsert = "ACTUATOR TEST | EXHAUST BRAKE";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x5E:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL CONTROL";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x5F:
                                         descriptionToInsert = "ACTUATOR TEST | PWM RADIATOR FAN";
                                         valueToInsert = "RUNNING";
-                                        unitToInsert = string.Empty;
                                         break;
                                     default:
                                         descriptionToInsert = "ACTUATOR TEST | OFFSET: " + Util.ByteToHexString(payload, 0, 1);
                                         valueToInsert = string.Empty;
-                                        unitToInsert = string.Empty;
                                         break;
                                 }
                             }
@@ -1963,8 +1896,8 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "ACTUATOR TEST";
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0x14: // request diagnostic data
                             if (message.Length >= minLength)
@@ -1976,12 +1909,12 @@ namespace ChryslerCCDSCIScanner
 
                                         if (MainForm.units == "imperial")
                                         {
-                                            valueToInsert = payload[1].ToString("0.0").Replace(",", ".");
+                                            valueToInsert = payload[1].ToString("0");
                                             unitToInsert = "°F";
                                         }
                                         else if (MainForm.units == "metric")
                                         {
-                                            valueToInsert = Math.Round((payload[1] * 0.555556D) - 17.77778D, 1).ToString("0.0").Replace(",", ".");
+                                            valueToInsert = Math.Round((payload[1] * 0.555556D) - 17.77778D).ToString("0");
                                             unitToInsert = "°C";
                                         }
 
@@ -2045,8 +1978,8 @@ namespace ChryslerCCDSCIScanner
                                         }
 
                                         break;
-                                    case 0x0C: // desired iac stepper motor position
-                                        descriptionToInsert = "DESIRED IAC STEPPER MOTOR POSITION";
+                                    case 0x0C: // target iac stepper motor position
+                                        descriptionToInsert = "TARGET IAC STEPPER MOTOR POSITION";
                                         valueToInsert = payload[1].ToString("0");
                                         unitToInsert = string.Empty;
                                         break;
@@ -2133,6 +2066,11 @@ namespace ChryslerCCDSCIScanner
                                         }
 
                                         break;
+                                    case 0x1D: // cruise target speed
+                                        descriptionToInsert = "CRUISE TARGET SPEED";
+                                        valueToInsert = payload[1].ToString("0");
+                                        unitToInsert = string.Empty;
+                                        break;
                                     case 0x1E: // key-on cycles error 2
                                         descriptionToInsert = "KEY-ON CYCLES ERROR 2";
                                         valueToInsert = payload[1].ToString("0");
@@ -2144,8 +2082,134 @@ namespace ChryslerCCDSCIScanner
                                         unitToInsert = string.Empty;
                                         break;
                                     case 0x20: // speed control status
-                                        descriptionToInsert = "SPEED CONTROL STATUS";
-                                        valueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0');
+                                        string lastCruiseCutoutReason = string.Empty;
+                                        string cruiseDeniedReason = string.Empty;
+
+                                        switch (payload[1] & 0xF0) // upper 4 bits encode last cutout reason 
+                                        {
+                                            case 0x00:
+                                                lastCruiseCutoutReason = "ON/OFF SW";
+                                                break;
+                                            case 0x10:
+                                                lastCruiseCutoutReason = "SPEED SEN";
+                                                break;
+                                            case 0x20:
+                                                lastCruiseCutoutReason = "RPM LIMIT";
+                                                break;
+                                            case 0x30:
+                                                lastCruiseCutoutReason = "BRAKE SW";
+                                                break;
+                                            case 0x40:
+                                                lastCruiseCutoutReason = "P/N SW";
+                                                break;
+                                            case 0x50:
+                                                lastCruiseCutoutReason = "RPM/SPEED";
+                                                break;
+                                            case 0x60:
+                                                lastCruiseCutoutReason = "CLUTCH";
+                                                break;
+                                            case 0x70:
+                                                lastCruiseCutoutReason = "S/C DTC";
+                                                break;
+                                            case 0x80:
+                                                lastCruiseCutoutReason = "KEY OFF";
+                                                break;
+                                            case 0x90:
+                                                lastCruiseCutoutReason = "ACTIVE";
+                                                break;
+                                            case 0xA0:
+                                                lastCruiseCutoutReason = "CLUTCH UP";
+                                                break;
+                                            case 0xB0:
+                                                lastCruiseCutoutReason = "N/A";
+                                                break;
+                                            case 0xC0:
+                                                lastCruiseCutoutReason = "SW DTC";
+                                                break;
+                                            case 0xD0:
+                                                lastCruiseCutoutReason = "CANCEL SW";
+                                                break;
+                                            case 0xE0:
+                                                lastCruiseCutoutReason = "LIMP-IN";
+                                                break;
+                                            case 0xF0:
+                                                lastCruiseCutoutReason = "12V DTC";
+                                                break;
+                                            default:
+                                                lastCruiseCutoutReason = "N/A";
+                                                break;
+                                        }
+
+                                        switch (payload[1] & 0x0F) // lower 4 bits encode denied reason 
+                                        {
+                                            case 0x00:
+                                                cruiseDeniedReason = "ON/OFF SW";
+                                                break;
+                                            case 0x01:
+                                                cruiseDeniedReason = "SPEED SEN";
+                                                break;
+                                            case 0x02:
+                                                cruiseDeniedReason = "RPM LIMIT";
+                                                break;
+                                            case 0x03:
+                                                cruiseDeniedReason = "BRAKE SW";
+                                                break;
+                                            case 0x04:
+                                                cruiseDeniedReason = "P/N SW";
+                                                break;
+                                            case 0x05:
+                                                cruiseDeniedReason = "RPM/SPEED";
+                                                break;
+                                            case 0x06:
+                                                cruiseDeniedReason = "CLUTCH";
+                                                break;
+                                            case 0x07:
+                                                cruiseDeniedReason = "S/C DTC";
+                                                break;
+                                            case 0x08:
+                                                cruiseDeniedReason = "ALLOWED";
+                                                break;
+                                            case 0x09:
+                                                cruiseDeniedReason = "ACTIVE";
+                                                break;
+                                            case 0x0A:
+                                                cruiseDeniedReason = "CLUTCH UP";
+                                                break;
+                                            case 0x0B:
+                                                cruiseDeniedReason = "N/A";
+                                                break;
+                                            case 0x0C:
+                                                cruiseDeniedReason = "SW DTC";
+                                                break;
+                                            case 0x0D:
+                                                cruiseDeniedReason = "CANCEL SW";
+                                                break;
+                                            case 0x0E:
+                                                cruiseDeniedReason = "LIMP-IN";
+                                                break;
+                                            case 0x0F:
+                                                cruiseDeniedReason = "12V DTC";
+                                                break;
+                                            default:
+                                                cruiseDeniedReason = "N/A";
+                                                break;
+                                        }
+
+                                        if ((payload[1] & 0x0F) == 0x08)
+                                        {
+                                            descriptionToInsert = "CRUISE | LAST CUTOUT: " + lastCruiseCutoutReason + " | STATE: " + cruiseDeniedReason;
+                                            valueToInsert = "STOPPED";
+                                        }
+                                        else if ((payload[1] & 0x0F) == 0x09)
+                                        {
+                                            descriptionToInsert = "CRUISE | LAST CUTOUT: " + lastCruiseCutoutReason + " | STATE: " + cruiseDeniedReason;
+                                            valueToInsert = "ENGAGED";
+                                        }
+                                        else
+                                        {
+                                            descriptionToInsert = "CRUISE | LAST CUTOUT: " + lastCruiseCutoutReason + " | DENIED: " + cruiseDeniedReason;
+                                            valueToInsert = "STOPPED";
+                                        }
                                         unitToInsert = string.Empty;
                                         break;
                                     case 0x24: // target battery charging voltage
@@ -2330,14 +2394,13 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "ROM VALUE | OFFSET: " + Util.ByteToHexString(payload, 0, 2);
                                 valueToInsert = Util.ByteToHexString(payload, 2, 1);
-                                unitToInsert = string.Empty;
                             }
                             else // error
                             {
                                 descriptionToInsert = "ROM VALUE";
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0x16: // ROM constant value
                             if (message.Length >= minLength)
@@ -2349,39 +2412,36 @@ namespace ChryslerCCDSCIScanner
 
                                 descriptionToInsert = "ROM CONSTANT VALUE | OFFSET: " + Util.ByteToHexStringSimple(offsetArray);
                                 valueToInsert = Util.ByteToHexString(payload, 1, 1);
-                                unitToInsert = string.Empty;
                             }
                             else // error
                             {
                                 descriptionToInsert = "ROM CONSTANT VALUE";
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0x17: // erase fault codes
                             if (message.Length >= minLength)
                             {
                                 if (payload[0] == 0xE0) valueToInsert = "ERASED";
                                 else valueToInsert = "FAILED";
-                                unitToInsert = string.Empty;
                             }
                             else // error
                             {
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0x18: // control ASD relay
                             if (message.Length >= minLength)
                             {
                                 // TODO
-                                unitToInsert = string.Empty;
                             }
                             else // error
                             {
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0x19: // set minimum idle speed
                             if (message.Length >= minLength)
@@ -2418,14 +2478,22 @@ namespace ChryslerCCDSCIScanner
                                         if (Util.IsBitSet(payload[1], 5)) switchList.Add("IDLE SELECT");
                                         if (Util.IsBitSet(payload[1], 6)) switchList.Add("TRANSFER PMPDR");
 
-                                        descriptionToInsert = "SWITCH TEST | ";
-
-                                        foreach (string s in switchList)
+                                        
+                                        if (switchList.Count > 0)
                                         {
-                                            descriptionToInsert += s + " | ";
-                                        }
+                                            descriptionToInsert = "SWITCH TEST | ";
 
-                                        descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
+                                            foreach (string s in switchList)
+                                            {
+                                                descriptionToInsert += s + " | ";
+                                            }
+
+                                            descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
+                                        }
+                                        else
+                                        {
+                                            descriptionToInsert = "SWITCH TEST";
+                                        }
                                         break;
                                     case 0x02:
                                         switchList.Clear();
@@ -2436,14 +2504,21 @@ namespace ChryslerCCDSCIScanner
                                         if (Util.IsBitSet(payload[1], 5)) switchList.Add("EVAP PURGE");
                                         if (Util.IsBitSet(payload[1], 7)) switchList.Add("LOW OIL");
 
-                                        descriptionToInsert = "SWITCH TEST | ";
-
-                                        foreach (string s in switchList)
+                                        if (switchList.Count > 0)
                                         {
-                                            descriptionToInsert += s + " | ";
-                                        }
+                                            descriptionToInsert = "SWITCH TEST | ";
 
-                                        descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
+                                            foreach (string s in switchList)
+                                            {
+                                                descriptionToInsert += s + " | ";
+                                            }
+
+                                            descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
+                                        }
+                                        else
+                                        {
+                                            descriptionToInsert = "SWITCH TEST";
+                                        }
                                         break;
                                     case 0x03:
                                         switchList.Clear();
@@ -2454,14 +2529,21 @@ namespace ChryslerCCDSCIScanner
                                         if (Util.IsBitSet(payload[1], 6)) switchList.Add("TRANS O/D");
                                         if (Util.IsBitSet(payload[1], 7)) switchList.Add("TRANS TOW MODE");
 
-                                        descriptionToInsert = "SWITCH TEST | ";
-
-                                        foreach (string s in switchList)
+                                        if (switchList.Count > 0)
                                         {
-                                            descriptionToInsert += s + " | ";
-                                        }
+                                            descriptionToInsert = "SWITCH TEST | ";
 
-                                        descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
+                                            foreach (string s in switchList)
+                                            {
+                                                descriptionToInsert += s + " | ";
+                                            }
+
+                                            descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
+                                        }
+                                        else
+                                        {
+                                            descriptionToInsert = "SWITCH TEST";
+                                        }
                                         break;
                                     case 0x04:
                                         switchList.Clear();
@@ -2469,14 +2551,21 @@ namespace ChryslerCCDSCIScanner
                                         if (Util.IsBitSet(payload[1], 4)) switchList.Add("ASD");
                                         if (Util.IsBitSet(payload[1], 6)) switchList.Add("IGNITION");
 
-                                        descriptionToInsert = "SWITCH TEST | ";
-
-                                        foreach (string s in switchList)
+                                        if (switchList.Count > 0)
                                         {
-                                            descriptionToInsert += s + " | ";
-                                        }
+                                            descriptionToInsert = "SWITCH TEST | ";
 
-                                        descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
+                                            foreach (string s in switchList)
+                                            {
+                                                descriptionToInsert += s + " | ";
+                                            }
+
+                                            descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
+                                        }
+                                        else
+                                        {
+                                            descriptionToInsert = "SWITCH TEST";
+                                        }
                                         break;
                                     default:
                                         descriptionToInsert = "SWITCH TEST | OFFSET: " + Util.ByteToHexString(payload, 0, 1);
@@ -2484,13 +2573,12 @@ namespace ChryslerCCDSCIScanner
                                 }
 
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
                             else // error
                             {
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0x1B: // init byte mode download
                             valueToInsert = string.Empty;
@@ -2505,7 +2593,6 @@ namespace ChryslerCCDSCIScanner
                                         descriptionToInsert = "WRITE MEMROY | RESET EMR 1";
                                         if ((payload[1] == 0x00) && (payload[2] == 0xFF)) valueToInsert = "OK";
                                         else valueToInsert = "FAILED";
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x11: // reset emr2
                                         descriptionToInsert = "WRITE MEMROY | RESET EMR 2";
@@ -2539,13 +2626,10 @@ namespace ChryslerCCDSCIScanner
                                                 valueToInsert = "FAILED";
                                             }
                                         }
-
-                                        unitToInsert = string.Empty;
                                         break;
                                     default:
                                         descriptionToInsert = "WRITE MEMROY | OFFSET: " + Util.ByteToHexString(payload, 0, 1);
                                         valueToInsert = Util.ByteToHexString(payload, 1, 1);
-                                        unitToInsert = string.Empty;
                                         break;
                                 }
                             }
@@ -2553,8 +2637,8 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "WRITE MEMROY";
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0x21: // set sync / timing / spark scatter
                             if (message.Length >= minLength)
@@ -2586,7 +2670,6 @@ namespace ChryslerCCDSCIScanner
                                                 break;
                                         }
 
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x01:
                                         descriptionToInsert = "KILL SPARK SCATTER";
@@ -2613,7 +2696,6 @@ namespace ChryslerCCDSCIScanner
                                                 break;
                                         }
 
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x10:
                                         descriptionToInsert = "SET SYNC MODE";
@@ -2640,12 +2722,10 @@ namespace ChryslerCCDSCIScanner
                                                 break;
                                         }
 
-                                        unitToInsert = string.Empty;
                                         break;
                                     default:
                                         descriptionToInsert = "SET ENGINE PARAMETER | OFFSET: " + Util.ByteToHexString(payload, 0, 1);
                                         valueToInsert = Util.ByteToHexString(payload, 1, 1);
-                                        unitToInsert = string.Empty;
                                         break;
                                 }
                             }
@@ -2653,8 +2733,8 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "SET ENGINE PARAMETER";
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0x22: // send engine parameters
                             if (message.Length >= minLength)
@@ -2954,26 +3034,24 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "READ FLASH MEMORY | OFFSET: " + Util.ByteToHexString(payload, 0, 3);
                                 valueToInsert = Util.ByteToHexString(payload, 3, 1);
-                                unitToInsert = string.Empty;
                             }
                             else // error
                             {
                                 descriptionToInsert = "READ FLASH MEMORY";
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0x27: // write flash memory
                             if (message.Length >= minLength)
                             {
                                 valueToInsert = "NOT SUPPORTED";
-                                unitToInsert = string.Empty;
                             }
                             else // error
                             {
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0x28: // read EEPROM
                             if (message.Length >= minLength)
@@ -2981,14 +3059,13 @@ namespace ChryslerCCDSCIScanner
                                 descriptionToInsert = "READ EEPROM | OFFSET: ";
                                 descriptionToInsert += Util.ByteToHexString(payload, 0, 2);
                                 valueToInsert = Util.ByteToHexString(payload, 2, 1);
-                                unitToInsert = string.Empty;
                             }
                             else // error
                             {
                                 descriptionToInsert = "READ EEPROM";
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0x2A: // information request
                             if (message.Length >= minLength)
@@ -3253,13 +3330,12 @@ namespace ChryslerCCDSCIScanner
                             if (message.Length >= minLength)
                             {
                                 valueToInsert = Util.ByteToHexStringSimple(payload);
-                                unitToInsert = string.Empty;
                             }
                             else // error
                             {
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0x2C: // send security seed
                             if (message.Length >= minLength)
@@ -3268,7 +3344,6 @@ namespace ChryslerCCDSCIScanner
                                 {
                                     case 0x02:
                                         valueToInsert = "FAILED";
-                                        unitToInsert = string.Empty;
                                         break;
                                     default:
                                         valueToInsert = "RESULT=" + Util.ByteToHexString(payload, 3, 1);
@@ -3278,22 +3353,21 @@ namespace ChryslerCCDSCIScanner
                             else // error
                             {
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0x2D: // min-max engine parameter value
                             if (message.Length >= minLength)
                             {
                                 descriptionToInsert = "MIN/MAX ENGINE PARAMETER VALUE | OFFSET: " + Util.ByteToHexString(payload, 0, 1);
                                 valueToInsert = Util.ByteToHexString(payload, 1, 1);
-                                unitToInsert = string.Empty;
                             }
                             else // error
                             {
                                 descriptionToInsert = "MIN/MAX ENGINE PARAMETER VALUE";
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0x2E: // engine fault codes
                         case 0x32:
@@ -3301,25 +3375,23 @@ namespace ChryslerCCDSCIScanner
                             if (message.Length >= minLength)
                             {
                                 valueToInsert = Util.ByteToHexStringSimple(payload);
-                                unitToInsert = string.Empty;
                             }
                             else // error
                             {
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0xFE: // select low-speed mode
                             if (message.Length >= minLength)
                             {
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
                             else // error
                             {
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         default:
                             descriptionToInsert = string.Empty;
@@ -3354,8 +3426,8 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "F0 RAM TABLE SELECTED";
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0xF1: // high-speed mode RAM table
                             if (payload.Length > 1)
@@ -3379,8 +3451,8 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "F1 RAM TABLE SELECTED";
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0xF2: // high-speed mode RAM table
                             if (payload.Length > 1)
@@ -3404,8 +3476,8 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "F2 RAM TABLE SELECTED";
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0xF3: // high-speed mode RAM table
                             if (payload.Length > 1)
@@ -3429,8 +3501,8 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "F3 RAM TABLE SELECTED";
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0xF4: // high-speed mode RAM table
                             if (payload.Length > 1)
@@ -3438,62 +3510,392 @@ namespace ChryslerCCDSCIScanner
                                 switch (payload[0]) // RAM offset
                                 {
                                     case 0x01:
-                                        descriptionToInsert = "DTC";
-                                        valueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        descriptionToInsert = "DIAGNOSTIC TROUBLE CODE";
+
+                                        if (payload.Length >= 2)
+                                        {
+                                            valueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        }
+                                        else // error
+                                        {
+                                            valueToInsert = "ERROR";
+                                        }
+
                                         unitToInsert = string.Empty;
                                         break;
                                     case 0x0A:
-                                        if (payload.Length >= 4)
+                                        descriptionToInsert = "ENGINE SPEED";
+
+                                        if ((payload.Length >= 4) && (payload[2] == 0x0B))
                                         {
-                                            if (payload[2] == 0x0B)
-                                            {
-                                                descriptionToInsert = "ENGINE SPEED";
-                                                valueToInsert = Math.Round(((payload[1] << 8) + payload[3]) * 0.125D, 3).ToString("0.000");
-                                                unitToInsert = "RPM";
-                                            }
-                                            else
-                                            {
-                                                descriptionToInsert = string.Empty;
-                                                valueToInsert = string.Empty;
-                                                unitToInsert = string.Empty;
-                                            }
+                                            valueToInsert = Math.Round(((payload[1] << 8) + payload[3]) * 0.125D, 3).ToString("0.000").Replace(",", ".");
+                                            unitToInsert = "RPM";
                                         }
-                                        else
+                                        else // error
                                         {
-                                            descriptionToInsert = string.Empty;
-                                            valueToInsert = string.Empty;
+                                            valueToInsert = "ERROR";
                                             unitToInsert = string.Empty;
                                         }
                                         break;
                                     case 0x0C:
-                                        if (payload.Length >= 4)
-                                        {
-                                            if (payload[2] == 0x0D)
-                                            {
-                                                descriptionToInsert = "VEHICLE SPEED";
+                                        descriptionToInsert = "VEHICLE SPEED";
 
-                                                if (MainForm.units == "imperial")
+                                        if ((payload.Length >= 4) && (payload[2] == 0x0D))
+                                        {
+                                            if (MainForm.units == "imperial")
+                                            {
+                                                valueToInsert = Math.Round(((payload[1] << 8) + payload[3]) * 0.0156D, 3).ToString("0.000").Replace(",", ".");
+                                                unitToInsert = "MPH";
+                                            }
+                                            else if (MainForm.units == "metric")
+                                            {
+                                                valueToInsert = Math.Round(((payload[1] << 8) + payload[3]) * 0.0156D * 1.609344D, 3).ToString("0.000").Replace(",", ".");
+                                                unitToInsert = "KM/H";
+                                            }
+                                        }
+                                        else // error
+                                        {
+                                            valueToInsert = "ERROR";
+                                            unitToInsert = string.Empty;
+                                        }
+                                        break;
+                                    case 0x0E:
+                                        descriptionToInsert = "CRUISE | CONTROL SWITCH PRESSED";
+
+                                        if (payload.Length >= 2)
+                                        {
+                                            List<string> switchList = new List<string>();
+                                            switchList.Clear();
+
+                                            if (Util.IsBitSet(payload[1], 0)) switchList.Add("CANCEL");
+                                            if (Util.IsBitSet(payload[1], 1)) switchList.Add("COAST");
+                                            if (Util.IsBitSet(payload[1], 2)) switchList.Add("SET");
+                                            if (Util.IsBitSet(payload[1], 3)) switchList.Add("ACC/RES");
+                                            if (Util.IsBitSet(payload[1], 4)) switchList.Add("ON/OFF");
+
+                                            if (switchList.Count > 0)
+                                            {
+                                                foreach (string s in switchList)
                                                 {
-                                                    valueToInsert = Math.Round(((payload[1] << 8) + payload[3]) * 0.0156D, 3).ToString("0.000");
-                                                    unitToInsert = "MPH";
+                                                    valueToInsert += s + " | ";
                                                 }
-                                                else if (MainForm.units == "metric")
-                                                {
-                                                    valueToInsert = Math.Round(((payload[1] << 8) + payload[3]) * 0.0156D * 1.609344D, 3).ToString("0.000");
-                                                    unitToInsert = "KM/H";
-                                                }
+
+                                                valueToInsert = valueToInsert.Remove(valueToInsert.Length - 3); // remove last "|" character
                                             }
                                             else
                                             {
-                                                descriptionToInsert = string.Empty;
                                                 valueToInsert = string.Empty;
-                                                unitToInsert = string.Empty;
                                             }
                                         }
-                                        else
+                                        else // error
                                         {
-                                            descriptionToInsert = string.Empty;
-                                            valueToInsert = string.Empty;
+                                            valueToInsert = "ERROR";
+                                        }
+
+                                        unitToInsert = string.Empty;
+                                        break;
+                                    case 0x0F:
+                                        descriptionToInsert = "BATTERY VOLTAGE";
+
+                                        if (payload.Length >= 2)
+                                        {
+                                            valueToInsert = Math.Round(payload[1] * 0.0618D, 3).ToString("0.000").Replace(",", ".");
+                                            unitToInsert = "V";
+                                        }
+                                        else // error
+                                        {
+                                            valueToInsert = "ERROR";
+                                            unitToInsert = string.Empty;
+                                        }
+                                        break;
+                                    case 0x10:
+                                        descriptionToInsert = "AMBIENT TEMPERATURE SENSOR VOLTAGE";
+
+                                        if (payload.Length >= 2)
+                                        {
+                                            valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
+                                            unitToInsert = "V";
+                                        }
+                                        else // error
+                                        {
+                                            valueToInsert = "ERROR";
+                                            unitToInsert = string.Empty;
+                                        }
+                                        break;
+                                    case 0x11:
+                                        descriptionToInsert = "AMBIENT TEMPERATURE";
+
+                                        if (payload.Length >= 2)
+                                        {
+                                            if (MainForm.units == "imperial")
+                                            {
+                                                valueToInsert = Math.Round((payload[1] * 1.8D) - 198.4D, 3).ToString("0.0").Replace(",", ".");
+                                                unitToInsert = "°F";
+                                            }
+                                            else if (MainForm.units == "metric")
+                                            {
+                                                valueToInsert = Math.Round((((payload[1] * 1.8D) - 198.4D) * 0.555556D) - 17.77778D, 3).ToString("0.0").Replace(",", ".");
+                                                unitToInsert = "°C";
+                                            }
+                                        }
+                                        else // error
+                                        {
+                                            valueToInsert = "ERROR";
+                                            unitToInsert = string.Empty;
+                                        }
+                                        break;
+                                    case 0x12:
+                                        descriptionToInsert = "THROTTLE POSITION SENSOR (TPS) VOLTAGE";
+
+                                        if (payload.Length >= 2)
+                                        {
+                                            valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
+                                            unitToInsert = "V";
+                                        }
+                                        else // error
+                                        {
+                                            valueToInsert = "ERROR";
+                                            unitToInsert = string.Empty;
+                                        }
+                                        break;
+                                    case 0x13:
+                                        descriptionToInsert = "MINIMUM TPS VOLTAGE";
+
+                                        if (payload.Length >= 2)
+                                        {
+                                            valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
+                                            unitToInsert = "V";
+                                        }
+                                        else // error
+                                        {
+                                            valueToInsert = "ERROR";
+                                            unitToInsert = string.Empty;
+                                        }
+                                        break;
+                                    case 0x14:
+                                        descriptionToInsert = "CALCULATED TPS VOLTAGE";
+
+                                        if (payload.Length >= 2)
+                                        {
+                                            valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
+                                            unitToInsert = "V";
+                                        }
+                                        else // error
+                                        {
+                                            valueToInsert = "ERROR";
+                                            unitToInsert = string.Empty;
+                                        }
+                                        break;
+                                    case 0x15:
+                                        descriptionToInsert = "ENGINE COOLANT TEMPERATURE SENSOR VOLTAGE";
+
+                                        if (payload.Length >= 2)
+                                        {
+                                            valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
+                                            unitToInsert = "V";
+                                        }
+                                        else // error
+                                        {
+                                            valueToInsert = "ERROR";
+                                            unitToInsert = string.Empty;
+                                        }
+                                        break;
+                                    case 0x16:
+                                        descriptionToInsert = "ENGINE COOLANT TEMPERATURE";
+
+                                        if (payload.Length >= 2)
+                                        {
+                                            if (MainForm.units == "imperial")
+                                            {
+                                                valueToInsert = Math.Round((payload[1] * 1.8D) - 198.4D, 3).ToString("0.0").Replace(",", ".");
+                                                unitToInsert = "°F";
+                                            }
+                                            else if (MainForm.units == "metric")
+                                            {
+                                                valueToInsert = Math.Round((((payload[1] * 1.8D) - 198.4D) * 0.555556D) - 17.77778D, 3).ToString("0.0").Replace(",", ".");
+                                                unitToInsert = "°C";
+                                            }
+                                        }
+                                        else // error
+                                        {
+                                            valueToInsert = "ERROR";
+                                            unitToInsert = string.Empty;
+                                        }
+                                        break;
+                                    case 0x21:
+                                        descriptionToInsert = "CRUISE | SWITCH VOLTAGE";
+
+                                        if (payload.Length >= 2)
+                                        {
+                                            valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
+                                            unitToInsert = "V";
+                                        }
+                                        else // error
+                                        {
+                                            valueToInsert = "ERROR";
+                                            unitToInsert = string.Empty;
+                                        }
+                                        break;
+                                    case 0x3B:
+                                        descriptionToInsert = "CRUISE | SET SPEED";
+
+                                        if (payload.Length >= 2)
+                                        {
+                                            if (MainForm.units == "imperial")
+                                            {
+                                                valueToInsert = Math.Round(payload[1] / 2.0D, 1).ToString("0.0").Replace(",", ".");
+                                                unitToInsert = "MPH";
+                                            }
+                                            else if (MainForm.units == "metric")
+                                            {
+                                                valueToInsert = Math.Round((payload[1] / 2.0D) * 1.609344D, 1).ToString("0.0").Replace(",", ".");
+                                                unitToInsert = "KM/H";
+                                            }
+                                        }
+                                        else // error
+                                        {
+                                            valueToInsert = "ERROR";
+                                            unitToInsert = string.Empty;
+                                        }
+                                        break;
+                                    case 0x3F:
+                                        if (payload.Length >= 2)
+                                        {
+                                            string lastCruiseCutoutReason = string.Empty;
+                                            string cruiseDeniedReason = string.Empty;
+
+                                            switch (payload[1] & 0xF0) // upper 4 bits encode last cutout reason 
+                                            {
+                                                case 0x00:
+                                                    lastCruiseCutoutReason = "ON/OFF SW";
+                                                    break;
+                                                case 0x10:
+                                                    lastCruiseCutoutReason = "SPEED SEN";
+                                                    break;
+                                                case 0x20:
+                                                    lastCruiseCutoutReason = "RPM LIMIT";
+                                                    break;
+                                                case 0x30:
+                                                    lastCruiseCutoutReason = "BRAKE SW";
+                                                    break;
+                                                case 0x40:
+                                                    lastCruiseCutoutReason = "P/N SW";
+                                                    break;
+                                                case 0x50:
+                                                    lastCruiseCutoutReason = "RPM/SPEED";
+                                                    break;
+                                                case 0x60:
+                                                    lastCruiseCutoutReason = "CLUTCH";
+                                                    break;
+                                                case 0x70:
+                                                    lastCruiseCutoutReason = "S/C DTC";
+                                                    break;
+                                                case 0x80:
+                                                    lastCruiseCutoutReason = "KEY OFF";
+                                                    break;
+                                                case 0x90:
+                                                    lastCruiseCutoutReason = "ACTIVE";
+                                                    break;
+                                                case 0xA0:
+                                                    lastCruiseCutoutReason = "CLUTCH UP";
+                                                    break;
+                                                case 0xB0:
+                                                    lastCruiseCutoutReason = "N/A";
+                                                    break;
+                                                case 0xC0:
+                                                    lastCruiseCutoutReason = "SW DTC";
+                                                    break;
+                                                case 0xD0:
+                                                    lastCruiseCutoutReason = "CANCEL";
+                                                    break;
+                                                case 0xE0:
+                                                    lastCruiseCutoutReason = "LIMP-IN";
+                                                    break;
+                                                case 0xF0:
+                                                    lastCruiseCutoutReason = "12V DTC";
+                                                    break;
+                                                default:
+                                                    lastCruiseCutoutReason = "N/A";
+                                                    break;
+                                            }
+
+                                            switch (payload[1] & 0x0F) // lower 4 bits encode denied reason 
+                                            {
+                                                case 0x00:
+                                                    cruiseDeniedReason = "ON/OFF SW";
+                                                    break;
+                                                case 0x01:
+                                                    cruiseDeniedReason = "SPEED SEN";
+                                                    break;
+                                                case 0x02:
+                                                    cruiseDeniedReason = "RPM LIMIT";
+                                                    break;
+                                                case 0x03:
+                                                    cruiseDeniedReason = "BRAKE SW";
+                                                    break;
+                                                case 0x04:
+                                                    cruiseDeniedReason = "P/N SW";
+                                                    break;
+                                                case 0x05:
+                                                    cruiseDeniedReason = "RPM/SPEED";
+                                                    break;
+                                                case 0x06:
+                                                    cruiseDeniedReason = "CLUTCH";
+                                                    break;
+                                                case 0x07:
+                                                    cruiseDeniedReason = "S/C DTC";
+                                                    break;
+                                                case 0x08:
+                                                    cruiseDeniedReason = "ALLOWED";
+                                                    break;
+                                                case 0x09:
+                                                    cruiseDeniedReason = "ACTIVE";
+                                                    break;
+                                                case 0x0A:
+                                                    cruiseDeniedReason = "CLUTCH UP";
+                                                    break;
+                                                case 0x0B:
+                                                    cruiseDeniedReason = "N/A";
+                                                    break;
+                                                case 0x0C:
+                                                    cruiseDeniedReason = "SW DTC";
+                                                    break;
+                                                case 0x0D:
+                                                    cruiseDeniedReason = "CANCEL";
+                                                    break;
+                                                case 0x0E:
+                                                    cruiseDeniedReason = "LIMP-IN";
+                                                    break;
+                                                case 0x0F:
+                                                    cruiseDeniedReason = "12V DTC";
+                                                    break;
+                                                default:
+                                                    cruiseDeniedReason = "N/A";
+                                                    break;
+                                            }
+
+                                            if ((payload[1] & 0x0F) == 0x08)
+                                            {
+                                                descriptionToInsert = "CRUISE | LAST CUTOUT: " + lastCruiseCutoutReason + " | STATE: " + cruiseDeniedReason;
+                                                valueToInsert = "STOPPED";
+                                            }
+                                            else if ((payload[1] & 0x0F) == 0x09)
+                                            {
+                                                descriptionToInsert = "CRUISE | LAST CUTOUT: " + lastCruiseCutoutReason + " | STATE: " + cruiseDeniedReason;
+                                                valueToInsert = "ENGAGED";
+                                            }
+                                            else
+                                            {
+                                                descriptionToInsert = "CRUISE | LAST CUTOUT: " + lastCruiseCutoutReason + " | DENIED: " + cruiseDeniedReason;
+                                                valueToInsert = "STOPPED";
+                                            }
+
+                                            unitToInsert = string.Empty;
+                                        }
+                                        else // error
+                                        {
+                                            descriptionToInsert = "CRUISE STATE";
+                                            valueToInsert = "ERROR";
                                             unitToInsert = string.Empty;
                                         }
                                         break;
@@ -3544,8 +3946,8 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "F5 RAM TABLE SELECTED";
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0xF6: // high-speed mode RAM table
                             if (payload.Length > 1)
@@ -3569,8 +3971,8 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "F6 RAM TABLE SELECTED";
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0xF7: // high-speed mode RAM table
                             if (payload.Length > 1)
@@ -3594,8 +3996,8 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "F7 RAM TABLE SELECTED";
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0xF8: // high-speed mode RAM table
                             if (payload.Length > 1)
@@ -3619,8 +4021,8 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "F8 RAM TABLE SELECTED";
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0xF9: // high-speed mode RAM table
                             if (payload.Length > 1)
@@ -3644,8 +4046,8 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "F9 RAM TABLE SELECTED";
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0xFA: // high-speed mode RAM table
                             if (payload.Length > 1)
@@ -3669,8 +4071,8 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "FA RAM TABLE SELECTED";
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0xFB: // high-speed mode RAM table
                             if (payload.Length > 1)
@@ -3694,8 +4096,8 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "FB RAM TABLE SELECTED";
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0xFC: // high-speed mode RAM table
                             if (payload.Length > 1)
@@ -3719,8 +4121,8 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "FC RAM TABLE SELECTED";
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0xFD: // high-speed mode RAM table
                             if (payload.Length > 1)
@@ -3744,20 +4146,19 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "FD RAM TABLE SELECTED";
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0xFE: // select low-speed mode
                             if (message.Length >= minLength)
                             {
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
                             else // error
                             {
                                 valueToInsert = "ERROR";
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         case 0xFF: // high-speed mode RAM table
                             if (payload.Length > 1)
@@ -3781,8 +4182,8 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "FF RAM TABLE SELECTED";
                                 valueToInsert = string.Empty;
-                                unitToInsert = string.Empty;
                             }
+                            unitToInsert = string.Empty;
                             break;
                         default:
                             descriptionToInsert = string.Empty;
