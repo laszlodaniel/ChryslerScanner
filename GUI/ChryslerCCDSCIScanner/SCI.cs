@@ -2325,10 +2325,20 @@ namespace ChryslerCCDSCIScanner
                                         valueToInsert = Math.Round(payload[1] * 0.019607843D, 3).ToString("0.000").Replace(",", ".");
                                         unitToInsert = "V";
                                         break;
-                                    case 0x4F: // fuel level percent
+                                    case 0x4F: // fuel level
                                         descriptionToInsert = "FUEL LEVEL";
-                                        valueToInsert = Math.Round(payload[1] * 0.3922D, 1).ToString("0.0").Replace(",", ".");
-                                        unitToInsert = "%";
+
+                                        if (MainForm.units == "imperial")
+                                        {
+                                            valueToInsert = Math.Round(payload[1] * 0.125D, 1).ToString("0.0").Replace(",", ".");
+                                            unitToInsert = "GALLON";
+                                        }
+                                        else if (MainForm.units == "metric")
+                                        {
+                                            valueToInsert = Math.Round(payload[1] * 0.125D * 3.785412D, 1).ToString("0.0").Replace(",", ".");
+                                            unitToInsert = "LITER";
+                                        }
+
                                         break;
                                     case 0x5C: // calculated engine load
                                         descriptionToInsert = "CALCULATED ENGINE LOAD";
@@ -3569,9 +3579,10 @@ namespace ChryslerCCDSCIScanner
 
                                             if (Util.IsBitSet(payload[1], 0)) switchList.Add("CANCEL");
                                             if (Util.IsBitSet(payload[1], 1)) switchList.Add("COAST");
-                                            if (Util.IsBitSet(payload[1], 2)) switchList.Add("SET");
+                                            if (Util.IsBitClear(payload[1], 2)) switchList.Add("SET");
                                             if (Util.IsBitSet(payload[1], 3)) switchList.Add("ACC/RES");
                                             if (Util.IsBitSet(payload[1], 4)) switchList.Add("ON/OFF");
+                                            if (Util.IsBitSet(payload[1], 7)) switchList.Add("BRAKE");
 
                                             if (switchList.Count > 0)
                                             {
