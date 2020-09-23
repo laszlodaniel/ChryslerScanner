@@ -33,8 +33,8 @@ extern LiquidCrystal_I2C lcd;
 // 00: patch
 // (00: revision)
 // = v0.1.0(.0)
-#define FW_VERSION 0x00020200
-#define FW_DATE 0x000202005F5F2EDB
+#define FW_VERSION 0x00020300
+#define FW_DATE 0x000203005F6B1A8E
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -2937,8 +2937,7 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                             {
                                 if (message_length > 3)
                                 {
-                                    float tps_position_float = roundf(message[1] * 0.65);
-                                    uint8_t tps_position = (uint8_t)tps_position_float;
+                                    uint8_t tps_position = round(message[1] * 0.65);
             
                                     if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
                                     {
@@ -2975,18 +2974,18 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                             {
                                 if (message_length > 3)
                                 {
-                                    float coolant_temp = 0;
-                                    float intake_temp = 0;
+                                    int coolant_temp = 0;
+                                    int intake_temp = 0;
                                     
                                     if (lcd_units == 0) // imperial
                                     {
-                                        coolant_temp = roundf((message[1] * 1.8) - 198.4);
-                                        intake_temp = roundf((message[2] * 1.8) - 198.4);
+                                        coolant_temp = round((message[1] * 1.8) - 198.4);
+                                        intake_temp = round((message[2] * 1.8) - 198.4);
                                     }
                                     else if (lcd_units == 1) // metric
                                     {
-                                        coolant_temp = roundf((((message[1] * 1.8) - 198.4) * 0.555556) - 17.77778);
-                                        intake_temp = roundf((((message[2] * 1.8) - 198.4) * 0.555556) - 17.77778);
+                                        coolant_temp = message[1] - 128;
+                                        intake_temp = message[2] - 128;
                                     }
         
                                     if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
@@ -2999,30 +2998,30 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                         else if ((coolant_temp > -100) && (coolant_temp <= -10))
                                         {
                                             lcd.setCursor(0, 1);
-                                            lcd.print(coolant_temp, 0);
+                                            lcd.print(coolant_temp);
                                         }
                                         else if ((coolant_temp > -10) && (coolant_temp < 0))
                                         {
                                             lcd.setCursor(0, 1);
                                             lcd.print(" ");
-                                            lcd.print(coolant_temp, 0);
+                                            lcd.print(coolant_temp);
                                         }
                                         else if ((coolant_temp >= 0) && (coolant_temp < 10))
                                         {
                                             lcd.setCursor(0, 1);
                                             lcd.print("  ");
-                                            lcd.print(coolant_temp, 0);
+                                            lcd.print(coolant_temp);
                                         }
                                         else if ((coolant_temp >= 10) && (coolant_temp < 100))
                                         {
                                             lcd.setCursor(0, 1);
                                             lcd.print(" ");
-                                            lcd.print(coolant_temp, 0);
+                                            lcd.print(coolant_temp);
                                         }
                                         else if (coolant_temp >= 100)
                                         {
                                             lcd.setCursor(0, 1);
-                                            lcd.print(coolant_temp, 0);
+                                            lcd.print(coolant_temp);
                                         }
         
                                         if (intake_temp <= -100)
@@ -3030,69 +3029,69 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                             lcd.setCursor(4, 1);
                                             lcd.print("-99");
                                         }
-                                        else if ((intake_temp > -100.0) && (intake_temp <= -10.0))
+                                        else if ((intake_temp > -100) && (intake_temp <= -10))
                                         {
                                             lcd.setCursor(4, 1);
-                                            lcd.print(intake_temp, 0);
+                                            lcd.print(intake_temp);
                                         }
-                                        else if ((intake_temp > -10.0) && (intake_temp < 0.0))
+                                        else if ((intake_temp > -10) && (intake_temp < 0))
                                         {
                                             lcd.setCursor(4, 1);
                                             lcd.print(" ");
-                                            lcd.print(intake_temp, 0);
+                                            lcd.print(intake_temp);
                                         }
-                                        else if ((intake_temp >= 0.0) && (intake_temp < 10.0))
+                                        else if ((intake_temp >= 0) && (intake_temp < 10))
                                         {
                                             lcd.setCursor(4, 1);
                                             lcd.print("  ");
-                                            lcd.print(intake_temp, 0);
+                                            lcd.print(intake_temp);
                                         }
                                         else if ((intake_temp >= 10) && (intake_temp < 100))
                                         {
                                             lcd.setCursor(4, 1);
                                             lcd.print(" ");
-                                            lcd.print(intake_temp, 0);
+                                            lcd.print(intake_temp);
                                         }
                                         else if (intake_temp >= 100)
                                         {
                                             lcd.setCursor(4, 1);
-                                            lcd.print(intake_temp, 0);
+                                            lcd.print(intake_temp);
                                         }
                                     }
                                     else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
                                     {
-                                        if (coolant_temp <= -100.0)
+                                        if (coolant_temp <= -100)
                                         {
                                             lcd.setCursor(0, 1);
                                             lcd.print("-99");
                                         }
-                                        else if ((coolant_temp > -100.0) && (coolant_temp <= -10.0))
+                                        else if ((coolant_temp > -100) && (coolant_temp <= -10))
                                         {
                                             lcd.setCursor(0, 1);
-                                            lcd.print(coolant_temp, 0);
+                                            lcd.print(coolant_temp);
                                         }
-                                        else if ((coolant_temp > -10.0) && (coolant_temp < 0.0))
+                                        else if ((coolant_temp > -10) && (coolant_temp < 0))
                                         {
                                             lcd.setCursor(0, 1);
                                             lcd.print(" ");
-                                            lcd.print(coolant_temp, 0);
+                                            lcd.print(coolant_temp);
                                         }
-                                        else if ((coolant_temp >= 0.0) && (coolant_temp < 10.0))
+                                        else if ((coolant_temp >= 0) && (coolant_temp < 10))
                                         {
                                             lcd.setCursor(0, 1);
                                             lcd.print("  ");
-                                            lcd.print(coolant_temp, 0);
+                                            lcd.print(coolant_temp);
                                         }
                                         else if ((coolant_temp >= 10) && (coolant_temp < 100))
                                         {
                                             lcd.setCursor(0, 1);
                                             lcd.print(" ");
-                                            lcd.print(coolant_temp, 0);
+                                            lcd.print(coolant_temp);
                                         }
                                         else if (coolant_temp >= 100)
                                         {
                                             lcd.setCursor(0, 1);
-                                            lcd.print(coolant_temp, 0);
+                                            lcd.print(coolant_temp);
                                         }
                                     }
                                     else
@@ -3395,7 +3394,7 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                     {
                                         case 0x01: // ambient air temperature
                                         {
-                                            float ambient_temp = 0;
+                                            int ambient_temp = 0;
                                             
                                             if (lcd_units == 0) // imperial
                                             {
@@ -3403,7 +3402,7 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                             }
                                             else if (lcd_units == 1) // metric
                                             {
-                                                ambient_temp = roundf((message[2] * 0.555556) - 17.77778);
+                                                ambient_temp = round((message[2] * 0.555556) - 17.77778);
                                             }
                 
                                             if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
@@ -3416,66 +3415,66 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                                 else if ((ambient_temp > -100) && (ambient_temp <= -10))
                                                 {
                                                     lcd.setCursor(4, 1);
-                                                    lcd.print(ambient_temp, 0);
+                                                    lcd.print(ambient_temp);
                                                 }
                                                 else if ((ambient_temp > -10) && (ambient_temp < 0))
                                                 {
                                                     lcd.setCursor(4, 1);
                                                     lcd.print(" ");
-                                                    lcd.print(ambient_temp, 0);
+                                                    lcd.print(ambient_temp);
                                                 }
                                                 else if ((ambient_temp >= 0) && (ambient_temp < 10))
                                                 {
                                                     lcd.setCursor(4, 1);
                                                     lcd.print("  ");
-                                                    lcd.print(ambient_temp, 0);
+                                                    lcd.print(ambient_temp);
                                                 }
                                                 else if ((ambient_temp >= 10) && (ambient_temp < 100))
                                                 {
                                                     lcd.setCursor(4, 1);
                                                     lcd.print(" ");
-                                                    lcd.print(ambient_temp, 0);
+                                                    lcd.print(ambient_temp);
                                                 }
                                                 else if (ambient_temp >= 100)
                                                 {
                                                     lcd.setCursor(4, 1);
-                                                    lcd.print(ambient_temp, 0);
+                                                    lcd.print(ambient_temp);
                                                 }
                                             }
                                             else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
                                             {
-                                                if (ambient_temp <= -100.0)
+                                                if (ambient_temp <= -100)
                                                 {
                                                     lcd.setCursor(4, 1);
                                                     lcd.print("-99");
                                                 }
-                                                else if ((ambient_temp > -100.0) && (ambient_temp <= -10.0))
+                                                else if ((ambient_temp > -100) && (ambient_temp <= -10))
                                                 {
                                                     lcd.setCursor(4, 1);
-                                                    lcd.print(ambient_temp, 0);
+                                                    lcd.print(ambient_temp);
                                                 }
-                                                else if ((ambient_temp > -10.0) && (ambient_temp < 0.0))
+                                                else if ((ambient_temp > -10) && (ambient_temp < 0))
                                                 {
                                                     lcd.setCursor(4, 1);
                                                     lcd.print(" ");
-                                                    lcd.print(ambient_temp, 0);
+                                                    lcd.print(ambient_temp);
                                                 }
-                                                else if ((ambient_temp >= 0.0) && (ambient_temp < 10.0))
+                                                else if ((ambient_temp >= 0) && (ambient_temp < 10))
                                                 {
                                                     lcd.setCursor(4, 1);
                                                     lcd.print("  ");
-                                                    lcd.print(ambient_temp, 0);
+                                                    lcd.print(ambient_temp);
                                                 }
                                                 else if ((ambient_temp >= 10) && (ambient_temp < 100))
                                                 {
                                                     lcd.setCursor(4, 1);
                                                     lcd.print(" ");
-                                                    lcd.print(ambient_temp, 0);
+                                                    lcd.print(ambient_temp);
                                                 }
                                                 else if (ambient_temp >= 100)
                                                 {
                                                     lcd.setCursor(4, 1);
-                                                    lcd.print(ambient_temp, 0);
+                                                    lcd.print(ambient_temp);
                                                 }
                                             }
                                             else
@@ -3486,15 +3485,15 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                         }
                                         case 0x05: // engine coolant temperature
                                         {
-                                            float coolant_temp = 0;
+                                            int coolant_temp = 0;
                                             
                                             if (lcd_units == 0) // imperial
                                             {
-                                                coolant_temp = roundf((message[2] * 1.8) - 198.4);
+                                                coolant_temp = round((message[2] * 1.8) - 198.4);
                                             }
                                             else if (lcd_units == 1) // metric
                                             {
-                                                coolant_temp = roundf((((message[2] * 1.8) - 198.4) * 0.555556) - 17.77778);
+                                                coolant_temp = round(message[2] - 128);
                                             }
                 
                                             if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
@@ -3507,66 +3506,66 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                                 else if ((coolant_temp > -100) && (coolant_temp <= -10))
                                                 {
                                                     lcd.setCursor(0, 1);
-                                                    lcd.print(coolant_temp, 0);
+                                                    lcd.print(coolant_temp);
                                                 }
                                                 else if ((coolant_temp > -10) && (coolant_temp < 0))
                                                 {
                                                     lcd.setCursor(0, 1);
                                                     lcd.print(" ");
-                                                    lcd.print(coolant_temp, 0);
+                                                    lcd.print(coolant_temp);
                                                 }
                                                 else if ((coolant_temp >= 0) && (coolant_temp < 10))
                                                 {
                                                     lcd.setCursor(0, 1);
                                                     lcd.print("  ");
-                                                    lcd.print(coolant_temp, 0);
+                                                    lcd.print(coolant_temp);
                                                 }
                                                 else if ((coolant_temp >= 10) && (coolant_temp < 100))
                                                 {
                                                     lcd.setCursor(0, 1);
                                                     lcd.print(" ");
-                                                    lcd.print(coolant_temp, 0);
+                                                    lcd.print(coolant_temp);
                                                 }
                                                 else if (coolant_temp >= 100)
                                                 {
                                                     lcd.setCursor(0, 1);
-                                                    lcd.print(coolant_temp, 0);
+                                                    lcd.print(coolant_temp);
                                                 }
                                             }
                                             else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
                                             {
-                                                if (coolant_temp <= -100.0)
+                                                if (coolant_temp <= -100)
                                                 {
                                                     lcd.setCursor(0, 1);
                                                     lcd.print("-99");
                                                 }
-                                                else if ((coolant_temp > -100.0) && (coolant_temp <= -10.0))
+                                                else if ((coolant_temp > -100) && (coolant_temp <= -10))
                                                 {
                                                     lcd.setCursor(0, 1);
-                                                    lcd.print(coolant_temp, 0);
+                                                    lcd.print(coolant_temp);
                                                 }
-                                                else if ((coolant_temp > -10.0) && (coolant_temp < 0.0))
+                                                else if ((coolant_temp > -10) && (coolant_temp < 0))
                                                 {
                                                     lcd.setCursor(0, 1);
                                                     lcd.print(" ");
-                                                    lcd.print(coolant_temp, 0);
+                                                    lcd.print(coolant_temp);
                                                 }
-                                                else if ((coolant_temp >= 0.0) && (coolant_temp < 10.0))
+                                                else if ((coolant_temp >= 0) && (coolant_temp < 10))
                                                 {
                                                     lcd.setCursor(0, 1);
                                                     lcd.print("  ");
-                                                    lcd.print(coolant_temp, 0);
+                                                    lcd.print(coolant_temp);
                                                 }
                                                 else if ((coolant_temp >= 10) && (coolant_temp < 100))
                                                 {
                                                     lcd.setCursor(0, 1);
                                                     lcd.print(" ");
-                                                    lcd.print(coolant_temp, 0);
+                                                    lcd.print(coolant_temp);
                                                 }
                                                 else if (coolant_temp >= 100)
                                                 {
                                                     lcd.setCursor(0, 1);
-                                                    lcd.print(coolant_temp, 0);
+                                                    lcd.print(coolant_temp);
                                                 }
                                             }
                                             else
@@ -3831,11 +3830,11 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                             
                                             if (lcd_units == 0) // imperial
                                             {
-                                                vehicle_speed = roundf(message[2] / 2.0);
+                                                vehicle_speed = round(message[2] / 2.0);
                                             }
                                             else if (lcd_units == 1) // metric
                                             {
-                                                vehicle_speed = roundf(message[2] * 1.609344 / 2.0 );
+                                                vehicle_speed = round(message[2] * 1.609344 / 2.0 );
                                             }
                 
                                             if (((lcd_char_width == 20) && (lcd_char_height == 4)) || ((lcd_char_width == 16) && (lcd_char_height == 2))) // 20x4 / 16x2 LCD
@@ -3866,8 +3865,7 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                         }
                                         case 0x46: // throttle position sensor
                                         {
-                                            float tps_position_float = roundf(message[2] * 0.3922);
-                                            uint8_t tps_position = (uint8_t)tps_position_float;
+                                            uint8_t tps_position = round(message[2] * 0.3922);
                     
                                             if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
                                             {
