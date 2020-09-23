@@ -3493,7 +3493,7 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                             }
                                             else if (lcd_units == 1) // metric
                                             {
-                                                coolant_temp = round(message[2] - 128);
+                                                coolant_temp = message[2] - 128;
                                             }
                 
                                             if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
