@@ -1002,8 +1002,8 @@ namespace ChryslerCCDSCIScanner
                             {
                                 string batteryVoltage = Math.Round(payload[0] * 0.125D, 1).ToString("0.0").Replace(",", ".");
                                 string oilPressure = Math.Round(payload[1] * 0.5D * 6.894757D, 1).ToString("0.0").Replace(",", ".");
-                                string coolantTemperature = Math.Round((((payload[2] * 1.8D) - 83.2D) * 0.555556D) - 17.77778D).ToString("0");
-                                string intakeAirTemperature = Math.Round((((payload[3] * 1.8D) - 83.2D) * 0.555556D) - 17.77778D).ToString("0");
+                                string coolantTemperature = (payload[2] - 64).ToString("0");
+                                string intakeAirTemperature = (payload[3] - 64).ToString("0");
 
                                 descriptionToInsert = "BATTERY: " + batteryVoltage + " V | " + "OIL: " + oilPressure + " KPA | " + "COOLANT: " + coolantTemperature + " °C";
                                 valueToInsert = "IAT: " + intakeAirTemperature + " °C";
@@ -1405,7 +1405,7 @@ namespace ChryslerCCDSCIScanner
                             }
                             else if (MainForm.units == "metric")
                             {
-                                valueToInsert = Math.Round((((payload[0] * 1.8D) - 198.4D) * 0.555556D) - 17.77778D).ToString("0") + " | " + Math.Round((((payload[1] * 1.8D) - 198.4D) * 0.555556D) - 17.77778D).ToString("0");
+                                valueToInsert = (payload[0] - 128).ToString("0") + " | " + (payload[1] - 128).ToString("0");
                                 unitToInsert = "°C | °C";
                             }
                         }
@@ -2807,7 +2807,7 @@ namespace ChryslerCCDSCIScanner
                                                     }
                                                     else if (MainForm.units == "metric")
                                                     {
-                                                        temperature = (((payload[3] - 40) * 0.555556) - 17.77778).ToString("0");
+                                                        temperature = Math.Round(((payload[3] - 40) * 0.555556) - 17.77778).ToString("0");
                                                         unitToInsert = "°C";
                                                     }
 

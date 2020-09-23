@@ -1934,7 +1934,7 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         else if (MainForm.units == "metric")
                                         {
-                                            valueToInsert = Math.Round((((payload[1] * 1.8D) - 198.4D) * 0.555556D) - 17.77778D).ToString("0");
+                                            valueToInsert = (payload[1] - 128).ToString("0");
                                             unitToInsert = "°C";
                                         }
                                         break;
@@ -2248,7 +2248,7 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         else if (MainForm.units == "metric")
                                         {
-                                            valueToInsert = Math.Round((payload[1] * 1.961D) * 6.894757D, 1).ToString("0.0").Replace(",", ".");
+                                            valueToInsert = Math.Round(payload[1] * 1.961D * 6.894757D, 1).ToString("0.0").Replace(",", ".");
                                             unitToInsert = "KPA";
                                         }
 
@@ -2375,12 +2375,12 @@ namespace ChryslerCCDSCIScanner
 
                                         if (MainForm.units == "imperial")
                                         {
-                                            valueToInsert = Math.Round((payload[1] * 1.8039215686D) - 83.2, 1).ToString("0.0").Replace(",", ".");
+                                            valueToInsert = Math.Round((payload[1] * 1.8D) - 83.2D).ToString("0");
                                             unitToInsert = "°F";
                                         }
                                         else if (MainForm.units == "metric")
                                         {
-                                            valueToInsert = Math.Round((((payload[1] * 1.8039215686D) - 83.2D) * 0.555556D) - 17.77778D, 1).ToString("0.0").Replace(",", ".");
+                                            valueToInsert = (payload[1] - 64).ToString("0");
                                             unitToInsert = "°C";
                                         }
 
@@ -3640,12 +3640,12 @@ namespace ChryslerCCDSCIScanner
                                         {
                                             if (MainForm.units == "imperial")
                                             {
-                                                valueToInsert = Math.Round((payload[1] * 1.8D) - 198.4D, 3).ToString("0.0").Replace(",", ".");
+                                                valueToInsert = Math.Round((payload[1] * 1.8D) - 198.4D).ToString("0");
                                                 unitToInsert = "°F";
                                             }
                                             else if (MainForm.units == "metric")
                                             {
-                                                valueToInsert = Math.Round((((payload[1] * 1.8D) - 198.4D) * 0.555556D) - 17.77778D, 3).ToString("0.0").Replace(",", ".");
+                                                valueToInsert = (payload[1] - 128).ToString("0");
                                                 unitToInsert = "°C";
                                             }
                                         }
@@ -3718,12 +3718,12 @@ namespace ChryslerCCDSCIScanner
                                         {
                                             if (MainForm.units == "imperial")
                                             {
-                                                valueToInsert = Math.Round((payload[1] * 1.8D) - 198.4D, 3).ToString("0.0").Replace(",", ".");
+                                                valueToInsert = Math.Round((payload[1] * 1.8D) - 198.4D).ToString("0");
                                                 unitToInsert = "°F";
                                             }
                                             else if (MainForm.units == "metric")
                                             {
-                                                valueToInsert = Math.Round((((payload[1] * 1.8D) - 198.4D) * 0.555556D) - 17.77778D, 3).ToString("0.0").Replace(",", ".");
+                                                valueToInsert = (payload[1] - 128).ToString("0");
                                                 unitToInsert = "°C";
                                             }
                                         }
