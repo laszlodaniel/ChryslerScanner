@@ -33,8 +33,8 @@ extern LiquidCrystal_I2C lcd;
 // 00: patch
 // (00: revision)
 // = v0.1.0(.0)
-#define FW_VERSION 0x00020300
-#define FW_DATE 0x000203005F6B1A8E
+#define FW_VERSION 0x00030000
+#define FW_DATE 0x000300005FBF7A8C
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -331,7 +331,7 @@ typedef struct {
     uint32_t repeated_msg_raw_start = 0; // iteration start, 4-bytes max
     uint32_t repeated_msg_raw_end = 0; // iteration end, 4-bytes max
     uint16_t repeated_msg_increment = 1; // if iteration is true then the counter in the message will increase this much for every new message
-    uint16_t repeated_msg_interval = 0; // ms
+    uint16_t repeated_msg_interval = 100; // ms
     uint32_t repeated_msg_last_millis = 0;
     uint8_t repeat_retry_counter = 0;
     bool random_msg = false;
@@ -343,7 +343,7 @@ typedef struct {
     volatile uint32_t msg_tx_count = 0; // total transmitted messages
 } bus;
 
-bus ccd, pcm;
+bus ccd, pcm, tcm;
 
 uint8_t sci_hi_speed_memarea[] = { 0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF };
 
@@ -354,7 +354,7 @@ uint16_t command_purge_timeout = 200; // milliseconds, if a command isn't comple
 uint8_t ack[1] = { 0x00 }; // acknowledge payload array
 uint8_t err[1] = { 0xFF }; // error payload array
 
-uint8_t scanner_status[44];
+uint8_t scanner_status[53];
 
 uint8_t avr_signature[3];
 uint16_t free_ram_available = 0;
@@ -653,68 +653,68 @@ Purpose:  called when the UART2 is ready to transmit the next byte
     }
 }
 
-//ISR(TCM_RECEIVE_INTERRUPT)
-///*************************************************************************
-//Function: UART3 Receive Complete interrupt
-//Purpose:  called when the UART3 has received a character
-//**************************************************************************/
-//{
-//    uint16_t tmphead;
-//    uint8_t data;
-//    uint8_t usr;
-//    uint8_t lastRxError;
-// 
-//    /* read UART status register and UART data register */ 
-//    usr  = TCM_STATUS;
-//    data = TCM_DATA;
-//    
-//    /* get error bits from status register */
-//    lastRxError = (usr & (_BV(FE3)|_BV(DOR3)));
-//
-//    /* calculate buffer index */ 
-//    tmphead = (TCM_RxHead + 1) & TCM_RX3_BUFFER_MASK;
-//    
-//    if (tmphead == TCM_RxTail)
-//    {
-//        /* error: receive buffer overflow */
-//        lastRxError = UART_BUFFER_OVERFLOW >> 8;
-//    }
-//    else
-//    {
-//        /* store new index */
-//        TCM_RxHead = tmphead;
-//        /* store received data in buffer */
-//        if (!tcm.invert_logic) TCM_RxBuf[tmphead] = data;
-//        else TCM_RxBuf[tmphead] = ((data << 4) & 0xF0) | ((data >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
-//    }
-//    TCM_LastRxError = lastRxError;
-//
-//    tcm.last_byte_millis = millis();
-//}
-//
-//ISR(TCM_TRANSMIT_INTERRUPT)
-///*************************************************************************
-//Function: UART3 Data Register Empty interrupt
-//Purpose:  called when the UART3 is ready to transmit the next byte
-//**************************************************************************/
-//{
-//    uint16_t tmptail;
-//
-//    if (TCM_TxHead != TCM_TxTail)
-//    {
-//        /* calculate and store new buffer index */
-//        tmptail = (TCM_TxTail + 1) & TCM_TX3_BUFFER_MASK;
-//        TCM_TxTail = tmptail;
-//        /* get one byte from buffer and write it to UART */
-//        if (!tcm.invert_logic) TCM_DATA = TCM_TxBuf[tmptail]; /* start transmission */
-//        else TCM_DATA = ((TCM_TxBuf[tmptail] << 4) & 0xF0) | ((TCM_TxBuf[tmptail] >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
-//    }
-//    else
-//    {
-//        /* tx buffer empty, disable UDRE interrupt */
-//        TCM_CONTROL &= ~_BV(TCM_UDRIE);
-//    }
-//}
+ISR(TCM_RECEIVE_INTERRUPT)
+/*************************************************************************
+Function: UART3 Receive Complete interrupt
+Purpose:  called when the UART3 has received a character
+**************************************************************************/
+{
+    uint16_t tmphead;
+    uint8_t data;
+    uint8_t usr;
+    uint8_t lastRxError;
+ 
+    /* read UART status register and UART data register */ 
+    usr  = TCM_STATUS;
+    data = TCM_DATA;
+    
+    /* get error bits from status register */
+    lastRxError = (usr & (_BV(FE3)|_BV(DOR3)));
+
+    /* calculate buffer index */ 
+    tmphead = (TCM_RxHead + 1) & TCM_RX3_BUFFER_MASK;
+    
+    if (tmphead == TCM_RxTail)
+    {
+        /* error: receive buffer overflow */
+        lastRxError = UART_BUFFER_OVERFLOW >> 8;
+    }
+    else
+    {
+        /* store new index */
+        TCM_RxHead = tmphead;
+        /* store received data in buffer */
+        if (!tcm.invert_logic) TCM_RxBuf[tmphead] = data;
+        else TCM_RxBuf[tmphead] = ((data << 4) & 0xF0) | ((data >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
+    }
+    TCM_LastRxError = lastRxError;
+
+    tcm.last_byte_millis = millis();
+}
+
+ISR(TCM_TRANSMIT_INTERRUPT)
+/*************************************************************************
+Function: UART3 Data Register Empty interrupt
+Purpose:  called when the UART3 is ready to transmit the next byte
+**************************************************************************/
+{
+    uint16_t tmptail;
+
+    if (TCM_TxHead != TCM_TxTail)
+    {
+        /* calculate and store new buffer index */
+        tmptail = (TCM_TxTail + 1) & TCM_TX3_BUFFER_MASK;
+        TCM_TxTail = tmptail;
+        /* get one byte from buffer and write it to UART */
+        if (!tcm.invert_logic) TCM_DATA = TCM_TxBuf[tmptail]; /* start transmission */
+        else TCM_DATA = ((TCM_TxBuf[tmptail] << 4) & 0xF0) | ((TCM_TxBuf[tmptail] >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
+    }
+    else
+    {
+        /* tx buffer empty, disable UDRE interrupt */
+        TCM_CONTROL &= ~_BV(TCM_UDRIE);
+    }
+}
 
 
 // Functions
@@ -1417,233 +1417,233 @@ void pcm_tx_flush(void)
 
 
 // SCI-bus functions (for TCM)
-///*************************************************************************
-//Function: tcm_init()
-//Purpose:  initialize UART3 and set baudrate to conform SCI-bus requirements,
-//          frame format is fixed
-//Input:    direct ubrr value
-//Returns:  none
-//**************************************************************************/
-//void tcm_init(uint16_t ubrr)
-//{
-//    /* reset ringbuffer */
-//    ATOMIC_BLOCK(ATOMIC_FORCEON)
-//    {
-//        TCM_RxHead = 0;
-//        TCM_RxTail = 0;
-//        TCM_TxHead = 0;
-//        TCM_TxTail = 0;
-//    }
-//  
-//    /* set baud rate */
-//    UBRR3H = (ubrr >> 8) & 0x0F;
-//    UBRR3L = ubrr & 0xFF;
-//
-//    /* enable USART receiver and transmitter and receive complete interrupt */
-//    TCM_CONTROL |= (1 << RXCIE3) | (1 << RXEN3) | (1 << TXEN3);
-//
-//    /* set frame format: asynchronous, 8 data bit, no parity, 1 stop bit */
-//    UCSR3C |= (1 << UCSZ30) | (1 << UCSZ31);
-//    
-//} // end of tcm_init
-//
-//
-///*************************************************************************
-//Function: tcm_getc()
-//Purpose:  return byte from the receive buffer and remove it
-//Returns:  low byte:  next byte in the receive buffer
-//          high byte: error flags
-//**************************************************************************/
-//uint16_t tcm_getc(void)
-//{
-//    uint16_t tmptail;
-//    uint8_t data;
-//
-//    ATOMIC_BLOCK(ATOMIC_FORCEON)
-//    {
-//        if (TCM_RxHead == TCM_RxTail)
-//        {
-//            return UART_RX_NO_DATA; /* no data available */
-//        }
-//    }
-//  
-//    /* calculate / store buffer index */
-//    tmptail = (TCM_RxTail + 1) & TCM_RX3_BUFFER_MASK;
-//  
-//    TCM_RxTail = tmptail;
-//  
-//    /* get data from receive buffer */
-//    data = TCM_RxBuf[tmptail];
-//
-//    return (TCM_LastRxError << 8 ) + data;
-//    
-//} // end of tcm_getc
-//
-//
-///*************************************************************************
-//Function: tcm_peek()
-//Purpose:  return the next byte waiting in the receive buffer
-//          without removing it
-//Input:    index number in the buffer (default = 0 = next available byte)
-//Returns:  low byte:  next byte in the receive buffer
-//          high byte: error flags
-//**************************************************************************/
-//uint16_t tcm_peek(uint16_t index = 0)
-//{
-//    uint16_t tmptail;
-//    uint8_t data;
-//
-//    ATOMIC_BLOCK(ATOMIC_FORCEON)
-//    {
-//        if (TCM_RxHead == TCM_RxTail)
-//        {
-//            return UART_RX_NO_DATA;   /* no data available */
-//        }
-//    }
-//  
-//    tmptail = (TCM_RxTail + 1 + index) & TCM_RX3_BUFFER_MASK;
-//
-//    /* get data from receive buffer */
-//    data = TCM_RxBuf[tmptail];
-//
-//    return (TCM_LastRxError << 8 ) + data;
-//
-//} // end of tcm_peek
-//
-//
-///*************************************************************************
-//Function: tcm_putc()
-//Purpose:  transmit byte to the SCI-bus (TCM)
-//Input:    byte to be transmitted
-//Returns:  none
-//**************************************************************************/
-//void tcm_putc(uint8_t data)
-//{
-//    uint16_t tmphead;
-//    uint16_t txtail_tmp;
-//
-//    tmphead = (TCM_TxHead + 1) & TCM_TX3_BUFFER_MASK;
-//
-//    do
-//    {
-//        ATOMIC_BLOCK(ATOMIC_FORCEON)
-//        {
-//            txtail_tmp = TCM_TxTail;
-//        }
-//    }
-//    while (tmphead == txtail_tmp); /* wait for free space in buffer */
-//
-//    TCM_TxBuf[tmphead] = data;
-//    TCM_TxHead = tmphead;
-//
-//    /* enable UDRE interrupt */
-//    TCM_CONTROL |= _BV(TCM_UDRIE);
-//
-//} // end of tcm_putc
-//
-//
-///*************************************************************************
-//Function: tcm_puts()
-//Purpose:  transmit string to the SCI-bus (TCM)
-//Input:    pointer to the string to be transmitted
-//Returns:  none
-//**************************************************************************/
-//void tcm_puts(const char *s)
-//{
-//    while(*s)
-//    {
-//        tcm_putc(*s++);
-//    }
-//
-//} // end of tcm_puts
-//
-//
-///*************************************************************************
-//Function: tcm_puts_p()
-//Purpose:  transmit string from program memory to the SCI-bus (TCM)
-//Input:    pointer to the program memory string to be transmitted
-//Returns:  none
-//**************************************************************************/
-//void tcm_puts_p(const char *progmem_s)
-//{
-//    register char c;
-//
-//    while ((c = pgm_read_byte(progmem_s++)))
-//    {
-//        tcm_putc(c);
-//    }
-//
-//} // end of tcm_puts_p
-//
-//
-///*************************************************************************
-//Function: tcm_rx_available()
-//Purpose:  determine the number of bytes waiting in the receive buffer
-//Input:    none
-//Returns:  integer number of bytes in the receive buffer
-//**************************************************************************/
-//uint8_t tcm_rx_available(void)
-//{
-//    uint8_t ret;
-//  
-//    ATOMIC_BLOCK(ATOMIC_FORCEON)
-//    {
-//        ret = (TCM_RX3_BUFFER_SIZE + TCM_RxHead - TCM_RxTail) & TCM_RX3_BUFFER_MASK;
-//    }
-//    return ret;
-//    
-//} // end of tcm_rx_available
-//
-//
-///*************************************************************************
-//Function: tcm_tx_available()
-//Purpose:  determine the number of bytes waiting in the transmit buffer
-//Input:    none
-//Returns:  integer number of bytes in the transmit buffer
-//**************************************************************************/
-//uint8_t tcm_tx_available(void)
-//{
-//    uint8_t ret;
-//  
-//    ATOMIC_BLOCK(ATOMIC_FORCEON)
-//    {
-//        ret = (TCM_TX3_BUFFER_SIZE + TCM_TxHead - TCM_TxTail) & TCM_TX3_BUFFER_MASK;
-//    }
-//    return ret;
-//    
-//} // end of tcm_tx_available
-//
-//
-///*************************************************************************
-//Function: tcm_rx_flush()
-//Purpose:  flush bytes waiting in the receive buffer, actually ignores them
-//Input:    none
-//Returns:  none
-//**************************************************************************/
-//void tcm_rx_flush(void)
-//{
-//    ATOMIC_BLOCK(ATOMIC_FORCEON)
-//    {
-//        TCM_RxHead = TCM_RxTail;
-//    }
-//    
-//} // end of tcm_rx_flush
-//
-//
-///*************************************************************************
-//Function: tcm_tx_flush()
-//Purpose:  flush bytes waiting in the transmit buffer, actually ignores them
-//Input:    none
-//Returns:  none
-//**************************************************************************/
-//void tcm_tx_flush(void)
-//{
-//    ATOMIC_BLOCK(ATOMIC_FORCEON)
-//    {
-//        TCM_TxHead = TCM_TxTail;
-//    }
-//    
-//} // end of tcm_tx_flush
+/*************************************************************************
+Function: tcm_init()
+Purpose:  initialize UART3 and set baudrate to conform SCI-bus requirements,
+          frame format is fixed
+Input:    direct ubrr value
+Returns:  none
+**************************************************************************/
+void tcm_init(uint16_t ubrr)
+{
+    /* reset ringbuffer */
+    ATOMIC_BLOCK(ATOMIC_FORCEON)
+    {
+        TCM_RxHead = 0;
+        TCM_RxTail = 0;
+        TCM_TxHead = 0;
+        TCM_TxTail = 0;
+    }
+  
+    /* set baud rate */
+    UBRR3H = (ubrr >> 8) & 0x0F;
+    UBRR3L = ubrr & 0xFF;
+
+    /* enable USART receiver and transmitter and receive complete interrupt */
+    TCM_CONTROL |= (1 << RXCIE3) | (1 << RXEN3) | (1 << TXEN3);
+
+    /* set frame format: asynchronous, 8 data bit, no parity, 1 stop bit */
+    UCSR3C |= (1 << UCSZ30) | (1 << UCSZ31);
+    
+} // end of tcm_init
+
+
+/*************************************************************************
+Function: tcm_getc()
+Purpose:  return byte from the receive buffer and remove it
+Returns:  low byte:  next byte in the receive buffer
+          high byte: error flags
+**************************************************************************/
+uint16_t tcm_getc(void)
+{
+    uint16_t tmptail;
+    uint8_t data;
+
+    ATOMIC_BLOCK(ATOMIC_FORCEON)
+    {
+        if (TCM_RxHead == TCM_RxTail)
+        {
+            return UART_RX_NO_DATA; /* no data available */
+        }
+    }
+  
+    /* calculate / store buffer index */
+    tmptail = (TCM_RxTail + 1) & TCM_RX3_BUFFER_MASK;
+  
+    TCM_RxTail = tmptail;
+  
+    /* get data from receive buffer */
+    data = TCM_RxBuf[tmptail];
+
+    return (TCM_LastRxError << 8 ) + data;
+    
+} // end of tcm_getc
+
+
+/*************************************************************************
+Function: tcm_peek()
+Purpose:  return the next byte waiting in the receive buffer
+          without removing it
+Input:    index number in the buffer (default = 0 = next available byte)
+Returns:  low byte:  next byte in the receive buffer
+          high byte: error flags
+**************************************************************************/
+uint16_t tcm_peek(uint16_t index = 0)
+{
+    uint16_t tmptail;
+    uint8_t data;
+
+    ATOMIC_BLOCK(ATOMIC_FORCEON)
+    {
+        if (TCM_RxHead == TCM_RxTail)
+        {
+            return UART_RX_NO_DATA;   /* no data available */
+        }
+    }
+  
+    tmptail = (TCM_RxTail + 1 + index) & TCM_RX3_BUFFER_MASK;
+
+    /* get data from receive buffer */
+    data = TCM_RxBuf[tmptail];
+
+    return (TCM_LastRxError << 8 ) + data;
+
+} // end of tcm_peek
+
+
+/*************************************************************************
+Function: tcm_putc()
+Purpose:  transmit byte to the SCI-bus (TCM)
+Input:    byte to be transmitted
+Returns:  none
+**************************************************************************/
+void tcm_putc(uint8_t data)
+{
+    uint16_t tmphead;
+    uint16_t txtail_tmp;
+
+    tmphead = (TCM_TxHead + 1) & TCM_TX3_BUFFER_MASK;
+
+    do
+    {
+        ATOMIC_BLOCK(ATOMIC_FORCEON)
+        {
+            txtail_tmp = TCM_TxTail;
+        }
+    }
+    while (tmphead == txtail_tmp); /* wait for free space in buffer */
+
+    TCM_TxBuf[tmphead] = data;
+    TCM_TxHead = tmphead;
+
+    /* enable UDRE interrupt */
+    TCM_CONTROL |= _BV(TCM_UDRIE);
+
+} // end of tcm_putc
+
+
+/*************************************************************************
+Function: tcm_puts()
+Purpose:  transmit string to the SCI-bus (TCM)
+Input:    pointer to the string to be transmitted
+Returns:  none
+**************************************************************************/
+void tcm_puts(const char *s)
+{
+    while(*s)
+    {
+        tcm_putc(*s++);
+    }
+
+} // end of tcm_puts
+
+
+/*************************************************************************
+Function: tcm_puts_p()
+Purpose:  transmit string from program memory to the SCI-bus (TCM)
+Input:    pointer to the program memory string to be transmitted
+Returns:  none
+**************************************************************************/
+void tcm_puts_p(const char *progmem_s)
+{
+    register char c;
+
+    while ((c = pgm_read_byte(progmem_s++)))
+    {
+        tcm_putc(c);
+    }
+
+} // end of tcm_puts_p
+
+
+/*************************************************************************
+Function: tcm_rx_available()
+Purpose:  determine the number of bytes waiting in the receive buffer
+Input:    none
+Returns:  integer number of bytes in the receive buffer
+**************************************************************************/
+uint8_t tcm_rx_available(void)
+{
+    uint8_t ret;
+  
+    ATOMIC_BLOCK(ATOMIC_FORCEON)
+    {
+        ret = (TCM_RX3_BUFFER_SIZE + TCM_RxHead - TCM_RxTail) & TCM_RX3_BUFFER_MASK;
+    }
+    return ret;
+    
+} // end of tcm_rx_available
+
+
+/*************************************************************************
+Function: tcm_tx_available()
+Purpose:  determine the number of bytes waiting in the transmit buffer
+Input:    none
+Returns:  integer number of bytes in the transmit buffer
+**************************************************************************/
+uint8_t tcm_tx_available(void)
+{
+    uint8_t ret;
+  
+    ATOMIC_BLOCK(ATOMIC_FORCEON)
+    {
+        ret = (TCM_TX3_BUFFER_SIZE + TCM_TxHead - TCM_TxTail) & TCM_TX3_BUFFER_MASK;
+    }
+    return ret;
+    
+} // end of tcm_tx_available
+
+
+/*************************************************************************
+Function: tcm_rx_flush()
+Purpose:  flush bytes waiting in the receive buffer, actually ignores them
+Input:    none
+Returns:  none
+**************************************************************************/
+void tcm_rx_flush(void)
+{
+    ATOMIC_BLOCK(ATOMIC_FORCEON)
+    {
+        TCM_RxHead = TCM_RxTail;
+    }
+    
+} // end of tcm_rx_flush
+
+
+/*************************************************************************
+Function: tcm_tx_flush()
+Purpose:  flush bytes waiting in the transmit buffer, actually ignores them
+Input:    none
+Returns:  none
+**************************************************************************/
+void tcm_tx_flush(void)
+{
+    ATOMIC_BLOCK(ATOMIC_FORCEON)
+    {
+        TCM_TxHead = TCM_TxTail;
+    }
+    
+} // end of tcm_tx_flush
 
 
 ///*************************************************************************
@@ -1939,6 +1939,8 @@ void configure_sci_bus(uint8_t data)
         {
             if ((data >> 4) & 0x01) // enable PCM
             {
+                pcm.enabled = true;
+                
                 if ((data >> 3) & 0x01) // inverted logic signal
                 {
                     pcm.invert_logic = true;
@@ -1950,8 +1952,6 @@ void configure_sci_bus(uint8_t data)
 
                 if ((data >> 2) & 0x01) // configuration "B"
                 {
-                    pcm.enabled = true;
-                    
                     // Disable all A-configuration pins first
                     digitalWrite(PA0, LOW);  // SCI-BUS_A_PCM_RX disabled
                     digitalWrite(PA1, LOW);  // SCI-BUS_A_PCM_TX disabled
@@ -1963,9 +1963,9 @@ void configure_sci_bus(uint8_t data)
                 }
                 else // configuration "A"
                 {
-                    pcm.enabled = true;
-                    //tcm.enabled = false; // TCM pins interfere with PCM pins in configuration "A"
-                    
+                    tcm.enabled = false; // TCM pins interfere with PCM pins in configuration "A"
+                    cbi(tcm.bus_settings, 4); // clear 4th enable bit
+
                     // Disable all B-configuration pins first
                     digitalWrite(PA4, LOW);  // SCI-BUS_B_PCM_RX disabled
                     digitalWrite(PA5, LOW);  // SCI-BUS_B_PCM_TX disabled
@@ -2032,17 +2032,16 @@ void configure_sci_bus(uint8_t data)
         {
             // don't change anything
         }
-
-        uint8_t ret[2] = { 0x00, pcm.bus_settings };
-        send_usb_packet(from_usb, to_usb, settings, set_sci_bus, ret, 2); // acknowledge
     }
-/*
+
     else if (((data >> 6) & 0x03) == 0x03) // TCM
     {
         if ((data >> 5) & 0x01) // change settings
         {
             if ((data >> 4) & 0x01) // enable TCM
             {
+                tcm.enabled = true;
+                
                 if ((data >> 3) & 0x01) // inverted logic signal
                 {
                     tcm.invert_logic = true;
@@ -2054,8 +2053,6 @@ void configure_sci_bus(uint8_t data)
 
                 if ((data >> 2) & 0x01) // configuration "B"
                 {
-                    tcm.enabled = true;
-                    
                     // Disable all A-configuration pins first
                     digitalWrite(PA0, LOW);  // SCI-BUS_A_PCM_RX disabled
                     digitalWrite(PA1, LOW);  // SCI-BUS_A_PCM_TX disabled
@@ -2068,7 +2065,7 @@ void configure_sci_bus(uint8_t data)
                 else // configuration "A"
                 {
                     pcm.enabled = false; // PCM pins interfere with TCM pins in configuration "A"
-                    tcm.enabled = true;
+                    cbi(pcm.bus_settings, 4); // clear 4th enable bit
                     
                     // Disable all B-configuration pins first
                     digitalWrite(PA4, LOW);  // SCI-BUS_B_PCM_RX disabled
@@ -2136,11 +2133,17 @@ void configure_sci_bus(uint8_t data)
         {
             // don't change anything
         }
-
-        uint8_t ret[2] = { 0x00, tcm.bus_settings };
-        send_usb_packet(from_usb, to_usb, settings, set_sci_bus, ret, 2); // acknowledge
     }
-*/
+
+    uint8_t ret[2];
+    ret[0] = 0x00;
+    ret[1] = pcm.bus_settings;
+    send_usb_packet(from_usb, to_usb, settings, set_sci_bus, ret, 2); // acknowledge
+    ret[0] = 0x00;
+    ret[1] = tcm.bus_settings;
+    send_usb_packet(from_usb, to_usb, settings, set_sci_bus, ret, 2); // acknowledge
+    
+
 } // end of configure_sci_bus
 
 
@@ -2715,22 +2718,32 @@ int cmd_status(void)
     scanner_status[31] = (pcm.msg_tx_count >> 8) & 0xFF;
     scanner_status[32] = pcm.msg_tx_count & 0xFF;
 
-    if (lcd_enabled) scanner_status[33] = 0x01;
-    else scanner_status[33] = 0x00;
+    scanner_status[33] = (tcm.bus_settings);
+    scanner_status[34] = (tcm.msg_rx_count >> 24) & 0xFF;
+    scanner_status[35] = (tcm.msg_rx_count >> 16) & 0xFF;
+    scanner_status[36] = (tcm.msg_rx_count >> 8) & 0xFF;
+    scanner_status[37] = tcm.msg_rx_count & 0xFF;
+    scanner_status[38] = (tcm.msg_tx_count >> 24) & 0xFF;
+    scanner_status[39] = (tcm.msg_tx_count >> 16) & 0xFF;
+    scanner_status[40] = (tcm.msg_tx_count >> 8) & 0xFF;
+    scanner_status[41] = tcm.msg_tx_count & 0xFF;
 
-    scanner_status[34] = lcd_i2c_address;
-    scanner_status[35] = lcd_char_width;
-    scanner_status[36] = lcd_char_height;
-    scanner_status[37] = lcd_refresh_rate;
-    scanner_status[38] = lcd_units;
-    scanner_status[39] = lcd_data_source;
+    if (lcd_enabled) scanner_status[42] = 0x01;
+    else scanner_status[42] = 0x00;
 
-    scanner_status[40] = (heartbeat_interval >> 8) & 0xFF;
-    scanner_status[41] = heartbeat_interval & 0xFF;
-    scanner_status[42] = (led_blink_duration >> 8) & 0xFF;
-    scanner_status[43] = led_blink_duration & 0xFF;
+    scanner_status[43] = lcd_i2c_address;
+    scanner_status[44] = lcd_char_width;
+    scanner_status[45] = lcd_char_height;
+    scanner_status[46] = lcd_refresh_rate;
+    scanner_status[47] = lcd_units;
+    scanner_status[48] = lcd_data_source;
 
-    send_usb_packet(from_usb, to_usb, status, ok, scanner_status, 44);
+    scanner_status[49] = (heartbeat_interval >> 8) & 0xFF;
+    scanner_status[50] = heartbeat_interval & 0xFF;
+    scanner_status[51] = (led_blink_duration >> 8) & 0xFF;
+    scanner_status[52] = led_blink_duration & 0xFF;
+
+    send_usb_packet(from_usb, to_usb, status, ok, scanner_status, 53);
     return 0;
     
 } // end of cmd_status
@@ -4230,6 +4243,12 @@ void handle_usb_data(void)
                                                 pcm.repeated_msg_increment = to_uint16(cmd_payload[3], cmd_payload[4]); // 0-65535
                                                 break;
                                             }
+                                            case 0x03: // SCI-bus (TCM)
+                                            {
+                                                tcm.repeated_msg_interval = to_uint16(cmd_payload[1], cmd_payload[2]); // 0-65535 milliseconds
+                                                tcm.repeated_msg_increment = to_uint16(cmd_payload[3], cmd_payload[4]); // 0-65535
+                                                break;
+                                            }
                                             default:
                                             {
                                                 send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, already enabled
@@ -5227,7 +5246,209 @@ void handle_usb_data(void)
                     } // case to_pcm:
                     case to_tcm: // 0x03 - SCI-bus (TCM) is the target
                     {
-                        send_usb_packet(from_usb, to_usb, ok_error, error_fatal, err, 1);
+                        switch (command) // evaluate command
+                        {
+                            case msg_tx: // 0x06 - send message to the SCI-bus (TCM)
+                            {
+                                switch (subdatacode) // evaluate SUB-DATA CODE byte
+                                {
+                                    case stop_msg_flow: // 0x01 - stop message transmission (single and repeated as well)
+                                    {
+                                        tcm.repeat = false;
+                                        tcm.repeat_next = false;
+                                        tcm.repeat_iterate = false;
+                                        tcm.repeat_list_once = false;
+                                        tcm.repeat_stop = true;
+                                        tcm.msg_to_transmit_count = 0;
+                                        tcm.msg_to_transmit_count_ptr = 0;
+                                        tcm.repeated_msg_length = 0;
+                                        tcm.repeated_msg_last_millis = 0;
+                                        tcm.msg_buffer_ptr = 0;
+                                        
+                                        uint8_t ret[2] = { 0x00, to_tcm };
+                                        send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 2);
+                                        break;
+                                    }
+                                    case single_msg: // 0x02 - send message to the SCI-bus once
+                                    {
+                                        if (!payload_bytes || (payload_length > TCM_RX3_BUFFER_SIZE))
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error
+                                            break;
+                                        }
+
+                                        // Fill the pending buffer with the message to be sent
+                                        for (uint16_t i = 0; i < payload_length; i++)
+                                        {
+                                            tcm.msg_buffer[i] = cmd_payload[i];
+                                        }
+
+                                        tcm.msg_buffer_ptr = payload_length;
+                                        tcm.msg_to_transmit_count = 1;
+                                        tcm.msg_tx_pending  = true; // set flag so the main loop knows there's something to do
+
+                                        uint8_t ret[2] = { 0x00, to_tcm };
+                                        send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 2);
+                                        break;
+                                    }
+                                    case repeated_single_msg: // 0x04 - send repeated message(s) to the SCI-bus (TCM)
+                                    {
+                                        if ((payload_length < 4) || (payload_length > TCM_RX3_BUFFER_SIZE))
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error
+                                            break;
+                                        }
+                                        
+                                        switch (cmd_payload[0]) // first payload byte tells us if a message has variables that need to increase every iteration
+                                        {
+                                            case 0x00: // no iteration needed, send the same message(s) again and again
+                                            {
+                                                // Payload structure example:
+                                                // 00 01 06 F4 0A 0B 0C 0D 11
+                                                // -----------------------------------
+                                                // 00: no message iteration needed, send the same message(s) again ang again
+                                                // 01: number of messages
+                                                // 06: message length
+                                                // F4 0A 0B 0C 0D 11: message
+
+                                                for (uint16_t i = 3; i < payload_length; i++)
+                                                {
+                                                    tcm.msg_buffer[i-3] = cmd_payload[i]; // copy and save all the message bytes for this session
+                                                }
+
+                                                tcm.msg_to_transmit_count = cmd_payload[1]; // message count
+                                                tcm.repeated_msg_length = cmd_payload[2]; // message length
+                                                tcm.msg_buffer_ptr = tcm.repeated_msg_length;
+                                                tcm.repeat = true; // set flag
+                                                tcm.repeat_next = true; // set flag
+                                                tcm.repeat_iterate = false; // set flag
+                                                tcm.repeat_list_once = false;
+                                                tcm.repeat_stop = false;
+
+                                                uint8_t ret[2] = { 0x00, to_tcm };
+                                                send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
+                                                break;
+                                            }
+                                            case 0x01: // message iteration needed, 1 message only!
+                                            {
+                                                // Payload structure example:
+                                                // 01 01 04 26 00 00 00 26 01 FF FF 
+                                                // Note: iteration only works for messages of maximum 4 bytes length and it assumes one ID-byte and 1-2-3 address bytes
+                                                // -----------------------------------
+                                                // 01: message iteration needed, 1 message only!
+                                                // 01: number of messages
+                                                // 04: message length
+                                                // 26 00 00 00: first message in the sequence
+                                                // 26 01 FF FF: last message in the sequence
+
+                                                if ((payload_length > 4) && (payload_length < 12)) // at least 5 bytes are necessary (min: 3 flag bytes + 1 start byte + 1 end byte = 5, max: 3 flag bytes + 4 start byte + 4 end byte = 11)
+                                                {
+                                                    tcm.msg_to_transmit_count = 1;
+                                                    tcm.repeated_msg_length = cmd_payload[2]; // message length
+                                                    tcm.msg_buffer_ptr = 0;
+                                                    tcm.repeat = true; // set flag
+                                                    tcm.repeat_next = true; // set flag
+                                                    tcm.repeat_iterate = true; // set flag
+                                                    tcm.repeat_list_once = false;
+                                                    tcm.repeat_stop = false;
+
+                                                    if (tcm.repeated_msg_length == 0x04) // 4-bytes length
+                                                    {
+                                                        tcm.repeated_msg_raw_start =  to_uint32(cmd_payload[3], cmd_payload[4], cmd_payload[5], cmd_payload[6]);
+                                                        tcm.repeated_msg_raw_end = to_uint32(cmd_payload[7], cmd_payload[8], cmd_payload[9], cmd_payload[10]);
+                                                    }
+                                                    else if (tcm.repeated_msg_length == 0x03) // 3-bytes length
+                                                    {
+                                                        tcm.repeated_msg_raw_start = to_uint32(0, cmd_payload[3], cmd_payload[4], cmd_payload[5]);
+                                                        tcm.repeated_msg_raw_end = to_uint32(0, cmd_payload[6], cmd_payload[7], cmd_payload[8]);
+                                                    }
+                                                    else if (tcm.repeated_msg_length == 0x02) // 2-bytes length
+                                                    {
+                                                        tcm.repeated_msg_raw_start = to_uint16(cmd_payload[3], cmd_payload[4]);
+                                                        tcm.repeated_msg_raw_end = to_uint16(cmd_payload[5], cmd_payload[6]);
+                                                    }
+                                                    else if (tcm.repeated_msg_length == 0x01) // 1-byte length
+                                                    {
+                                                        tcm.repeated_msg_raw_start = cmd_payload[3];
+                                                        tcm.repeated_msg_raw_end = cmd_payload[4];
+                                                    }
+
+                                                    uint8_t ret[2] = { 0x00, to_tcm };
+                                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
+                                                }
+                                                else
+                                                {
+                                                    send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, too long message
+                                                }
+                                                break;
+                                            }
+                                            default:
+                                            {
+                                                send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error, no message included
+                                                break;
+                                            }
+                                        }
+                                        break;
+                                    }
+                                    case list_msg: // 0x03 - send a set of messages to the SCI-bus (TCM) once
+                                    case repeated_list_msg: // 0x05 - send a set of messages repeatedly to the SCI-bus (TCM)
+                                    {
+                                        if (payload_length < 3)
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error
+                                            break;
+                                        }
+
+                                        // Payload structure example:
+                                        // 00 02 02 14 07 02 14 08
+                                        // --------------------------------
+                                        // 00: message iteration not supported, reads always zero
+                                        // 02: number of messages
+                                        // 02: 1st message length
+                                        // 14 07: message #1
+                                        // 02: 2nd message length
+                                        // 14 08: message #2
+                                        // XX: n-th message length
+                                        // XX XX...: message #n
+
+                                        for (uint8_t i = 2; i < payload_length; i++)
+                                        {
+                                            tcm.msg_buffer[i-2] = cmd_payload[i]; // copy and save all the message bytes for this session
+                                        }
+
+                                        tcm.msg_to_transmit_count = cmd_payload[1]; // save number of messages
+                                        tcm.msg_to_transmit_count_ptr = 0; // current message to transmit
+                                        tcm.repeated_msg_length = cmd_payload[2]; // first message length is saved
+                                        tcm.msg_buffer_ptr = 0; // set the pointer in the main buffer at the beginning
+                                        tcm.repeat = true; // set flag
+                                        tcm.repeat_next = true; // set flag
+                                        tcm.repeat_iterate = false;
+
+                                        if (subdatacode == list_msg) tcm.repeat_list_once = true;
+                                        else if (subdatacode == repeated_list_msg) tcm.repeat_list_once = false;
+                                        
+                                        tcm.repeat_stop = false;
+
+                                        uint8_t ret[2] = { 0x00, to_tcm };
+
+                                        if (subdatacode == list_msg) send_usb_packet(from_usb, to_usb, msg_tx, list_msg, ret, 2); // acknowledge
+                                        else if (subdatacode == repeated_list_msg) send_usb_packet(from_usb, to_usb, msg_tx, repeated_list_msg, ret, 2); // acknowledge
+                                        break;
+                                    }
+                                    default:
+                                    {
+                                        send_usb_packet(from_usb, to_usb, ok_error, error_subdatacode_invalid_value, err, 1);
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            default: // other values are not used.
+                            {
+                                send_usb_packet(from_usb, to_usb, ok_error, error_datacode_invalid_command, err, 1);
+                                break;
+                            }
+                        }
                         break;
                     } // case to_tcm:
                 } // switch (target)   
@@ -6321,10 +6542,641 @@ void handle_sci_data(void)
         }
     }
     
-//    if (tcm.enabled)
-//    {
-//        // TODO LATER
-//    }
+    if (tcm.enabled)
+    {
+        // Handle completed messages
+        if (tcm.speed == LOBAUD) // handle low-speed mode first (7812.5 baud)
+        {
+            if (((millis() - tcm.last_byte_millis) > SCI_LS_T3_DELAY) && (tcm_rx_available() > 0))
+            { 
+                tcm.message_length = tcm_rx_available();
+                uint8_t usb_msg[TIMESTAMP_LENGTH+tcm.message_length]; // create local array which will hold the timestamp and the SCI-bus (TCM) message
+                update_timestamp(current_timestamp); // get current time for the timestamp
+                
+                for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+                {
+                    usb_msg[i] = current_timestamp[i];
+                }
+                for (uint8_t i = 0; i < tcm.message_length; i++) // put every byte in the SCI-bus message after the timestamp
+                {
+                    usb_msg[TIMESTAMP_LENGTH+i] = tcm_getc() & 0xFF;
+                }
+
+                send_usb_packet(from_tcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, TIMESTAMP_LENGTH+tcm.message_length); // send message to laptop
+                handle_lcd(from_tcm, usb_msg, 4, TIMESTAMP_LENGTH+tcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                
+                if (usb_msg[4] == 0x12) // pay attention to special bytes (speed change)
+                {
+                    sbi(tcm.bus_settings, 5); // set change settings bit
+                    sbi(tcm.bus_settings, 4); // set enable bit
+                    sbi(tcm.bus_settings, 1); // set/clear speed bits (62500 baud)
+                    cbi(tcm.bus_settings, 0); // set/clear speed bits (62500 baud)
+                    configure_sci_bus(tcm.bus_settings);
+                }
+
+                if (tcm.repeat && !tcm.repeat_iterate) // prepare next repeated message
+                {
+                    if (tcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
+                    {
+                        bool match = true;
+                        for (uint8_t i = 0; i < tcm.repeated_msg_length; i++)
+                        {
+                            if (tcm.msg_buffer[i] != usb_msg[TIMESTAMP_LENGTH+i]) match = false; // compare received bytes with message sent
+                        }
+                        if (match) tcm.repeat_next = true; // if echo is correct prepare next message
+                    }
+                    else if (tcm.msg_to_transmit_count > 1) // multiple messages
+                    {
+                        bool match = true;
+                        for (uint8_t i = 0; i < tcm.repeated_msg_length; i++)
+                        {
+                            if (tcm.msg_buffer[tcm.msg_buffer_ptr + 1 + i] != usb_msg[TIMESTAMP_LENGTH+i]) match = false; // compare received bytes with message sent
+                        }
+                        if (match)
+                        {
+                            tcm.repeat_next = true; // if echo is correct prepare next message
+
+                            // Increase the current message counter and set the buffer pointer to the next message length
+                            tcm.msg_to_transmit_count_ptr++;
+                            tcm.msg_buffer_ptr += tcm.repeated_msg_length + 1;
+                            tcm.repeated_msg_length = tcm.msg_buffer[tcm.msg_buffer_ptr]; // re-calculate new message length
+        
+                            // After the last message reset everything to zero to start at the beginning
+                            if (tcm.msg_to_transmit_count_ptr == tcm.msg_to_transmit_count)
+                            {
+                                tcm.msg_to_transmit_count_ptr = 0;
+                                tcm.msg_buffer_ptr = 0;
+                                tcm.repeated_msg_length = tcm.msg_buffer[tcm.msg_buffer_ptr]; // re-calculate new message length
+
+                                if (tcm.repeat_list_once) tcm.repeat_stop = true;
+                            }
+                        }
+                    }
+
+                    if (tcm.repeat_stop) // one-shot message list is terminated here
+                    {
+                        tcm.msg_buffer_ptr = 0;
+                        tcm.repeat = false;
+                        tcm.repeat_next = false;
+                        tcm.repeat_iterate = false;
+                        tcm.repeat_list_once = false;
+                    }
+                }
+                else if (tcm.repeat && tcm.repeat_iterate)
+                {
+                    if (tcm.message_length == (tcm.repeated_msg_length + 1)) // received message has to be 1 byte bigger than what was sent
+                    {
+                        tcm.repeat_next = true;
+                        tcm.repeat_retry_counter = 0;
+                    }
+                    else
+                    {
+                        tcm.msg_tx_pending = true; // send the same message again if no answer is received
+                        tcm.repeat_retry_counter++;
+                        if (tcm.repeat_retry_counter > 10)
+                        {
+                            tcm.repeat = false; // don't repeat after 10 failed attempts
+                            tcm.repeat_stop = true;
+                            tcm.repeat_retry_counter = 0;
+                        }
+                        delay(500);
+                    }
+
+                    if (tcm.repeat_stop)
+                    {
+                        tcm.msg_buffer_ptr = 0;
+                        tcm.repeated_msg_length = 0;
+                        tcm.repeat = false;
+                        tcm.repeat_next = false;
+                        tcm.repeat_iterate = false;
+                        tcm.repeat_list_once = false;
+
+                        uint8_t ret[2] = { 0x00, to_tcm }; // improvised payload array with only 1 element which is the target bus
+                        send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 2);
+                    }
+                }
+                
+                tcm_rx_flush();
+                tcm.msg_rx_count++;
+            }
+        }
+        else if (tcm.speed == HIBAUD) // handle high-speed mode (62500 baud), no need to wait for message completion here, it is already handled when the message was sent
+        {
+            if (tcm_rx_available() > 0)
+            {
+                tcm.message_length = tcm_rx_available();
+                uint16_t packet_length = TIMESTAMP_LENGTH + (2*tcm.message_length) - 1;
+                uint8_t usb_msg[packet_length]; // create local array which will hold the timestamp and the SCI-bus (TCM) message
+                update_timestamp(current_timestamp); // get current time for the timestamp
+
+                // Request and response bytes are mixed together in a single message:
+                // 00 00 00 00 F4 0A 00 0B 00 0C 00 0D 00...
+                // 00 00 00 00: timestamp
+                // F4: RAM table
+                // 0A: RAM address
+                // 00: RAM value at 0A
+                // 0B: RAM address
+                // 00: RAM value at 0B
+
+                for (uint8_t i = 0; i < TIMESTAMP_LENGTH; i++) // put 4 timestamp bytes in the front
+                {
+                    usb_msg[i] = current_timestamp[i];
+                }
+
+                if (tcm.msg_to_transmit_count == 1)
+                {
+                    usb_msg[4] = tcm.msg_buffer[0]; // put RAM table byte first
+                    tcm_getc(); // get rid of the first byte in the receive buffer, it's the RAM table byte
+                    
+                    for (uint8_t i = 0; i < tcm.msg_buffer_ptr; i++) 
+                    {
+                        usb_msg[5+(i*2)] = tcm.msg_buffer[i+1]; // put original request message byte next
+                        usb_msg[5+(i*2)+1] = tcm_getc() & 0xFF; // put response byte after the request byte
+                    }
+                    
+                    send_usb_packet(from_tcm, to_usb, msg_rx, sci_hs_bytes, usb_msg, packet_length);
+                }
+                else if (tcm.msg_to_transmit_count > 1)
+                {
+                    usb_msg[4] = tcm.msg_buffer[tcm.msg_buffer_ptr + 1]; // put RAM table byte first
+                    tcm_getc(); // get rid of the first byte in the receive buffer, it's the RAM table byte
+                    
+                    for (uint8_t i = 0; i < tcm.repeated_msg_length; i++) 
+                    {
+                        usb_msg[5+(i*2)] = tcm.msg_buffer[tcm.msg_buffer_ptr+i+2]; // put original request message byte next
+                        usb_msg[5+(i*2)+1] = tcm_getc() & 0xFF; // put response byte after the request byte
+                    }
+                    
+                    send_usb_packet(from_tcm, to_usb, msg_rx, sci_hs_bytes, usb_msg, packet_length);
+                }
+
+                if (usb_msg[4] == 0xFE) // pay attention to special bytes (speed change)
+                {
+                    sbi(tcm.bus_settings, 5); // set change settings bit
+                    sbi(tcm.bus_settings, 4); // set enable bit
+                    cbi(tcm.bus_settings, 1); // set/clear speed bits (7812.5 baud)
+                    sbi(tcm.bus_settings, 0); // set/clear speed bits (7812.5 baud)
+                    configure_sci_bus(tcm.bus_settings);
+                }
+
+                if (tcm.repeat && !tcm.repeat_iterate)
+                {
+                    if (tcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
+                    {
+                        tcm.repeat_next = true; // accept echo without verification...
+                    }
+                    else if (tcm.msg_to_transmit_count > 1) // multiple messages
+                    {
+                        tcm.repeat_next = true; // accept echo without verification...
+
+                        // Increase the current message counter and set the buffer pointer to the next message length
+                        tcm.msg_to_transmit_count_ptr++;
+                        tcm.msg_buffer_ptr += tcm.repeated_msg_length + 1;
+                        tcm.repeated_msg_length = tcm.msg_buffer[tcm.msg_buffer_ptr]; // re-calculate new message length
+    
+                        // After the last message reset everything to zero to start at the beginning
+                        if (tcm.msg_to_transmit_count_ptr == tcm.msg_to_transmit_count)
+                        {
+                            tcm.msg_to_transmit_count_ptr = 0;
+                            tcm.msg_buffer_ptr = 0;
+                            tcm.repeated_msg_length = tcm.msg_buffer[tcm.msg_buffer_ptr]; // re-calculate new message length
+
+                            if (tcm.repeat_list_once) tcm.repeat_stop = true;
+                        }
+                    }
+
+                    if (tcm.repeat_stop) // one-shot message list is terminated here
+                    {
+                        tcm.msg_buffer_ptr = 0;
+                        tcm.repeat = false;
+                        tcm.repeat_next = false;
+                        tcm.repeat_iterate = false;
+                        tcm.repeat_list_once = false;
+                    }
+                }
+                else if (tcm.repeat && tcm.repeat_iterate)
+                {
+                    // TODO
+                    if (true) // check proper echo
+                    {
+                        tcm.repeat_next = true; // accept echo without verification...
+                    }
+                    else
+                    {
+                        tcm.msg_tx_pending = true; // send the same message again
+                    }
+                    
+                    if (tcm.repeat_stop)
+                    {
+                        tcm.msg_buffer_ptr = 0;
+                        tcm.repeated_msg_length = 0;
+                        tcm.repeat = false;
+                        tcm.repeat_next = false;
+                        tcm.repeat_iterate = false;
+                        tcm.repeat_list_once = false;
+                    }
+                }
+
+                handle_lcd(from_tcm, usb_msg, 4, TIMESTAMP_LENGTH+tcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                tcm_rx_flush();
+                tcm.msg_rx_count++;
+            }
+        }
+        else // other non-standard speeds are handled here
+        {
+            if (((millis() - tcm.last_byte_millis) > SCI_LS_T3_DELAY) && (tcm_rx_available() > 0))
+            { 
+                tcm.message_length = tcm_rx_available();
+                uint8_t usb_msg[TIMESTAMP_LENGTH+tcm.message_length]; // create local array which will hold the timestamp and the SCI-bus (TCM) message
+                update_timestamp(current_timestamp); // get current time for the timestamp
+                
+                for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+                {
+                    usb_msg[i] = current_timestamp[i];
+                }
+                for (uint8_t i = 0; i < tcm.message_length; i++) // put every byte in the SCI-bus message after the timestamp
+                {
+                    usb_msg[TIMESTAMP_LENGTH+i] = tcm_getc() & 0xFF;
+                }
+
+                send_usb_packet(from_tcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, TIMESTAMP_LENGTH+tcm.message_length); // send message to laptop
+
+                // No automatic speed change for 976.5 and 125000 baud!
+
+                if (tcm.repeat && !tcm.repeat_iterate)
+                {
+                    if (tcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
+                    {
+                        tcm.repeat_next = true; // accept echo without verification...
+                    }
+                    else if (tcm.msg_to_transmit_count > 1) // multiple messages
+                    {
+                        tcm.repeat_next = true; // accept echo without verification...
+
+                        // Increase the current message counter and set the buffer pointer to the next message length
+                        tcm.msg_to_transmit_count_ptr++;
+                        tcm.msg_buffer_ptr += tcm.repeated_msg_length + 1;
+                        tcm.repeated_msg_length = tcm.msg_buffer[tcm.msg_buffer_ptr]; // re-calculate new message length
+    
+                        // After the last message reset everything to zero to start at the beginning
+                        if (tcm.msg_to_transmit_count_ptr == tcm.msg_to_transmit_count)
+                        {
+                            tcm.msg_to_transmit_count_ptr = 0;
+                            tcm.msg_buffer_ptr = 0;
+                            tcm.repeated_msg_length = tcm.msg_buffer[tcm.msg_buffer_ptr]; // re-calculate new message length
+
+                            if (tcm.repeat_list_once) tcm.repeat_stop = true;
+                        }
+                    }
+
+                    if (tcm.repeat_stop) // one-shot message list is terminated here
+                    {
+                        tcm.msg_buffer_ptr = 0;
+                        tcm.repeat = false;
+                        tcm.repeat_next = false;
+                        tcm.repeat_iterate = false;
+                        tcm.repeat_list_once = false;
+                    }
+                }
+                else if (tcm.repeat && tcm.repeat_iterate)
+                {
+                    // TODO
+                    if (true) // check proper echo
+                    {
+                        tcm.repeat_next = true; // accept echo without verification...
+                    }
+                    else
+                    {
+                        tcm.msg_tx_pending = true; // send the same message again
+                    }
+                    
+                    if (tcm.repeat_stop)
+                    {
+                        tcm.msg_buffer_ptr = 0;
+                        tcm.repeated_msg_length = 0;
+                        tcm.repeat = false;
+                        tcm.repeat_next = false;
+                        tcm.repeat_iterate = false;
+                        tcm.repeat_list_once = false;
+                    }
+                }
+                
+                handle_lcd(from_tcm, usb_msg, 4, TIMESTAMP_LENGTH+tcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                tcm_rx_flush();
+                tcm.msg_rx_count++;
+            }
+        }
+
+        // Repeated messages are prepared here for transmission
+        if (tcm.repeat && (tcm_rx_available() == 0))
+        {
+            current_millis = millis(); // check current time
+            if ((current_millis - tcm.repeated_msg_last_millis) > tcm.repeated_msg_interval) // wait between messages
+            {
+                tcm.repeated_msg_last_millis = current_millis;
+                
+                if (tcm.repeat_next && !tcm.repeat_iterate) // no iteration, same message over and over again
+                {
+                    // The message is already in the tcm.msg_buffer array, just set flags
+                    tcm.msg_tx_pending = true; // set flag
+                    tcm.repeat_next = false;
+                }
+                else if (tcm.repeat_next && tcm.repeat_iterate) // iteration, message is incremented for every repeat according to settings
+                {
+                    if (tcm.repeated_msg_length == 0x04) // 4-bytes length
+                    {
+                        if (tcm.msg_buffer_ptr == 0) // no existing message in the buffer yet, lets load the first one
+                        {
+                            tcm.msg_buffer[0] = (tcm.repeated_msg_raw_start >> 24) & 0xFF; // decompose raw message from its integer form to byte components
+                            tcm.msg_buffer[1] = (tcm.repeated_msg_raw_start >> 16) & 0xFF;
+                            tcm.msg_buffer[2] = (tcm.repeated_msg_raw_start >> 8) & 0xFF;
+                            tcm.msg_buffer[3] = tcm.repeated_msg_raw_start & 0xFF;
+                            tcm.msg_buffer_ptr = 4;
+                        }
+                        else // increment existing message
+                        {
+                            // First combine bytes into a single integer
+                            uint32_t message = to_uint32(tcm.msg_buffer[0], tcm.msg_buffer[1], tcm.msg_buffer[2], tcm.msg_buffer[3]);
+                            message += tcm.repeated_msg_increment; // add increment
+                            tcm.msg_buffer[0] = (message >> 24) & 0xFF; // decompose integer into byte compontents again
+                            tcm.msg_buffer[1] = (message >> 16) & 0xFF;
+                            tcm.msg_buffer[2] = (message >> 8) & 0xFF;
+                            tcm.msg_buffer[3] = message & 0xFF;
+                            tcm.msg_buffer_ptr = 4;
+                            
+                            if ((message + tcm.repeated_msg_increment) > tcm.repeated_msg_raw_end) tcm.repeat_stop = true; // don't prepare another message, it's the end
+                        }
+                    }
+                    else if (tcm.repeated_msg_length == 0x03) // 3-bytes length
+                    {
+                        if (tcm.msg_buffer_ptr == 0) // no existing message in the buffer yet, lets load the first one
+                        {
+                            tcm.msg_buffer[0] = (tcm.repeated_msg_raw_start >> 16) & 0xFF; // decompose raw message from its integer form to byte components
+                            tcm.msg_buffer[1] = (tcm.repeated_msg_raw_start >> 8) & 0xFF;
+                            tcm.msg_buffer[2] = tcm.repeated_msg_raw_start & 0xFF;
+                            tcm.msg_buffer_ptr = 3;
+                        }
+                        else // increment existing message
+                        {
+                            // First combine bytes into a single integer
+                            uint32_t message = to_uint32(0, tcm.msg_buffer[0], tcm.msg_buffer[1], tcm.msg_buffer[2]);
+                            message += tcm.repeated_msg_increment; // add increment
+                            tcm.msg_buffer[0] = (message >> 16) & 0xFF; // decompose integer into byte compontents again
+                            tcm.msg_buffer[1] = (message >> 8) & 0xFF;
+                            tcm.msg_buffer[2] = message & 0xFF;
+                            tcm.msg_buffer_ptr = 3;
+                            
+                            if ((message + tcm.repeated_msg_increment) > tcm.repeated_msg_raw_end) tcm.repeat_stop = true; // don't prepare another message, it's the end
+                        }
+                    }
+                    else if (tcm.repeated_msg_length == 0x02) // 2-bytes length
+                    {
+                        if (tcm.msg_buffer_ptr == 0) // no existing message in the buffer yet, lets load the first one
+                        {
+                            tcm.msg_buffer[0] = (tcm.repeated_msg_raw_start >> 8) & 0xFF; // decompose raw message from its integer form to byte components
+                            tcm.msg_buffer[1] = tcm.repeated_msg_raw_start & 0xFF;
+                            tcm.msg_buffer_ptr = 2;
+                        }
+                        else // increment existing message
+                        {
+                            // First combine bytes into a single integer
+                            uint16_t message = to_uint16(tcm.msg_buffer[0], tcm.msg_buffer[1]);
+                            message += tcm.repeated_msg_increment; // add increment
+                            tcm.msg_buffer[0] = (message >> 8) & 0xFF; // decompose integer into byte compontents again
+                            tcm.msg_buffer[1] = message & 0xFF;
+                            tcm.msg_buffer_ptr = 2;
+                            
+                            if ((message + tcm.repeated_msg_increment) > tcm.repeated_msg_raw_end) tcm.repeat_stop = true; // don't prepare another message, it's the end
+                        }
+                    }
+                    else if (tcm.repeated_msg_length == 0x01) // 1-byte length
+                    {
+                        if (tcm.msg_buffer_ptr == 0) // no existing message in the buffer yet, lets load the first one
+                        {
+                            tcm.msg_buffer[0] = tcm.repeated_msg_raw_start & 0xFF; // decompose raw message from its integer form to byte components
+                            tcm.msg_buffer_ptr = 1;
+                        }
+                        else // increment existing message
+                        {
+                            // First combine bytes into a single integer
+                            tcm.msg_buffer[0] += tcm.repeated_msg_increment; // add increment
+                            tcm.msg_buffer_ptr = 1;
+                            
+                            if ((tcm.msg_buffer[0] + tcm.repeated_msg_increment) > tcm.repeated_msg_raw_end) tcm.repeat_stop = true; // don't prepare another message, it's the end
+                        }
+                    }
+
+                    tcm.msg_tx_pending = true; // set flag
+                    tcm.repeat_next = false;
+                }
+            }
+        }
+
+        // Send message
+        if (tcm.msg_tx_pending && (tcm_rx_available() == 0))
+        {
+            if (tcm.speed == LOBAUD) // low speed mode (7812.5 baud), half-duplex mode approach
+            {
+                if (tcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
+                {
+                    for (uint8_t i = 0; i < tcm.msg_buffer_ptr; i++) // repeat for the length of the message
+                    {
+                        timeout_reached = false;
+                        timeout_start = millis(); // save current time
+                        tcm_putc(tcm.msg_buffer[i]); // put the next byte in the transmit buffer
+                        while ((tcm_rx_available() <= i) && !timeout_reached)
+                        {
+                            // wait here for echo (half-duplex mode)
+                            if ((millis() - timeout_start) > SCI_LS_T1_DELAY) timeout_reached = true;
+                        }
+                        if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
+                        {
+                            timeout_reached = false;
+                            send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                            break;
+                        }
+                    }
+                }
+                else if (tcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
+                {
+                    // Navigate in the main buffer after the message length byte and start sending those bytes
+                    for (uint8_t i = (tcm.msg_buffer_ptr + 1); i < (tcm.msg_buffer_ptr + 1 + tcm.repeated_msg_length); i++)
+                    {
+                        timeout_reached = false;
+                        timeout_start = millis(); // save current time
+                        tcm_putc(tcm.msg_buffer[i]); // put the next byte in the transmit buffer
+                        while ((tcm_rx_available() <= (i - tcm.msg_buffer_ptr - 1)) && !timeout_reached)
+                        {
+                            // wait here for echo (half-duplex mode)
+                            if ((millis() - timeout_start) > SCI_LS_T1_DELAY) timeout_reached = true;
+                        }
+                        if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
+                        {
+                            timeout_reached = false;
+                            send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                            break;
+                        }
+                    }
+                }
+            }
+            else if (tcm.speed == HIBAUD) // high speed mode (7812.5 baud), full-duplex mode approach
+            {
+                uint8_t echo_retry_counter = 0;
+                
+                if (tcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
+                {
+                    if (array_contains(sci_hi_speed_memarea, 16, tcm.msg_buffer[0])) // make sure that the memory table select byte is approved by the TCM before sending the full message
+                    {
+                        if ((tcm.msg_buffer_ptr > 1) && (tcm.msg_buffer[1] == 0xFF)) // return full RAM-table if the first address is an invalid 0xFF
+                        {
+                            // Prepare message buffer as if it was filled with data beforehand
+                            for (uint8_t i = 0; i < 240; i++)
+                            {
+                                tcm.msg_buffer[1 + i] = i; // put the address byte after the memory table pointer
+                            }
+                            tcm.msg_buffer_ptr = 241;
+                        }
+                        
+                        for (uint8_t i = 0; i < tcm.msg_buffer_ptr; i++) // repeat for the length of the message
+                        {
+                            tcm_again_01:
+                            timeout_reached = false;
+                            timeout_start = millis(); // save current time
+                            tcm_putc(tcm.msg_buffer[i]); // put the next byte in the transmit buffer
+                            while ((tcm_rx_available() <= i) && !timeout_reached)
+                            {
+                                // wait here for response (echo in case of F0...FF)
+                                if ((millis() - timeout_start) > SCI_HS_T3_DELAY) timeout_reached = true;
+                            }
+                            if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
+                            {
+                                timeout_reached = false;
+                                uint8_t ret[2] = { tcm.msg_buffer[0], tcm.msg_buffer[i] };
+                                send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_no_response, ret, 2); // return two bytes to determine which table and which address is unresponsive
+                                break;
+                            }
+                            if (tcm_peek(0) != tcm.msg_buffer[0]) // make sure the first RAM-table byte is echoed back correctly
+                            {
+                                tcm_rx_flush();
+                                echo_retry_counter++;
+                                if (echo_retry_counter < 10) goto tcm_again_01;
+                                else
+                                {
+                                    send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_memory_ptr_no_response, tcm.msg_buffer, 1); // send error packet back to the laptop
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Messsage doesn't start with a RAM-table value, invalid
+                        send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_invalid_memory_ptr, tcm.msg_buffer, 1); // send error packet back to the laptop
+                    }
+                }
+                else if (tcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
+                {
+                    // Navigate in the main buffer after the message length byte and start sending those bytes
+                    if (array_contains(sci_hi_speed_memarea, 16, tcm.msg_buffer[tcm.msg_buffer_ptr + 1])) // make sure that the memory table select byte is approved by the TCM before sending the full message
+                    {
+                        uint8_t j = 0;
+                        
+                        for (uint8_t i = (tcm.msg_buffer_ptr + 1); i < (tcm.msg_buffer_ptr + 1 + tcm.repeated_msg_length); i++) // repeat for the length of the message
+                        {
+                            tcm_again_02:
+                            timeout_reached = false;
+                            timeout_start = millis(); // save current time
+                            tcm_putc(tcm.msg_buffer[i]); // put the next byte in the transmit buffer
+                           
+                            while ((tcm_rx_available() <= j) && !timeout_reached)
+                            {
+                                // wait here for response (echo in case of F0...FF)
+                                if ((millis() - timeout_start) > SCI_HS_T3_DELAY) timeout_reached = true;
+                            }
+                            if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
+                            {
+                                timeout_reached = false;
+                                uint8_t ret[2] = { tcm.msg_buffer[tcm.msg_buffer_ptr + 1], tcm.msg_buffer[tcm.msg_buffer_ptr + 1 + j] };
+                                send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_no_response, ret, 2); // return two bytes to determine which table and which address is unresponsive
+                                break;
+                            }
+                            if (tcm_peek(0) != tcm.msg_buffer[tcm.msg_buffer_ptr + 1]) // make sure the first RAM-table byte is echoed back correctly
+                            {
+                                tcm_rx_flush();
+                                echo_retry_counter++;
+                                if (echo_retry_counter < 10) goto tcm_again_02;
+                                else
+                                {
+                                    send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_memory_ptr_no_response, tcm.msg_buffer, 1); // send error packet back to the laptop
+                                    break;
+                                }
+                            }
+                            
+                            j++;
+                        }
+                    }
+                    else
+                    {
+                        // Messsage doesn't start with a RAM-table value, invalid
+                        send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_invalid_memory_ptr, tcm.msg_buffer, 1); // send error packet back to the laptop
+                    }
+                }
+            }
+            else // non-standard speeds
+            {
+                if (tcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
+                {
+                    for (uint8_t i = 0; i < tcm.msg_buffer_ptr; i++) // repeat for the length of the message
+                    {
+                        timeout_reached = false;
+                        timeout_start = millis(); // save current time
+                        tcm_putc(tcm.msg_buffer[i]); // put the next byte in the transmit buffer
+                        while ((tcm_rx_available() <= i) && !timeout_reached)
+                        {
+                            // wait here for echo (half-duplex mode)
+                            if ((millis() - timeout_start) > SCI_LS_T1_DELAY) timeout_reached = true;
+                        }
+                        if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
+                        {
+                            timeout_reached = false;
+                            send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                            break;
+                        }
+                    }
+                }
+                else if (tcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
+                {
+                    uint8_t j = 0;
+                    
+                    // Navigate in the main buffer after the message length byte and start sending those bytes 
+                    for (uint8_t i = (tcm.msg_buffer_ptr + 1); i < (tcm.msg_buffer_ptr + 1 + tcm.repeated_msg_length); i++) // repeat for the length of the message
+                    {
+                        timeout_reached = false;
+                        timeout_start = millis(); // save current time
+                        tcm_putc(tcm.msg_buffer[i]); // put the next byte in the transmit buffer
+                       
+                        while ((tcm_rx_available() <= j) && !timeout_reached)
+                        {
+                            // wait here for response (echo in case of F0...FF)
+                            if ((millis() - timeout_start) > SCI_LS_T1_DELAY) timeout_reached = true;
+                        }
+                        if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
+                        {
+                            timeout_reached = false;
+                            uint8_t ret[2] = { tcm.msg_buffer[tcm.msg_buffer_ptr + 1], tcm.msg_buffer[tcm.msg_buffer_ptr + 1 + j] };
+                            send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_no_response, ret, 2); // return two bytes to determine which table and which address is unresponsive
+                            break;
+                        }
+                        
+                        j++;
+                    }
+                }
+            }
+            
+            tcm.msg_tx_pending = false; // re-arm, make it possible to send a message again
+            tcm.msg_tx_count++;
+        }
+    }
         
 } // end of handle_sci_data
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ChryslerCCDSCIScanner
 {
-    public class SCIDiagnosticsTable
+    public class SCIPCMDiagnosticsTable
     {
         public delegate void TableUpdatedEventHandler(object sender, EventArgs e);
         public event TableUpdatedEventHandler TableUpdated;
@@ -16,7 +16,7 @@ namespace ChryslerCCDSCIScanner
 
         public const int listStart = 5;
 
-        public SCIDiagnosticsTable()
+        public SCIPCMDiagnosticsTable()
         {
             InitSCIPCMTable();
             InitRAMDumpTable();

@@ -30,10 +30,8 @@ namespace ChryslerCCDSCIScanner
         public const int intEEPROMsize = 4096;
         public const int extEEPROMsize = 4096;
 
-        public string DateTimeNow;
         public static string USBTextLogFilename;
         public static string USBBinaryLogFilename;
-        public static string DiagnosticsSnapshotFilename;
         public static string CCDLogFilename;
         public static string CCDB2F2LogFilename;
         public static string CCDEPROMTextFilename;
@@ -45,9 +43,11 @@ namespace ChryslerCCDSCIScanner
         public static string PCMEPROMBinaryFilename;
         public static string PCMEEPROMTextFilename;
         public static string PCMEEPROMBinaryFilename;
+        public static string TCMLogFilename;
 
         public int lastCCDScrollBarPosition = 0;
         public int lastPCMScrollBarPosition = 0;
+        public int lastTCMScrollBarPosition = 0;
 
         public static string units = string.Empty;
         public static bool includeTimestampInLogFiles = false;
@@ -56,7 +56,8 @@ namespace ChryslerCCDSCIScanner
         public AboutForm About;
         public Packet Packet = new Packet();
         public CCD CCD = new CCD();
-        public SCI PCM = new SCI();
+        public SCIPCM PCM = new SCIPCM();
+        public SCITCM TCM = new SCITCM();
         public System.Timers.Timer TimeoutTimer = new System.Timers.Timer();
         public WebClient Downloader = new WebClient();
         public FileInfo fi = new FileInfo(@"DRBDBReader/database.mem");
@@ -78,12 +79,13 @@ namespace ChryslerCCDSCIScanner
             if (!Directory.Exists("LOG")) Directory.CreateDirectory("LOG");
             if (!Directory.Exists("LOG/CCD")) Directory.CreateDirectory("LOG/CCD");
             if (!Directory.Exists("LOG/PCM")) Directory.CreateDirectory("LOG/PCM");
+            if (!Directory.Exists("LOG/TCM")) Directory.CreateDirectory("LOG/TCM");
             if (!Directory.Exists("LOG/USB")) Directory.CreateDirectory("LOG/USB");
             if (!Directory.Exists("ROMs")) Directory.CreateDirectory("ROMs");
             if (!Directory.Exists("ROMs/CCD")) Directory.CreateDirectory("ROMs/CCD");
             if (!Directory.Exists("ROMs/PCM")) Directory.CreateDirectory("ROMs/PCM");
 
-            DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             USBTextLogFilename = @"LOG/USB/usblog_" + DateTimeNow + ".txt";
             USBBinaryLogFilename = @"LOG/USB/usblog_" + DateTimeNow + ".bin";
 
@@ -100,6 +102,8 @@ namespace ChryslerCCDSCIScanner
             PCMEEPROMTextFilename = @"ROMs/pcm_eeprom_" + DateTimeNow + ".txt";
             PCMEEPROMBinaryFilename = @"ROMs/pcm_eeprom_" + DateTimeNow + ".bin";
 
+            TCMLogFilename = @"LOG/TCM/tcmlog_" + DateTimeNow + ".txt";
+
             TimeoutTimer.Elapsed += new ElapsedEventHandler(TimeoutHandler);
             TimeoutTimer.Interval = 2000; // ms
             TimeoutTimer.AutoReset = false;
@@ -109,6 +113,7 @@ namespace ChryslerCCDSCIScanner
 
             CCDBusDiagnosticsListBox.Items.AddRange(CCD.Diagnostics.Table.ToArray());
             SCIBusPCMDiagnosticsListBox.Items.AddRange(PCM.Diagnostics.Table.ToArray());
+            SCIBusTCMDiagnosticsListBox.Items.AddRange(TCM.Diagnostics.Table.ToArray());
 
             SCIBusModuleComboBox.SelectedIndex = 0;
             SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
@@ -201,7 +206,7 @@ namespace ChryslerCCDSCIScanner
                     success = int.TryParse(SCIBusTxMessageRepeatIntervalTextBox.Text, out repeatInterval);
                     break;
                 case Packet.Target.tcm:
-                    //success = int.TryParse(SCIBusTxMessageRepeatIntervalTextBox.Text, out repeatInterval);
+                    success = int.TryParse(SCIBusTxMessageRepeatIntervalTextBox.Text, out repeatInterval);
                     break;
                 default:
                     break;
@@ -220,7 +225,7 @@ namespace ChryslerCCDSCIScanner
                         SCIBusTxMessageRepeatIntervalTextBox.Text = "100";
                         break;
                     case Packet.Target.tcm:
-                        //SCIBusTxMessageRepeatIntervalTextBox.Text = "100";
+                        SCIBusTxMessageRepeatIntervalTextBox.Text = "100";
                         break;
                     default:
                         break;
@@ -241,7 +246,7 @@ namespace ChryslerCCDSCIScanner
                     repeatIncrement = Util.HexStringToByte(SCIBusTxMessageRepeatIncrementTextBox.Text);
                     break;
                 case Packet.Target.tcm:
-                    //repeatIncrement = Util.HexStringToByte(SCIBusTxMessageRepeatIncrementTextBox.Text);
+                    repeatIncrement = Util.HexStringToByte(SCIBusTxMessageRepeatIncrementTextBox.Text);
                     break;
                 default:
                     break;
@@ -260,7 +265,7 @@ namespace ChryslerCCDSCIScanner
                         SCIBusTxMessageRepeatIncrementTextBox.Text = "00 01";
                         break;
                     case Packet.Target.tcm:
-                        //SCIBusTxMessageRepeatIncrementTextBox.Text = "00 01";
+                        SCIBusTxMessageRepeatIncrementTextBox.Text = "00 01";
                         break;
                     default:
                         break;
@@ -293,7 +298,7 @@ namespace ChryslerCCDSCIScanner
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Set SCI-bus (PCM) message repeat behavior:", Packet.tx.buffer);
                     break;
                 case Packet.Target.tcm:
-                    //Util.UpdateTextBox(USBTextBox, "[<-TX] Set SCI-bus (TCM) message repeat behavior:", Packet.tx.buffer);
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Set SCI-bus (TCM) message repeat behavior:", Packet.tx.buffer);
                     break;
                 default:
                     break;
@@ -352,7 +357,7 @@ namespace ChryslerCCDSCIScanner
                             }
                             break;
                         case (byte)Packet.Command.status:
-                            if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 43))
+                            if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 52))
                             {
                                 string AVRSignature = Util.ByteToHexString(Packet.rx.payload, 0, 3);
                                 if ((Packet.rx.payload[0] == 0x1E) && (Packet.rx.payload[1] == 0x98) && (Packet.rx.payload[2] == 0x01)) AVRSignature += " (ATmega2560)";
@@ -385,7 +390,7 @@ namespace ChryslerCCDSCIScanner
                                 string CCDBusMsgRxCountString = string.Empty;
                                 string CCDBusMsgTxCountString = string.Empty;
 
-                                if (((Packet.rx.payload[15] >> 4) & 0x01) == 0x00)
+                                if (Util.IsBitClear(Packet.rx.payload[15], 4))
                                 {
                                     CCDBusTransceiverOnOffCheckBox.CheckedChanged -= new EventHandler(CCDBusSettingsCheckBox_CheckedChanged);
                                     CCDBusTransceiverOnOffCheckBox.Checked = false;
@@ -402,10 +407,10 @@ namespace ChryslerCCDSCIScanner
                                     CCDBusStateString = "enabled";
                                 }
 
-                                if (((Packet.rx.payload[15] >> 3) & 0x01) == 0x00) CCDBusLogicString = "non-inverted";
+                                if (Util.IsBitClear(Packet.rx.payload[15], 3)) CCDBusLogicString = "non-inverted";
                                 else CCDBusLogicString = "inverted";
 
-                                if (((Packet.rx.payload[15] >> 2) & 0x01) == 0x00)
+                                if (Util.IsBitClear(Packet.rx.payload[15], 2))
                                 {
                                     CCDBusTerminationBiasOnOffCheckBox.CheckedChanged -= new EventHandler(this.CCDBusSettingsCheckBox_CheckedChanged);
                                     CCDBusTerminationBiasOnOffCheckBox.Checked = false;
@@ -453,11 +458,11 @@ namespace ChryslerCCDSCIScanner
                                 string SCIBusPCMMsgRxCountString = string.Empty;
                                 string SCIBusPCMMsgTxCountString = string.Empty;
 
-                                if (((Packet.rx.payload[24] >> 4) & 0x01) == 1)
+                                if (Util.IsBitSet(Packet.rx.payload[24], 4))
                                 {
                                     SCIBusPCMStateString = "enabled";
 
-                                    if (((Packet.rx.payload[24] >> 3) & 0x01) == 0x00)
+                                    if (Util.IsBitClear(Packet.rx.payload[24], 3))
                                     {
                                         SCIBusPCMLogicString += "non-inverted";
                                         SCIBusOBD1EngineCableUsedCheckBox.Checked = false;
@@ -468,7 +473,7 @@ namespace ChryslerCCDSCIScanner
                                         SCIBusOBD1EngineCableUsedCheckBox.Checked = true;
                                     }
 
-                                    if (((Packet.rx.payload[24] >> 2) & 0x01) == 0)
+                                    if (Util.IsBitClear(Packet.rx.payload[24], 2))
                                     {
                                         SCIBusPCMOBDConfigurationString = "A";
                                         SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
@@ -527,6 +532,67 @@ namespace ChryslerCCDSCIScanner
                                 SCIBusPCMMsgRxCountString = ((Packet.rx.payload[25] << 24) + (Packet.rx.payload[26] << 16) + (Packet.rx.payload[27] << 8) + Packet.rx.payload[28]).ToString();
                                 SCIBusPCMMsgTxCountString = ((Packet.rx.payload[29] << 24) + (Packet.rx.payload[30] << 16) + (Packet.rx.payload[31] << 8) + Packet.rx.payload[32]).ToString();
 
+                                string SCIBusTCMStateString = string.Empty;
+                                string SCIBusTCMLogicString = string.Empty;
+                                string SCIBusTCMOBDConfigurationString = string.Empty;
+                                string SCIBusTCMSpeedString = string.Empty;
+                                string SCIBusTCMMsgRxCountString = string.Empty;
+                                string SCIBusTCMMsgTxCountString = string.Empty;
+
+                                if (Util.IsBitSet(Packet.rx.payload[33], 4))
+                                {
+                                    SCIBusTCMStateString = "enabled";
+
+                                    if (Util.IsBitClear(Packet.rx.payload[33], 3))
+                                    {
+                                        SCIBusTCMLogicString += "non-inverted";
+                                    }
+                                    else
+                                    {
+                                        SCIBusTCMLogicString += "inverted";
+                                    }
+
+                                    if (Util.IsBitClear(Packet.rx.payload[33], 2))
+                                    {
+                                        SCIBusTCMOBDConfigurationString = "A";
+                                    }
+                                    else
+                                    {
+                                        SCIBusTCMOBDConfigurationString = "B";
+                                    }
+
+                                    switch (Packet.rx.payload[33] & 0x03)
+                                    {
+                                        case 0x00:
+                                            SCIBusTCMSpeedString = "976.5 baud";
+                                            break;
+                                        case 0x01:
+                                            SCIBusTCMSpeedString = "7812.5 baud";
+                                            break;
+                                        case 0x02:
+                                            SCIBusTCMSpeedString = "62500 baud";
+                                            break;
+                                        case 0x03:
+                                            SCIBusTCMSpeedString = "125000 baud";
+                                            break;
+                                        default:
+                                            SCIBusTCMSpeedString = "unknown";
+                                            break;
+                                    }
+                                }
+                                else
+                                {
+                                    SCIBusTCMStateString = "disabled";
+                                    SCIBusTCMLogicString = "-";
+                                    SCIBusTCMOBDConfigurationString = "-";
+                                    SCIBusTCMSpeedString = "-";
+                                }
+
+                                TCM.UpdateHeader(SCIBusTCMStateString, SCIBusTCMSpeedString, SCIBusTCMLogicString, SCIBusTCMOBDConfigurationString);
+
+                                SCIBusTCMMsgRxCountString = ((Packet.rx.payload[34] << 24) + (Packet.rx.payload[35] << 16) + (Packet.rx.payload[36] << 8) + Packet.rx.payload[37]).ToString();
+                                SCIBusTCMMsgTxCountString = ((Packet.rx.payload[38] << 24) + (Packet.rx.payload[39] << 16) + (Packet.rx.payload[40] << 8) + Packet.rx.payload[41]).ToString();
+
                                 string LCDStatusString = string.Empty;
                                 string LCDI2CAddressString = string.Empty;
                                 string LCDSizeString = string.Empty;
@@ -534,7 +600,7 @@ namespace ChryslerCCDSCIScanner
                                 string LCDUnitsString = string.Empty;
                                 string LCDDataSourceString = string.Empty;
 
-                                if (Packet.rx.payload[33] == 0x00)
+                                if (Packet.rx.payload[42] == 0x00)
                                 {
                                     LCDStateComboBox.SelectedIndex = 0;
                                     LCDStatusString = "disabled";
@@ -545,17 +611,17 @@ namespace ChryslerCCDSCIScanner
                                     LCDStatusString = "enabled";
                                 }
 
-                                LCDI2CAddressTextBox.Text = Util.ByteToHexString(Packet.rx.payload, 34, 1);
-                                LCDI2CAddressString = Util.ByteToHexString(Packet.rx.payload, 34, 1) + " (hex)";
+                                LCDI2CAddressTextBox.Text = Util.ByteToHexString(Packet.rx.payload, 43, 1);
+                                LCDI2CAddressString = Util.ByteToHexString(Packet.rx.payload, 43, 1) + " (hex)";
 
-                                LCDWidthTextBox.Text = Packet.rx.payload[35].ToString("0");
-                                LCDHeightTextBox.Text = Packet.rx.payload[36].ToString("0");
-                                LCDSizeString = Packet.rx.payload[35].ToString("0") + "x" + Packet.rx.payload[36].ToString("0") + " characters";
+                                LCDWidthTextBox.Text = Packet.rx.payload[44].ToString("0");
+                                LCDHeightTextBox.Text = Packet.rx.payload[45].ToString("0");
+                                LCDSizeString = Packet.rx.payload[44].ToString("0") + "x" + Packet.rx.payload[45].ToString("0") + " characters";
 
-                                LCDRefreshRateTextBox.Text = Packet.rx.payload[37].ToString("0");
-                                LCDRefreshRateString = Packet.rx.payload[37].ToString("0") + " Hz";
+                                LCDRefreshRateTextBox.Text = Packet.rx.payload[46].ToString("0");
+                                LCDRefreshRateString = Packet.rx.payload[46].ToString("0") + " Hz";
 
-                                if (Packet.rx.payload[38] == 0x00)
+                                if (Packet.rx.payload[47] == 0x00)
                                 {
                                     LCDUnitsString = "imperial";
                                 }
@@ -564,7 +630,7 @@ namespace ChryslerCCDSCIScanner
                                     LCDUnitsString = "metric";
                                 }
 
-                                switch (Packet.rx.payload[39])
+                                switch (Packet.rx.payload[48])
                                 {
                                     case 0x01:
                                         LCDDataSourceString = "CCD-bus";
@@ -584,8 +650,8 @@ namespace ChryslerCCDSCIScanner
                                         break;
                                 }
 
-                                ushort LEDHeartbeatInterval = (ushort)((Packet.rx.payload[40] << 8) + Packet.rx.payload[41]);
-                                ushort LEDBlinkDuration = (ushort)((Packet.rx.payload[42] << 8) + Packet.rx.payload[43]);
+                                ushort LEDHeartbeatInterval = (ushort)((Packet.rx.payload[49] << 8) + Packet.rx.payload[50]);
+                                ushort LEDBlinkDuration = (ushort)((Packet.rx.payload[51] << 8) + Packet.rx.payload[52]);
 
                                 string LEDHeartbeatStateString = string.Empty;
                                 if (LEDHeartbeatInterval > 0) LEDHeartbeatStateString = "enabled";
@@ -619,6 +685,13 @@ namespace ChryslerCCDSCIScanner
                                                                "       Speed: " + SCIBusPCMSpeedString + Environment.NewLine +
                                                                "       Messages received: " + SCIBusPCMMsgRxCountString + Environment.NewLine +
                                                                "       Messages sent: " + SCIBusPCMMsgTxCountString + Environment.NewLine +
+                                                               "       ----------SCI-bus (TCM) status----------" + Environment.NewLine +
+                                                               "       State: " + SCIBusTCMStateString + Environment.NewLine +
+                                                               "       Logic: " + SCIBusTCMLogicString + Environment.NewLine +
+                                                               "       OBD config.: " + SCIBusTCMOBDConfigurationString + Environment.NewLine +
+                                                               "       Speed: " + SCIBusTCMSpeedString + Environment.NewLine +
+                                                               "       Messages received: " + SCIBusTCMMsgRxCountString + Environment.NewLine +
+                                                               "       Messages sent: " + SCIBusTCMMsgTxCountString + Environment.NewLine +
                                                                "       ---------------LCD status---------------" + Environment.NewLine +
                                                                "       State: " + LCDStatusString + Environment.NewLine +
                                                                "       I2C address: " + LCDI2CAddressString + Environment.NewLine +
@@ -728,76 +801,109 @@ namespace ChryslerCCDSCIScanner
                                     {
                                         if (Packet.rx.payload[0] == 0x00) // OK
                                         {
-                                            string SCIBusStateString = string.Empty;
-                                            string SCIBusLogicString = string.Empty;
-                                            string SCIBusOBDConfigurationString = string.Empty;
-                                            string SCIBusSpeedString = string.Empty;
+                                            string SCIBusPCMStateString = string.Empty;
+                                            string SCIBusPCMLogicString = string.Empty;
+                                            string SCIBusPCMOBDConfigurationString = string.Empty;
+                                            string SCIBusPCMSpeedString = string.Empty;
+                                            string SCIBusTCMStateString = string.Empty;
+                                            string SCIBusTCMLogicString = string.Empty;
+                                            string SCIBusTCMOBDConfigurationString = string.Empty;
+                                            string SCIBusTCMSpeedString = string.Empty;
 
-                                            if (((Packet.rx.payload[1] >> 4) & 0x01) == 0)
+                                            if (((Packet.rx.payload[1] >> 6) & 0x03) == 0x02) // PCM settings received
                                             {
-                                                SCIBusStateString = "disabled";
-                                                SCIBusSpeedComboBox.SelectedIndex = 0;
+                                                if (Util.IsBitClear(Packet.rx.payload[1], 4))
+                                                {
+                                                    SCIBusPCMStateString = "disabled";
+                                                }
+                                                else
+                                                {
+                                                    SCIBusPCMStateString = "enabled";
+
+                                                    if (Util.IsBitClear(Packet.rx.payload[1], 3))
+                                                    {
+                                                        SCIBusPCMLogicString = "non-inverted";
+                                                    }
+                                                    else
+                                                    {
+                                                        SCIBusPCMLogicString = "inverted";
+                                                    }
+
+                                                    if (Util.IsBitClear(Packet.rx.payload[1], 2))
+                                                    {
+                                                        SCIBusPCMOBDConfigurationString = "A";
+                                                    }
+                                                    else
+                                                    {
+                                                        SCIBusPCMOBDConfigurationString = "B";
+                                                    }
+
+                                                    switch (Packet.rx.payload[1] & 0x03)
+                                                    {
+                                                        case 0x00:
+                                                            SCIBusPCMSpeedString = "976.5 baud";
+                                                            break;
+                                                        case 0x01:
+                                                            SCIBusPCMSpeedString = "7812.5 baud";
+                                                            break;
+                                                        case 0x02:
+                                                            SCIBusPCMSpeedString = "62500 baud";
+                                                            break;
+                                                        case 0x03:
+                                                            SCIBusPCMSpeedString = "125000 baud";
+                                                            break;
+                                                        default:
+                                                            SCIBusPCMSpeedString = "unknown";
+                                                            break;
+                                                    }
+                                                }
                                             }
-                                            else
+                                            else if (((Packet.rx.payload[1] >> 6) & 0x03) == 0x03) // TCM settings received
                                             {
-                                                SCIBusStateString = "enabled";
-
-                                                if (((Packet.rx.payload[1] >> 3) & 0x01) == 0x00)
+                                                if (Util.IsBitClear(Packet.rx.payload[1], 4))
                                                 {
-                                                    SCIBusLogicString = "non-inverted";
-                                                    SCIBusOBD1EngineCableUsedCheckBox.Checked = false;
+                                                    SCIBusTCMStateString = "disabled";
                                                 }
                                                 else
                                                 {
-                                                    SCIBusLogicString = "inverted";
-                                                    SCIBusOBD1EngineCableUsedCheckBox.Checked = true;
-                                                }
+                                                    SCIBusTCMStateString = "enabled";
 
-                                                if (((Packet.rx.payload[1] >> 2) & 0x01) == 0)
-                                                {
-                                                    SCIBusOBDConfigurationString = "A";
-                                                    SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
-                                                }
-                                                else
-                                                {
-                                                    SCIBusOBDConfigurationString = "B";
-                                                    SCIBusOBDConfigurationComboBox.SelectedIndex = 1;
-                                                }
+                                                    if (Util.IsBitClear(Packet.rx.payload[1], 3))
+                                                    {
+                                                        SCIBusTCMLogicString = "non-inverted";
+                                                    }
+                                                    else
+                                                    {
+                                                        SCIBusTCMLogicString = "inverted";
+                                                    }
 
-                                                if ((Packet.rx.payload[1] & 0x03) == 0x00)
-                                                {
-                                                    SCIBusSpeedString = "976.5 baud";
-                                                    SCIBusSpeedComboBox.SelectedIndex = 1;
-                                                    SCIBusReadFaultCodesButton.Enabled = true;
-                                                    SCIBusEraseFaultCodesButton.Enabled = true;
-                                                }
-                                                else if ((Packet.rx.payload[1] & 0x03) == 0x01)
-                                                {
-                                                    SCIBusSpeedString = "7812.5 baud";
-                                                    SCIBusSpeedComboBox.SelectedIndex = 2;
-                                                    SCIBusReadFaultCodesButton.Enabled = true;
-                                                    SCIBusEraseFaultCodesButton.Enabled = true;
-                                                }
-                                                else if ((Packet.rx.payload[1] & 0x03) == 0x02)
-                                                {
-                                                    SCIBusSpeedString = "62500 baud";
-                                                    SCIBusSpeedComboBox.SelectedIndex = 3;
-                                                    SCIBusReadFaultCodesButton.Enabled = false;
-                                                    SCIBusEraseFaultCodesButton.Enabled = false;
-                                                }
-                                                else if ((Packet.rx.payload[1] & 0x03) == 0x03)
-                                                {
-                                                    SCIBusSpeedString = "125000 baud";
-                                                    SCIBusSpeedComboBox.SelectedIndex = 4;
-                                                    SCIBusReadFaultCodesButton.Enabled = true;
-                                                    SCIBusEraseFaultCodesButton.Enabled = true;
-                                                }
-                                                else
-                                                {
-                                                    SCIBusSpeedString = "unknown";
-                                                    SCIBusSpeedComboBox.SelectedIndex = 0;
-                                                    SCIBusReadFaultCodesButton.Enabled = true;
-                                                    SCIBusEraseFaultCodesButton.Enabled = true;
+                                                    if (Util.IsBitClear(Packet.rx.payload[1], 2))
+                                                    {
+                                                        SCIBusTCMOBDConfigurationString = "A";
+                                                    }
+                                                    else
+                                                    {
+                                                        SCIBusTCMOBDConfigurationString = "B";
+                                                    }
+
+                                                    switch (Packet.rx.payload[1] & 0x03)
+                                                    {
+                                                        case 0x00:
+                                                            SCIBusTCMSpeedString = "976.5 baud";
+                                                            break;
+                                                        case 0x01:
+                                                            SCIBusTCMSpeedString = "7812.5 baud";
+                                                            break;
+                                                        case 0x02:
+                                                            SCIBusTCMSpeedString = "62500 baud";
+                                                            break;
+                                                        case 0x03:
+                                                            SCIBusTCMSpeedString = "125000 baud";
+                                                            break;
+                                                        default:
+                                                            SCIBusTCMSpeedString = "unknown";
+                                                            break;
+                                                    }
                                                 }
                                             }
 
@@ -805,38 +911,42 @@ namespace ChryslerCCDSCIScanner
 
                                             if (((Packet.rx.payload[1] >> 6) & 0x03) == 0x02) // PCM settings received
                                             {
-                                                if (SCIBusStateString == "enabled")
+                                                if (SCIBusPCMStateString == "enabled")
                                                 {
                                                     Util.UpdateTextBox(USBTextBox, "[INFO] PCM settings: " + Environment.NewLine +
-                                                                                   "       - state: " + SCIBusStateString + Environment.NewLine +
-                                                                                   "       - logic: " + SCIBusLogicString + Environment.NewLine +
-                                                                                   "       - obd config.: " + SCIBusOBDConfigurationString + Environment.NewLine +
-                                                                                   "       - speed: " + SCIBusSpeedString);
+                                                                                   "       - state: " + SCIBusPCMStateString + Environment.NewLine +
+                                                                                   "       - logic: " + SCIBusPCMLogicString + Environment.NewLine +
+                                                                                   "       - obd config.: " + SCIBusPCMOBDConfigurationString + Environment.NewLine +
+                                                                                   "       - speed: " + SCIBusPCMSpeedString);
                                                 }
                                                 else
                                                 {
                                                     Util.UpdateTextBox(USBTextBox, "[INFO] PCM settings: " + Environment.NewLine +
-                                                                                   "       - state: " + SCIBusStateString);
+                                                                                   "       - state: " + SCIBusPCMStateString);
                                                 }
+
+                                                PCM.UpdateHeader(SCIBusPCMStateString, SCIBusPCMSpeedString, SCIBusPCMLogicString, SCIBusPCMOBDConfigurationString);
                                             }
                                             else if (((Packet.rx.payload[1] >> 6) & 0x03) == 0x03) // TCM settings received
                                             {
-                                                if (SCIBusStateString == "enabled")
+                                                if (SCIBusTCMStateString == "enabled")
                                                 {
                                                     Util.UpdateTextBox(USBTextBox, "[INFO] TCM settings: " + Environment.NewLine +
-                                                                                   "       - state: " + SCIBusStateString + Environment.NewLine +
-                                                                                   "       - logic: " + SCIBusLogicString + Environment.NewLine +
-                                                                                   "       - obd config.: " + SCIBusOBDConfigurationString + Environment.NewLine +
-                                                                                   "       - speed: " + SCIBusSpeedString);
+                                                                                   "       - state: " + SCIBusTCMStateString + Environment.NewLine +
+                                                                                   "       - logic: " + SCIBusTCMLogicString + Environment.NewLine +
+                                                                                   "       - obd config.: " + SCIBusTCMOBDConfigurationString + Environment.NewLine +
+                                                                                   "       - speed: " + SCIBusTCMSpeedString);
                                                 }
                                                 else
                                                 {
                                                     Util.UpdateTextBox(USBTextBox, "[INFO] TCM settings: " + Environment.NewLine +
-                                                                                   "       - state: " + SCIBusStateString);
+                                                                                   "       - state: " + SCIBusTCMStateString);
                                                 }
+
+                                                TCM.UpdateHeader(SCIBusTCMStateString, SCIBusTCMSpeedString, SCIBusTCMLogicString, SCIBusTCMOBDConfigurationString);
                                             }
 
-                                            PCM.UpdateHeader(SCIBusStateString, SCIBusSpeedString, SCIBusLogicString, SCIBusOBDConfigurationString);
+                                            SCIBusModuleComboBox_SelectedIndexChanged(this, EventArgs.Empty);
                                         }
                                         else // error
                                         {
@@ -1879,6 +1989,8 @@ namespace ChryslerCCDSCIScanner
                     PCM.AddMessage(Packet.rx.payload.ToArray());
                     break;
                 case (byte)Packet.Source.tcm:
+                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message:", Packet.rx.buffer);
+                    TCM.AddMessage(Packet.rx.payload.ToArray());
                     break;
                 default:
                     Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", Packet.rx.buffer);
@@ -1908,6 +2020,18 @@ namespace ChryslerCCDSCIScanner
             SCIBusPCMDiagnosticsListBox.SetVerticalScrollPosition(lastPCMScrollBarPosition);
 
             SCIBusPCMDiagnosticsListBox.EndUpdate();
+        }
+
+        private void UpdateSCITCMTable(object sender, EventArgs e)
+        {
+            SCIBusTCMDiagnosticsListBox.BeginUpdate();
+
+            lastTCMScrollBarPosition = SCIBusTCMDiagnosticsListBox.GetVerticalScrollPosition();
+            SCIBusTCMDiagnosticsListBox.Items.Clear();
+            SCIBusTCMDiagnosticsListBox.Items.AddRange(TCM.Diagnostics.Table.ToArray());
+            SCIBusTCMDiagnosticsListBox.SetVerticalScrollPosition(lastTCMScrollBarPosition);
+
+            SCIBusTCMDiagnosticsListBox.EndUpdate();
         }
 
         #endregion
@@ -1973,7 +2097,7 @@ namespace ChryslerCCDSCIScanner
                     ConnectButton.Enabled = false; // no double-click
                     COMPortsRefreshButton.Enabled = false;
 
-                    while (ConnectionCounter < 5) // try connecting to the scanner 5 times, then give up
+                    while (ConnectionCounter < 5) // try connecting to the scanner 5 times before giving up
                     {
                         if (Packet.Serial.IsOpen) Packet.Serial.Close(); // can't overwrite fields if serial port is open
                         Packet.Serial.PortName = COMPortsComboBox.Text;
@@ -2038,12 +2162,13 @@ namespace ChryslerCCDSCIScanner
                                         COMPortsComboBox.Enabled = false;
                                         COMPortsRefreshButton.Enabled = false;
                                         USBCommunicationGroupBox.Enabled = true;
-                                        DeviceCCDSCITabControl.Enabled = true;
+                                        DeviceCCDSCILCDTabControl.Enabled = true;
                                         DiagnosticsGroupBox.Enabled = true;
                                         //ReadROMToolStripMenuItem.Enabled = true;
                                         Packet.PacketReceived += AnalyzePacket; // subscribe to the OnPacketReceived event
                                         CCD.Diagnostics.TableUpdated += UpdateCCDTable; // subscribe to the CCD-bus OnTableUpdated event
                                         PCM.Diagnostics.TableUpdated += UpdateSCIPCMTable; // subscribe to the SCI-bus (PCM) OnTableUpdated event
+                                        TCM.Diagnostics.TableUpdated += UpdateSCITCMTable; // subscribe to the SCI-bus (TCM) OnTableUpdated event
                                         Packet.MonitorSerialPort();
                                         VersionInfoButton_Click(this, EventArgs.Empty);
                                         StatusButton_Click(this, EventArgs.Empty);
@@ -2088,12 +2213,13 @@ namespace ChryslerCCDSCIScanner
                         Packet.Serial.Close();
                         Packet.PacketReceived -= AnalyzePacket; // unsubscribe from the OnPacketReceived event
                         CCD.Diagnostics.TableUpdated -= UpdateCCDTable; // unsubscribe from the CCD-bus OnTableUpdated event
-                        PCM.Diagnostics.TableUpdated -= UpdateSCIPCMTable; // subscribe to the SCI-bus (PCM) OnTableUpdated event
+                        PCM.Diagnostics.TableUpdated -= UpdateSCIPCMTable; // unsubscribe from the SCI-bus (PCM) OnTableUpdated event
+                        TCM.Diagnostics.TableUpdated -= UpdateSCITCMTable; // unsubscribe from the SCI-bus (PCM) OnTableUpdated event
                         ConnectButton.Text = "Connect";
                         COMPortsComboBox.Enabled = true;
                         COMPortsRefreshButton.Enabled = true;
                         USBCommunicationGroupBox.Enabled = false;
-                        DeviceCCDSCITabControl.Enabled = false;
+                        DeviceCCDSCILCDTabControl.Enabled = false;
                         DiagnosticsGroupBox.Enabled = false;
                         ReadROMToolStripMenuItem.Enabled = false;
                         deviceFound = false;
@@ -3299,16 +3425,34 @@ namespace ChryslerCCDSCIScanner
                 {
                     byte[] message = Util.HexStringToByte(SCIBusTxMessagesListBox.Items[0].ToString());
 
-                    Packet.tx.source = (byte)Packet.Source.device;
-                    Packet.tx.target = (byte)Packet.Target.pcm;
-                    Packet.tx.command = (byte)Packet.Command.msgTx;
-                    Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                    Packet.tx.payload = message;
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send a SCI-bus (PCM) message once:", Packet.tx.buffer);
-                    if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
-                                                                           "       " + Util.ByteToHexStringSimple(message));
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    switch (SCIBusModuleComboBox.SelectedIndex)
+                    {
+                        case 0: // engine
+                            Packet.tx.source = (byte)Packet.Source.device;
+                            Packet.tx.target = (byte)Packet.Target.pcm;
+                            Packet.tx.command = (byte)Packet.Command.msgTx;
+                            Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+                            Packet.tx.payload = message;
+                            Packet.GeneratePacket();
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send a SCI-bus (PCM) message once:", Packet.tx.buffer);
+                            if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
+                                                                                   "       " + Util.ByteToHexStringSimple(message));
+                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            break;
+                        case 1: // transmission
+                            Packet.tx.source = (byte)Packet.Source.device;
+                            Packet.tx.target = (byte)Packet.Target.tcm;
+                            Packet.tx.command = (byte)Packet.Command.msgTx;
+                            Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+                            Packet.tx.payload = message;
+                            Packet.GeneratePacket();
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send a SCI-bus (TCM) message once:", Packet.tx.buffer);
+                            if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine +
+                                                                                   "       " + Util.ByteToHexStringSimple(message));
+                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            break;
+                    }
+                   
                 }
                 else // list of messages once
                 {
@@ -3330,25 +3474,49 @@ namespace ChryslerCCDSCIScanner
                         payloadList.AddRange(messages[i]); // message
                     }
 
-                    Packet.tx.source = (byte)Packet.Source.device;
-                    Packet.tx.target = (byte)Packet.Target.pcm;
-                    Packet.tx.command = (byte)Packet.Command.msgTx;
-                    Packet.tx.mode = (byte)Packet.MsgTxMode.list;
-                    Packet.tx.payload = payloadList.ToArray();
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send SCI-bus (PCM) message list once:", Packet.tx.buffer);
-
                     StringBuilder messageList = new StringBuilder();
 
-                    foreach (byte[] item in messages)
+                    switch (SCIBusModuleComboBox.SelectedIndex)
                     {
-                        messageList.Append("       " + Util.ByteToHexStringSimple(item) + Environment.NewLine);
+                        case 0: // engine
+                            Packet.tx.source = (byte)Packet.Source.device;
+                            Packet.tx.target = (byte)Packet.Target.pcm;
+                            Packet.tx.command = (byte)Packet.Command.msgTx;
+                            Packet.tx.mode = (byte)Packet.MsgTxMode.list;
+                            Packet.tx.payload = payloadList.ToArray();
+                            Packet.GeneratePacket();
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send SCI-bus (PCM) message list once:", Packet.tx.buffer);
+
+                            foreach (byte[] item in messages)
+                            {
+                                messageList.Append("       " + Util.ByteToHexStringSimple(item) + Environment.NewLine);
+                            }
+                            messageList.Replace(Environment.NewLine, string.Empty, messageList.Length - 2, 2); // remove last newline character
+
+                            if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine + messageList.ToString());
+
+                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            break;
+                        case 1: // transmission
+                            Packet.tx.source = (byte)Packet.Source.device;
+                            Packet.tx.target = (byte)Packet.Target.tcm;
+                            Packet.tx.command = (byte)Packet.Command.msgTx;
+                            Packet.tx.mode = (byte)Packet.MsgTxMode.list;
+                            Packet.tx.payload = payloadList.ToArray();
+                            Packet.GeneratePacket();
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send SCI-bus (TCM) message list once:", Packet.tx.buffer);
+
+                            foreach (byte[] item in messages)
+                            {
+                                messageList.Append("       " + Util.ByteToHexStringSimple(item) + Environment.NewLine);
+                            }
+                            messageList.Replace(Environment.NewLine, string.Empty, messageList.Length - 2, 2); // remove last newline character
+
+                            if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine + messageList.ToString());
+
+                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            break;
                     }
-                    messageList.Replace(Environment.NewLine, string.Empty, messageList.Length - 2, 2); // remove last newline character
-
-                    if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine + messageList.ToString());
-
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
                 }
             }
             else // repeat message(s) forever
@@ -3365,9 +3533,6 @@ namespace ChryslerCCDSCIScanner
                         return;
                     }
 
-                    // First send a settings packet to configure repeat behavior
-                    SetRepeatedMessageBehavior(Packet.Target.pcm);
-
                     byte[] message = Util.HexStringToByte(SCIBusTxMessagesListBox.Items[0].ToString());
                     List<byte> payloadList = new List<byte>();
 
@@ -3376,25 +3541,42 @@ namespace ChryslerCCDSCIScanner
                     payloadList.Add((byte)message.Length); // message length
                     payloadList.AddRange(message);
 
-                    Packet.tx.source = (byte)Packet.Source.device;
-                    Packet.tx.target = (byte)Packet.Target.pcm;
-                    Packet.tx.command = (byte)Packet.Command.msgTx;
-                    Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
-                    Packet.tx.payload = payloadList.ToArray();
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send a repeated SCI-bus (PCM) message:", Packet.tx.buffer);
-                    if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
-                                                                           "       " + Util.ByteToHexStringSimple(message));
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    switch (SCIBusModuleComboBox.SelectedIndex)
+                    {
+                        case 0: // engine 
+                            SetRepeatedMessageBehavior(Packet.Target.pcm); // first send a settings packet to configure repeat behavior
 
+                            Packet.tx.source = (byte)Packet.Source.device;
+                            Packet.tx.target = (byte)Packet.Target.pcm;
+                            Packet.tx.command = (byte)Packet.Command.msgTx;
+                            Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
+                            Packet.tx.payload = payloadList.ToArray();
+                            Packet.GeneratePacket();
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send a repeated SCI-bus (PCM) message:", Packet.tx.buffer);
+                            if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
+                                                                                   "       " + Util.ByteToHexStringSimple(message));
+                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            break;
+                        case 1: // transmission
+                            SetRepeatedMessageBehavior(Packet.Target.tcm); // first send a settings packet to configure repeat behavior
+
+                            Packet.tx.source = (byte)Packet.Source.device;
+                            Packet.tx.target = (byte)Packet.Target.tcm;
+                            Packet.tx.command = (byte)Packet.Command.msgTx;
+                            Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
+                            Packet.tx.payload = payloadList.ToArray();
+                            Packet.GeneratePacket();
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send a repeated SCI-bus (TCM) message:", Packet.tx.buffer);
+                            if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine +
+                                                                                   "       " + Util.ByteToHexStringSimple(message));
+                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            break;
+                    }
                 }
                 else // repeated list of messages
                 {
                     if (!SCIBusTxMessageRepeatIncrementCheckBox.Checked) // no message iteration with parameter incrementing
                     {
-                        // First send a settings packet to configure repeat behavior
-                        SetRepeatedMessageBehavior(Packet.Target.pcm);
-
                         List<byte[]> messages = new List<byte[]>();
                         List<byte> payloadList = new List<byte>();
                         byte messageCount = (byte)SCIBusTxMessagesListBox.Items.Count;
@@ -3413,25 +3595,53 @@ namespace ChryslerCCDSCIScanner
                             payloadList.AddRange(messages[i]); // message
                         }
 
-                        Packet.tx.source = (byte)Packet.Source.device;
-                        Packet.tx.target = (byte)Packet.Target.pcm;
-                        Packet.tx.command = (byte)Packet.Command.msgTx;
-                        Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedList;
-                        Packet.tx.payload = payloadList.ToArray();
-                        Packet.GeneratePacket();
-                        Util.UpdateTextBox(USBTextBox, "[<-TX] Send repeated SCI-bus (PCM) message list:", Packet.tx.buffer);
-
                         StringBuilder messageList = new StringBuilder();
 
-                        foreach (byte[] item in messages)
+                        switch (SCIBusModuleComboBox.SelectedIndex)
                         {
-                            messageList.Append("       " + Util.ByteToHexStringSimple(item) + Environment.NewLine);
+                            case 0: // engine
+                                SetRepeatedMessageBehavior(Packet.Target.pcm); // first send a settings packet to configure repeat behavior
+
+                                Packet.tx.source = (byte)Packet.Source.device;
+                                Packet.tx.target = (byte)Packet.Target.pcm;
+                                Packet.tx.command = (byte)Packet.Command.msgTx;
+                                Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedList;
+                                Packet.tx.payload = payloadList.ToArray();
+                                Packet.GeneratePacket();
+                                Util.UpdateTextBox(USBTextBox, "[<-TX] Send repeated SCI-bus (PCM) message list:", Packet.tx.buffer);
+
+                                foreach (byte[] item in messages)
+                                {
+                                    messageList.Append("       " + Util.ByteToHexStringSimple(item) + Environment.NewLine);
+                                }
+                                messageList.Replace(Environment.NewLine, string.Empty, messageList.Length - 2, 2); // remove last newline character
+
+                                if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine + messageList.ToString());
+
+                                await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                                break;
+                            case 1: // transmission
+                                SetRepeatedMessageBehavior(Packet.Target.tcm); // first send a settings packet to configure repeat behavior
+
+                                Packet.tx.source = (byte)Packet.Source.device;
+                                Packet.tx.target = (byte)Packet.Target.tcm;
+                                Packet.tx.command = (byte)Packet.Command.msgTx;
+                                Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedList;
+                                Packet.tx.payload = payloadList.ToArray();
+                                Packet.GeneratePacket();
+                                Util.UpdateTextBox(USBTextBox, "[<-TX] Send repeated SCI-bus (TCM) message list:", Packet.tx.buffer);
+
+                                foreach (byte[] item in messages)
+                                {
+                                    messageList.Append("       " + Util.ByteToHexStringSimple(item) + Environment.NewLine);
+                                }
+                                messageList.Replace(Environment.NewLine, string.Empty, messageList.Length - 2, 2); // remove last newline character
+
+                                if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine + messageList.ToString());
+
+                                await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                                break;
                         }
-                        messageList.Replace(Environment.NewLine, string.Empty, messageList.Length - 2, 2); // remove last newline character
-
-                        if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine + messageList.ToString());
-
-                        await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
                     }
                     else // message iteration with parameter incrementing
                     {
@@ -3465,27 +3675,53 @@ namespace ChryslerCCDSCIScanner
                             return;
                         }
 
-                        // First send a settings packet to configure repeat behavior
-                        SetRepeatedMessageBehavior(Packet.Target.pcm);
+                        switch (SCIBusModuleComboBox.SelectedIndex)
+                        {
+                            case 0: // engine
+                                SetRepeatedMessageBehavior(Packet.Target.pcm); // first send a settings packet to configure repeat behavior
 
-                        payloadList.Add(0x01); // message iteration with parameter incrementing
-                        payloadList.Add(0x01); // 1 message only, although there's two in the listbox: 1 for start message that is being incremented until the second message is reached
-                        payloadList.Add((byte)messageStart.Length); // message length
-                        payloadList.AddRange(messageStart);
-                        payloadList.AddRange(messageEnd);
+                                payloadList.Add(0x01); // message iteration with parameter incrementing
+                                payloadList.Add(0x01); // 1 message only, although there's two in the listbox: 1 for start message that is being incremented until the second message is reached
+                                payloadList.Add((byte)messageStart.Length); // message length
+                                payloadList.AddRange(messageStart);
+                                payloadList.AddRange(messageEnd);
 
-                        Packet.tx.source = (byte)Packet.Source.device;
-                        Packet.tx.target = (byte)Packet.Target.pcm;
-                        Packet.tx.command = (byte)Packet.Command.msgTx;
-                        Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
-                        Packet.tx.payload = payloadList.ToArray();
-                        Packet.GeneratePacket();
-                        Util.UpdateTextBox(USBTextBox, "[<-TX] Send an iterated SCI-bus (PCM) message:", Packet.tx.buffer);
-                        Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) iterated message information:" + Environment.NewLine +
-                                                       "       - start: " + Util.ByteToHexStringSimple(messageStart) + Environment.NewLine +
-                                                       "       - end:   " + Util.ByteToHexStringSimple(messageEnd) + Environment.NewLine +
-                                                       "       - incr.: " + Util.ByteToHexStringSimple(Util.HexStringToByte(SCIBusTxMessageRepeatIncrementTextBox.Text)));
-                        await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                                Packet.tx.source = (byte)Packet.Source.device;
+                                Packet.tx.target = (byte)Packet.Target.pcm;
+                                Packet.tx.command = (byte)Packet.Command.msgTx;
+                                Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
+                                Packet.tx.payload = payloadList.ToArray();
+                                Packet.GeneratePacket();
+                                Util.UpdateTextBox(USBTextBox, "[<-TX] Send an iterated SCI-bus (PCM) message:", Packet.tx.buffer);
+                                Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) iterated message information:" + Environment.NewLine +
+                                                               "       - start: " + Util.ByteToHexStringSimple(messageStart) + Environment.NewLine +
+                                                               "       - end:   " + Util.ByteToHexStringSimple(messageEnd) + Environment.NewLine +
+                                                               "       - incr.: " + Util.ByteToHexStringSimple(Util.HexStringToByte(SCIBusTxMessageRepeatIncrementTextBox.Text)));
+                                await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                                break;
+                            case 1: // tranmission
+                                SetRepeatedMessageBehavior(Packet.Target.tcm); // first send a settings packet to configure repeat behavior
+
+                                payloadList.Add(0x01); // message iteration with parameter incrementing
+                                payloadList.Add(0x01); // 1 message only, although there's two in the listbox: 1 for start message that is being incremented until the second message is reached
+                                payloadList.Add((byte)messageStart.Length); // message length
+                                payloadList.AddRange(messageStart);
+                                payloadList.AddRange(messageEnd);
+
+                                Packet.tx.source = (byte)Packet.Source.device;
+                                Packet.tx.target = (byte)Packet.Target.tcm;
+                                Packet.tx.command = (byte)Packet.Command.msgTx;
+                                Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
+                                Packet.tx.payload = payloadList.ToArray();
+                                Packet.GeneratePacket();
+                                Util.UpdateTextBox(USBTextBox, "[<-TX] Send an iterated SCI-bus (TCM) message:", Packet.tx.buffer);
+                                Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) iterated message information:" + Environment.NewLine +
+                                                               "       - start: " + Util.ByteToHexStringSimple(messageStart) + Environment.NewLine +
+                                                               "       - end:   " + Util.ByteToHexStringSimple(messageEnd) + Environment.NewLine +
+                                                               "       - incr.: " + Util.ByteToHexStringSimple(Util.HexStringToByte(SCIBusTxMessageRepeatIncrementTextBox.Text)));
+                                await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                                break;
+                        }
                     }
                 }
             }
@@ -3510,7 +3746,6 @@ namespace ChryslerCCDSCIScanner
             switch (SCIBusModuleComboBox.SelectedIndex)
             {
                 case 0: // engine
-                default:
                     config = Util.SetBit(config, 7); // PCM
                     config = Util.ClearBit(config, 6); // PCM
                     config = Util.SetBit(config, 5); // set change bit
@@ -3568,6 +3803,55 @@ namespace ChryslerCCDSCIScanner
                     }
                     break;
                 case 1: // transmission
+                    config = Util.SetBit(config, 7); // TCM
+                    config = Util.SetBit(config, 6); // TCM
+                    config = Util.SetBit(config, 5); // set change bit
+                    config = Util.ClearBit(config, 3); // OBD1 engine cable not applicable here
+
+                    if (SCIBusOBDConfigurationComboBox.SelectedIndex == 0)
+                    {
+                        config = Util.ClearBit(config, 2);
+                    }
+                    else
+                    {
+                        config = Util.SetBit(config, 2);
+                    }
+
+                    switch (SCIBusSpeedComboBox.SelectedIndex)
+                    {
+                        case 0: // off
+                            config = Util.ClearBit(config, 4); // clear state bit (disabled)
+                            config = Util.ClearBit(config, 1); // clear speed bit (dummy 976.5 baud)
+                            config = Util.ClearBit(config, 0); // clear speed bit (dummy 976.5 baud)
+                            break;
+                        case 1: // 976.5 baud
+                            config = Util.SetBit(config, 4); // set state bit (enabled)
+                            config = Util.ClearBit(config, 1);
+                            config = Util.ClearBit(config, 0);
+                            break;
+                        case 2: // 7812.5 baud
+                            config = Util.SetBit(config, 4); // set state bit (enabled)
+                            config = Util.ClearBit(config, 1);
+                            config = Util.SetBit(config, 0);
+                            break;
+                        case 3: // 62500 baud
+                            config = Util.SetBit(config, 4); // set state bit (enabled)
+                            config = Util.SetBit(config, 1);
+                            config = Util.ClearBit(config, 0);
+                            break;
+                        case 4: // 125000 baud
+                            config = Util.SetBit(config, 4); // set state bit (enabled)
+                            config = Util.SetBit(config, 1);
+                            config = Util.SetBit(config, 0);
+                            break;
+                        default: // 7812.5 baud
+                            config = Util.SetBit(config, 4); // set state bit (enabled)
+                            config = Util.ClearBit(config, 1);
+                            config = Util.SetBit(config, 0);
+                            break;
+                    }
+                    break;
+                default:
                     break;
             }
 
@@ -3653,10 +3937,60 @@ namespace ChryslerCCDSCIScanner
 
         private void SCIBusModuleComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (SCIBusModuleComboBox.SelectedIndex == 1)
+            switch (SCIBusModuleComboBox.SelectedIndex)
             {
-                MessageBox.Show("Communication with the transmission controller on SCI-bus is not yet supported." + Environment.NewLine + "Use CCD-bus instead, TCMs communicate mainly there anyways.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                SCIBusModuleComboBox.SelectedIndex = 0;
+                case 0: // PCM
+                    SCIBusFaultCodesLabel.Enabled = true;
+                    SCIBusReadFaultCodesButton.Enabled = true;
+                    SCIBusEraseFaultCodesButton.Enabled = true;
+                    SCIBusOBD1EngineCableUsedCheckBox.Enabled = true;
+
+                    if (PCM.state == "enabled")
+                    {
+                        if (PCM.speed == "976.5 baud") SCIBusSpeedComboBox.SelectedIndex = 1;
+                        else if (PCM.speed == "7812.5 baud") SCIBusSpeedComboBox.SelectedIndex = 2;
+                        else if (PCM.speed == "62500 baud") SCIBusSpeedComboBox.SelectedIndex = 3;
+                        else if (PCM.speed == "125000 baud") SCIBusSpeedComboBox.SelectedIndex = 4;
+                    }
+                    else if (PCM.state == "disabled")
+                    {
+                        SCIBusSpeedComboBox.SelectedIndex = 0; // off
+                    }
+
+                    if (PCM.logic == "non-inverted") SCIBusOBD1EngineCableUsedCheckBox.Checked = false;
+                    else if (PCM.logic == "inverted") SCIBusOBD1EngineCableUsedCheckBox.Checked = true;
+
+                    if (PCM.configuration == "A") SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
+                    else if (PCM.configuration == "B") SCIBusOBDConfigurationComboBox.SelectedIndex = 1;
+
+                    break;
+                case 1: // TCM
+                    SCIBusFaultCodesLabel.Enabled = false;
+                    SCIBusReadFaultCodesButton.Enabled = false;
+                    SCIBusEraseFaultCodesButton.Enabled = false;
+                    SCIBusOBD1EngineCableUsedCheckBox.Enabled = false;
+
+                    if (TCM.state == "enabled")
+                    {
+                        if (TCM.speed == "976.5 baud") SCIBusSpeedComboBox.SelectedIndex = 1;
+                        else if (TCM.speed == "7812.5 baud") SCIBusSpeedComboBox.SelectedIndex = 2;
+                        else if (TCM.speed == "62500 baud") SCIBusSpeedComboBox.SelectedIndex = 3;
+                        else if (TCM.speed == "125000 baud") SCIBusSpeedComboBox.SelectedIndex = 4;
+                    }
+                    else if (TCM.state == "disabled")
+                    {
+                        SCIBusSpeedComboBox.SelectedIndex = 0; // off
+                    }
+
+                    if (TCM.logic == "non-inverted") SCIBusOBD1EngineCableUsedCheckBox.Checked = false;
+                    else if (TCM.logic == "inverted") SCIBusOBD1EngineCableUsedCheckBox.Checked = true;
+
+                    if (TCM.configuration == "A") SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
+                    else if (TCM.configuration == "B") SCIBusOBDConfigurationComboBox.SelectedIndex = 1;
+
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -3665,7 +3999,15 @@ namespace ChryslerCCDSCIScanner
             if (e.KeyChar == (char)Keys.Return)
             {
                 e.Handled = true;
-                SetRepeatedMessageBehavior(Packet.Target.pcm);
+                switch (SCIBusModuleComboBox.SelectedIndex)
+                {
+                    case 0: // engine
+                        SetRepeatedMessageBehavior(Packet.Target.pcm);
+                        break;
+                    case 1: // transmission
+                        SetRepeatedMessageBehavior(Packet.Target.tcm);
+                        break;
+                }
             }
         }
 
@@ -3674,7 +4016,15 @@ namespace ChryslerCCDSCIScanner
             if (e.KeyChar == (char)Keys.Return)
             {
                 e.Handled = true;
-                SetRepeatedMessageBehavior(Packet.Target.pcm);
+                switch (SCIBusModuleComboBox.SelectedIndex)
+                {
+                    case 0: // engine
+                        SetRepeatedMessageBehavior(Packet.Target.pcm);
+                        break;
+                    case 1: // transmission
+                        SetRepeatedMessageBehavior(Packet.Target.tcm);
+                        break;
+                }
             }
         }
 
@@ -3720,16 +4070,33 @@ namespace ChryslerCCDSCIScanner
                         SCIBusTxMessageComboBox.SelectionLength = 0;
                     }
 
-                    Packet.tx.source = (byte)Packet.Source.device;
-                    Packet.tx.target = (byte)Packet.Target.pcm;
-                    Packet.tx.command = (byte)Packet.Command.msgTx;
-                    Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                    Packet.tx.payload = message;
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (PCM) message once:", Packet.tx.buffer);
-                    if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
-                                                                           "       " + Util.ByteToHexStringSimple(message));
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    switch (SCIBusModuleComboBox.SelectedIndex)
+                    {
+                        case 0: // engine
+                            Packet.tx.source = (byte)Packet.Source.device;
+                            Packet.tx.target = (byte)Packet.Target.pcm;
+                            Packet.tx.command = (byte)Packet.Command.msgTx;
+                            Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+                            Packet.tx.payload = message;
+                            Packet.GeneratePacket();
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (PCM) message once:", Packet.tx.buffer);
+                            if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
+                                                                                   "       " + Util.ByteToHexStringSimple(message));
+                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            break;
+                        case 1: // transmission
+                            Packet.tx.source = (byte)Packet.Source.device;
+                            Packet.tx.target = (byte)Packet.Target.tcm;
+                            Packet.tx.command = (byte)Packet.Command.msgTx;
+                            Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+                            Packet.tx.payload = message;
+                            Packet.GeneratePacket();
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (TCM) message once:", Packet.tx.buffer);
+                            if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine +
+                                                                                   "       " + Util.ByteToHexStringSimple(message));
+                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            break;
+                    }
                 }
                 else
                 {
@@ -3808,7 +4175,7 @@ namespace ChryslerCCDSCIScanner
             }
         }
 
-        private void DiagnosticsSnapshotButton_Click(object sender, EventArgs e)
+        private void DiagnosticsCopyToClipboardButton_Click(object sender, EventArgs e)
         {
             Clipboard.Clear();
 
@@ -3817,8 +4184,74 @@ namespace ChryslerCCDSCIScanner
                 case "CCDBusDiagnosticsTabPage":
                     Clipboard.SetText(string.Join(Environment.NewLine, CCD.Diagnostics.Table.ToArray()) + Environment.NewLine);
                     break;
-                case "SCIBusDiagnosticsTabPage":
+                case "SCIBusPCMDiagnosticsTabPage":
                     Clipboard.SetText(string.Join(Environment.NewLine, PCM.Diagnostics.Table.ToArray()) + Environment.NewLine);
+                    break;
+                case "SCIBusTCMDiagnosticsTabPage":
+                    Clipboard.SetText(string.Join(Environment.NewLine, TCM.Diagnostics.Table.ToArray()) + Environment.NewLine);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void DiagnosticsSnapshotButton_Click(object sender, EventArgs e)
+        {
+            string DateTimeNow;
+            int counter;
+
+            switch (DiagnosticsTabControl.SelectedTab.Name)
+            {
+                case "CCDBusDiagnosticsTabPage":
+                    DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss"); // new time for each snapshot
+                    string CCDDiagnosticsSnapshotFilename = @"LOG/CCD/ccdsnapshot_" + DateTimeNow;
+                    counter = 1;
+
+                    while (File.Exists(CCDDiagnosticsSnapshotFilename + ".txt"))
+                    {
+                        if (CCDDiagnosticsSnapshotFilename.Length > 35) CCDDiagnosticsSnapshotFilename = CCDDiagnosticsSnapshotFilename.Remove(CCDDiagnosticsSnapshotFilename.Length - 3, 3); // remove last 3 characters
+                        CCDDiagnosticsSnapshotFilename += "_";
+                        if (counter < 10) CCDDiagnosticsSnapshotFilename += "0";
+                        CCDDiagnosticsSnapshotFilename += counter.ToString();
+                        counter++;
+                    }
+
+                    CCDDiagnosticsSnapshotFilename += ".txt";
+                    File.AppendAllText(CCDDiagnosticsSnapshotFilename, string.Join(Environment.NewLine, CCD.Diagnostics.Table.ToArray()) + Environment.NewLine);
+                    break;
+                case "SCIBusPCMDiagnosticsTabPage":
+                    DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss"); // new time for each snapshot
+                    string PCMDiagnosticsSnapshotFilename = @"LOG/PCM/pcmsnapshot_" + DateTimeNow;
+                    counter = 1;
+
+                    while (File.Exists(PCMDiagnosticsSnapshotFilename + ".txt"))
+                    {
+                        if (PCMDiagnosticsSnapshotFilename.Length > 35) PCMDiagnosticsSnapshotFilename = PCMDiagnosticsSnapshotFilename.Remove(PCMDiagnosticsSnapshotFilename.Length - 3, 3); // remove last 3 characters
+                        PCMDiagnosticsSnapshotFilename += "_";
+                        if (counter < 10) PCMDiagnosticsSnapshotFilename += "0";
+                        PCMDiagnosticsSnapshotFilename += counter.ToString();
+                        counter++;
+                    }
+
+                    PCMDiagnosticsSnapshotFilename += ".txt";
+                    File.AppendAllText(PCMDiagnosticsSnapshotFilename, string.Join(Environment.NewLine, PCM.Diagnostics.Table.ToArray()) + Environment.NewLine);
+                    break;
+                case "SCIBusTCMDiagnosticsTabPage":
+                    DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss"); // new time for each snapshot
+                    string TCMDiagnosticsSnapshotFilename = @"LOG/TCM/tcmsnapshot_" + DateTimeNow;
+                    counter = 1;
+
+                    while (File.Exists(TCMDiagnosticsSnapshotFilename + ".txt"))
+                    {
+                        if (TCMDiagnosticsSnapshotFilename.Length > 35) TCMDiagnosticsSnapshotFilename = TCMDiagnosticsSnapshotFilename.Remove(TCMDiagnosticsSnapshotFilename.Length - 3, 3); // remove last 3 characters
+                        TCMDiagnosticsSnapshotFilename += "_";
+                        if (counter < 10) TCMDiagnosticsSnapshotFilename += "0";
+                        TCMDiagnosticsSnapshotFilename += counter.ToString();
+                        counter++;
+                    }
+
+                    TCMDiagnosticsSnapshotFilename += ".txt";
+                    File.AppendAllText(TCMDiagnosticsSnapshotFilename, string.Join(Environment.NewLine, TCM.Diagnostics.Table.ToArray()) + Environment.NewLine);
                     break;
                 default:
                     break;

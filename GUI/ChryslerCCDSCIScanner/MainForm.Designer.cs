@@ -45,7 +45,7 @@
             this.USBTextBox = new System.Windows.Forms.TextBox();
             this.ControlPanelGroupBox = new System.Windows.Forms.GroupBox();
             this.ExpandButton = new System.Windows.Forms.Button();
-            this.DeviceCCDSCITabControl = new System.Windows.Forms.TabControl();
+            this.DeviceCCDSCILCDTabControl = new System.Windows.Forms.TabControl();
             this.DeviceControlTabPage = new System.Windows.Forms.TabPage();
             this.MillisecondsLabel02 = new System.Windows.Forms.Label();
             this.LEDBlinkDurationTextBox = new System.Windows.Forms.TextBox();
@@ -103,6 +103,8 @@
             this.CCDBusTxMessagesListBox = new System.Windows.Forms.ListBox();
             this.DebugRandomCCDBusMessagesButton = new System.Windows.Forms.Button();
             this.SCIBusControlTabPage = new System.Windows.Forms.TabPage();
+            this.SCIBusFaultCodesLabel = new System.Windows.Forms.Label();
+            this.SCIBusEraseFaultCodesButton = new System.Windows.Forms.Button();
             this.SCIBusOBDConfigurationComboBox = new System.Windows.Forms.ComboBox();
             this.SCIBusOBDConfigurationLabel = new System.Windows.Forms.Label();
             this.SCIBusOBD1EngineCableUsedCheckBox = new System.Windows.Forms.CheckBox();
@@ -127,6 +129,9 @@
             this.SCIBusTxMessageComboBox = new System.Windows.Forms.ComboBox();
             this.SCIBusTxMessagesListBox = new System.Windows.Forms.ListBox();
             this.LCDControlTabPage = new System.Windows.Forms.TabPage();
+            this.LCDI2CAddressHexLabel = new System.Windows.Forms.Label();
+            this.LCDI2CAddressTextBox = new System.Windows.Forms.TextBox();
+            this.LCDI2CAddressLabel = new System.Windows.Forms.Label();
             this.LCDPreviewLabel = new System.Windows.Forms.Label();
             this.LCDDataSourceComboBox = new System.Windows.Forms.ComboBox();
             this.LCDDataSourceLabel = new System.Windows.Forms.Label();
@@ -146,23 +151,21 @@
             this.COMPortsComboBox = new System.Windows.Forms.ComboBox();
             this.ConnectButton = new System.Windows.Forms.Button();
             this.DiagnosticsGroupBox = new System.Windows.Forms.GroupBox();
-            this.DiagnosticsRefreshButton = new System.Windows.Forms.Button();
             this.DiagnosticsSnapshotButton = new System.Windows.Forms.Button();
+            this.DiagnosticsRefreshButton = new System.Windows.Forms.Button();
+            this.DiagnosticsCopyToClipboardButton = new System.Windows.Forms.Button();
             this.DiagnosticsResetViewButton = new System.Windows.Forms.Button();
             this.DiagnosticsTabControl = new System.Windows.Forms.TabControl();
             this.CCDBusDiagnosticsTabPage = new System.Windows.Forms.TabPage();
-            this.SCIBusDiagnosticsTabPage = new System.Windows.Forms.TabPage();
-            this.LCDI2CAddressTextBox = new System.Windows.Forms.TextBox();
-            this.LCDI2CAddressLabel = new System.Windows.Forms.Label();
-            this.LCDI2CAddressHexLabel = new System.Windows.Forms.Label();
             this.CCDBusDiagnosticsListBox = new ChryslerCCDSCIScanner.FlickerFreeListBox();
+            this.SCIBusPCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
             this.SCIBusPCMDiagnosticsListBox = new ChryslerCCDSCIScanner.FlickerFreeListBox();
-            this.SCIBusEraseFaultCodesButton = new System.Windows.Forms.Button();
-            this.SCIBusFaultCodesLabel = new System.Windows.Forms.Label();
+            this.SCIBusTCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
+            this.SCIBusTCMDiagnosticsListBox = new ChryslerCCDSCIScanner.FlickerFreeListBox();
             this.MenuStrip.SuspendLayout();
             this.USBCommunicationGroupBox.SuspendLayout();
             this.ControlPanelGroupBox.SuspendLayout();
-            this.DeviceCCDSCITabControl.SuspendLayout();
+            this.DeviceCCDSCILCDTabControl.SuspendLayout();
             this.DeviceControlTabPage.SuspendLayout();
             this.CCDBusControlTabPage.SuspendLayout();
             this.SCIBusControlTabPage.SuspendLayout();
@@ -170,7 +173,8 @@
             this.DiagnosticsGroupBox.SuspendLayout();
             this.DiagnosticsTabControl.SuspendLayout();
             this.CCDBusDiagnosticsTabPage.SuspendLayout();
-            this.SCIBusDiagnosticsTabPage.SuspendLayout();
+            this.SCIBusPCMDiagnosticsTabPage.SuspendLayout();
+            this.SCIBusTCMDiagnosticsTabPage.SuspendLayout();
             this.SuspendLayout();
             // 
             // MenuStrip
@@ -307,7 +311,7 @@
             // ControlPanelGroupBox
             // 
             this.ControlPanelGroupBox.Controls.Add(this.ExpandButton);
-            this.ControlPanelGroupBox.Controls.Add(this.DeviceCCDSCITabControl);
+            this.ControlPanelGroupBox.Controls.Add(this.DeviceCCDSCILCDTabControl);
             this.ControlPanelGroupBox.Controls.Add(this.COMPortsRefreshButton);
             this.ControlPanelGroupBox.Controls.Add(this.COMPortsComboBox);
             this.ControlPanelGroupBox.Controls.Add(this.ConnectButton);
@@ -328,18 +332,18 @@
             this.ExpandButton.UseVisualStyleBackColor = true;
             this.ExpandButton.Click += new System.EventHandler(this.ExpandButton_Click);
             // 
-            // DeviceCCDSCITabControl
+            // DeviceCCDSCILCDTabControl
             // 
-            this.DeviceCCDSCITabControl.Controls.Add(this.DeviceControlTabPage);
-            this.DeviceCCDSCITabControl.Controls.Add(this.CCDBusControlTabPage);
-            this.DeviceCCDSCITabControl.Controls.Add(this.SCIBusControlTabPage);
-            this.DeviceCCDSCITabControl.Controls.Add(this.LCDControlTabPage);
-            this.DeviceCCDSCITabControl.Enabled = false;
-            this.DeviceCCDSCITabControl.Location = new System.Drawing.Point(3, 19);
-            this.DeviceCCDSCITabControl.Name = "DeviceCCDSCITabControl";
-            this.DeviceCCDSCITabControl.SelectedIndex = 0;
-            this.DeviceCCDSCITabControl.Size = new System.Drawing.Size(361, 243);
-            this.DeviceCCDSCITabControl.TabIndex = 5;
+            this.DeviceCCDSCILCDTabControl.Controls.Add(this.DeviceControlTabPage);
+            this.DeviceCCDSCILCDTabControl.Controls.Add(this.CCDBusControlTabPage);
+            this.DeviceCCDSCILCDTabControl.Controls.Add(this.SCIBusControlTabPage);
+            this.DeviceCCDSCILCDTabControl.Controls.Add(this.LCDControlTabPage);
+            this.DeviceCCDSCILCDTabControl.Enabled = false;
+            this.DeviceCCDSCILCDTabControl.Location = new System.Drawing.Point(3, 19);
+            this.DeviceCCDSCILCDTabControl.Name = "DeviceCCDSCILCDTabControl";
+            this.DeviceCCDSCILCDTabControl.SelectedIndex = 0;
+            this.DeviceCCDSCILCDTabControl.Size = new System.Drawing.Size(361, 243);
+            this.DeviceCCDSCILCDTabControl.TabIndex = 5;
             // 
             // DeviceControlTabPage
             // 
@@ -1003,6 +1007,25 @@
             this.SCIBusControlTabPage.TabIndex = 1;
             this.SCIBusControlTabPage.Text = "SCI-bus";
             // 
+            // SCIBusFaultCodesLabel
+            // 
+            this.SCIBusFaultCodesLabel.AutoSize = true;
+            this.SCIBusFaultCodesLabel.Location = new System.Drawing.Point(158, 142);
+            this.SCIBusFaultCodesLabel.Name = "SCIBusFaultCodesLabel";
+            this.SCIBusFaultCodesLabel.Size = new System.Drawing.Size(71, 13);
+            this.SCIBusFaultCodesLabel.TabIndex = 0;
+            this.SCIBusFaultCodesLabel.Text = "Fault code(s):";
+            // 
+            // SCIBusEraseFaultCodesButton
+            // 
+            this.SCIBusEraseFaultCodesButton.Location = new System.Drawing.Point(293, 137);
+            this.SCIBusEraseFaultCodesButton.Name = "SCIBusEraseFaultCodesButton";
+            this.SCIBusEraseFaultCodesButton.Size = new System.Drawing.Size(53, 23);
+            this.SCIBusEraseFaultCodesButton.TabIndex = 14;
+            this.SCIBusEraseFaultCodesButton.Text = "Erase";
+            this.SCIBusEraseFaultCodesButton.UseVisualStyleBackColor = true;
+            this.SCIBusEraseFaultCodesButton.Click += new System.EventHandler(this.SCIBusEraseFaultCodesButton_Click);
+            // 
             // SCIBusOBDConfigurationComboBox
             // 
             this.SCIBusOBDConfigurationComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
@@ -1282,6 +1305,33 @@
             this.LCDControlTabPage.TabIndex = 3;
             this.LCDControlTabPage.Text = "LCD";
             // 
+            // LCDI2CAddressHexLabel
+            // 
+            this.LCDI2CAddressHexLabel.AutoSize = true;
+            this.LCDI2CAddressHexLabel.Location = new System.Drawing.Point(301, 43);
+            this.LCDI2CAddressHexLabel.Name = "LCDI2CAddressHexLabel";
+            this.LCDI2CAddressHexLabel.Size = new System.Drawing.Size(24, 13);
+            this.LCDI2CAddressHexLabel.TabIndex = 7;
+            this.LCDI2CAddressHexLabel.Text = "hex";
+            // 
+            // LCDI2CAddressTextBox
+            // 
+            this.LCDI2CAddressTextBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.LCDI2CAddressTextBox.Location = new System.Drawing.Point(279, 39);
+            this.LCDI2CAddressTextBox.Name = "LCDI2CAddressTextBox";
+            this.LCDI2CAddressTextBox.Size = new System.Drawing.Size(21, 21);
+            this.LCDI2CAddressTextBox.TabIndex = 9;
+            this.LCDI2CAddressTextBox.Text = "27";
+            // 
+            // LCDI2CAddressLabel
+            // 
+            this.LCDI2CAddressLabel.AutoSize = true;
+            this.LCDI2CAddressLabel.Location = new System.Drawing.Point(225, 43);
+            this.LCDI2CAddressLabel.Name = "LCDI2CAddressLabel";
+            this.LCDI2CAddressLabel.Size = new System.Drawing.Size(53, 13);
+            this.LCDI2CAddressLabel.TabIndex = 8;
+            this.LCDI2CAddressLabel.Text = "I2C addr.:";
+            // 
             // LCDPreviewLabel
             // 
             this.LCDPreviewLabel.AutoSize = true;
@@ -1465,8 +1515,9 @@
             // 
             // DiagnosticsGroupBox
             // 
-            this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsRefreshButton);
             this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsSnapshotButton);
+            this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsRefreshButton);
+            this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsCopyToClipboardButton);
             this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsResetViewButton);
             this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsTabControl);
             this.DiagnosticsGroupBox.Enabled = false;
@@ -1476,6 +1527,16 @@
             this.DiagnosticsGroupBox.TabIndex = 3;
             this.DiagnosticsGroupBox.TabStop = false;
             this.DiagnosticsGroupBox.Text = "Diagnostics";
+            // 
+            // DiagnosticsSnapshotButton
+            // 
+            this.DiagnosticsSnapshotButton.Location = new System.Drawing.Point(306, 541);
+            this.DiagnosticsSnapshotButton.Name = "DiagnosticsSnapshotButton";
+            this.DiagnosticsSnapshotButton.Size = new System.Drawing.Size(75, 25);
+            this.DiagnosticsSnapshotButton.TabIndex = 5;
+            this.DiagnosticsSnapshotButton.Text = "Snapshot";
+            this.DiagnosticsSnapshotButton.UseVisualStyleBackColor = true;
+            this.DiagnosticsSnapshotButton.Click += new System.EventHandler(this.DiagnosticsSnapshotButton_Click);
             // 
             // DiagnosticsRefreshButton
             // 
@@ -1487,15 +1548,15 @@
             this.DiagnosticsRefreshButton.UseVisualStyleBackColor = true;
             this.DiagnosticsRefreshButton.Click += new System.EventHandler(this.DiagnosticsRefreshButton_Click);
             // 
-            // DiagnosticsSnapshotButton
+            // DiagnosticsCopyToClipboardButton
             // 
-            this.DiagnosticsSnapshotButton.Location = new System.Drawing.Point(166, 541);
-            this.DiagnosticsSnapshotButton.Name = "DiagnosticsSnapshotButton";
-            this.DiagnosticsSnapshotButton.Size = new System.Drawing.Size(135, 25);
-            this.DiagnosticsSnapshotButton.TabIndex = 4;
-            this.DiagnosticsSnapshotButton.Text = "Copy table to clipboard";
-            this.DiagnosticsSnapshotButton.UseVisualStyleBackColor = true;
-            this.DiagnosticsSnapshotButton.Click += new System.EventHandler(this.DiagnosticsSnapshotButton_Click);
+            this.DiagnosticsCopyToClipboardButton.Location = new System.Drawing.Point(166, 541);
+            this.DiagnosticsCopyToClipboardButton.Name = "DiagnosticsCopyToClipboardButton";
+            this.DiagnosticsCopyToClipboardButton.Size = new System.Drawing.Size(135, 25);
+            this.DiagnosticsCopyToClipboardButton.TabIndex = 4;
+            this.DiagnosticsCopyToClipboardButton.Text = "Copy table to clipboard";
+            this.DiagnosticsCopyToClipboardButton.UseVisualStyleBackColor = true;
+            this.DiagnosticsCopyToClipboardButton.Click += new System.EventHandler(this.DiagnosticsCopyToClipboardButton_Click);
             // 
             // DiagnosticsResetViewButton
             // 
@@ -1510,7 +1571,8 @@
             // DiagnosticsTabControl
             // 
             this.DiagnosticsTabControl.Controls.Add(this.CCDBusDiagnosticsTabPage);
-            this.DiagnosticsTabControl.Controls.Add(this.SCIBusDiagnosticsTabPage);
+            this.DiagnosticsTabControl.Controls.Add(this.SCIBusPCMDiagnosticsTabPage);
+            this.DiagnosticsTabControl.Controls.Add(this.SCIBusTCMDiagnosticsTabPage);
             this.DiagnosticsTabControl.Location = new System.Drawing.Point(3, 16);
             this.DiagnosticsTabControl.Name = "DiagnosticsTabControl";
             this.DiagnosticsTabControl.SelectedIndex = 0;
@@ -1528,44 +1590,6 @@
             this.CCDBusDiagnosticsTabPage.TabIndex = 0;
             this.CCDBusDiagnosticsTabPage.Text = "CCD-bus";
             // 
-            // SCIBusDiagnosticsTabPage
-            // 
-            this.SCIBusDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
-            this.SCIBusDiagnosticsTabPage.Controls.Add(this.SCIBusPCMDiagnosticsListBox);
-            this.SCIBusDiagnosticsTabPage.Location = new System.Drawing.Point(4, 22);
-            this.SCIBusDiagnosticsTabPage.Name = "SCIBusDiagnosticsTabPage";
-            this.SCIBusDiagnosticsTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.SCIBusDiagnosticsTabPage.Size = new System.Drawing.Size(877, 495);
-            this.SCIBusDiagnosticsTabPage.TabIndex = 1;
-            this.SCIBusDiagnosticsTabPage.Text = "SCI-bus (PCM)";
-            // 
-            // LCDI2CAddressTextBox
-            // 
-            this.LCDI2CAddressTextBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
-            this.LCDI2CAddressTextBox.Location = new System.Drawing.Point(279, 39);
-            this.LCDI2CAddressTextBox.Name = "LCDI2CAddressTextBox";
-            this.LCDI2CAddressTextBox.Size = new System.Drawing.Size(21, 21);
-            this.LCDI2CAddressTextBox.TabIndex = 9;
-            this.LCDI2CAddressTextBox.Text = "27";
-            // 
-            // LCDI2CAddressLabel
-            // 
-            this.LCDI2CAddressLabel.AutoSize = true;
-            this.LCDI2CAddressLabel.Location = new System.Drawing.Point(225, 43);
-            this.LCDI2CAddressLabel.Name = "LCDI2CAddressLabel";
-            this.LCDI2CAddressLabel.Size = new System.Drawing.Size(53, 13);
-            this.LCDI2CAddressLabel.TabIndex = 8;
-            this.LCDI2CAddressLabel.Text = "I2C addr.:";
-            // 
-            // LCDI2CAddressHexLabel
-            // 
-            this.LCDI2CAddressHexLabel.AutoSize = true;
-            this.LCDI2CAddressHexLabel.Location = new System.Drawing.Point(301, 43);
-            this.LCDI2CAddressHexLabel.Name = "LCDI2CAddressHexLabel";
-            this.LCDI2CAddressHexLabel.Size = new System.Drawing.Size(24, 13);
-            this.LCDI2CAddressHexLabel.TabIndex = 7;
-            this.LCDI2CAddressHexLabel.Text = "hex";
-            // 
             // CCDBusDiagnosticsListBox
             // 
             this.CCDBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
@@ -1576,6 +1600,17 @@
             this.CCDBusDiagnosticsListBox.ScrollAlwaysVisible = true;
             this.CCDBusDiagnosticsListBox.Size = new System.Drawing.Size(873, 484);
             this.CCDBusDiagnosticsListBox.TabIndex = 0;
+            // 
+            // SCIBusPCMDiagnosticsTabPage
+            // 
+            this.SCIBusPCMDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
+            this.SCIBusPCMDiagnosticsTabPage.Controls.Add(this.SCIBusPCMDiagnosticsListBox);
+            this.SCIBusPCMDiagnosticsTabPage.Location = new System.Drawing.Point(4, 22);
+            this.SCIBusPCMDiagnosticsTabPage.Name = "SCIBusPCMDiagnosticsTabPage";
+            this.SCIBusPCMDiagnosticsTabPage.Padding = new System.Windows.Forms.Padding(3);
+            this.SCIBusPCMDiagnosticsTabPage.Size = new System.Drawing.Size(877, 495);
+            this.SCIBusPCMDiagnosticsTabPage.TabIndex = 1;
+            this.SCIBusPCMDiagnosticsTabPage.Text = "SCI-bus (PCM)";
             // 
             // SCIBusPCMDiagnosticsListBox
             // 
@@ -1589,24 +1624,28 @@
             this.SCIBusPCMDiagnosticsListBox.Size = new System.Drawing.Size(873, 484);
             this.SCIBusPCMDiagnosticsListBox.TabIndex = 0;
             // 
-            // SCIBusEraseFaultCodesButton
+            // SCIBusTCMDiagnosticsTabPage
             // 
-            this.SCIBusEraseFaultCodesButton.Location = new System.Drawing.Point(293, 137);
-            this.SCIBusEraseFaultCodesButton.Name = "SCIBusEraseFaultCodesButton";
-            this.SCIBusEraseFaultCodesButton.Size = new System.Drawing.Size(53, 23);
-            this.SCIBusEraseFaultCodesButton.TabIndex = 14;
-            this.SCIBusEraseFaultCodesButton.Text = "Erase";
-            this.SCIBusEraseFaultCodesButton.UseVisualStyleBackColor = true;
-            this.SCIBusEraseFaultCodesButton.Click += new System.EventHandler(this.SCIBusEraseFaultCodesButton_Click);
+            this.SCIBusTCMDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
+            this.SCIBusTCMDiagnosticsTabPage.Controls.Add(this.SCIBusTCMDiagnosticsListBox);
+            this.SCIBusTCMDiagnosticsTabPage.Location = new System.Drawing.Point(4, 22);
+            this.SCIBusTCMDiagnosticsTabPage.Name = "SCIBusTCMDiagnosticsTabPage";
+            this.SCIBusTCMDiagnosticsTabPage.Padding = new System.Windows.Forms.Padding(3);
+            this.SCIBusTCMDiagnosticsTabPage.Size = new System.Drawing.Size(877, 495);
+            this.SCIBusTCMDiagnosticsTabPage.TabIndex = 2;
+            this.SCIBusTCMDiagnosticsTabPage.Text = "SCI-bus (TCM)";
             // 
-            // SCIBusFaultCodesLabel
+            // SCIBusTCMDiagnosticsListBox
             // 
-            this.SCIBusFaultCodesLabel.AutoSize = true;
-            this.SCIBusFaultCodesLabel.Location = new System.Drawing.Point(158, 142);
-            this.SCIBusFaultCodesLabel.Name = "SCIBusFaultCodesLabel";
-            this.SCIBusFaultCodesLabel.Size = new System.Drawing.Size(71, 13);
-            this.SCIBusFaultCodesLabel.TabIndex = 0;
-            this.SCIBusFaultCodesLabel.Text = "Fault code(s):";
+            this.SCIBusTCMDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
+            this.SCIBusTCMDiagnosticsListBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.SCIBusTCMDiagnosticsListBox.ItemHeight = 15;
+            this.SCIBusTCMDiagnosticsListBox.Location = new System.Drawing.Point(2, 2);
+            this.SCIBusTCMDiagnosticsListBox.Name = "SCIBusTCMDiagnosticsListBox";
+            this.SCIBusTCMDiagnosticsListBox.ScrollAlwaysVisible = true;
+            this.SCIBusTCMDiagnosticsListBox.SelectionMode = System.Windows.Forms.SelectionMode.None;
+            this.SCIBusTCMDiagnosticsListBox.Size = new System.Drawing.Size(873, 484);
+            this.SCIBusTCMDiagnosticsListBox.TabIndex = 1;
             // 
             // MainForm
             // 
@@ -1628,7 +1667,7 @@
             this.USBCommunicationGroupBox.ResumeLayout(false);
             this.USBCommunicationGroupBox.PerformLayout();
             this.ControlPanelGroupBox.ResumeLayout(false);
-            this.DeviceCCDSCITabControl.ResumeLayout(false);
+            this.DeviceCCDSCILCDTabControl.ResumeLayout(false);
             this.DeviceControlTabPage.ResumeLayout(false);
             this.DeviceControlTabPage.PerformLayout();
             this.CCDBusControlTabPage.ResumeLayout(false);
@@ -1640,7 +1679,8 @@
             this.DiagnosticsGroupBox.ResumeLayout(false);
             this.DiagnosticsTabControl.ResumeLayout(false);
             this.CCDBusDiagnosticsTabPage.ResumeLayout(false);
-            this.SCIBusDiagnosticsTabPage.ResumeLayout(false);
+            this.SCIBusPCMDiagnosticsTabPage.ResumeLayout(false);
+            this.SCIBusTCMDiagnosticsTabPage.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -1650,21 +1690,25 @@
 
         private System.Windows.Forms.MenuStrip MenuStrip;
         private System.Windows.Forms.ToolStripMenuItem ToolsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem UpdateToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem ReadROMToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem SettingsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem UnitsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem MetricUnitsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem ImperialUnitsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem IncludeTimestampInLogFilesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem AboutToolStripMenuItem;
         private System.Windows.Forms.GroupBox USBCommunicationGroupBox;
-        private System.Windows.Forms.GroupBox ControlPanelGroupBox;
         private System.Windows.Forms.TextBox USBTextBox;
         private System.Windows.Forms.Button USBSendPacketButton;
+        private System.Windows.Forms.Button ResetButton;
+        private System.Windows.Forms.GroupBox ControlPanelGroupBox;
         private System.Windows.Forms.Button ConnectButton;
         private System.Windows.Forms.ComboBox COMPortsComboBox;
         private System.Windows.Forms.Button COMPortsRefreshButton;
-        private System.Windows.Forms.GroupBox DiagnosticsGroupBox;
-        private System.Windows.Forms.Button ResetButton;
-        private System.Windows.Forms.TabControl DeviceCCDSCITabControl;
+        private System.Windows.Forms.Button ExpandButton;
+        private System.Windows.Forms.TabControl DeviceCCDSCILCDTabControl;
         private System.Windows.Forms.TabPage DeviceControlTabPage;
-        private System.Windows.Forms.TabPage CCDBusControlTabPage;
-        private System.Windows.Forms.TabPage SCIBusControlTabPage;
         private System.Windows.Forms.Button HandshakeButton;
         private System.Windows.Forms.Button StatusButton;
         private System.Windows.Forms.Button DebugRandomCCDBusMessagesButton;
@@ -1688,21 +1732,15 @@
         private System.Windows.Forms.Label EEPROMReadCountLabel;
         private System.Windows.Forms.TextBox EEPROMReadCountTextBox;
         private System.Windows.Forms.CheckBox EEPROMWriteEnableCheckBox;
-        private System.Windows.Forms.ToolStripMenuItem UpdateToolStripMenuItem;
         private System.Windows.Forms.Button SetLEDsButton;
         private System.Windows.Forms.Label SettingsLabel;
-        private System.Windows.Forms.ToolStripMenuItem UnitsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem MetricUnitsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem ImperialUnitsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem IncludeTimestampInLogFilesToolStripMenuItem;
         private System.Windows.Forms.Label HeartbeatIntervalLabel;
         private System.Windows.Forms.Label MillisecondsLabel01;
         private System.Windows.Forms.TextBox HeartbeatIntervalTextBox;
         private System.Windows.Forms.Label MillisecondsLabel02;
         private System.Windows.Forms.TextBox LEDBlinkDurationTextBox;
         private System.Windows.Forms.Label LEDBlinkDurationLabel;
-        private System.Windows.Forms.TabPage LCDControlTabPage;
-        private System.Windows.Forms.Button ExpandButton;
+        private System.Windows.Forms.TabPage CCDBusControlTabPage;
         private System.Windows.Forms.ListBox CCDBusTxMessagesListBox;
         private System.Windows.Forms.ComboBox USBSendPacketComboBox;
         private System.Windows.Forms.Button CCDBusTxMessageAddButton;
@@ -1726,6 +1764,7 @@
         private System.Windows.Forms.CheckBox CCDBusTerminationBiasOnOffCheckBox;
         private System.Windows.Forms.Button MeasureCCDBusVoltagesButton;
         private System.Windows.Forms.CheckBox CCDBusTransceiverOnOffCheckBox;
+        private System.Windows.Forms.TabPage SCIBusControlTabPage;
         private System.Windows.Forms.TextBox SCIBusTxMessageRepeatIncrementTextBox;
         private System.Windows.Forms.CheckBox SCIBusTxMessageRepeatIncrementCheckBox;
         private System.Windows.Forms.Label MillisecondsLabel05;
@@ -1749,14 +1788,7 @@
         private System.Windows.Forms.CheckBox SCIBusOBD1EngineCableUsedCheckBox;
         private System.Windows.Forms.ComboBox SCIBusOBDConfigurationComboBox;
         private System.Windows.Forms.Label SCIBusOBDConfigurationLabel;
-        private System.Windows.Forms.TabControl DiagnosticsTabControl;
-        private System.Windows.Forms.TabPage CCDBusDiagnosticsTabPage;
-        private System.Windows.Forms.TabPage SCIBusDiagnosticsTabPage;
-        private FlickerFreeListBox CCDBusDiagnosticsListBox;
-        private System.Windows.Forms.Button DiagnosticsResetViewButton;
-        private System.Windows.Forms.Button DiagnosticsSnapshotButton;
-        private FlickerFreeListBox SCIBusPCMDiagnosticsListBox;
-        private System.Windows.Forms.Button DiagnosticsRefreshButton;
+        private System.Windows.Forms.TabPage LCDControlTabPage;
         private System.Windows.Forms.Button LCDApplySettingsButton;
         private System.Windows.Forms.Label LCDRefreshRateLabel;
         private System.Windows.Forms.Label HzLabel01;
@@ -1771,13 +1803,24 @@
         private System.Windows.Forms.TextBox LCDPreviewTextBox;
         private System.Windows.Forms.ComboBox LCDDataSourceComboBox;
         private System.Windows.Forms.Label LCDDataSourceLabel;
-        private System.Windows.Forms.ToolStripMenuItem ReadROMToolStripMenuItem;
         private System.Windows.Forms.Label LCDPreviewLabel;
         private System.Windows.Forms.Label LCDI2CAddressHexLabel;
         private System.Windows.Forms.TextBox LCDI2CAddressTextBox;
         private System.Windows.Forms.Label LCDI2CAddressLabel;
         private System.Windows.Forms.Label SCIBusFaultCodesLabel;
         private System.Windows.Forms.Button SCIBusEraseFaultCodesButton;
+        private System.Windows.Forms.GroupBox DiagnosticsGroupBox;
+        private System.Windows.Forms.TabControl DiagnosticsTabControl;
+        private System.Windows.Forms.TabPage CCDBusDiagnosticsTabPage;
+        private FlickerFreeListBox CCDBusDiagnosticsListBox;
+        private System.Windows.Forms.TabPage SCIBusPCMDiagnosticsTabPage;
+        private FlickerFreeListBox SCIBusPCMDiagnosticsListBox;
+        private System.Windows.Forms.TabPage SCIBusTCMDiagnosticsTabPage;
+        private FlickerFreeListBox SCIBusTCMDiagnosticsListBox;
+        private System.Windows.Forms.Button DiagnosticsRefreshButton;
+        private System.Windows.Forms.Button DiagnosticsResetViewButton;
+        private System.Windows.Forms.Button DiagnosticsCopyToClipboardButton;
+        private System.Windows.Forms.Button DiagnosticsSnapshotButton;
     }
 }
 

@@ -53,8 +53,6 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 void setup()
 {
     // Define digital pin states.
-    //pinMode(INT4, INPUT_PULLUP);  // D2 (INT4), CCD-bus idle detector
-    //pinMode(INT5, INPUT_PULLUP);  // D3 (INT5), CCD-bus active byte detector
     pinMode(RX_LED, OUTPUT);      // Data received LED
     pinMode(TX_LED, OUTPUT);      // Data transmitted LED
     // PWR LED is tied to +5V directly, stays on when the scanner has power, draws about 2mA current.
@@ -84,7 +82,7 @@ void setup()
     usb_init(USBBAUD);// 250000 baud, an external serial monitor should have the same speed
     ccd_init(LOBAUD); // 7812.5 baud
     pcm_init(LOBAUD); // 7812.5 baud
-    //tcm_init(LOBAUD); // 7812.5 baud
+    tcm_init(LOBAUD); // 7812.5 baud
     
     analogReference(DEFAULT);   // use default voltage reference applied to AVCC (+5V)
     check_battery_volts();      // measure battery voltage from OBD16 pin
@@ -99,8 +97,8 @@ void setup()
     //ccd_tx_flush();
     pcm_rx_flush();
     pcm_tx_flush();
-    //tcm_rx_flush();
-    //tcm_tx_flush();
+    tcm_rx_flush();
+    tcm_tx_flush();
 
     lcd_init(); // initialize external LCD
     delay(2000);
@@ -127,13 +125,12 @@ void setup()
         }
     }
 
-    ccd.bus_settings = 0x51; // enabled, non-inverted, termination/bias disabled, 7812.5 baud
-    configure_sci_bus(0xB1); // PCM enabled, non-inverted, configuration "A", 7812.5 baud
-    //configure_sci_bus(0xE1); // TCM disabled, non-inverted, configuration "A", 7812.5 baud
-    ccd.repeated_msg_interval = 100; // ms
+    ccd.bus_settings = 0x51; // CCD-bus enabled, non-inverted, termination/bias disabled, 7812.5 baud
     ccd.repeated_msg_increment = 2;
-    pcm.repeated_msg_interval = 100; // ms
-    pcm.repeated_msg_increment = 1;
+    pcm.bus_settings = 0x91; // PCM enabled, non-inverted, configuration "A", 7812.5 baud
+    tcm.bus_settings = 0xC1; // TCM disabled, non-inverted, configuration "A", 7812.5 baud
+    tcm.enabled = false;
+    configure_sci_bus(0xB1); // force sending a settings packet
 
     send_usb_packet(from_usb, to_usb, reset, reset_done, ack, 1); // scanner ready
     send_hwfw_info(); // send hardware/firmware information to laptop

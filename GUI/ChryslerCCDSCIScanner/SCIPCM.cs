@@ -4,13 +4,12 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace ChryslerCCDSCIScanner
 {
-    public class SCI
+    public class SCIPCM
     {
-        public SCIDiagnosticsTable Diagnostics = new SCIDiagnosticsTable();
+        public SCIPCMDiagnosticsTable Diagnostics = new SCIPCMDiagnosticsTable();
         public DataTable MessageDatabase = new DataTable("PCMDatabase");
         public DataTable EngineDTC = new DataTable("EngineDTC");
         public List<byte> faultCodeList = new List<byte>();
@@ -24,10 +23,11 @@ namespace ChryslerCCDSCIScanner
         private const int descriptionColumnStart = 28;
         private const int valueColumnStart = 82;
         private const int unitColumnStart = 108;
-        private string state = null;
-        private string speed = null;
-        private string logic = null;
-        private string configuration = null;
+
+        public string state = null;
+        public string speed = null;
+        public string logic = null;
+        public string configuration = null;
 
         public string HeaderUnknown  = "│ SCI-BUS ENGINE          │ STATE: N/A                                                                                   ";
         public string HeaderDisabled = "│ SCI-BUS ENGINE          │ STATE: DISABLED                                                                              ";
@@ -35,7 +35,7 @@ namespace ChryslerCCDSCIScanner
         public string EmptyLine      = "│                         │                                                     │                         │             │";
         public string HeaderModified = string.Empty;
 
-        public SCI()
+        public SCIPCM()
         {
             column = new DataColumn();
             column.DataType = typeof(ushort);
