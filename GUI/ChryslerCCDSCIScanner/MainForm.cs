@@ -53,12 +53,30 @@ namespace ChryslerCCDSCIScanner
         public static bool includeTimestampInLogFiles = false;
         public static ushort tableRefreshRate = 0;
 
+        public bool CCDTableRefreshAllowed = false;
+        public List<string> CCDTableBuffer = new List<string>();
+        public List<int> CCDTableBufferLocation = new List<int>();
+        public List<int> CCDTableRowCountHistory = new List<int>();
+
+        public bool PCMTableRefreshAllowed = false;
+        public List<string> PCMTableBuffer = new List<string>();
+        public List<int> PCMTableBufferLocation = new List<int>();
+        public List<int> PCMTableRowCountHistory = new List<int>();
+
+        public bool TCMTableRefreshAllowed = false;
+        public List<string> TCMTableBuffer = new List<string>();
+        public List<int> TCMTableBufferLocation = new List<int>();
+        public List<int> TCMTableRowCountHistory = new List<int>();
+
         public AboutForm About;
         public Packet Packet = new Packet();
         public CCD CCD = new CCD();
         public SCIPCM PCM = new SCIPCM();
         public SCITCM TCM = new SCITCM();
         public System.Timers.Timer TimeoutTimer = new System.Timers.Timer();
+        public System.Timers.Timer CCDTableRefreshTimer = new System.Timers.Timer();
+        public System.Timers.Timer PCMTableRefreshTimer = new System.Timers.Timer();
+        public System.Timers.Timer TCMTableRefreshTimer = new System.Timers.Timer();
         public WebClient Downloader = new WebClient();
         public FileInfo fi = new FileInfo(@"DRBDBReader/database.mem");
         public Database db;
@@ -109,6 +127,21 @@ namespace ChryslerCCDSCIScanner
             TimeoutTimer.AutoReset = false;
             TimeoutTimer.Enabled = true;
 
+            CCDTableRefreshTimer.Elapsed += new ElapsedEventHandler(CCDTableRefreshHandler);
+            CCDTableRefreshTimer.Interval = 25; // ms
+            CCDTableRefreshTimer.AutoReset = true;
+            CCDTableRefreshTimer.Enabled = true;
+
+            PCMTableRefreshTimer.Elapsed += new ElapsedEventHandler(PCMTableRefreshHandler);
+            PCMTableRefreshTimer.Interval = 25; // ms
+            PCMTableRefreshTimer.AutoReset = true;
+            PCMTableRefreshTimer.Enabled = true;
+
+            TCMTableRefreshTimer.Elapsed += new ElapsedEventHandler(TCMTableRefreshHandler);
+            TCMTableRefreshTimer.Interval = 25; // ms
+            TCMTableRefreshTimer.AutoReset = true;
+            TCMTableRefreshTimer.Enabled = true;
+
             UpdateCOMPortList();
 
             CCDBusDiagnosticsListBox.Items.AddRange(CCD.Diagnostics.Table.ToArray());
@@ -146,12 +179,27 @@ namespace ChryslerCCDSCIScanner
                 includeTimestampInLogFiles = false;
             }
 
+            if (Properties.Settings.Default.CCDBusOnDemand == true)
+            {
+                CCDBusOnDemandToolStripMenuItem.Checked = true;
+            }
+            else
+            {
+                CCDBusOnDemandToolStripMenuItem.Checked = false;
+            }
+
             ActiveControl = ConnectButton; // put focus on the connect button
         }
 
         #region Methods
 
         private void TimeoutHandler(object source, ElapsedEventArgs e) => timeout = true;
+
+        private void CCDTableRefreshHandler(object source, ElapsedEventArgs e) => CCDTableRefreshAllowed = true;
+
+        private void PCMTableRefreshHandler(object source, ElapsedEventArgs e) => PCMTableRefreshAllowed = true;
+
+        private void TCMTableRefreshHandler(object source, ElapsedEventArgs e) => TCMTableRefreshAllowed = true;
 
         private void UpdateCOMPortList()
         {
@@ -1893,8 +1941,11 @@ namespace ChryslerCCDSCIScanner
                     }
                     break;
                 case (byte)Packet.Source.ccd:
-                    Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message:", Packet.rx.buffer);
-                    CCD.AddMessage(Packet.rx.payload.ToArray());
+                    if (CCDBusOnDemandToolStripMenuItem.Checked && (DeviceCCDSCILCDTabControl.SelectedTab.Name == "CCDBusControlTabPage") || !CCDBusOnDemandToolStripMenuItem.Checked)
+                    {
+                        Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message:", Packet.rx.buffer);
+                        CCD.AddMessage(Packet.rx.payload.ToArray());
+                    }
                     break;
                 case (byte)Packet.Source.pcm:
                     switch (Packet.rx.mode)
@@ -2000,38 +2051,142 @@ namespace ChryslerCCDSCIScanner
 
         private void UpdateCCDTable(object sender, EventArgs e)
         {
-            CCDBusDiagnosticsListBox.BeginUpdate();
+            if (CCDBusDiagnosticsListBox.Items.Count == 0)
+            {
+                CCDBusDiagnosticsListBox.Items.AddRange(CCD.Diagnostics.Table.ToArray());
+                return;
+            }
 
-            lastCCDScrollBarPosition = CCDBusDiagnosticsListBox.GetVerticalScrollPosition();
-            CCDBusDiagnosticsListBox.Items.Clear();
-            CCDBusDiagnosticsListBox.Items.AddRange(CCD.Diagnostics.Table.ToArray());
-            CCDBusDiagnosticsListBox.SetVerticalScrollPosition(lastCCDScrollBarPosition);
+            // Add current line to the buffer.
+            CCDTableBuffer.Add(CCD.Diagnostics.Table[CCD.Diagnostics.lastUpdatedLine]);
+            CCDTableBufferLocation.Add(CCD.Diagnostics.lastUpdatedLine);
+            CCDTableRowCountHistory.Add(CCD.Diagnostics.Table.Count);
 
-            CCDBusDiagnosticsListBox.EndUpdate();
+            if (CCDTableRefreshAllowed)
+            {
+                CCDTableRefreshAllowed = false;
+
+                CCDBusDiagnosticsListBox.BeginUpdate();
+
+                lastCCDScrollBarPosition = CCDBusDiagnosticsListBox.GetVerticalScrollPosition();
+
+                // Update header line.
+                CCDBusDiagnosticsListBox.Items.RemoveAt(1);
+                CCDBusDiagnosticsListBox.Items.Insert(1, CCD.Diagnostics.Table[1]);
+
+                // Update lines from buffer.
+                for (int i = 0; i < CCDTableBuffer.Count; i++)
+                {
+                    if (CCDBusDiagnosticsListBox.Items.Count == CCDTableRowCountHistory[i])
+                    {
+                        CCDBusDiagnosticsListBox.Items.RemoveAt(CCDTableBufferLocation[i]);
+                    }
+
+                    CCDBusDiagnosticsListBox.Items.Insert(CCDTableBufferLocation[i], CCDTableBuffer[i]);
+                }
+
+                //CCDBusDiagnosticsListBox.Items.Clear(); // bad idea
+                //CCDBusDiagnosticsListBox.Items.AddRange(CCD.Diagnostics.Table.ToArray()); // bad idea
+                CCDBusDiagnosticsListBox.SetVerticalScrollPosition(lastCCDScrollBarPosition);
+
+                CCDBusDiagnosticsListBox.EndUpdate();
+
+                CCDTableBuffer.Clear();
+                CCDTableBufferLocation.Clear();
+                CCDTableRowCountHistory.Clear();
+            }
         }
 
         private void UpdateSCIPCMTable(object sender, EventArgs e)
         {
-            SCIBusPCMDiagnosticsListBox.BeginUpdate();
+            if (SCIBusPCMDiagnosticsListBox.Items.Count == 0)
+            {
+                SCIBusPCMDiagnosticsListBox.Items.AddRange(PCM.Diagnostics.Table.ToArray());
+                return;
+            }
 
-            lastPCMScrollBarPosition = SCIBusPCMDiagnosticsListBox.GetVerticalScrollPosition();
-            SCIBusPCMDiagnosticsListBox.Items.Clear();
-            SCIBusPCMDiagnosticsListBox.Items.AddRange(PCM.Diagnostics.Table.ToArray());
-            SCIBusPCMDiagnosticsListBox.SetVerticalScrollPosition(lastPCMScrollBarPosition);
+            // Add current line to the buffer.
+            PCMTableBuffer.Add(PCM.Diagnostics.Table[PCM.Diagnostics.lastUpdatedLine]);
+            PCMTableBufferLocation.Add(PCM.Diagnostics.lastUpdatedLine);
+            PCMTableRowCountHistory.Add(PCM.Diagnostics.Table.Count);
 
-            SCIBusPCMDiagnosticsListBox.EndUpdate();
+            if (PCMTableRefreshAllowed)
+            {
+                PCMTableRefreshAllowed = false;
+
+                SCIBusPCMDiagnosticsListBox.BeginUpdate();
+
+                lastPCMScrollBarPosition = SCIBusPCMDiagnosticsListBox.GetVerticalScrollPosition();
+
+                // Update header line.
+                SCIBusPCMDiagnosticsListBox.Items.RemoveAt(1);
+                SCIBusPCMDiagnosticsListBox.Items.Insert(1, PCM.Diagnostics.Table[1]);
+
+                // Update lines from buffer.
+                for (int i = 0; i < PCMTableBuffer.Count; i++)
+                {
+                    if (SCIBusPCMDiagnosticsListBox.Items.Count == PCMTableRowCountHistory[i])
+                    {
+                        SCIBusPCMDiagnosticsListBox.Items.RemoveAt(PCMTableBufferLocation[i]);
+                    }
+
+                    SCIBusPCMDiagnosticsListBox.Items.Insert(PCMTableBufferLocation[i], PCMTableBuffer[i]);
+                }
+
+                SCIBusPCMDiagnosticsListBox.SetVerticalScrollPosition(lastPCMScrollBarPosition);
+
+                SCIBusPCMDiagnosticsListBox.EndUpdate();
+
+                PCMTableBuffer.Clear();
+                PCMTableBufferLocation.Clear();
+                PCMTableRowCountHistory.Clear();
+            }
         }
 
         private void UpdateSCITCMTable(object sender, EventArgs e)
         {
-            SCIBusTCMDiagnosticsListBox.BeginUpdate();
+            if (SCIBusTCMDiagnosticsListBox.Items.Count == 0)
+            {
+                SCIBusTCMDiagnosticsListBox.Items.AddRange(TCM.Diagnostics.Table.ToArray());
+                return;
+            }
 
-            lastTCMScrollBarPosition = SCIBusTCMDiagnosticsListBox.GetVerticalScrollPosition();
-            SCIBusTCMDiagnosticsListBox.Items.Clear();
-            SCIBusTCMDiagnosticsListBox.Items.AddRange(TCM.Diagnostics.Table.ToArray());
-            SCIBusTCMDiagnosticsListBox.SetVerticalScrollPosition(lastTCMScrollBarPosition);
+            // Add current line to the buffer.
+            TCMTableBuffer.Add(TCM.Diagnostics.Table[TCM.Diagnostics.lastUpdatedLine]);
+            TCMTableBufferLocation.Add(TCM.Diagnostics.lastUpdatedLine);
+            TCMTableRowCountHistory.Add(TCM.Diagnostics.Table.Count);
 
-            SCIBusTCMDiagnosticsListBox.EndUpdate();
+            if (TCMTableRefreshAllowed)
+            {
+                TCMTableRefreshAllowed = false;
+
+                SCIBusTCMDiagnosticsListBox.BeginUpdate();
+
+                lastTCMScrollBarPosition = SCIBusTCMDiagnosticsListBox.GetVerticalScrollPosition();
+
+                // Update header line.
+                SCIBusTCMDiagnosticsListBox.Items.RemoveAt(1);
+                SCIBusTCMDiagnosticsListBox.Items.Insert(1, TCM.Diagnostics.Table[1]);
+
+                // Update lines from buffer.
+                for (int i = 0; i < TCMTableBuffer.Count; i++)
+                {
+                    if (SCIBusTCMDiagnosticsListBox.Items.Count == TCMTableRowCountHistory[i])
+                    {
+                        SCIBusTCMDiagnosticsListBox.Items.RemoveAt(TCMTableBufferLocation[i]);
+                    }
+
+                    SCIBusTCMDiagnosticsListBox.Items.Insert(TCMTableBufferLocation[i], TCMTableBuffer[i]);
+                }
+
+                SCIBusTCMDiagnosticsListBox.SetVerticalScrollPosition(lastTCMScrollBarPosition);
+
+                SCIBusTCMDiagnosticsListBox.EndUpdate();
+
+                TCMTableBuffer.Clear();
+                TCMTableBufferLocation.Clear();
+                TCMTableRowCountHistory.Clear();
+            }
         }
 
         #endregion
@@ -3139,18 +3294,18 @@ namespace ChryslerCCDSCIScanner
 
         private async void CCDBusSettingsCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            byte CCDBusOnOff;
+            byte CCDBusState;
             byte CCDBusTerminationBiasOnOff;
 
             if (CCDBusTransceiverOnOffCheckBox.Checked)
             {
-                CCDBusOnOff = 0x01;
+                CCDBusState = 0x01;
                 CCDBusTransceiverOnOffCheckBox.Text = "CCD-bus transceiver ON";
                 CCD.UpdateHeader("enabled", null, null);
             }
             else
             {
-                CCDBusOnOff = 0x00;
+                CCDBusState = 0x00;
                 CCDBusTransceiverOnOffCheckBox.Text = "CCD-bus transceiver OFF";
                 CCD.UpdateHeader("disabled", null, null);
             }
@@ -3170,7 +3325,7 @@ namespace ChryslerCCDSCIScanner
             Packet.tx.target = (byte)Packet.Target.device;
             Packet.tx.command = (byte)Packet.Command.settings;
             Packet.tx.mode = (byte)Packet.SettingsMode.setCCDBus;
-            Packet.tx.payload = new byte[2] { CCDBusOnOff, CCDBusTerminationBiasOnOff };
+            Packet.tx.payload = new byte[2] { CCDBusState, CCDBusTerminationBiasOnOff };
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Change CCD-bus settings:", Packet.tx.buffer);
             await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
@@ -4139,9 +4294,13 @@ namespace ChryslerCCDSCIScanner
                     CCDBusDiagnosticsListBox.Items.Clear();
                     CCDBusDiagnosticsListBox.Items.AddRange(CCD.Diagnostics.Table.ToArray());
                     break;
-                case "SCIBusDiagnosticsTabPage":
+                case "SCIBusPCMDiagnosticsTabPage":
                     SCIBusPCMDiagnosticsListBox.Items.Clear();
                     SCIBusPCMDiagnosticsListBox.Items.AddRange(PCM.Diagnostics.Table.ToArray());
+                    break;
+                case "SCIBusTCMDiagnosticsTabPage":
+                    SCIBusTCMDiagnosticsListBox.Items.Clear();
+                    SCIBusTCMDiagnosticsListBox.Items.AddRange(TCM.Diagnostics.Table.ToArray());
                     break;
                 default:
                     break;
@@ -4156,19 +4315,41 @@ namespace ChryslerCCDSCIScanner
                     CCD.Diagnostics.IDByteList.Clear();
                     CCD.Diagnostics.UniqueIDByteList.Clear();
                     CCD.Diagnostics.B2F2IDByteList.Clear();
+                    CCDTableBuffer.Clear();
+                    CCDTableBufferLocation.Clear();
+                    CCDTableRowCountHistory.Clear();
+                    CCD.Diagnostics.lastUpdatedLine = 1;
                     CCD.Diagnostics.InitCCDTable();
                     CCDBusDiagnosticsListBox.Items.Clear();
                     CCDBusDiagnosticsListBox.Items.AddRange(CCD.Diagnostics.Table.ToArray());
                     break;
-                case "SCIBusDiagnosticsTabPage":
+                case "SCIBusPCMDiagnosticsTabPage":
                     PCM.Diagnostics.IDByteList.Clear();
                     PCM.Diagnostics.UniqueIDByteList.Clear();
+                    PCMTableBuffer.Clear();
+                    PCMTableBufferLocation.Clear();
+                    PCMTableRowCountHistory.Clear();
+                    PCM.Diagnostics.lastUpdatedLine = 1;
                     PCM.Diagnostics.InitSCIPCMTable();
                     PCM.Diagnostics.InitRAMDumpTable();
                     PCM.Diagnostics.RAMDumpTableVisible = false;
                     PCM.Diagnostics.RAMTableAddress = 0;
                     SCIBusPCMDiagnosticsListBox.Items.Clear();
                     SCIBusPCMDiagnosticsListBox.Items.AddRange(PCM.Diagnostics.Table.ToArray());
+                    break;
+                case "SCIBusTCMDiagnosticsTabPage":
+                    TCM.Diagnostics.IDByteList.Clear();
+                    TCM.Diagnostics.UniqueIDByteList.Clear();
+                    TCMTableBuffer.Clear();
+                    TCMTableBufferLocation.Clear();
+                    TCMTableRowCountHistory.Clear();
+                    TCM.Diagnostics.lastUpdatedLine = 1;
+                    TCM.Diagnostics.InitSCITCMTable();
+                    //TCM.Diagnostics.InitRAMDumpTable();
+                    //TCM.Diagnostics.RAMDumpTableVisible = false;
+                    //TCM.Diagnostics.RAMTableAddress = 0;
+                    SCIBusTCMDiagnosticsListBox.Items.Clear();
+                    SCIBusTCMDiagnosticsListBox.Items.AddRange(TCM.Diagnostics.Table.ToArray());
                     break;
                 default:
                     break;
@@ -4623,6 +4804,20 @@ namespace ChryslerCCDSCIScanner
                 Properties.Settings.Default.Timestamp = false;
                 Properties.Settings.Default.Save(); // save setting in application configuration file
                 includeTimestampInLogFiles = false;
+            }
+        }
+
+        private void CCDBusOnDemandToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (CCDBusOnDemandToolStripMenuItem.Checked)
+            {
+                Properties.Settings.Default.CCDBusOnDemand = true;
+                Properties.Settings.Default.Save(); // save setting in application configuration file
+            }
+            else
+            {
+                Properties.Settings.Default.CCDBusOnDemand = false;
+                Properties.Settings.Default.Save(); // save setting in application configuration file
             }
         }
 

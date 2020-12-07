@@ -15,6 +15,7 @@ namespace ChryslerCCDSCIScanner
         public List<byte> UniqueIDByteList = new List<byte>();
 
         public const int listStart = 5;
+        public int lastUpdatedLine = 1;
 
         public SCIPCMDiagnosticsTable()
         {
@@ -91,12 +92,15 @@ namespace ChryslerCCDSCIScanner
                 {
                     Table.Insert(listStart + location, row);
                 }
+
+                lastUpdatedLine = listStart + location;
             }
             else
             {
                 location = IDByteList.FindIndex(x => x == modifiedID);
                 Table.RemoveAt(listStart + location);
                 Table.Insert(listStart + location, row);
+                lastUpdatedLine = listStart + location;
             }
         }
 

@@ -16,6 +16,7 @@ namespace ChryslerCCDSCIScanner
         public int B2Row = 5;
         public int F2Row = 6;
         public const int listStart = 8;
+        public int lastUpdatedLine = 1;
 
         public CCDDiagnosticsTable()
         {
@@ -67,12 +68,15 @@ namespace ChryslerCCDSCIScanner
                 {
                     Table.Insert(listStart + location, row);
                 }
+
+                lastUpdatedLine = listStart + location;
             }
             else if (IDByteList.Contains(modifiedID) && ((modifiedID >> 8) != 0xB2) && ((modifiedID >>8) != 0xF2)) // if it's not diagnostic request or response message
             {
                 location = IDByteList.FindIndex(x => x == modifiedID);
                 Table.RemoveAt(listStart + location);
                 Table.Insert(listStart + location, row);
+                lastUpdatedLine = listStart + location;
             }
 
             switch (modifiedID >> 8)
@@ -84,12 +88,14 @@ namespace ChryslerCCDSCIScanner
                     Table.Insert(B2Row, row);
                     //Table.RemoveAt(F2Row);
                     //Table.Insert(F2Row, "│ F2 -- -- -- -- --       │ RESPONSE |                                          │                         │             │");
+                    lastUpdatedLine = B2Row;
                     break;
                 case 0xF2:
                     if (!B2F2IDByteList.Contains(0xF2)) B2F2IDByteList.Add(0xF2);
                     B2F2IDByteList.Sort();
                     Table.RemoveAt(F2Row);
                     Table.Insert(F2Row, row);
+                    lastUpdatedLine = F2Row;
                     break;
                 default:
                     break;

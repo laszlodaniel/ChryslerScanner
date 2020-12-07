@@ -12,8 +12,8 @@ namespace ChryslerCCDSCIScanner
         public SCITCMDiagnosticsTable Diagnostics = new SCITCMDiagnosticsTable();
         public DataTable MessageDatabase = new DataTable("TCMDatabase");
         public DataTable TransmissionDTC = new DataTable("TransmissionDTC");
-        public List<byte> faultCodeList = new List<byte>();
-        public bool faultCodesSaved = true;
+        public List<byte> transmissionFaultCodeList = new List<byte>();
+        public bool transmissionFaultCodesSaved = true;
         public ushort[] IDList;
         public byte[] DTCList;
         public DataColumn column;
@@ -100,7 +100,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 3;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "FAULT CODE LIST";
+            row["description"] = "TRANSMISSION FAULT CODE LIST";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);

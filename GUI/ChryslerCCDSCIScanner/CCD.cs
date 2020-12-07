@@ -136,7 +136,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "UNKNOWN MODULE PRESENT";
+            row["description"] = "UNKNOWN FEATURE PRESENT";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -156,7 +156,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "UNKNOWN MODULE PRESENT";
+            row["description"] = "UNKNOWN FEATURE PRESENT";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -246,7 +246,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "UNKNOWN MODULE PRESENT";
+            row["description"] = "UNKNOWN FEATURE PRESENT";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -286,7 +286,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "UNKNOWN MODULE PRESENT";
+            row["description"] = "UNKNOWN FEATURE PRESENT";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -356,7 +356,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "UNKNOWN MODULE PRESENT";
+            row["description"] = "UNKNOWN FEATURE PRESENT";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -426,7 +426,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "UNKNOWN MODULE PRESENT";
+            row["description"] = "UNKNOWN FEATURE PRESENT";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -476,7 +476,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "UNKNOWN MODULE PRESENT";
+            row["description"] = "UNKNOWN FEATURE PRESENT";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -596,7 +596,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "UNKNOWN MODULE PRESENT";
+            row["description"] = "UNKNOWN FEATURE PRESENT";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -676,7 +676,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "UNKNOWN MODULE PRESENT";
+            row["description"] = "UNKNOWN FEATURE PRESENT";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -812,7 +812,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "UNKNOWN MODULE PRESENT";
+            row["description"] = "UNKNOWN FEATURE PRESENT";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -1017,7 +1017,7 @@ namespace ChryslerCCDSCIScanner
                             unitToInsert = string.Empty;
                         }
                         break;
-                    case 0x0D: // unknown module present
+                    case 0x0D: // unknown feature present
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
                         break;
@@ -1025,7 +1025,7 @@ namespace ChryslerCCDSCIScanner
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
                         break;
-                    case 0x11: // unknown module present
+                    case 0x11: // unknown feature present
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
                         break;
@@ -1176,7 +1176,7 @@ namespace ChryslerCCDSCIScanner
                             unitToInsert = string.Empty;
                         }
                         break;
-                    case 0x2A: // unknown module present
+                    case 0x2A: // unknown feature present
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
                         break;
@@ -1237,7 +1237,7 @@ namespace ChryslerCCDSCIScanner
                             unitToInsert = string.Empty;
                         }
                         break;
-                    case 0x36: // unknown module present
+                    case 0x36: // unknown feature present
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
                         break;
@@ -1304,7 +1304,7 @@ namespace ChryslerCCDSCIScanner
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
                         break;
-                    case 0x4D: // unknown module present
+                    case 0x4D: // unknown feature present
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
                         break;
@@ -1366,7 +1366,7 @@ namespace ChryslerCCDSCIScanner
                             unitToInsert = string.Empty;
                         }
                         break;
-                    case 0x76: // unknown module present
+                    case 0x76: // unknown feature present
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
                         break;
@@ -1415,7 +1415,7 @@ namespace ChryslerCCDSCIScanner
                             unitToInsert = string.Empty;
                         }
                         break;
-                    case 0x8D: // unknown module present
+                    case 0x8D: // unknown feature present
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
                         break;
@@ -2332,7 +2332,7 @@ namespace ChryslerCCDSCIScanner
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
                         break;
-                    case 0xB6: // unknown module present
+                    case 0xB6: // unknown feature present
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
                         break;
@@ -2389,7 +2389,7 @@ namespace ChryslerCCDSCIScanner
                             unitToInsert = string.Empty;
                         }
                         break;
-                    case 0xCD: // unknown module present
+                    case 0xCD: // unknown feature present
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
                         break;
@@ -3256,7 +3256,7 @@ namespace ChryslerCCDSCIScanner
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
                         break;
-                    case 0xF6: // unknown module present
+                    case 0xF6: // unknown feature present
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
                         break;

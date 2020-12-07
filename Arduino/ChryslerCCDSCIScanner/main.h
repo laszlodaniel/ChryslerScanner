@@ -33,8 +33,8 @@ extern LiquidCrystal_I2C lcd;
 // 00: patch
 // (00: revision)
 // = v0.1.0(.0)
-#define FW_VERSION 0x00030000
-#define FW_DATE 0x000300005FBF7A8C
+#define FW_VERSION 0x00040000
+#define FW_DATE 0x000400005FCE566E
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024

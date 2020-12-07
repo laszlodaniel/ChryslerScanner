@@ -77,6 +77,14 @@ void setup()
     pinMode(PA7, OUTPUT);
 
     exteeprom_init(); // initialize external EEPROM chip (24LC32A)
+
+    ccd.bus_settings = 0x41; // CCD-bus disabled, non-inverted, termination/bias disabled, 7812.5 baud
+    ccd.enabled = false;
+    ccd.repeated_msg_increment = 2;
+    pcm.bus_settings = 0x91; // PCM enabled, non-inverted, configuration "A", 7812.5 baud
+    tcm.bus_settings = 0xC1; // TCM disabled, non-inverted, configuration "A", 7812.5 baud
+    tcm.enabled = false;
+    configure_sci_bus(0xB1); // force sending a settings packet
     
     // Initialize serial interfaces with default speeds.
     usb_init(USBBAUD);// 250000 baud, an external serial monitor should have the same speed
@@ -124,13 +132,6 @@ void setup()
             }
         }
     }
-
-    ccd.bus_settings = 0x51; // CCD-bus enabled, non-inverted, termination/bias disabled, 7812.5 baud
-    ccd.repeated_msg_increment = 2;
-    pcm.bus_settings = 0x91; // PCM enabled, non-inverted, configuration "A", 7812.5 baud
-    tcm.bus_settings = 0xC1; // TCM disabled, non-inverted, configuration "A", 7812.5 baud
-    tcm.enabled = false;
-    configure_sci_bus(0xB1); // force sending a settings packet
 
     send_usb_packet(from_usb, to_usb, reset, reset_done, ack, 1); // scanner ready
     send_hwfw_info(); // send hardware/firmware information to laptop

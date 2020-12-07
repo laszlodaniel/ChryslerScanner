@@ -12,10 +12,10 @@ namespace ChryslerCCDSCIScanner
         public SCIPCMDiagnosticsTable Diagnostics = new SCIPCMDiagnosticsTable();
         public DataTable MessageDatabase = new DataTable("PCMDatabase");
         public DataTable EngineDTC = new DataTable("EngineDTC");
-        public List<byte> faultCodeList = new List<byte>();
-        public bool faultCodesSaved = true;
+        public List<byte> engineFaultCodeList = new List<byte>();
+        public bool engineFaultCodesSaved = true;
         public ushort[] IDList;
-        public byte[] DTCList;
+        public byte[] engineDTCList;
         public DataColumn column;
         public DataRow row;
 
@@ -100,7 +100,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 3;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "FAULT CODE LIST";
+            row["description"] = "ENGINE FAULT CODE LIST";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -1479,7 +1479,7 @@ namespace ChryslerCCDSCIScanner
 
             #endregion
 
-            DTCList = EngineDTC.AsEnumerable().Select(r => r.Field<byte>("id")).ToArray();
+            engineDTCList = EngineDTC.AsEnumerable().Select(r => r.Field<byte>("id")).ToArray();
         }
 
         public void UpdateHeader(string state = "enabled", string speed = null, string logic = null, string configuration = null)
@@ -1517,7 +1517,7 @@ namespace ChryslerCCDSCIScanner
             byte[] timestamp = new byte[4];
             byte[] message = new byte[] { };
             byte[] payload = new byte[] { };
-            byte[] faultCodePayload = new byte[] { };
+            byte[] engineFaultCodePayload = new byte[] { };
 
             if (data.Length > 3)
             {
@@ -1538,8 +1538,8 @@ namespace ChryslerCCDSCIScanner
 
             if (message.Length > 2)
             {
-                faultCodePayload = new byte[data.Length - 6];
-                Array.Copy(data, 5, faultCodePayload, 0, faultCodePayload.Length); // copy payload from the input byte array (without ID and checksum byte)
+                engineFaultCodePayload = new byte[data.Length - 6];
+                Array.Copy(data, 5, engineFaultCodePayload, 0, engineFaultCodePayload.Length); // copy payload from the input byte array (without ID and checksum byte)
             }
 
             byte ID = message[0];
@@ -1567,7 +1567,7 @@ namespace ChryslerCCDSCIScanner
                 {
                     switch (ID)
                     {
-                        case 0x10: // fault code list
+                        case 0x10: // engine fault code list
                             if (message.Length >= minLength)
                             {
                                 byte checksum = 0;
@@ -1580,32 +1580,32 @@ namespace ChryslerCCDSCIScanner
 
                                 if (checksum == message[checksumLocation])
                                 {
-                                    faultCodeList.Clear();
-                                    faultCodeList.AddRange(faultCodePayload);
-                                    faultCodeList.Remove(0xFD); // not fault code related
-                                    faultCodeList.Remove(0xFE); // end of fault code list signifier
+                                    engineFaultCodeList.Clear();
+                                    engineFaultCodeList.AddRange(engineFaultCodePayload);
+                                    engineFaultCodeList.Remove(0xFD); // not fault code related
+                                    engineFaultCodeList.Remove(0xFE); // end of fault code list signifier
 
-                                    if (faultCodeList.Count > 0)
+                                    if (engineFaultCodeList.Count > 0)
                                     {
-                                        valueToInsert = Util.ByteToHexStringSimple(faultCodeList.ToArray());
-                                        faultCodesSaved = false;
+                                        valueToInsert = Util.ByteToHexStringSimple(engineFaultCodeList.ToArray());
+                                        engineFaultCodesSaved = false;
                                     }
                                     else
                                     {
                                         valueToInsert = "NO FAULT CODES";
-                                        faultCodesSaved = false;
+                                        engineFaultCodesSaved = false;
                                     }
                                 }
                                 else
                                 {
                                     valueToInsert = "CHECKSUM ERROR";
-                                    faultCodesSaved = true;
+                                    engineFaultCodesSaved = true;
                                 }
                             }
                             else // error
                             {
                                 valueToInsert = "ERROR";
-                                faultCodesSaved = true;
+                                engineFaultCodesSaved = true;
                             }
                             unitToInsert = string.Empty;
                             break;
@@ -4237,7 +4237,7 @@ namespace ChryslerCCDSCIScanner
 
             Diagnostics.AddRow(modifiedID, rowToAdd.ToString());
 
-            if (speed == "62500 baud") Diagnostics.AddRAMTableDump(data);
+            //if (speed == "62500 baud") Diagnostics.AddRAMTableDump(data);
 
             UpdateHeader();
 
@@ -4252,15 +4252,15 @@ namespace ChryslerCCDSCIScanner
 
             File.AppendAllText(MainForm.PCMLogFilename, Util.ByteToHexStringSimple(message) + Environment.NewLine);
 
-            if (!faultCodesSaved)
+            if (!engineFaultCodesSaved)
             {
                 StringBuilder sb = new StringBuilder();
 
-                if (faultCodeList.Count > 0)
+                if (engineFaultCodeList.Count > 0)
                 {
                     sb.Append("FAULT CODE LIST:" + Environment.NewLine);
 
-                    foreach (byte code in faultCodeList)
+                    foreach (byte code in engineFaultCodeList)
                     {
                         int index = EngineDTC.Rows.IndexOf(EngineDTC.Rows.Find(code));
                         byte[] temp = new byte[1] { code };
@@ -4285,7 +4285,7 @@ namespace ChryslerCCDSCIScanner
                     File.AppendAllText(MainForm.PCMLogFilename, Environment.NewLine + sb.ToString() + Environment.NewLine + Environment.NewLine);
                 }
 
-                faultCodesSaved = true;
+                engineFaultCodesSaved = true;
             }
         }
     }
