@@ -126,6 +126,8 @@ namespace ChryslerCCDSCIScanner
             TimeoutTimer.Interval = 2000; // ms
             TimeoutTimer.AutoReset = false;
             TimeoutTimer.Enabled = true;
+            TimeoutTimer.Stop();
+            timeout = false;
 
             CCDTableRefreshTimer.Elapsed += new ElapsedEventHandler(CCDTableRefreshHandler);
             CCDTableRefreshTimer.Interval = 25; // ms
@@ -2310,6 +2312,7 @@ namespace ChryslerCCDSCIScanner
                                     if (receivedHandshake == expectedHandshake)
                                     {
                                         TimeoutTimer.Stop();
+                                        timeout = false;
                                         Util.UpdateTextBox(USBTextBox, "[INFO] Handshake OK: " + receivedHandshake);
                                         Util.UpdateTextBox(USBTextBox, "[INFO] Device connected (" + Packet.Serial.PortName + ").");
                                         deviceFound = true;
@@ -2378,6 +2381,7 @@ namespace ChryslerCCDSCIScanner
                         DiagnosticsGroupBox.Enabled = false;
                         ReadROMToolStripMenuItem.Enabled = false;
                         deviceFound = false;
+                        timeout = false;
                         Util.UpdateTextBox(USBTextBox, "[INFO] Device disconnected (" + Packet.Serial.PortName + ").");
                     }
                 }
