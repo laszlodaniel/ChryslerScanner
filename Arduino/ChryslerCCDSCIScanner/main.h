@@ -33,8 +33,8 @@ extern LiquidCrystal_I2C lcd;
 // 00: patch
 // (00: revision)
 // = v0.1.0(.0)
-#define FW_VERSION 0x00040000
-#define FW_DATE 0x000400005FCE566E
+#define FW_VERSION 0x00040100
+#define FW_DATE 0x000401005FCF8BF7
 
 // RAM buffer sizes for different UART-channels
 #define USB_RX0_BUFFER_SIZE 1024
@@ -300,7 +300,7 @@ volatile uint8_t  TCM_TxTail;
 volatile uint8_t  TCM_LastRxError;
 
 typedef struct {
-    bool enabled = true; // bus state (enabled or disabled)
+    bool enabled = false; // bus state (enabled or disabled)
     bool termination_bias_enabled = false;
     bool invert_logic = false; // OBD1 SCI engine adapter cable needs special message handling
     uint8_t bus_settings = 0;

@@ -79,19 +79,17 @@ void setup()
     exteeprom_init(); // initialize external EEPROM chip (24LC32A)
 
     ccd.bus_settings = 0x41; // CCD-bus disabled, non-inverted, termination/bias disabled, 7812.5 baud
-    ccd.enabled = false;
     ccd.repeated_msg_increment = 2;
     pcm.bus_settings = 0x91; // PCM enabled, non-inverted, configuration "A", 7812.5 baud
+    pcm.enabled = true;
     tcm.bus_settings = 0xC1; // TCM disabled, non-inverted, configuration "A", 7812.5 baud
-    tcm.enabled = false;
-    configure_sci_bus(0xB1); // force sending a settings packet
-    
+
     // Initialize serial interfaces with default speeds.
     usb_init(USBBAUD);// 250000 baud, an external serial monitor should have the same speed
     ccd_init(LOBAUD); // 7812.5 baud
     pcm_init(LOBAUD); // 7812.5 baud
     tcm_init(LOBAUD); // 7812.5 baud
-    
+
     analogReference(DEFAULT);   // use default voltage reference applied to AVCC (+5V)
     check_battery_volts();      // measure battery voltage from OBD16 pin
     check_ccd_volts();          // measure CCD-bus wire voltages
@@ -110,7 +108,7 @@ void setup()
 
     lcd_init(); // initialize external LCD
     delay(2000);
-    
+
     if (lcd_enabled)
     {
         switch (lcd_units)
@@ -134,9 +132,9 @@ void setup()
     }
 
     send_usb_packet(from_usb, to_usb, reset, reset_done, ack, 1); // scanner ready
+    configure_sci_bus(0xB1); // force sending an sci-bus settings packet
     send_hwfw_info(); // send hardware/firmware information to laptop
     cmd_status(); // send status
-    
     wdt_enable(WDTO_2S); // enable watchdog timer that resets program if its timer reaches 2 seconds (useful if the code hangs for some reason and needs auto-reset)
 }
 
