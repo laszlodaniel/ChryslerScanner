@@ -24,8 +24,8 @@ C19   0.1uF           C-EU                                         1206
 C20   470pF           C-EU                                         1206
 C21   0.1uF           C-EU                                         1206
 C22   0.1uF           C-EU                                         1206
-C23   0.1uF           C-EU                                         1206
-C24   0.1uF           C-EU                                         1206
+C23   3.3nF           C-EU                                         1206
+C24   3.3nF           C-EU                                         1206
 CN1   OBD2            OBD2                                         OBD2-90
 D1    RED             LED                                          1206
 D2    ORANGE          LED                                          1206
