@@ -2096,7 +2096,7 @@ namespace ChryslerCCDSCIScanner
                                                     }
                                                 }
 
-                                                sb.Remove(sb.Length - 1, 1); // remove last newline character
+                                                sb.Remove(sb.Length - 2, 2); // remove last newline character
 
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] PCM fault code(s) found:" + Environment.NewLine + sb.ToString());
                                             }
