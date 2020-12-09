@@ -53,17 +53,14 @@ namespace ChryslerCCDSCIScanner
         public static bool includeTimestampInLogFiles = false;
         public static ushort tableRefreshRate = 0;
 
-        public bool CCDTableRefreshAllowed = false;
         public List<string> CCDTableBuffer = new List<string>();
         public List<int> CCDTableBufferLocation = new List<int>();
         public List<int> CCDTableRowCountHistory = new List<int>();
 
-        public bool PCMTableRefreshAllowed = false;
         public List<string> PCMTableBuffer = new List<string>();
         public List<int> PCMTableBufferLocation = new List<int>();
         public List<int> PCMTableRowCountHistory = new List<int>();
 
-        public bool TCMTableRefreshAllowed = false;
         public List<string> TCMTableBuffer = new List<string>();
         public List<int> TCMTableBufferLocation = new List<int>();
         public List<int> TCMTableRowCountHistory = new List<int>();
@@ -197,11 +194,115 @@ namespace ChryslerCCDSCIScanner
 
         private void TimeoutHandler(object source, ElapsedEventArgs e) => timeout = true;
 
-        private void CCDTableRefreshHandler(object source, ElapsedEventArgs e) => CCDTableRefreshAllowed = true;
+        private void CCDTableRefreshHandler(object source, ElapsedEventArgs e)
+        {
+            if (CCDTableBuffer.Count > 0)
+            {
+                CCDBusDiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
+                {
+                    CCDBusDiagnosticsListBox.BeginUpdate();
 
-        private void PCMTableRefreshHandler(object source, ElapsedEventArgs e) => PCMTableRefreshAllowed = true;
+                    lastCCDScrollBarPosition = CCDBusDiagnosticsListBox.GetVerticalScrollPosition();
 
-        private void TCMTableRefreshHandler(object source, ElapsedEventArgs e) => TCMTableRefreshAllowed = true;
+                    // Update header line.
+                    CCDBusDiagnosticsListBox.Items.RemoveAt(1);
+                    CCDBusDiagnosticsListBox.Items.Insert(1, CCD.Diagnostics.Table[1]);
+
+                    // Update lines from buffer.
+                    for (int i = 0; i < CCDTableBuffer.Count; i++)
+                    {
+                        if (CCDBusDiagnosticsListBox.Items.Count == CCDTableRowCountHistory[i])
+                        {
+                            CCDBusDiagnosticsListBox.Items.RemoveAt(CCDTableBufferLocation[i]);
+                        }
+
+                        CCDBusDiagnosticsListBox.Items.Insert(CCDTableBufferLocation[i], CCDTableBuffer[i]);
+                    }
+
+                    //CCDBusDiagnosticsListBox.Items.Clear(); // bad idea
+                    //CCDBusDiagnosticsListBox.Items.AddRange(CCD.Diagnostics.Table.ToArray()); // bad idea
+                    CCDBusDiagnosticsListBox.SetVerticalScrollPosition(lastCCDScrollBarPosition);
+
+                    CCDBusDiagnosticsListBox.EndUpdate();
+
+                    CCDTableBuffer.Clear();
+                    CCDTableBufferLocation.Clear();
+                    CCDTableRowCountHistory.Clear();
+                });
+            }
+        }
+
+        private void PCMTableRefreshHandler(object source, ElapsedEventArgs e)
+        {
+            if (PCMTableBuffer.Count > 0)
+            {
+                SCIBusPCMDiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
+                {
+                    SCIBusPCMDiagnosticsListBox.BeginUpdate();
+
+                    lastPCMScrollBarPosition = SCIBusPCMDiagnosticsListBox.GetVerticalScrollPosition();
+
+                    // Update header line.
+                    SCIBusPCMDiagnosticsListBox.Items.RemoveAt(1);
+                    SCIBusPCMDiagnosticsListBox.Items.Insert(1, PCM.Diagnostics.Table[1]);
+
+                    // Update lines from buffer.
+                    for (int i = 0; i < PCMTableBuffer.Count; i++)
+                    {
+                        if (SCIBusPCMDiagnosticsListBox.Items.Count == PCMTableRowCountHistory[i])
+                        {
+                            SCIBusPCMDiagnosticsListBox.Items.RemoveAt(PCMTableBufferLocation[i]);
+                        }
+
+                        SCIBusPCMDiagnosticsListBox.Items.Insert(PCMTableBufferLocation[i], PCMTableBuffer[i]);
+                    }
+
+                    SCIBusPCMDiagnosticsListBox.SetVerticalScrollPosition(lastPCMScrollBarPosition);
+
+                    SCIBusPCMDiagnosticsListBox.EndUpdate();
+
+                    PCMTableBuffer.Clear();
+                    PCMTableBufferLocation.Clear();
+                    PCMTableRowCountHistory.Clear();
+                });
+            }
+        }
+
+        private void TCMTableRefreshHandler(object source, ElapsedEventArgs e)
+        {
+            if (TCMTableBuffer.Count > 0)
+            {
+                SCIBusTCMDiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
+                {
+                    SCIBusTCMDiagnosticsListBox.BeginUpdate();
+
+                    lastTCMScrollBarPosition = SCIBusTCMDiagnosticsListBox.GetVerticalScrollPosition();
+
+                    // Update header line.
+                    SCIBusTCMDiagnosticsListBox.Items.RemoveAt(1);
+                    SCIBusTCMDiagnosticsListBox.Items.Insert(1, TCM.Diagnostics.Table[1]);
+
+                    // Update lines from buffer.
+                    for (int i = 0; i < TCMTableBuffer.Count; i++)
+                    {
+                        if (SCIBusTCMDiagnosticsListBox.Items.Count == TCMTableRowCountHistory[i])
+                        {
+                            SCIBusTCMDiagnosticsListBox.Items.RemoveAt(TCMTableBufferLocation[i]);
+                        }
+
+                        SCIBusTCMDiagnosticsListBox.Items.Insert(TCMTableBufferLocation[i], TCMTableBuffer[i]);
+                    }
+
+                    SCIBusTCMDiagnosticsListBox.SetVerticalScrollPosition(lastTCMScrollBarPosition);
+
+                    SCIBusTCMDiagnosticsListBox.EndUpdate();
+
+                    TCMTableBuffer.Clear();
+                    TCMTableBufferLocation.Clear();
+                    TCMTableRowCountHistory.Clear();
+                });
+            }
+        }
 
         private void UpdateCOMPortList()
         {
@@ -2063,40 +2164,6 @@ namespace ChryslerCCDSCIScanner
             CCDTableBuffer.Add(CCD.Diagnostics.Table[CCD.Diagnostics.lastUpdatedLine]);
             CCDTableBufferLocation.Add(CCD.Diagnostics.lastUpdatedLine);
             CCDTableRowCountHistory.Add(CCD.Diagnostics.Table.Count);
-
-            if (CCDTableRefreshAllowed)
-            {
-                CCDTableRefreshAllowed = false;
-
-                CCDBusDiagnosticsListBox.BeginUpdate();
-
-                lastCCDScrollBarPosition = CCDBusDiagnosticsListBox.GetVerticalScrollPosition();
-
-                // Update header line.
-                CCDBusDiagnosticsListBox.Items.RemoveAt(1);
-                CCDBusDiagnosticsListBox.Items.Insert(1, CCD.Diagnostics.Table[1]);
-
-                // Update lines from buffer.
-                for (int i = 0; i < CCDTableBuffer.Count; i++)
-                {
-                    if (CCDBusDiagnosticsListBox.Items.Count == CCDTableRowCountHistory[i])
-                    {
-                        CCDBusDiagnosticsListBox.Items.RemoveAt(CCDTableBufferLocation[i]);
-                    }
-
-                    CCDBusDiagnosticsListBox.Items.Insert(CCDTableBufferLocation[i], CCDTableBuffer[i]);
-                }
-
-                //CCDBusDiagnosticsListBox.Items.Clear(); // bad idea
-                //CCDBusDiagnosticsListBox.Items.AddRange(CCD.Diagnostics.Table.ToArray()); // bad idea
-                CCDBusDiagnosticsListBox.SetVerticalScrollPosition(lastCCDScrollBarPosition);
-
-                CCDBusDiagnosticsListBox.EndUpdate();
-
-                CCDTableBuffer.Clear();
-                CCDTableBufferLocation.Clear();
-                CCDTableRowCountHistory.Clear();
-            }
         }
 
         private void UpdateSCIPCMTable(object sender, EventArgs e)
@@ -2111,38 +2178,6 @@ namespace ChryslerCCDSCIScanner
             PCMTableBuffer.Add(PCM.Diagnostics.Table[PCM.Diagnostics.lastUpdatedLine]);
             PCMTableBufferLocation.Add(PCM.Diagnostics.lastUpdatedLine);
             PCMTableRowCountHistory.Add(PCM.Diagnostics.Table.Count);
-
-            if (PCMTableRefreshAllowed)
-            {
-                PCMTableRefreshAllowed = false;
-
-                SCIBusPCMDiagnosticsListBox.BeginUpdate();
-
-                lastPCMScrollBarPosition = SCIBusPCMDiagnosticsListBox.GetVerticalScrollPosition();
-
-                // Update header line.
-                SCIBusPCMDiagnosticsListBox.Items.RemoveAt(1);
-                SCIBusPCMDiagnosticsListBox.Items.Insert(1, PCM.Diagnostics.Table[1]);
-
-                // Update lines from buffer.
-                for (int i = 0; i < PCMTableBuffer.Count; i++)
-                {
-                    if (SCIBusPCMDiagnosticsListBox.Items.Count == PCMTableRowCountHistory[i])
-                    {
-                        SCIBusPCMDiagnosticsListBox.Items.RemoveAt(PCMTableBufferLocation[i]);
-                    }
-
-                    SCIBusPCMDiagnosticsListBox.Items.Insert(PCMTableBufferLocation[i], PCMTableBuffer[i]);
-                }
-
-                SCIBusPCMDiagnosticsListBox.SetVerticalScrollPosition(lastPCMScrollBarPosition);
-
-                SCIBusPCMDiagnosticsListBox.EndUpdate();
-
-                PCMTableBuffer.Clear();
-                PCMTableBufferLocation.Clear();
-                PCMTableRowCountHistory.Clear();
-            }
         }
 
         private void UpdateSCITCMTable(object sender, EventArgs e)
@@ -2157,38 +2192,6 @@ namespace ChryslerCCDSCIScanner
             TCMTableBuffer.Add(TCM.Diagnostics.Table[TCM.Diagnostics.lastUpdatedLine]);
             TCMTableBufferLocation.Add(TCM.Diagnostics.lastUpdatedLine);
             TCMTableRowCountHistory.Add(TCM.Diagnostics.Table.Count);
-
-            if (TCMTableRefreshAllowed)
-            {
-                TCMTableRefreshAllowed = false;
-
-                SCIBusTCMDiagnosticsListBox.BeginUpdate();
-
-                lastTCMScrollBarPosition = SCIBusTCMDiagnosticsListBox.GetVerticalScrollPosition();
-
-                // Update header line.
-                SCIBusTCMDiagnosticsListBox.Items.RemoveAt(1);
-                SCIBusTCMDiagnosticsListBox.Items.Insert(1, TCM.Diagnostics.Table[1]);
-
-                // Update lines from buffer.
-                for (int i = 0; i < TCMTableBuffer.Count; i++)
-                {
-                    if (SCIBusTCMDiagnosticsListBox.Items.Count == TCMTableRowCountHistory[i])
-                    {
-                        SCIBusTCMDiagnosticsListBox.Items.RemoveAt(TCMTableBufferLocation[i]);
-                    }
-
-                    SCIBusTCMDiagnosticsListBox.Items.Insert(TCMTableBufferLocation[i], TCMTableBuffer[i]);
-                }
-
-                SCIBusTCMDiagnosticsListBox.SetVerticalScrollPosition(lastTCMScrollBarPosition);
-
-                SCIBusTCMDiagnosticsListBox.EndUpdate();
-
-                TCMTableBuffer.Clear();
-                TCMTableBufferLocation.Clear();
-                TCMTableRowCountHistory.Clear();
-            }
         }
 
         #endregion
