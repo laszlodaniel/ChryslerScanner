@@ -84,9 +84,9 @@ S2    RESET           TACT_SWITCH                                  6X6X5MM-SMD
 U1    ATMEGA2560-16AU ATMEGA2560-16AU                              TQFP100
 U2    CP2102          CP210X_USB_UART                              QFN28
 U3    IRF7317         IRF7317                                      SOIC-8
-U4    74HC4066        4066D                                        SO14
-U5    74HC4066        4066D                                        SO14
+U4    74HC4066        4066D                                        SOIC-14
+U5    74HC4066        4066D                                        SOIC-14
 U6    24LC32A         EEPROM                                       SOIC-8
 U7    USBLC6-2SC6     USBLC6-2SC6                                  SOT23-6
-U8    LM393D          LM393D                                       SO8
+U8    LM393D          LM393D                                       SOIC-8
 USB   MICRO_USB       USB                                          USB-B-MICRO-THT
