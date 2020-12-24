@@ -3747,6 +3747,48 @@ namespace ChryslerCCDSCIScanner
                                             unitToInsert = string.Empty;
                                         }
                                         break;
+                                    case 0x35:
+                                        descriptionToInsert = "TARGET IDLE SPEED";
+
+                                        if ((payload.Length >= 4) && (payload[2] == 0x36))
+                                        {
+                                            valueToInsert = Math.Round(((payload[1] << 8) + payload[3]) * 0.125D, 3).ToString("0.000").Replace(",", ".");
+                                            unitToInsert = "RPM";
+                                        }
+                                        else // error
+                                        {
+                                            valueToInsert = "ERROR";
+                                            unitToInsert = string.Empty;
+                                        }
+                                        break;
+                                    case 0x37:
+                                        descriptionToInsert = "TARGET IDLE AIR CONTROL MOTOR STEPS";
+
+                                        if (payload.Length >= 2)
+                                        {
+                                            valueToInsert = payload[1].ToString();
+                                        }
+                                        else // error
+                                        {
+                                            valueToInsert = "ERROR";
+                                        }
+
+                                        unitToInsert = string.Empty;
+                                        break;
+                                    case 0x3A:
+                                        descriptionToInsert = "CHARGING VOLTAGE";
+
+                                        if (payload.Length >= 2)
+                                        {
+                                            valueToInsert = Math.Round(payload[1] * 0.0618D, 3).ToString("0.000").Replace(",", ".");
+                                            unitToInsert = "V";
+                                        }
+                                        else // error
+                                        {
+                                            valueToInsert = "ERROR";
+                                            unitToInsert = string.Empty;
+                                        }
+                                        break;
                                     case 0x3B:
                                         descriptionToInsert = "CRUISE | SET SPEED";
 
@@ -3768,6 +3810,20 @@ namespace ChryslerCCDSCIScanner
                                             valueToInsert = "ERROR";
                                             unitToInsert = string.Empty;
                                         }
+                                        break;
+                                    case 0x3E:
+                                        descriptionToInsert = "IDLE AIR CONTROL MOTOR STEPS";
+
+                                        if (payload.Length >= 2)
+                                        {
+                                            valueToInsert = payload[1].ToString();
+                                        }
+                                        else // error
+                                        {
+                                            valueToInsert = "ERROR";
+                                        }
+
+                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x3F:
                                         if (payload.Length >= 2)
@@ -4237,7 +4293,7 @@ namespace ChryslerCCDSCIScanner
 
             Diagnostics.AddRow(modifiedID, rowToAdd.ToString());
 
-            //if (speed == "62500 baud") Diagnostics.AddRAMTableDump(data);
+            if (speed == "62500 baud") Diagnostics.AddRAMTableDump(data);
 
             UpdateHeader();
 

@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -34,21 +34,19 @@
 #include <avr/pgmspace.h>
 #include <avr/wdt.h>
 #include <util/atomic.h>
-#include <CCDLibrary.h>        // https://github.com/laszlodaniel/CCDLibrary
-#include <extEEPROM.h>         // https://github.com/JChristensen/extEEPROM
-#include <LiquidCrystal_I2C.h> // https://github.com/fdebrabander/Arduino-LiquidCrystal-I2C-library
-#include <Wire.h>
-#include "main.h"
+#include "led.h"
+#include "battery.h"
+#include "memory.h"
+#include "lcd.h"
+#include "ccd.h"
+#include "sci.h"
+#include "usb.h"
+#include "common.h"
+#include "tools.h"
 
 #ifndef F_CPU
 #define F_CPU 16000000UL // 16 MHz system clock
 #endif
-
-// Construct an object called "eep" for the external 24LC32A EEPROM chip.
-extEEPROM eep(kbits_32, 1, 32, 0x50); // device size: 32 kilobits = 4 kilobytes, number of devices: 1, page size: 32 bytes (from datasheet), device address: 0x50 by default
-
-// Construct an object called "lcd" for the external display.
-LiquidCrystal_I2C lcd(0x27, 20, 4);
 
 void setup()
 {
@@ -67,14 +65,14 @@ void setup()
     blink_led(ACT_LED);           // 
 
     // SCI-bus A/B-configuration selector outputs.
-    pinMode(PA0, OUTPUT);
-    pinMode(PA1, OUTPUT);
-    pinMode(PA2, OUTPUT);
-    pinMode(PA3, OUTPUT);
-    pinMode(PA4, OUTPUT);
-    pinMode(PA5, OUTPUT);
-    pinMode(PA6, OUTPUT);
-    pinMode(PA7, OUTPUT);
+    pinMode(A_PCM_RX_EN, OUTPUT);
+    pinMode(A_PCM_TX_EN, OUTPUT);
+    pinMode(A_TCM_RX_EN, OUTPUT);
+    pinMode(A_TCM_TX_EN, OUTPUT);
+    pinMode(B_PCM_RX_EN, OUTPUT);
+    pinMode(B_PCM_TX_EN, OUTPUT);
+    pinMode(B_TCM_RX_EN, OUTPUT);
+    pinMode(B_TCM_TX_EN, OUTPUT);
 
     exteeprom_init(); // initialize external EEPROM chip (24LC32A)
 
@@ -86,7 +84,7 @@ void setup()
 
     // Initialize serial interfaces with default speeds.
     usb_init(USBBAUD);// 250000 baud, an external serial monitor should have the same speed
-    ccd_init(LOBAUD); // 7812.5 baud
+    ccd_init(); // 7812.5 baud
     pcm_init(LOBAUD); // 7812.5 baud
     tcm_init(LOBAUD); // 7812.5 baud
 

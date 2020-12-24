@@ -257,6 +257,31 @@ namespace ChryslerCCDSCIScanner
                         SCIBusPCMDiagnosticsListBox.Items.Insert(PCMTableBufferLocation[i], PCMTableBuffer[i]);
                     }
 
+                    // Update RAM-table if applicable.
+                    if ((PCM.speed == "62500 baud") && PCM.Diagnostics.RAMDumpTableVisible)
+                    {
+                        // RAM-table has never been displayed.
+                        if (PCM.Diagnostics.Table.Count != SCIBusPCMDiagnosticsListBox.Items.Count)
+                        {
+                            for (int i = 0; i < 22; i++)
+                            {
+                                SCIBusPCMDiagnosticsListBox.Items.Add(PCM.Diagnostics.Table[PCM.Diagnostics.Table.Count - 22 + i]);
+                            }
+                        }
+                        else
+                        {
+                            for (int i = 0; i < 22; i++)
+                            {
+                                SCIBusPCMDiagnosticsListBox.Items.RemoveAt(SCIBusPCMDiagnosticsListBox.Items.Count - 1);
+                            }
+
+                            for (int i = 0; i < 22; i++)
+                            {
+                                SCIBusPCMDiagnosticsListBox.Items.Add(PCM.Diagnostics.Table[PCM.Diagnostics.Table.Count - 22 + i]);
+                            }
+                        }
+                    }
+
                     SCIBusPCMDiagnosticsListBox.SetVerticalScrollPosition(lastPCMScrollBarPosition);
 
                     SCIBusPCMDiagnosticsListBox.EndUpdate();
@@ -1232,7 +1257,7 @@ namespace ChryslerCCDSCIScanner
                                     if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 29))
                                     {
                                         double HardwareVersion = ((Packet.rx.payload[0] << 8) + Packet.rx.payload[1]) / 100.00;
-                                        string HardwareVersionString = "v" + (HardwareVersion).ToString("0.00").Replace(",", ".");
+                                        string HardwareVersionString = "v" + (HardwareVersion).ToString("0.00").Replace(",", ".").Insert(3, ".");
                                         DateTime HardwareDate = Util.UnixTimeStampToDateTime((Packet.rx.payload[6] << 24) + (Packet.rx.payload[7] << 16) + (Packet.rx.payload[8] << 8) + Packet.rx.payload[9]);
                                         DateTime AssemblyDate = Util.UnixTimeStampToDateTime((Packet.rx.payload[14] << 24) + (Packet.rx.payload[15] << 16) + (Packet.rx.payload[16] << 8) + Packet.rx.payload[17]);
                                         DateTime FirmwareDate = Util.UnixTimeStampToDateTime((Packet.rx.payload[22] << 24) + (Packet.rx.payload[23] << 16) + (Packet.rx.payload[24] << 8) + Packet.rx.payload[25]);
@@ -1251,12 +1276,12 @@ namespace ChryslerCCDSCIScanner
                                                                        "       Firmware date: " + FirmwareDateString);
                                         if (!Text.Contains("  |  FW v"))
                                         {
-                                            Text += "  |  FW " + FirmwareVersionString;
+                                            Text += "  |  FW " + FirmwareVersionString + "  |  HW " + HardwareVersionString;
                                         }
                                         else
                                         {
-                                            Text = Text.Remove(Text.Length - 6);
-                                            Text += FirmwareVersionString;
+                                            Text = Text.Remove(Text.Length - 20);
+                                            Text += FirmwareVersionString + "  |  HW " + HardwareVersionString;
                                         }
 
                                         if (Math.Round(HardwareVersion * 100) < 144) // below V1.44 the hardware doesn't support these features
@@ -1649,7 +1674,7 @@ namespace ChryslerCCDSCIScanner
                                             if ((start == 0) && (length == 256))
                                             {
                                                 double HardwareVersion = ((Packet.rx.payload[3] << 8) + Packet.rx.payload[4]) / 100.00;
-                                                string HardwareVersionString = "v" + (HardwareVersion).ToString("0.00").Replace(",", ".");
+                                                string HardwareVersionString = "v" + (HardwareVersion).ToString("0.00").Replace(",", ".").Insert(3, ".");
                                                 DateTime HardwareDate = Util.UnixTimeStampToDateTime((Packet.rx.payload[9] << 24) + (Packet.rx.payload[10] << 16) + (Packet.rx.payload[11] << 8) + Packet.rx.payload[12]);
                                                 DateTime AssemblyDate = Util.UnixTimeStampToDateTime((Packet.rx.payload[17] << 24) + (Packet.rx.payload[18] << 16) + (Packet.rx.payload[19] << 8) + Packet.rx.payload[20]);
                                                 string HardwareDateString = HardwareDate.ToString("yyyy.MM.dd HH:mm:ss");
@@ -2164,6 +2189,13 @@ namespace ChryslerCCDSCIScanner
             CCDTableBuffer.Add(CCD.Diagnostics.Table[CCD.Diagnostics.lastUpdatedLine]);
             CCDTableBufferLocation.Add(CCD.Diagnostics.lastUpdatedLine);
             CCDTableRowCountHistory.Add(CCD.Diagnostics.Table.Count);
+
+            //if (CCD.Diagnostics.lastUpdatedLine == CCD.Diagnostics.B2Row)
+            //{
+            //    CCDTableBuffer.Add(CCD.Diagnostics.Table[CCD.Diagnostics.F2Row]);
+            //    CCDTableBufferLocation.Add(CCD.Diagnostics.F2Row);
+            //    CCDTableRowCountHistory.Add(CCD.Diagnostics.Table.Count);
+            //}
         }
 
         private void UpdateSCIPCMTable(object sender, EventArgs e)
@@ -4587,7 +4619,7 @@ namespace ChryslerCCDSCIScanner
         {
             Uri GUIAssemblyInfoFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/GUI/ChryslerCCDSCIScanner/Properties/AssemblyInfo.cs");
             Uri GUIZIPDownload = new Uri("https://github.com/laszlodaniel/ChryslerCCDSCIScanner/raw/master/GUI/ChryslerCCDSCIScanner/bin/Debug/ChryslerCCDSCIScanner_V14X_GUI.zip");
-            Uri FWSourceFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/Arduino/ChryslerCCDSCIScanner/main.h");
+            Uri FWSourceFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/Arduino/ChryslerCCDSCIScanner/common.h");
             Uri FWFlashFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/Arduino/ChryslerCCDSCIScanner/ChryslerCCDSCIScanner.ino.mega.hex");
 
             // First check if GUI update is available.
@@ -4664,19 +4696,19 @@ namespace ChryslerCCDSCIScanner
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             try
             {
-                Downloader.DownloadFile(FWSourceFile, @"Update/main.h");
+                Downloader.DownloadFile(FWSourceFile, @"Update/common.h");
             }
             catch
             {
                 MessageBox.Show("Firmware update availability cannot be checked.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
 
-            if (File.Exists(@"Update/main.h") && deviceFound)
+            if (File.Exists(@"Update/common.h") && deviceFound)
             {
                 // Get new version/UNIX time value from the downloaded file
                 string line = string.Empty;
                 bool done = false;
-                using (Stream stream = File.Open(@"Update/main.h", FileMode.Open))
+                using (Stream stream = File.Open(@"Update/common.h", FileMode.Open))
                 {
                     using (StreamReader reader = new StreamReader(stream))
                     {
@@ -4751,11 +4783,11 @@ namespace ChryslerCCDSCIScanner
                     }
                 }
 
-                File.Delete(@"Update/main.h");
+                File.Delete(@"Update/common.h");
             }
             else if (!deviceFound)
             {
-                File.Delete(@"Update/main.h");
+                File.Delete(@"Update/common.h");
                 MessageBox.Show("Device firmware update cannot be checked." + Environment.NewLine +
                                 "Connect to the device and try again!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
