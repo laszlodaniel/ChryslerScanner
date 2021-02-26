@@ -32,7 +32,7 @@
             this.MenuStrip = new System.Windows.Forms.MenuStrip();
             this.ToolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UpdateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.ReadROMToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.ReadMemoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.SettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UnitsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.MetricUnitsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -194,7 +194,7 @@
             // 
             this.ToolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.UpdateToolStripMenuItem,
-            this.ReadROMToolStripMenuItem});
+            this.ReadMemoryToolStripMenuItem});
             this.ToolsToolStripMenuItem.Name = "ToolsToolStripMenuItem";
             this.ToolsToolStripMenuItem.Size = new System.Drawing.Size(46, 20);
             this.ToolsToolStripMenuItem.Text = "Tools";
@@ -202,17 +202,17 @@
             // UpdateToolStripMenuItem
             // 
             this.UpdateToolStripMenuItem.Name = "UpdateToolStripMenuItem";
-            this.UpdateToolStripMenuItem.Size = new System.Drawing.Size(130, 22);
+            this.UpdateToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.UpdateToolStripMenuItem.Text = "Update";
             this.UpdateToolStripMenuItem.Click += new System.EventHandler(this.UpdateToolStripMenuItem_Click);
             // 
-            // ReadROMToolStripMenuItem
+            // ReadMemoryToolStripMenuItem
             // 
-            this.ReadROMToolStripMenuItem.Enabled = false;
-            this.ReadROMToolStripMenuItem.Name = "ReadROMToolStripMenuItem";
-            this.ReadROMToolStripMenuItem.Size = new System.Drawing.Size(130, 22);
-            this.ReadROMToolStripMenuItem.Text = "Read ROM";
-            this.ReadROMToolStripMenuItem.Click += new System.EventHandler(this.ReadROMToolStripMenuItem_Click);
+            this.ReadMemoryToolStripMenuItem.Enabled = false;
+            this.ReadMemoryToolStripMenuItem.Name = "ReadMemoryToolStripMenuItem";
+            this.ReadMemoryToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.ReadMemoryToolStripMenuItem.Text = "Read memory";
+            this.ReadMemoryToolStripMenuItem.Click += new System.EventHandler(this.ReadMemoryToolStripMenuItem_Click);
             // 
             // SettingsToolStripMenuItem
             // 
@@ -1699,7 +1699,7 @@
         private System.Windows.Forms.MenuStrip MenuStrip;
         private System.Windows.Forms.ToolStripMenuItem ToolsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem UpdateToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem ReadROMToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem ReadMemoryToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem SettingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem UnitsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem MetricUnitsToolStripMenuItem;

@@ -76,32 +76,35 @@ namespace ChryslerCCDSCIScanner
         /// <param name="bytes">Packet to display.</param>
         public static void UpdateTextBox(TextBox textBox, string text, byte[] bytes = null)
         {
-            string ret = string.Empty;
-
-            if (textBox.Text != "") ret += Environment.NewLine + Environment.NewLine;
-
-            ret += text;
-
-            if (bytes != null) ret += Environment.NewLine + ByteToHexString(bytes, 0, bytes.Length);
-
-            if (textBox.TextLength + ret.Length > textBox.MaxLength)
+            if (!textBox.IsDisposed)
             {
-                textBox.Clear();
-                GC.Collect();
-            }
+                string ret = string.Empty;
 
-            textBox.AppendText(ret);
+                if (textBox.Text != "") ret += Environment.NewLine + Environment.NewLine;
 
-            // Save generated text to a logfile.
-            if (textBox.Name == "USBTextBox") File.AppendAllText(MainForm.USBTextLogFilename, ret);
+                ret += text;
 
-            // Save raw USB packet to a binary logfile.
-            using (BinaryWriter writer = new BinaryWriter(File.Open(MainForm.USBBinaryLogFilename, FileMode.Append)))
-            {
-                if (bytes != null)
+                if (bytes != null) ret += Environment.NewLine + ByteToHexString(bytes, 0, bytes.Length);
+
+                if (textBox.TextLength + ret.Length > textBox.MaxLength)
                 {
-                    writer.Write(bytes);
-                    writer.Close();
+                    textBox.Clear();
+                    GC.Collect();
+                }
+
+                textBox.AppendText(ret);
+
+                // Save generated text to a logfile.
+                if (textBox.Name == "USBTextBox") File.AppendAllText(MainForm.USBTextLogFilename, ret);
+
+                // Save raw USB packet to a binary logfile.
+                using (BinaryWriter writer = new BinaryWriter(File.Open(MainForm.USBBinaryLogFilename, FileMode.Append)))
+                {
+                    if (bytes != null)
+                    {
+                        writer.Write(bytes);
+                        writer.Close();
+                    }
                 }
             }
         }

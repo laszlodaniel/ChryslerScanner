@@ -14,26 +14,20 @@ namespace ChryslerCCDSCIScanner
             originalForm = incomingForm;
             InitializeComponent();
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-            GUIFWVersionLabel.Text = "GUI v" + Assembly.GetExecutingAssembly().GetName().Version.ToString(3) + "   |   FW ";
+            GUIFWHWVersionLabel.Text = "GUI v" + Assembly.GetExecutingAssembly().GetName().Version.ToString(3) + "   |   FW ";
 
-            if (originalForm.FWVersion != String.Empty) GUIFWVersionLabel.Text += originalForm.FWVersion;
-            else GUIFWVersionLabel.Text += "N/A";
+            if (originalForm.FWVersion != String.Empty) GUIFWHWVersionLabel.Text += originalForm.FWVersion;
+            else GUIFWHWVersionLabel.Text += "N/A";
+
+            GUIFWHWVersionLabel.Text += "   |   HW ";
+
+            if (originalForm.HWVersion != String.Empty) GUIFWHWVersionLabel.Text += originalForm.HWVersion;
+            else GUIFWHWVersionLabel.Text += "N/A";
         }
 
         private void BlogLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             System.Diagnostics.Process.Start("https://chryslerccdsci.wordpress.com/");
-        }
-
-        private void CloseButton_Click(object sender, EventArgs e)
-        {
-            GC.Collect();
-            this.Close();
-        }
-
-        private void AboutForm_FormClosed(object sender, FormClosedEventArgs e)
-        {
-            GC.Collect();
         }
     }
 }

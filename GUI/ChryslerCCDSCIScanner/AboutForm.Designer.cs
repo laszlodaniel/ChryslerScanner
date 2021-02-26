@@ -28,26 +28,26 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.GUIFWVersionLabel = new System.Windows.Forms.Label();
+            this.GUIFWHWVersionLabel = new System.Windows.Forms.Label();
             this.AboutDescriptionLabel01 = new System.Windows.Forms.Label();
             this.AboutTitleLabel = new System.Windows.Forms.Label();
             this.AboutDescriptionLabel02 = new System.Windows.Forms.Label();
             this.AboutDescriptionLabel03 = new System.Windows.Forms.Label();
-            this.ScannerPictureBox = new System.Windows.Forms.PictureBox();
-            this.LogoPictureBox = new System.Windows.Forms.PictureBox();
             this.BlogLinkLabel = new System.Windows.Forms.LinkLabel();
-            ((System.ComponentModel.ISupportInitialize)(this.ScannerPictureBox)).BeginInit();
+            this.LogoPictureBox = new System.Windows.Forms.PictureBox();
+            this.ScannerPictureBox = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.LogoPictureBox)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.ScannerPictureBox)).BeginInit();
             this.SuspendLayout();
             // 
-            // GUIFWVersionLabel
+            // GUIFWHWVersionLabel
             // 
-            this.GUIFWVersionLabel.AutoSize = true;
-            this.GUIFWVersionLabel.Location = new System.Drawing.Point(12, 38);
-            this.GUIFWVersionLabel.Name = "GUIFWVersionLabel";
-            this.GUIFWVersionLabel.Size = new System.Drawing.Size(123, 13);
-            this.GUIFWVersionLabel.TabIndex = 0;
-            this.GUIFWVersionLabel.Text = "GUI v0.0.0  |  FW v0.0.0";
+            this.GUIFWHWVersionLabel.AutoSize = true;
+            this.GUIFWHWVersionLabel.Location = new System.Drawing.Point(12, 38);
+            this.GUIFWHWVersionLabel.Name = "GUIFWHWVersionLabel";
+            this.GUIFWHWVersionLabel.Size = new System.Drawing.Size(189, 13);
+            this.GUIFWHWVersionLabel.TabIndex = 0;
+            this.GUIFWHWVersionLabel.Text = "GUI v0.0.0  |  FW v0.0.0  |  HW v0.0.0";
             // 
             // AboutDescriptionLabel01
             // 
@@ -86,26 +86,6 @@
             this.AboutDescriptionLabel03.TabIndex = 0;
             this.AboutDescriptionLabel03.Text = "Developed by Daniel Laszlo @ Boundary Condition.";
             // 
-            // ScannerPictureBox
-            // 
-            this.ScannerPictureBox.BackgroundImage = global::ChryslerCCDSCIScanner.Properties.Resources.scanner_preview_128x128;
-            this.ScannerPictureBox.InitialImage = global::ChryslerCCDSCIScanner.Properties.Resources.scanner_preview_128x128;
-            this.ScannerPictureBox.Location = new System.Drawing.Point(150, 150);
-            this.ScannerPictureBox.Name = "ScannerPictureBox";
-            this.ScannerPictureBox.Size = new System.Drawing.Size(128, 128);
-            this.ScannerPictureBox.TabIndex = 10;
-            this.ScannerPictureBox.TabStop = false;
-            // 
-            // LogoPictureBox
-            // 
-            this.LogoPictureBox.BackgroundImage = global::ChryslerCCDSCIScanner.Properties.Resources.chrysler_icon_128x128;
-            this.LogoPictureBox.InitialImage = global::ChryslerCCDSCIScanner.Properties.Resources.chrysler_icon_128x128;
-            this.LogoPictureBox.Location = new System.Drawing.Point(16, 150);
-            this.LogoPictureBox.Name = "LogoPictureBox";
-            this.LogoPictureBox.Size = new System.Drawing.Size(128, 128);
-            this.LogoPictureBox.TabIndex = 1;
-            this.LogoPictureBox.TabStop = false;
-            // 
             // BlogLinkLabel
             // 
             this.BlogLinkLabel.AutoSize = true;
@@ -117,6 +97,26 @@
             this.BlogLinkLabel.Text = "https://chryslerccdsci.wordpress.com/";
             this.BlogLinkLabel.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.BlogLinkLabel_LinkClicked);
             // 
+            // LogoPictureBox
+            // 
+            this.LogoPictureBox.BackgroundImage = global::ChryslerCCDSCIScanner.Properties.Resources.chrysler_icon_128x128;
+            this.LogoPictureBox.InitialImage = global::ChryslerCCDSCIScanner.Properties.Resources.chrysler_icon_128x128;
+            this.LogoPictureBox.Location = new System.Drawing.Point(16, 150);
+            this.LogoPictureBox.Name = "LogoPictureBox";
+            this.LogoPictureBox.Size = new System.Drawing.Size(128, 128);
+            this.LogoPictureBox.TabIndex = 1;
+            this.LogoPictureBox.TabStop = false;
+            // 
+            // ScannerPictureBox
+            // 
+            this.ScannerPictureBox.BackgroundImage = global::ChryslerCCDSCIScanner.Properties.Resources.scanner_preview_128x128;
+            this.ScannerPictureBox.InitialImage = global::ChryslerCCDSCIScanner.Properties.Resources.scanner_preview_128x128;
+            this.ScannerPictureBox.Location = new System.Drawing.Point(150, 150);
+            this.ScannerPictureBox.Name = "ScannerPictureBox";
+            this.ScannerPictureBox.Size = new System.Drawing.Size(128, 128);
+            this.ScannerPictureBox.TabIndex = 10;
+            this.ScannerPictureBox.TabStop = false;
+            // 
             // AboutForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -126,7 +126,7 @@
             this.Controls.Add(this.ScannerPictureBox);
             this.Controls.Add(this.AboutDescriptionLabel03);
             this.Controls.Add(this.AboutDescriptionLabel02);
-            this.Controls.Add(this.GUIFWVersionLabel);
+            this.Controls.Add(this.GUIFWHWVersionLabel);
             this.Controls.Add(this.AboutDescriptionLabel01);
             this.Controls.Add(this.AboutTitleLabel);
             this.Controls.Add(this.LogoPictureBox);
@@ -136,22 +136,21 @@
             this.Name = "AboutForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "About";
-            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.AboutForm_FormClosed);
-            ((System.ComponentModel.ISupportInitialize)(this.ScannerPictureBox)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.LogoPictureBox)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.ScannerPictureBox)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
         }
 
         #endregion
-        private System.Windows.Forms.PictureBox LogoPictureBox;
-        private System.Windows.Forms.Label GUIFWVersionLabel;
+        private System.Windows.Forms.Label GUIFWHWVersionLabel;
         private System.Windows.Forms.Label AboutDescriptionLabel01;
         private System.Windows.Forms.Label AboutTitleLabel;
         private System.Windows.Forms.Label AboutDescriptionLabel02;
         private System.Windows.Forms.Label AboutDescriptionLabel03;
-        private System.Windows.Forms.PictureBox ScannerPictureBox;
         private System.Windows.Forms.LinkLabel BlogLinkLabel;
+        private System.Windows.Forms.PictureBox LogoPictureBox;
+        private System.Windows.Forms.PictureBox ScannerPictureBox;
     }
 }

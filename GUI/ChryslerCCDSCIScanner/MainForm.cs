@@ -23,6 +23,7 @@ namespace ChryslerCCDSCIScanner
         public bool FWUpdateAvailabile = false;
         public string GUIVersion = string.Empty;
         public string FWVersion = string.Empty;
+        public string HWVersion = string.Empty;
         public UInt64 deviceFirmwareTimestamp;
         public string selectedPort = string.Empty;
         public bool timeout = false;
@@ -65,8 +66,9 @@ namespace ChryslerCCDSCIScanner
         public List<int> TCMTableBufferLocation = new List<int>();
         public List<int> TCMTableRowCountHistory = new List<int>();
 
+        public ReadMemoryForm ReadMemory;
         public AboutForm About;
-        public Packet Packet = new Packet();
+        public static Packet Packet = new Packet();
         public CCD CCD = new CCD();
         public SCIPCM PCM = new SCIPCM();
         public SCITCM TCM = new SCITCM();
@@ -106,16 +108,16 @@ namespace ChryslerCCDSCIScanner
 
             CCDLogFilename = @"LOG/CCD/ccdlog_" + DateTimeNow + ".txt";
             CCDB2F2LogFilename = @"LOG/CCD/ccdb2f2log_" + DateTimeNow + ".txt";
-            CCDEPROMTextFilename = @"ROMS/ccd_eprom_" + DateTimeNow + ".txt";
-            CCDEPROMBinaryFilename = @"ROMs/ccd_eprom_" + DateTimeNow + ".bin";
-            CCDEEPROMTextFilename = @"ROMs/ccd_eeprom_" + DateTimeNow + ".txt";
-            CCDEEPROMBinaryFilename = @"ROMs/ccd_eeprom_" + DateTimeNow + ".bin";
+            //CCDEPROMTextFilename = @"ROMS/CCD/ccd_eprom_" + DateTimeNow + ".txt";
+            //CCDEPROMBinaryFilename = @"ROMs/CCD/ccd_eprom_" + DateTimeNow + ".bin";
+            //CCDEEPROMTextFilename = @"ROMs/CCD/ccd_eeprom_" + DateTimeNow + ".txt";
+            //CCDEEPROMBinaryFilename = @"ROMs/CCD/ccd_eeprom_" + DateTimeNow + ".bin";
 
             PCMLogFilename = @"LOG/PCM/pcmlog_" + DateTimeNow + ".txt";
-            PCMEPROMTextFilename = @"ROMs/pcm_eprom_" + DateTimeNow + ".txt";
-            PCMEPROMBinaryFilename = @"ROMs/pcm_eprom_" + DateTimeNow + ".bin";
-            PCMEEPROMTextFilename = @"ROMs/pcm_eeprom_" + DateTimeNow + ".txt";
-            PCMEEPROMBinaryFilename = @"ROMs/pcm_eeprom_" + DateTimeNow + ".bin";
+            PCMEPROMTextFilename = @"ROMs/PCM/pcm_eprom_" + DateTimeNow + ".txt";
+            //PCMEPROMBinaryFilename = @"ROMs/PCM/pcm_eprom_" + DateTimeNow + ".bin";
+            //PCMEEPROMTextFilename = @"ROMs/PCM/pcm_eeprom_" + DateTimeNow + ".txt";
+            //PCMEEPROMBinaryFilename = @"ROMs/PCM/pcm_eeprom_" + DateTimeNow + ".bin";
 
             TCMLogFilename = @"LOG/TCM/tcmlog_" + DateTimeNow + ".txt";
 
@@ -1267,6 +1269,7 @@ namespace ChryslerCCDSCIScanner
                                         string FirmwareDateString = FirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
                                         string FirmwareVersionString = "v" + Packet.rx.payload[26].ToString("0") + "." + Packet.rx.payload[27].ToString("0") + "." + Packet.rx.payload[28].ToString("0");
                                         FWVersion = FirmwareVersionString;
+                                        HWVersion = HardwareVersionString;
 
                                         Util.UpdateTextBox(USBTextBox, "[RX->] Hardware/Firmware information response:", Packet.rx.buffer);
                                         Util.UpdateTextBox(USBTextBox, "[INFO] Hardware ver.: " + HardwareVersionString + Environment.NewLine +
@@ -2226,6 +2229,17 @@ namespace ChryslerCCDSCIScanner
             TCMTableRowCountHistory.Add(TCM.Diagnostics.Table.Count);
         }
 
+        public async void TransmitUSBPacket(string description)
+        {
+            if (!USBSendPacketComboBox.Items.Contains(USBSendPacketComboBox.Text)) // only add unique items (no repeat!)
+            {
+                USBSendPacketComboBox.Items.Add(USBSendPacketComboBox.Text); // add command to the list so it can be selected later
+            }
+
+            Util.UpdateTextBox(USBTextBox, description, Packet.tx.buffer); // Packet class fields must be previously filled with data
+            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+        }
+
         #endregion
 
         #region USB communication
@@ -2357,7 +2371,7 @@ namespace ChryslerCCDSCIScanner
                                         USBCommunicationGroupBox.Enabled = true;
                                         DeviceCCDSCILCDTabControl.Enabled = true;
                                         DiagnosticsGroupBox.Enabled = true;
-                                        //ReadROMToolStripMenuItem.Enabled = true;
+                                        ReadMemoryToolStripMenuItem.Enabled = true;
                                         Packet.PacketReceived += AnalyzePacket; // subscribe to the OnPacketReceived event
                                         CCD.Diagnostics.TableUpdated += UpdateCCDTable; // subscribe to the CCD-bus OnTableUpdated event
                                         PCM.Diagnostics.TableUpdated += UpdateSCIPCMTable; // subscribe to the SCI-bus (PCM) OnTableUpdated event
@@ -2414,10 +2428,11 @@ namespace ChryslerCCDSCIScanner
                         USBCommunicationGroupBox.Enabled = false;
                         DeviceCCDSCILCDTabControl.Enabled = false;
                         DiagnosticsGroupBox.Enabled = false;
-                        ReadROMToolStripMenuItem.Enabled = false;
+                        ReadMemoryToolStripMenuItem.Enabled = false;
                         deviceFound = false;
                         timeout = false;
                         Util.UpdateTextBox(USBTextBox, "[INFO] Device disconnected (" + Packet.Serial.PortName + ").");
+                        if (ReadMemory != null) ReadMemory.Close();
                     }
                 }
             }
@@ -4805,9 +4820,23 @@ namespace ChryslerCCDSCIScanner
             return;
         }
 
-        private void ReadROMToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ReadMemoryToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("TODO", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (ReadMemory == null)
+            {
+                ReadMemory = new ReadMemoryForm(this)
+                {
+                    StartPosition = FormStartPosition.CenterParent
+                };
+
+                ReadMemory.FormClosed += delegate { ReadMemory = null; };
+                ReadMemory.Show();
+            }
+            else
+            {
+                ReadMemory.WindowState = FormWindowState.Normal;
+                ReadMemory.Focus();
+            }
         }
 
         private void MetricUnitsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -4867,6 +4896,7 @@ namespace ChryslerCCDSCIScanner
                 StartPosition = FormStartPosition.CenterParent
             };
 
+            About.FormClosed += delegate { About = null; };
             About.ShowDialog();
         }
 
