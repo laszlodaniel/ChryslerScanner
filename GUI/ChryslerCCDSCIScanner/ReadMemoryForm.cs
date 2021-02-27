@@ -821,9 +821,34 @@ namespace ChryslerCCDSCIScanner
             UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Increment: " + Util.ByteToHexStringSimple(SCIBusPCMIncrementBytes));
             UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Output: " + SCIBusPCMMemoryBinaryFilename.ToString());
             UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Binary size: " + SCIBusPCMTotalBytes.ToString() + " bytes = " + ((double)SCIBusPCMTotalBytes / 1024.0).ToString("0.00") + " kilobytes.");
-            UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Return PCM to low-speed mode.");
+            //UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Return PCM to low-speed mode.");
 
-            SCIBusPCMLowSpeedSelectWorker.RunWorkerAsync();
+            //SCIBusPCMLowSpeedSelectWorker.RunWorkerAsync();
+
+            UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Memory reading session is ready to start.");
+
+            if (!SCIBusPCMReadMemoryWorker.IsBusy)
+            {
+                SCIBusPCMReadMemoryInitializeSessionButton.Enabled = true;
+                SCIBusPCMReadMemoryStartButton.Enabled = true;
+                SCIBusPCMReadMemoryStopButton.Enabled = false;
+                SCIBusPCMLowSpeedSelectEcho = false;
+                SCIBusPCMResponse = false;
+                SCIBusPCMRxTimeout = false;
+                SCIBusPCMTxTimeout = false;
+                SCIBusPCMRxRetryCount = 0;
+                SCIBusPCMTxRetryCount = 0;
+
+                if (SCIBusPCMMemoryOffsetWidth == 16) SCIBusPCMTxPayload = new byte[3] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1] };
+                if (SCIBusPCMMemoryOffsetWidth == 24) SCIBusPCMTxPayload = new byte[4] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2] };
+            }
+            else
+            {
+                SCIBusPCMReadMemoryInitializeSessionButton.Enabled = true;
+                SCIBusPCMReadMemoryStartButton.Enabled = false;
+                SCIBusPCMReadMemoryStopButton.Enabled = false;
+                UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Failed to initialize session.");
+            }
 
             SCIBusPCMReadMemoryHelpButton.Enabled = true;
         }
@@ -1236,8 +1261,8 @@ namespace ChryslerCCDSCIScanner
                 }
 
                 textBox.AppendText(text);
-                if (textBox.Name == "CCDBusReadMemoryInfoTextBox") File.AppendAllText(CCDBusMemoryTextFilename, text);
-                if (textBox.Name == "SCIBusPCMReadMemoryInfoTextBox") File.AppendAllText(SCIBusPCMMemoryTextFilename, text);
+                if ((textBox.Name == "CCDBusReadMemoryInfoTextBox") && (CCDBusMemoryTextFilename != null)) File.AppendAllText(CCDBusMemoryTextFilename, text);
+                if ((textBox.Name == "SCIBusPCMReadMemoryInfoTextBox") && (SCIBusPCMMemoryTextFilename != null)) File.AppendAllText(SCIBusPCMMemoryTextFilename, text);
             }
         }
 
