@@ -330,7 +330,9 @@ namespace ChryslerCCDSCIScanner
             CCDBusMemoryBinaryFilename = @"ROMs/CCD/ccd_eprom_" + DateTimeNow + ".bin";
             CCDBusMemoryTextFilename = @"ROMs/CCD/ccd_eprom_" + DateTimeNow + ".txt";
 
-            CCDBusTotalBytes = CCDBusEndMemoryOffset - CCDBusStartMemoryOffset + CCDBusIncrement;
+            if (CCDBusIncrement == 2) CCDBusTotalBytes = CCDBusEndMemoryOffset - CCDBusStartMemoryOffset + CCDBusIncrement;
+            else CCDBusTotalBytes = (CCDBusEndMemoryOffset - CCDBusStartMemoryOffset + CCDBusIncrement) / CCDBusIncrement;
+
             CCDBusBytesReadCount = 0;
             CCDBusReadMemoryProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)CCDBusBytesReadCount / (double)CCDBusTotalBytes * 100.0)) + "% (" + CCDBusBytesReadCount.ToString() + "/" + CCDBusTotalBytes.ToString() + " bytes)";
 
@@ -341,13 +343,14 @@ namespace ChryslerCCDSCIScanner
             UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "Start offset: " + Util.ByteToHexStringSimple(CCDBusStartMemoryOffsetBytes));
             UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "End offset: " + Util.ByteToHexStringSimple(CCDBusEndMemoryOffsetBytes));
             UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "Increment: " + Util.ByteToHexStringSimple(CCDBusIncrementBytes));
+            UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "Output: " + CCDBusMemoryBinaryFilename.ToString());
+            UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "Binary size: " + CCDBusTotalBytes.ToString() + " bytes = " + ((double)CCDBusTotalBytes / 1024.0).ToString("0.00") + " kilobytes.");
             UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "Check CCD-bus status: ");
 
             if (CCDBusAlive)
             {
                 UpdateTextBox(CCDBusReadMemoryInfoTextBox, "alive");
-                UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "Output: " + CCDBusMemoryBinaryFilename.ToString());
-                UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "Binary size: " + CCDBusTotalBytes.ToString() + " bytes = " + ((double)CCDBusTotalBytes/1024.0).ToString("0.00") + " kilobytes.");
+
                 UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "Memory reading session is ready to start.");
             }
             else UpdateTextBox(CCDBusReadMemoryInfoTextBox, "no activity");
@@ -1143,13 +1146,18 @@ namespace ChryslerCCDSCIScanner
                     if ((CCDBusResponseBytes[1] == CCDBusModule) && (CCDBusResponseBytes[2] == CCDBusReadMemoryCommand))
                     {
                         CCDBusResponse = true;
-                        CCDBusMemoryValueBytes = CCDBusResponseBytes.Skip(3).Take((int)CCDBusIncrement).ToArray();
+
+                        if (CCDBusIncrement == 2) CCDBusMemoryValueBytes = CCDBusResponseBytes.Skip(3).Take(2).ToArray(); // get both payload bytes
+                        else CCDBusMemoryValueBytes = CCDBusResponseBytes.Skip(3).Take(1).ToArray(); // get first payload byte only
+
                         CCDBusReadMemoryCurrentOffsetTextBox.Text = Util.ByteToHexStringSimple(CCDBusCurrentMemoryOffsetBytes);
                         CCDBusReadMemoryCurrentOffsetTextBox.SelectionLength = 0;
                         CCDBusReadMemoryValuesTextBox.Text = Util.ByteToHexStringSimple(CCDBusMemoryValueBytes);
                         CCDBusReadMemoryValuesTextBox.SelectionLength = 0;
 
-                        CCDBusBytesReadCount += CCDBusIncrement;
+                        if (CCDBusIncrement == 2) CCDBusBytesReadCount += 2;
+                        else CCDBusBytesReadCount++;
+
                         CCDBusReadMemoryProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)CCDBusBytesReadCount / (double)CCDBusTotalBytes * 100.0)) + "% (" + CCDBusBytesReadCount.ToString() + "/" + CCDBusTotalBytes.ToString() + " bytes)";
 
                         using (BinaryWriter writer = new BinaryWriter(File.Open(CCDBusMemoryBinaryFilename, FileMode.Append)))
@@ -1212,7 +1220,7 @@ namespace ChryslerCCDSCIScanner
                         SCIBusPCMReadMemoryValueTextBox.Text = Util.ByteToHexStringSimple(new byte[1] { SCIBusPCMMemoryValue });
                         SCIBusPCMReadMemoryValueTextBox.SelectionLength = 0;
 
-                        SCIBusPCMBytesReadCount += SCIBusPCMIncrement;
+                        SCIBusPCMBytesReadCount++;
                         SCIBusPCMReadMemoryProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusPCMBytesReadCount / (double)SCIBusPCMTotalBytes * 100.0)) + "% (" + SCIBusPCMBytesReadCount.ToString() + "/" + SCIBusPCMTotalBytes.ToString() + " bytes)";
 
                         using (BinaryWriter writer = new BinaryWriter(File.Open(SCIBusPCMMemoryBinaryFilename, FileMode.Append)))
