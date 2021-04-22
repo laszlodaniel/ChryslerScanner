@@ -105,13 +105,13 @@ namespace ChryslerCCDSCIScanner
             CCDBusNextRequestTimer.Start();
 
             CCDBusRxTimeoutTimer.Elapsed += new ElapsedEventHandler(CCDBusRxTimeoutHandler);
-            CCDBusRxTimeoutTimer.Interval = 500; // ms
+            CCDBusRxTimeoutTimer.Interval = 2000; // ms
             CCDBusRxTimeoutTimer.AutoReset = false;
             CCDBusRxTimeoutTimer.Enabled = true;
             CCDBusRxTimeoutTimer.Stop();
 
             CCDBusTxTimeoutTimer.Elapsed += new ElapsedEventHandler(CCDBusTxTimeoutHandler);
-            CCDBusTxTimeoutTimer.Interval = 500; // ms
+            CCDBusTxTimeoutTimer.Interval = 2000; // ms
             CCDBusTxTimeoutTimer.AutoReset = false;
             CCDBusTxTimeoutTimer.Enabled = true;
             CCDBusTxTimeoutTimer.Stop();
@@ -129,13 +129,13 @@ namespace ChryslerCCDSCIScanner
             SCIBusPCMNextRequestTimer.Start();
 
             SCIBusPCMRxTimeoutTimer.Elapsed += new ElapsedEventHandler(SCIBusPCMRxTimeoutHandler);
-            SCIBusPCMRxTimeoutTimer.Interval = 500; // ms
+            SCIBusPCMRxTimeoutTimer.Interval = 2000; // ms
             SCIBusPCMRxTimeoutTimer.AutoReset = false;
             SCIBusPCMRxTimeoutTimer.Enabled = true;
             SCIBusPCMRxTimeoutTimer.Stop();
 
             SCIBusPCMTxTimeoutTimer.Elapsed += new ElapsedEventHandler(SCIBusPCMTxTimeoutHandler);
-            SCIBusPCMTxTimeoutTimer.Interval = 500; // ms
+            SCIBusPCMTxTimeoutTimer.Interval = 2000; // ms
             SCIBusPCMTxTimeoutTimer.AutoReset = false;
             SCIBusPCMTxTimeoutTimer.Enabled = true;
             SCIBusPCMTxTimeoutTimer.Stop();
@@ -1209,8 +1209,18 @@ namespace ChryslerCCDSCIScanner
                 {
                     if (SCIBusPCMResponseBytes.Length == (SCIBusPCMTxPayload.Length + 1))
                     {
-                        SCIBusPCMResponse = true;
-                        SCIBusPCMRxTimeoutTimer.Stop();
+                        if ((SCIBusPCMResponseBytes[1] == SCIBusPCMCurrentMemoryOffsetBytes[0]) && (SCIBusPCMResponseBytes[2] == SCIBusPCMCurrentMemoryOffsetBytes[1])) // check if response has the offset we are currently waiting for
+                        {
+                            if ((SCIBusPCMMemoryOffsetWidth == 16) || ((SCIBusPCMMemoryOffsetWidth == 24) && (SCIBusPCMResponseBytes[3] == SCIBusPCMCurrentMemoryOffsetBytes[2])))
+                            {
+                                SCIBusPCMResponse = true;
+                                SCIBusPCMRxTimeoutTimer.Stop();
+                            }
+                            else
+                            {
+                                return; // try again next time
+                            }
+                        }
 
                         if (SCIBusPCMMemoryOffsetWidth == 16) SCIBusPCMMemoryValue = SCIBusPCMResponseBytes[3];
                         if (SCIBusPCMMemoryOffsetWidth == 24) SCIBusPCMMemoryValue = SCIBusPCMResponseBytes[4];
