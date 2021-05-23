@@ -88,7 +88,7 @@ namespace ChryslerCCDSCIScanner
             Size = new Size(405, 650); // resize form to collapsed view
             CenterToScreen(); // put window at the center of the screen
 
-            if (File.Exists(@"DRBDBReader/database.mem")) db = new Database(fi); // load DRB3 database
+            if (fi.Exists) db = new Database(fi); // load DRB3 database
 
             GUIVersion = "v" + Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
             Text += "  |  GUI " + GUIVersion;
@@ -4633,8 +4633,8 @@ namespace ChryslerCCDSCIScanner
         private void UpdateToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Uri GUIAssemblyInfoFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/GUI/ChryslerCCDSCIScanner/Properties/AssemblyInfo.cs");
-            Uri GUIZIPDownload = new Uri("https://github.com/laszlodaniel/ChryslerCCDSCIScanner/raw/master/GUI/ChryslerCCDSCIScanner/bin/Debug/ChryslerCCDSCIScanner_V14X_GUI.zip");
-            Uri FWSourceFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/Arduino/ChryslerCCDSCIScanner/common.h");
+            Uri GUIZIPDownload = new Uri("https://github.com/laszlodaniel/ChryslerCCDSCIScanner/raw/master/GUI/ChryslerCCDSCIScanner/bin/Debug/ChryslerCCDSCIScanner_GUI.zip");
+            Uri FWSourceFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/Arduino/ChryslerCCDSCIScanner/ChryslerCCDSCIScanner.ino");
             Uri FWFlashFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/Arduino/ChryslerCCDSCIScanner/ChryslerCCDSCIScanner.ino.mega.hex");
 
             // First check if GUI update is available.
@@ -4663,46 +4663,61 @@ namespace ChryslerCCDSCIScanner
                         while (!done)
                         {
                             line = reader.ReadLine();
-                            if (line.StartsWith("[assembly: AssemblyVersion"))
+
+                            if (line != null)
                             {
-                                done = true;
+                                if (line.StartsWith("[assembly: AssemblyVersion"))
+                                {
+                                    done = true;
+                                }
+                            }
+                            else
+                            {
+                                break;
                             }
                         }
                     }
                 }
 
-                string latestGUIVersionString = "v" + line.Substring(28, 5);
+                if (line != null)
+                {
+                    string latestGUIVersionString = "v" + line.Substring(28, 5);
 
-                if (latestGUIVersionString == GUIVersion)
-                {
-                    MessageBox.Show("You are using the latest GUI version.", "No GUI update available", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-                else
-                {
-                    if (MessageBox.Show("Latest GUI version: " + latestGUIVersionString + Environment.NewLine +
-                                        "Current GUI version: " + GUIVersion + Environment.NewLine +
-                                        "There is a new GUI version available." + Environment.NewLine +
-                                        "Do you want to download it?", "GUI update available", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
+                    if (latestGUIVersionString == GUIVersion)
                     {
-                        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-                        try
-                        {
-                            //Downloader.DownloadProgressChanged += new DownloadProgressChangedEventHandler(Downloader_DownloadProgressChanged);
-                            //Downloader.DownloadFileCompleted += new AsyncCompletedEventHandler(Downloader_DownloadFileCompleted);
-                            //Downloader.QueryString.Add("ChryslerCCDSCIScanner_V14X_GUI.zip", "ChryslerCCDSCIScanner_V14X_GUI");
-                            Downloader.DownloadFile(GUIZIPDownload, @"Update/ChryslerCCDSCIScanner_V14X_GUI.zip");
-                            MessageBox.Show("Updated GUI download finished." + Environment.NewLine +
-                                            "Close this application and unpack the .zip-file from the Update folder!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        }
-                        catch
-                        {
-                            MessageBox.Show("GUI download error.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        }
+                        MessageBox.Show("You are using the latest GUI version.", "No GUI update available", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     else
                     {
-                        MessageBox.Show("GUI update cancelled.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        if (MessageBox.Show("Latest GUI version: " + latestGUIVersionString + Environment.NewLine +
+                                            "Current GUI version: " + GUIVersion + Environment.NewLine +
+                                            "There is a new GUI version available." + Environment.NewLine +
+                                            "Do you want to download it?", "GUI update available", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
+                        {
+                            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                            try
+                            {
+                                //Downloader.DownloadProgressChanged += new DownloadProgressChangedEventHandler(Downloader_DownloadProgressChanged);
+                                //Downloader.DownloadFileCompleted += new AsyncCompletedEventHandler(Downloader_DownloadFileCompleted);
+                                //Downloader.QueryString.Add("ChryslerCCDSCIScanner_V14X_GUI.zip", "ChryslerCCDSCIScanner_V14X_GUI");
+                                Downloader.DownloadFile(GUIZIPDownload, @"Update/ChryslerCCDSCIScanner_GUI.zip");
+                                MessageBox.Show("Updated GUI download finished." + Environment.NewLine +
+                                                "Close this application and unpack the .zip-file from the Update folder!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            }
+                            catch
+                            {
+                                MessageBox.Show("GUI download error.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show("GUI update cancelled.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
                     }
+                }
+                else
+                {
+                    MessageBox.Show("GUI download error." + Environment.NewLine + "Please download the latest GUI .zip file from GitHub and overwrite the old executable file.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
 
                 File.Delete(@"Update/AssemblyInfo.cs");
@@ -4711,98 +4726,113 @@ namespace ChryslerCCDSCIScanner
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             try
             {
-                Downloader.DownloadFile(FWSourceFile, @"Update/common.h");
+                Downloader.DownloadFile(FWSourceFile, @"Update/ChryslerCCDSCIScanner.ino");
             }
             catch
             {
                 MessageBox.Show("Firmware update availability cannot be checked.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
 
-            if (File.Exists(@"Update/common.h") && deviceFound)
+            if (File.Exists(@"Update/ChryslerCCDSCIScanner.ino") && deviceFound)
             {
                 // Get new version/UNIX time value from the downloaded file
                 string line = string.Empty;
                 bool done = false;
-                using (Stream stream = File.Open(@"Update/common.h", FileMode.Open))
+                using (Stream stream = File.Open(@"Update/ChryslerCCDSCIScanner.ino", FileMode.Open))
                 {
                     using (StreamReader reader = new StreamReader(stream))
                     {
                         while (!done)
                         {
                             line = reader.ReadLine();
-                            if (line.Contains("#define FW_VERSION") || line.Contains("#define FW_DATE"))
+
+                            if (line != null)
                             {
-                                done = true;
+                                if (line.Contains("#define FW_VERSION") || line.Contains("#define FW_DATE"))
+                                {
+                                    done = true;
+                                }
+                            }
+                            else
+                            {
+                                break;
                             }
                         }
                     }
                 }
 
-                UInt32 ver = 0;
+                if (line != null)
+                {
+                    UInt32 ver = 0;
 
-                if (line.StartsWith("#define FW_DATE"))
-                {
-                    string hexline = line.Substring(16, 10);
-                    ver = Convert.ToUInt32(hexline, 16);
-                }
-                else if (line.StartsWith("#define FW_VERSION"))
-                {
-                    string hexline = line.Substring(19, 10);
-                    ver = Convert.ToUInt32(hexline, 16);
-                }
-
-                byte major = (byte)(ver >> 24);
-                byte minor = (byte)(ver >> 16);
-                byte patch = (byte)(ver >> 8);
-                string latestFWVersionString = "v" + major.ToString("0") + "." + minor.ToString("0") + "." + patch.ToString("0");
-
-                if (latestFWVersionString == FWVersion)
-                {
-                    MessageBox.Show("The diagnostic scanner uses the latest firmware version.", "No firmware update available", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-                else
-                {
-                    if (MessageBox.Show("Latest firmware version: " + latestFWVersionString + Environment.NewLine +
-                                        "Current firmware version: " + FWVersion + Environment.NewLine +
-                                        "There is a new device firmware version available." + Environment.NewLine +
-                                        "Do you want to update the device?", "Device firmware update available", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
+                    if (line.StartsWith("#define FW_DATE"))
                     {
-                        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-                        try
-                        {
-                            Downloader.DownloadFile(FWFlashFile, @"Tools/ChryslerCCDSCIScanner.ino.mega.hex");
-                        }
-                        catch
-                        {
-                            MessageBox.Show("Firmware download error.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        }
+                        string hexline = line.Substring(16, 10);
+                        ver = Convert.ToUInt32(hexline, 16);
+                    }
+                    else if (line.StartsWith("#define FW_VERSION"))
+                    {
+                        string hexline = line.Substring(19, 10);
+                        ver = Convert.ToUInt32(hexline, 16);
+                    }
 
-                        ConnectButton.PerformClick(); // disconnect
-                        Thread.Sleep(500); // wait until UI updates its controls
-                        this.Refresh();
-                        Process process = new Process();
-                        process.StartInfo.WorkingDirectory = "Tools";
-                        process.StartInfo.FileName = "avrdude.exe";
-                        process.StartInfo.Arguments = "-C avrdude.conf -p m2560 -c wiring -P " + selectedPort + " -b 115200 -D -U flash:w:ChryslerCCDSCIScanner.ino.mega.hex:i";
-                        process.Start();
-                        process.WaitForExit();
-                        this.Refresh();
-                        File.Delete(@"Tools/ChryslerCCDSCIScanner.ino.mega.hex");
-                        MessageBox.Show("Device firmware update finished." + Environment.NewLine +
-                                        "Connect again manually.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        FWVersion = latestFWVersionString;
+                    byte major = (byte)(ver >> 24);
+                    byte minor = (byte)(ver >> 16);
+                    byte patch = (byte)(ver >> 8);
+                    string latestFWVersionString = "v" + major.ToString("0") + "." + minor.ToString("0") + "." + patch.ToString("0");
+
+                    if (latestFWVersionString == FWVersion)
+                    {
+                        MessageBox.Show("The diagnostic scanner uses the latest firmware version.", "No firmware update available", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     else
                     {
-                        MessageBox.Show("Device firmware update cancelled.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        if (MessageBox.Show("Latest firmware version: " + latestFWVersionString + Environment.NewLine +
+                                            "Current firmware version: " + FWVersion + Environment.NewLine +
+                                            "There is a new device firmware version available." + Environment.NewLine +
+                                            "Do you want to update the device?", "Device firmware update available", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
+                        {
+                            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                            try
+                            {
+                                Downloader.DownloadFile(FWFlashFile, @"Tools/ChryslerCCDSCIScanner.ino.mega.hex");
+                            }
+                            catch
+                            {
+                                MessageBox.Show("Firmware download error.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+
+                            ConnectButton.PerformClick(); // disconnect
+                            Thread.Sleep(500); // wait until UI updates its controls
+                            this.Refresh();
+                            Process process = new Process();
+                            process.StartInfo.WorkingDirectory = "Tools";
+                            process.StartInfo.FileName = "avrdude.exe";
+                            process.StartInfo.Arguments = "-C avrdude.conf -p m2560 -c wiring -P " + selectedPort + " -b 115200 -D -U flash:w:ChryslerCCDSCIScanner.ino.mega.hex:i";
+                            process.Start();
+                            process.WaitForExit();
+                            this.Refresh();
+                            File.Delete(@"Tools/ChryslerCCDSCIScanner.ino.mega.hex");
+                            MessageBox.Show("Device firmware update finished." + Environment.NewLine +
+                                            "Connect again manually.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            FWVersion = latestFWVersionString;
+                        }
+                        else
+                        {
+                            MessageBox.Show("Device firmware update cancelled.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
                     }
                 }
+                else
+                {
+                    MessageBox.Show("Firmware download error." + Environment.NewLine + "Please download the latest .hex flash file from GitHub and perform a manual update." + Environment.NewLine + "For more information check the \"Tools\\update.txt\" file.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
 
-                File.Delete(@"Update/common.h");
+                File.Delete(@"Update/ChryslerCCDSCIScanner.ino");
             }
             else if (!deviceFound)
             {
-                File.Delete(@"Update/common.h");
+                File.Delete(@"Update/ChryslerCCDSCIScanner.ino");
                 MessageBox.Show("Device firmware update cannot be checked." + Environment.NewLine +
                                 "Connect to the device and try again!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }

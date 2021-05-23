@@ -382,6 +382,16 @@ namespace ChryslerCCDSCIScanner
             MessageDatabase.Rows.Add(row);
 
             row = MessageDatabase.NewRow();
+            row["id"] = 0x54;
+            row["length"] = 4;
+            row["parameterCount"] = 2;
+            row["message"] = string.Empty;
+            row["description"] = "TRANSMISSION TEMPERATURE | ENGINE COOLANT TEMPERATURE";
+            row["value"] = string.Empty;
+            row["unit"] = string.Empty;
+            MessageDatabase.Rows.Add(row);
+
+            row = MessageDatabase.NewRow();
             row["id"] = 0x56;
             row["length"] = 4;
             row["parameterCount"] = 1;
@@ -457,6 +467,16 @@ namespace ChryslerCCDSCIScanner
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
             row["description"] = "PCM TO BCM MESSAGE: INCREMENT ODOMETER/TRIPMETER";
+            row["value"] = string.Empty;
+            row["unit"] = string.Empty;
+            MessageDatabase.Rows.Add(row);
+
+            row = MessageDatabase.NewRow();
+            row["id"] = 0x89;
+            row["length"] = 4;
+            row["parameterCount"] = 2;
+            row["message"] = string.Empty;
+            row["description"] = "FUEL EFFICIENCY";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -733,6 +753,16 @@ namespace ChryslerCCDSCIScanner
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
             row["description"] = "COMPASS CALL DATA A/C CLUTCH ON";
+            row["value"] = string.Empty;
+            row["unit"] = string.Empty;
+            MessageDatabase.Rows.Add(row);
+
+            row = MessageDatabase.NewRow();
+            row["id"] = 0xDC;
+            row["length"] = 3;
+            row["parameterCount"] = 1;
+            row["message"] = string.Empty;
+            row["description"] = "SHIFT LEVER POSITION";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -1321,6 +1351,26 @@ namespace ChryslerCCDSCIScanner
                             unitToInsert = string.Empty;
                         }
                         break;
+                    case 0x54: // Transmission temperature / Engine coolant temperature
+                        if (message.Length >= minLength)
+                        {
+                            if (MainForm.units == "imperial")
+                            {
+                                valueToInsert = Math.Round((payload[0] * 1.8D) - 198.4D).ToString("0") + " | " + Math.Round((payload[1] * 1.8D) - 198.4D).ToString("0");
+                                unitToInsert = "°F | °F";
+                            }
+                            else if (MainForm.units == "metric")
+                            {
+                                valueToInsert = (payload[0] - 128).ToString("0") + " | " + (payload[1] - 128).ToString("0");
+                                unitToInsert = "°C | °C";
+                            }
+                        }
+                        else
+                        {
+                            valueToInsert = "ERROR";
+                            unitToInsert = string.Empty;
+                        }
+                        break;
                     case 0x56: // request MIL state - transmission
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
@@ -1394,6 +1444,18 @@ namespace ChryslerCCDSCIScanner
                     case 0x84: // PCM to BCM message
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
+                        break;
+                    case 0x89: // Fuel efficiency
+                        if (message.Length >= minLength)
+                        {
+                            valueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " MPG | " + payload[1].ToString("0") + " L/100KM";
+                            unitToInsert = "-";
+                        }
+                        else
+                        {
+                            valueToInsert = "ERROR";
+                            unitToInsert = string.Empty;
+                        }
                         break;
                     case 0x8C:
                         if (message.Length >= minLength)
@@ -2445,6 +2507,37 @@ namespace ChryslerCCDSCIScanner
                     case 0xDB: // compass calibration data / A/C clutch on
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
+                        break;
+                    case 0xDC: // shift lever position
+                        if (message.Length >= minLength)
+                        {
+                            valueToInsert = string.Empty;
+
+                            if (Util.IsBitSet(payload[0], 0)) valueToInsert += "NEUTRAL ";
+                            else if (Util.IsBitSet(payload[0], 1)) valueToInsert += "REVERSE ";
+                            else if(Util.IsBitSet(payload[0], 2)) valueToInsert += "1 ";
+                            else if(Util.IsBitSet(payload[0], 3)) valueToInsert += "2 ";
+                            else if(Util.IsBitSet(payload[0], 4)) valueToInsert += "3 ";
+                            else if(Util.IsBitSet(payload[0], 5)) valueToInsert += "4 ";
+                            else valueToInsert += "N/A ";
+
+                            switch ((payload[0] >> 6) & 0x03)
+                            {
+                                case 1:
+                                    valueToInsert += "| LOCK: PART";
+                                    break;
+                                case 2:
+                                    valueToInsert += "| LOCK: FULL";
+                                    break;
+                            }
+
+                            unitToInsert = string.Empty;
+                        }
+                        else
+                        {
+                            valueToInsert = "ERROR";
+                            unitToInsert = string.Empty;
+                        }
                         break;
                     case 0xE4: // engine speed (RPM) / intake manifold absolute pressure (MAP)
                         if (message.Length >= minLength)
