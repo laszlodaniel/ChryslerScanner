@@ -1684,10 +1684,10 @@ namespace ChryslerCCDSCIScanner
                                                 string AssemblyDateString = AssemblyDate.ToString("yyyy.MM.dd HH:mm:ss");
                                                 double ADCVoltage = ((Packet.rx.payload[21] << 8) + Packet.rx.payload[22]) / 100.00;
                                                 string ADCVoltageString = ADCVoltage.ToString("0.00").Replace(",", ".") + " V";
-                                                double R19Resistance = ((Packet.rx.payload[23] << 8) + Packet.rx.payload[24]) / 1000.0;
-                                                double R20Resistance = ((Packet.rx.payload[25] << 8) + Packet.rx.payload[26]) / 1000.0;
-                                                string R19ResistanceString = R19Resistance.ToString("0.000").Replace(",", ".") + " kΩ";
-                                                string R20ResistanceString = R20Resistance.ToString("0.000").Replace(",", ".") + " kΩ";
+                                                double RDHighResistance = ((Packet.rx.payload[23] << 8) + Packet.rx.payload[24]) / 1000.0;
+                                                double RDLowResistance = ((Packet.rx.payload[25] << 8) + Packet.rx.payload[26]) / 1000.0;
+                                                string RDHighResistanceString = RDHighResistance.ToString("0.000").Replace(",", ".") + " kΩ";
+                                                string RDLowResistanceString = RDLowResistance.ToString("0.000").Replace(",", ".") + " kΩ";
                                                 string LCDStateString = string.Empty;
 
                                                 if (Util.IsBitSet(Packet.rx.payload[27], 0)) LCDStateString = "enabled";
@@ -1730,18 +1730,21 @@ namespace ChryslerCCDSCIScanner
                                                                                "       Assembly date: " + Util.ByteToHexString(Packet.rx.payload, 13, 8) + " | " + Environment.NewLine +
                                                                                "                      " + AssemblyDateString + Environment.NewLine +
                                                                                "       ADC supply:    " + Util.ByteToHexString(Packet.rx.payload, 21, 2) + " | " + ADCVoltageString + Environment.NewLine +
-                                                                               "       R19 resistor:  " + Util.ByteToHexString(Packet.rx.payload, 23, 2) + " | " + R19ResistanceString + Environment.NewLine +
-                                                                               "       R20 resistor:  " + Util.ByteToHexString(Packet.rx.payload, 25, 2) + " | " + R20ResistanceString + Environment.NewLine +
-                                                                               "       LCD state:     " + Util.ByteToHexString(Packet.rx.payload, 27, 1) + " | " + LCDStateString + Environment.NewLine +
-                                                                               "       LCD I2C addr.: " + Util.ByteToHexString(Packet.rx.payload, 28, 1) + " | " + LCDI2CAddressString + Environment.NewLine +
-                                                                               "       LCD width:     " + Util.ByteToHexString(Packet.rx.payload, 29, 1) + " | " + LCDWidthString + Environment.NewLine +
-                                                                               "       LCD height:    " + Util.ByteToHexString(Packet.rx.payload, 30, 1) + " | " + LCDHeightString + Environment.NewLine +
-                                                                               "       LCD refresh:   " + Util.ByteToHexString(Packet.rx.payload, 31, 1) + " | " + LCDRefreshRateString + Environment.NewLine +
-                                                                               "       LCD units:     " + Util.ByteToHexString(Packet.rx.payload, 32, 1) + " | " + LCDUnitsString + Environment.NewLine +
-                                                                               "       LCD data src:  " + Util.ByteToHexString(Packet.rx.payload, 33, 1) + " | " + LCDDataSourceString + Environment.NewLine +
+                                                                               "       RDH resistor:  " + Util.ByteToHexString(Packet.rx.payload, 23, 2) + " | " + RDHighResistanceString + Environment.NewLine +
+                                                                               "       RDL resistor:  " + Util.ByteToHexString(Packet.rx.payload, 25, 2) + " | " + RDLowResistanceString + Environment.NewLine +
+                                                                               "       LCD state:        " + Util.ByteToHexString(Packet.rx.payload, 27, 1) + " | " + LCDStateString + Environment.NewLine +
+                                                                               "       LCD I2C addr.:    " + Util.ByteToHexString(Packet.rx.payload, 28, 1) + " | " + LCDI2CAddressString + Environment.NewLine +
+                                                                               "       LCD width:        " + Util.ByteToHexString(Packet.rx.payload, 29, 1) + " | " + LCDWidthString + Environment.NewLine +
+                                                                               "       LCD height:       " + Util.ByteToHexString(Packet.rx.payload, 30, 1) + " | " + LCDHeightString + Environment.NewLine +
+                                                                               "       LCD refresh:      " + Util.ByteToHexString(Packet.rx.payload, 31, 1) + " | " + LCDRefreshRateString + Environment.NewLine +
+                                                                               "       LCD units:        " + Util.ByteToHexString(Packet.rx.payload, 32, 1) + " | " + LCDUnitsString + Environment.NewLine +
+                                                                               "       LCD data src:     " + Util.ByteToHexString(Packet.rx.payload, 33, 1) + " | " + LCDDataSourceString + Environment.NewLine +
                                                                                "       LED heartbeat: " + Util.ByteToHexString(Packet.rx.payload, 34, 2) + " | " + LEDHeartbeatInterval + Environment.NewLine +
                                                                                "       LED blink:     " + Util.ByteToHexString(Packet.rx.payload, 36, 2) + " | " + LEDBlinkDuration + Environment.NewLine +
-                                                                               "       Checksum:      " + Util.ByteToHexString(Packet.rx.payload, 258, 1));
+                                                                               "       CCD settings:     " + Util.ByteToHexString(Packet.rx.payload, 38, 1) + Environment.NewLine +
+                                                                               "       PCM settings:     " + Util.ByteToHexString(Packet.rx.payload, 39, 1) + Environment.NewLine +
+                                                                               "       TCM settings:     " + Util.ByteToHexString(Packet.rx.payload, 40, 1) + Environment.NewLine +
+                                                                               "       Checksum:         " + Util.ByteToHexString(Packet.rx.payload, 258, 1));
                                             }
                                         }
                                         else // error
