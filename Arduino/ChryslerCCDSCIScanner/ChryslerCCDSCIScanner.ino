@@ -40,12 +40,12 @@
 // 00: patch
 // (00: revision)
 // = v0.1.0(.0)
-#define FW_VERSION 0x00050100
+#define FW_VERSION 0x00050200
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x0005010060AA5FFE
+#define FW_DATE 0x0005020060BB9761
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -6718,13 +6718,11 @@ void setup()
     pinMode(B_TCM_RX_EN, OUTPUT);
     pinMode(B_TCM_TX_EN, OUTPUT);
 
-    // Initialize serial interfaces with default speeds.
     usb_init(USBBAUD);// 250000 baud, an external serial monitor should have the same speed
+    eep_init(); // initialize external EEPROM chip and load settings
     ccd_init(); // 7812.5 baud
     pcm_init(LOBAUD); // 7812.5 baud
     tcm_init(LOBAUD); // 7812.5 baud
-
-    eep_init(); // initialize external EEPROM chip
     lcd_init(); // initialize external LCD
 
     if (lcd_enabled)
