@@ -2326,7 +2326,7 @@ namespace ChryslerCCDSCIScanner
                         catch
                         {
                             Util.UpdateTextBox(USBTextBox, "[INFO] " + Packet.Serial.PortName + " is opened by another application.");
-                            Util.UpdateTextBox(USBTextBox, "[INFO] Device not found at " + Packet.Serial.PortName + ".");
+                            Util.UpdateTextBox(USBTextBox, "[INFO] Device not found on " + Packet.Serial.PortName + ".");
                             break;
                         }
 
@@ -2353,7 +2353,7 @@ namespace ChryslerCCDSCIScanner
                                     }
                                     catch
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Cannot read enough byte from " + Packet.Serial.PortName + ".");
+                                        Util.UpdateTextBox(USBTextBox, "[INFO] Cannot read enough bytes from " + Packet.Serial.PortName + ".");
                                         break;
                                     }
 
@@ -2397,7 +2397,7 @@ namespace ChryslerCCDSCIScanner
                                 timeout = false;
                                 Packet.Serial.Close();
                                 ConnectionCounter++; // increase counter value and try again
-                                Util.UpdateTextBox(USBTextBox, "[INFO] Device is not responding at " + Packet.Serial.PortName + ".");
+                                Util.UpdateTextBox(USBTextBox, "[INFO] Device is not responding on " + Packet.Serial.PortName + ".");
                             }
 
                             if (deviceFound) break;

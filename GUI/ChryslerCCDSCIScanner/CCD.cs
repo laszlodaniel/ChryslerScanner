@@ -2544,12 +2544,12 @@ namespace ChryslerCCDSCIScanner
                         {
                             if (MainForm.units == "imperial")
                             {
-                                valueToInsert = (payload[0] * 32D).ToString("0") + " | " + Math.Round(payload[1] * 0.059756D, 1).ToString("0.0").Replace(",", ".");
+                                valueToInsert = (payload[0] * 32D).ToString("0") + " | " + Math.Round(payload[1] * 0.1217D * 0.49109778D, 1).ToString("0.0").Replace(",", ".");
                                 unitToInsert = "RPM | PSI";
                             }
                             else if (MainForm.units == "metric")
                             {
-                                valueToInsert = (payload[0] * 32D).ToString("0") + " | " + Math.Round(payload[1] * 0.059756D * 6.894757D, 1).ToString("0.0").Replace(",", ".");
+                                valueToInsert = (payload[0] * 32D).ToString("0") + " | " + Math.Round(payload[1] * 0.1217D * 25.4D * 0.133322368D, 1).ToString("0.0").Replace(",", ".");
                                 unitToInsert = "RPM | KPA";
                             }
                         }
