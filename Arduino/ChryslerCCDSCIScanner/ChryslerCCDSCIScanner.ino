@@ -40,12 +40,12 @@
 // 00: patch
 // (00: revision)
 // = v0.1.0(.0)
-#define FW_VERSION 0x00050200
+#define FW_VERSION 0x00050300
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x0005020060BB9761
+#define FW_DATE 0x0005030060D0AF50
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -308,6 +308,8 @@ typedef struct {
 
 bus ccd, pcm, tcm;
 
+uint32_t sci_test_byte_last_millis = 0;
+
 // Construct an object called "eep" for the external 24LC32A EEPROM chip.
 extEEPROM eep(kbits_32, 1, 32, 0x50); // device size: 32 kilobits = 4 kilobytes, number of devices: 1, page size: 32 bytes (from datasheet), device address: 0x50 by default
 
@@ -420,7 +422,7 @@ void eep_init(void)
         {
             uint8_t data[2];
             
-            eep.read(0x00, hw_version, sizeof(hw_version));
+            eep.read(0x00, hw_version, 2);
     
             if (to_uint16(hw_version[0], hw_version[1]) < 150)
             {
@@ -433,8 +435,8 @@ void eep_init(void)
                 eep.begin(extEEPROM::twiClock400kHz);
             }
     
-            eep.read(0x02, hw_date, sizeof(hw_date));
-            eep.read(0x0A, assembly_date, sizeof(assembly_date));
+            eep.read(0x02, hw_date, 8);
+            eep.read(0x0A, assembly_date, 8);
             eep.read(0x12, data, 2);
             adc_supply_voltage = to_uint16(data[0], data[1]);
             eep.read(0x14, data, 2);
@@ -3045,9 +3047,9 @@ Function: array_contains()
 Purpose:  checks if a value is present in an array
 Note:     only checks first occurence
 **************************************************************************/
-bool array_contains(uint8_t *src_array, uint8_t value)
+bool array_contains(uint8_t *src_array, uint16_t src_array_length, uint8_t value)
 {
-    for (uint16_t i = 0; i < sizeof(src_array); i++)
+    for (uint16_t i = 0; i < src_array_length; i++)
     {
         if (value == src_array[i]) return true;
     }
@@ -3253,7 +3255,7 @@ int cmd_status(void)
     scanner_status[51] = (led_blink_duration >> 8) & 0xFF;
     scanner_status[52] = led_blink_duration & 0xFF;
 
-    send_usb_packet(from_usb, to_usb, status, ok, scanner_status, sizeof(scanner_status));
+    send_usb_packet(from_usb, to_usb, status, ok, scanner_status, 53);
     return 0;
 }
 
@@ -5390,30 +5392,40 @@ void handle_sci_data(void)
                     }
                     else // only ID-bytes are received, the beginning of the messages must be supplemented so that the GUI understands what it is about
                     {
-                        pcm.message_length = pcm_rx_available();
-                        uint8_t usb_msg[7]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
-                        update_timestamp(current_timestamp); // get current time for the timestamp
-                        
-                        for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+                        if ((uint32_t)(millis() - sci_test_byte_last_millis) >= 200) // test bytes are broadcasted way too fast, filter them by transmitting every 200 ms
                         {
-                            usb_msg[i] = current_timestamp[i];
-                        }
+                            sci_test_byte_last_millis = millis();
 
-                        if (pcm.actuator_test_running && !pcm.ls_request_running) // if the actuator test mode is active then put two bytes before the received byte
-                        {
-                            usb_msg[4] = 0x13;
-                            usb_msg[5] = pcm.actuator_test_byte;
-                        }
-                        
-                        if (pcm.ls_request_running && !pcm.actuator_test_running) // if the request mode is active then put two bytes before the received byte; this is kind of annying, why isn't one time response enough... there's nothing "running" like in the case of actuator tests
-                        {
-                            usb_msg[4] = 0x2A;
-                            usb_msg[5] = pcm.ls_request_byte;
-                        }
+                            pcm.message_length = pcm_rx_available();
+                            uint8_t usb_msg[7]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
+                            update_timestamp(current_timestamp); // get current time for the timestamp
 
-                        usb_msg[6] = pcm_getc() & 0xFF; // BUG: this byte is different at first when the PCM begins to broadcast a single byte repeatedly, but it should be overwritten very soon after
-                        send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 7); // the message length is fixed by the nature of the active commands
-                        handle_lcd(from_pcm, usb_msg, 4, TIMESTAMP_LENGTH+pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                            for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+                            {
+                                usb_msg[i] = current_timestamp[i];
+                            }
+
+                            if (pcm.actuator_test_running && !pcm.ls_request_running) // if the actuator test mode is active then put two bytes before the received byte
+                            {
+                                usb_msg[4] = 0x13;
+                                usb_msg[5] = pcm.actuator_test_byte;
+                            }
+
+                            if (pcm.ls_request_running && !pcm.actuator_test_running) // if the request mode is active then put two bytes before the received byte; this is kind of annying, why isn't one time response enough... there's nothing "running" like in the case of actuator tests
+                            {
+                                usb_msg[4] = 0x2A;
+                                usb_msg[5] = pcm.ls_request_byte;
+                            }
+    
+                            usb_msg[6] = pcm_getc() & 0xFF; // BUG: this byte is different at first when the PCM begins to broadcast a single byte repeatedly, but it should be overwritten very soon after
+
+                            send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, 7); // the message length is fixed by the nature of the active commands
+                            handle_lcd(from_pcm, usb_msg, 4, TIMESTAMP_LENGTH+pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                        }
+                        else
+                        {
+                            pcm_getc(); // we don't need this byte right now, read it into oblivion
+                        }
                     }
 
                     pcm_rx_flush();
@@ -5833,7 +5845,7 @@ void handle_sci_data(void)
                 
                 if (pcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                 {
-                    if (array_contains(sci_hi_speed_memarea, pcm.msg_buffer[0])) // make sure that the memory table select byte is approved by the PCM before sending the full message
+                    if (array_contains(sci_hi_speed_memarea, 16, pcm.msg_buffer[0])) // make sure that the memory table select byte is approved by the PCM before sending the full message
                     {
                         if ((pcm.msg_buffer_ptr > 1) && (pcm.msg_buffer[1] == 0xFF)) // return full RAM-table if the first address is an invalid 0xFF
                         {
@@ -5885,7 +5897,7 @@ void handle_sci_data(void)
                 else if (pcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
                 {
                     // Navigate in the main buffer after the message length byte and start sending those bytes
-                    if (array_contains(sci_hi_speed_memarea, pcm.msg_buffer[pcm.msg_buffer_ptr + 1])) // make sure that the memory table select byte is approved by the PCM before sending the full message
+                    if (array_contains(sci_hi_speed_memarea, 16, pcm.msg_buffer[pcm.msg_buffer_ptr + 1])) // make sure that the memory table select byte is approved by the PCM before sending the full message
                     {
                         uint8_t j = 0;
                         
@@ -6470,7 +6482,7 @@ void handle_sci_data(void)
                 
                 if (tcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                 {
-                    if (array_contains(sci_hi_speed_memarea, tcm.msg_buffer[0])) // make sure that the memory table select byte is approved by the TCM before sending the full message
+                    if (array_contains(sci_hi_speed_memarea, 16, tcm.msg_buffer[0])) // make sure that the memory table select byte is approved by the TCM before sending the full message
                     {
                         if ((tcm.msg_buffer_ptr > 1) && (tcm.msg_buffer[1] == 0xFF)) // return full RAM-table if the first address is an invalid 0xFF
                         {
@@ -6522,7 +6534,7 @@ void handle_sci_data(void)
                 else if (tcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
                 {
                     // Navigate in the main buffer after the message length byte and start sending those bytes
-                    if (array_contains(sci_hi_speed_memarea, tcm.msg_buffer[tcm.msg_buffer_ptr + 1])) // make sure that the memory table select byte is approved by the TCM before sending the full message
+                    if (array_contains(sci_hi_speed_memarea, 16, tcm.msg_buffer[tcm.msg_buffer_ptr + 1])) // make sure that the memory table select byte is approved by the TCM before sending the full message
                     {
                         uint8_t j = 0;
                         
