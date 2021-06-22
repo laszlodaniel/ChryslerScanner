@@ -40,12 +40,12 @@
 // 00: patch
 // (00: revision)
 // = v0.1.0(.0)
-#define FW_VERSION 0x00050300
+#define FW_VERSION 0x00050400
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x0005030060D0AF50
+#define FW_DATE 0x0005040060D17051
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -391,7 +391,6 @@ bool connected_to_vehicle = false;
 uint32_t rx_led_ontime = 0;
 uint32_t tx_led_ontime = 0;
 uint32_t act_led_ontime = 0;
-uint32_t current_millis_blink = 0;
 uint32_t previous_act_blink = 0;
 uint16_t led_blink_duration = 50; // milliseconds
 uint16_t heartbeat_interval = 5000; // milliseconds
@@ -724,7 +723,7 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
     if (lcd_enabled)
     {
 //        current_millis = millis(); // check current time
-//        if ((current_millis - lcd_last_update ) > lcd_update_interval) // refresh rate
+//        if ((uint32_t)(current_millis - lcd_last_update ) >= lcd_update_interval) // refresh rate
 //        {
 //            lcd_last_update = current_millis;
             
@@ -3035,11 +3034,11 @@ Note:     this function updates a global byte array which can be read from anywh
 **************************************************************************/
 void update_timestamp(uint8_t *target)
 {
-    uint32_t mcu_current_millis = millis();
-    target[0] = (mcu_current_millis >> 24) & 0xFF;
-    target[1] = (mcu_current_millis >> 16) & 0xFF;
-    target[2] = (mcu_current_millis >> 8) & 0xFF;
-    target[3] = mcu_current_millis & 0xFF;
+    current_millis = millis();
+    target[0] = (current_millis >> 24) & 0xFF;
+    target[1] = (current_millis >> 16) & 0xFF;
+    target[2] = (current_millis >> 8) & 0xFF;
+    target[3] = current_millis & 0xFF;
 }
 
 /*************************************************************************
@@ -5067,7 +5066,7 @@ void handle_ccd_data(void)
         if (ccd.random_msg && (ccd.random_msg_interval > 0))
         {
             current_millis = millis(); // check current time
-            if ((current_millis - ccd.random_msg_last_millis) > ccd.random_msg_interval)
+            if ((uint32_t)(current_millis - ccd.random_msg_last_millis) >= ccd.random_msg_interval)
             {
                 ccd.random_msg_last_millis = current_millis;
                 ccd.msg_buffer_ptr = random(3, 7); // random message length between 3 and 6 bytes
@@ -5086,7 +5085,7 @@ void handle_ccd_data(void)
         if (ccd.repeat)
         {
             current_millis = millis(); // check current time
-            if ((current_millis - ccd.repeated_msg_last_millis) > ccd.repeated_msg_interval) // wait between messages
+            if ((uint32_t)(current_millis - ccd.repeated_msg_last_millis) >= ccd.repeated_msg_interval) // wait between messages
             {
                 ccd.repeated_msg_last_millis = current_millis;
                 if (ccd.repeat_next && !ccd.repeat_iterate) // no iteration, same message over and over again
@@ -5230,7 +5229,7 @@ void handle_sci_data(void)
         {
             if (!pcm.actuator_test_running && !pcm.ls_request_running) // send message back to laptop normally
             {
-                if (((millis() - pcm.last_byte_millis) > SCI_LS_T3_DELAY) && (pcm_rx_available() > 0))
+                if (((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T3_DELAY) && (pcm_rx_available() > 0))
                 { 
                     pcm.message_length = pcm_rx_available();
                     uint8_t usb_msg[TIMESTAMP_LENGTH+pcm.message_length]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
@@ -5346,7 +5345,7 @@ void handle_sci_data(void)
             }
             else // 0x13 and 0x2A has a weird delay between messages so they are handled here with a smaller delay
             {
-                if (((millis() - pcm.last_byte_millis) > 10) && (pcm_rx_available() > 0))
+                if (((uint32_t)(millis() - pcm.last_byte_millis) >= 10) && (pcm_rx_available() > 0))
                 { 
                     // Stop actuator test command is accepted
                     if ((pcm_peek(0) == 0x13) && (pcm_peek(1) == 0x00) && (pcm_peek(2) == 0x00))
@@ -5557,7 +5556,7 @@ void handle_sci_data(void)
         }
         else // other non-standard speeds are handled here
         {
-            if (((millis() - pcm.last_byte_millis) > SCI_LS_T3_DELAY) && (pcm_rx_available() > 0))
+            if (((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T3_DELAY) && (pcm_rx_available() > 0))
             { 
                 pcm.message_length = pcm_rx_available();
                 uint8_t usb_msg[TIMESTAMP_LENGTH+pcm.message_length]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
@@ -5644,7 +5643,7 @@ void handle_sci_data(void)
         if (pcm.repeat && (pcm_rx_available() == 0))
         {
             current_millis = millis(); // check current time
-            if ((current_millis - pcm.repeated_msg_last_millis) > pcm.repeated_msg_interval) // wait between messages
+            if ((uint32_t)(current_millis - pcm.repeated_msg_last_millis) >= pcm.repeated_msg_interval) // wait between messages
             {
                 pcm.repeated_msg_last_millis = current_millis;
                 
@@ -5760,7 +5759,7 @@ void handle_sci_data(void)
                         while ((pcm_rx_available() <= i) && !timeout_reached)
                         {
                             // wait here for echo (half-duplex mode)
-                            if ((millis() - timeout_start) > SCI_LS_T1_DELAY) timeout_reached = true;
+                            if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
                         }
                         if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                         {
@@ -5779,7 +5778,7 @@ void handle_sci_data(void)
                         while ((pcm_rx_available() <= pcm.msg_buffer_ptr) && !timeout_reached)
                         {
                             // wait here for echo (half-duplex mode)
-                            if ((millis() - timeout_start) > 100) timeout_reached = true;
+                            if ((uint32_t)(millis() - timeout_start) >= 100) timeout_reached = true;
                         }
                         if (timeout_reached)
                         {
@@ -5802,7 +5801,7 @@ void handle_sci_data(void)
                         while ((pcm_rx_available() <= pcm.msg_buffer_ptr) && !timeout_reached)
                         {
                             // wait here for echo (half-duplex mode)
-                            if ((millis() - timeout_start) > 100) timeout_reached = true;
+                            if ((uint32_t)(millis() - timeout_start) >= 100) timeout_reached = true;
                         }
                         if (timeout_reached)
                         {
@@ -5828,7 +5827,7 @@ void handle_sci_data(void)
                         while ((pcm_rx_available() <= (i - pcm.msg_buffer_ptr - 1)) && !timeout_reached)
                         {
                             // wait here for echo (half-duplex mode)
-                            if ((millis() - timeout_start) > SCI_LS_T1_DELAY) timeout_reached = true;
+                            if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
                         }
                         if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                         {
@@ -5866,7 +5865,7 @@ void handle_sci_data(void)
                             while ((pcm_rx_available() <= i) && !timeout_reached)
                             {
                                 // wait here for response (echo in case of F0...FF)
-                                if ((millis() - timeout_start) > SCI_HS_T3_DELAY) timeout_reached = true;
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_HS_T3_DELAY) timeout_reached = true;
                             }
                             if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                             {
@@ -5911,7 +5910,7 @@ void handle_sci_data(void)
                             while ((pcm_rx_available() <= j) && !timeout_reached)
                             {
                                 // wait here for response (echo in case of F0...FF)
-                                if ((millis() - timeout_start) > SCI_HS_T3_DELAY) timeout_reached = true;
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_HS_T3_DELAY) timeout_reached = true;
                             }
                             if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                             {
@@ -5954,7 +5953,7 @@ void handle_sci_data(void)
                         while ((pcm_rx_available() <= i) && !timeout_reached)
                         {
                             // wait here for echo (half-duplex mode)
-                            if ((millis() - timeout_start) > SCI_LS_T1_DELAY) timeout_reached = true;
+                            if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
                         }
                         if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                         {
@@ -5978,7 +5977,7 @@ void handle_sci_data(void)
                         while ((pcm_rx_available() <= j) && !timeout_reached)
                         {
                             // wait here for response (echo in case of F0...FF)
-                            if ((millis() - timeout_start) > SCI_LS_T1_DELAY) timeout_reached = true;
+                            if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
                         }
                         if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                         {
@@ -6003,7 +6002,7 @@ void handle_sci_data(void)
         // Handle completed messages
         if (tcm.speed == LOBAUD) // handle low-speed mode first (7812.5 baud)
         {
-            if (((millis() - tcm.last_byte_millis) > SCI_LS_T3_DELAY) && (tcm_rx_available() > 0))
+            if (((uint32_t)(millis() - tcm.last_byte_millis) >= SCI_LS_T3_DELAY) && (tcm_rx_available() > 0))
             { 
                 tcm.message_length = tcm_rx_available();
                 uint8_t usb_msg[TIMESTAMP_LENGTH+tcm.message_length]; // create local array which will hold the timestamp and the SCI-bus (TCM) message
@@ -6241,7 +6240,7 @@ void handle_sci_data(void)
         }
         else // other non-standard speeds are handled here
         {
-            if (((millis() - tcm.last_byte_millis) > SCI_LS_T3_DELAY) && (tcm_rx_available() > 0))
+            if (((uint32_t)(millis() - tcm.last_byte_millis) >= SCI_LS_T3_DELAY) && (tcm_rx_available() > 0))
             { 
                 tcm.message_length = tcm_rx_available();
                 uint8_t usb_msg[TIMESTAMP_LENGTH+tcm.message_length]; // create local array which will hold the timestamp and the SCI-bus (TCM) message
@@ -6328,7 +6327,7 @@ void handle_sci_data(void)
         if (tcm.repeat && (tcm_rx_available() == 0))
         {
             current_millis = millis(); // check current time
-            if ((current_millis - tcm.repeated_msg_last_millis) > tcm.repeated_msg_interval) // wait between messages
+            if ((uint32_t)(current_millis - tcm.repeated_msg_last_millis) >= tcm.repeated_msg_interval) // wait between messages
             {
                 tcm.repeated_msg_last_millis = current_millis;
                 
@@ -6444,7 +6443,7 @@ void handle_sci_data(void)
                         while ((tcm_rx_available() <= i) && !timeout_reached)
                         {
                             // wait here for echo (half-duplex mode)
-                            if ((millis() - timeout_start) > SCI_LS_T1_DELAY) timeout_reached = true;
+                            if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
                         }
                         if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                         {
@@ -6465,7 +6464,7 @@ void handle_sci_data(void)
                         while ((tcm_rx_available() <= (i - tcm.msg_buffer_ptr - 1)) && !timeout_reached)
                         {
                             // wait here for echo (half-duplex mode)
-                            if ((millis() - timeout_start) > SCI_LS_T1_DELAY) timeout_reached = true;
+                            if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
                         }
                         if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                         {
@@ -6503,7 +6502,7 @@ void handle_sci_data(void)
                             while ((tcm_rx_available() <= i) && !timeout_reached)
                             {
                                 // wait here for response (echo in case of F0...FF)
-                                if ((millis() - timeout_start) > SCI_HS_T3_DELAY) timeout_reached = true;
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_HS_T3_DELAY) timeout_reached = true;
                             }
                             if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                             {
@@ -6548,7 +6547,7 @@ void handle_sci_data(void)
                             while ((tcm_rx_available() <= j) && !timeout_reached)
                             {
                                 // wait here for response (echo in case of F0...FF)
-                                if ((millis() - timeout_start) > SCI_HS_T3_DELAY) timeout_reached = true;
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_HS_T3_DELAY) timeout_reached = true;
                             }
                             if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                             {
@@ -6591,7 +6590,7 @@ void handle_sci_data(void)
                         while ((tcm_rx_available() <= i) && !timeout_reached)
                         {
                             // wait here for echo (half-duplex mode)
-                            if ((millis() - timeout_start) > SCI_LS_T1_DELAY) timeout_reached = true;
+                            if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
                         }
                         if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                         {
@@ -6615,7 +6614,7 @@ void handle_sci_data(void)
                         while ((tcm_rx_available() <= j) && !timeout_reached)
                         {
                             // wait here for response (echo in case of F0...FF)
-                            if ((millis() - timeout_start) > SCI_LS_T1_DELAY) timeout_reached = true;
+                            if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
                         }
                         if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                         {
@@ -6681,24 +6680,24 @@ Note:     ACT heartbeat is handled here too;
 **************************************************************************/
 void handle_leds(void)
 {
-    current_millis_blink = millis(); // check current time
+    current_millis = millis(); // check current time
     if (heartbeat_enabled)
     {
-        if (current_millis_blink - previous_act_blink >= heartbeat_interval)
+        if ((uint32_t)(current_millis - previous_act_blink) >= heartbeat_interval)
         {
-            previous_act_blink = current_millis_blink; // save current time
+            previous_act_blink = current_millis; // save current time
             blink_led(ACT_LED);
         }
     }
-    if (current_millis_blink - rx_led_ontime >= led_blink_duration)
+    if ((uint32_t)(current_millis - rx_led_ontime) >= led_blink_duration)
     {
         digitalWrite(RX_LED, HIGH); // turn off RX LED
     }
-    if (current_millis_blink - tx_led_ontime >= led_blink_duration)
+    if ((uint32_t)(current_millis - tx_led_ontime) >= led_blink_duration)
     {
         digitalWrite(TX_LED, HIGH); // turn off TX LED
     }
-    if (current_millis_blink - act_led_ontime >= led_blink_duration)
+    if ((uint32_t)(current_millis - act_led_ontime) >= led_blink_duration)
     {
         digitalWrite(ACT_LED, HIGH); // turn off ACT LED
     }
