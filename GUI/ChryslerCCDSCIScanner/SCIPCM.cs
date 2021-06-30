@@ -270,7 +270,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 5;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "WRITE FLASH MEMORY";
+            row["description"] = "WRITE EEPROM";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -287,7 +287,7 @@ namespace ChryslerCCDSCIScanner
 
             row = MessageDatabase.NewRow();
             row["id"] = 0x2A;
-            row["length"] = 2;
+            row["length"] = 3;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
             row["description"] = "INFORMATION REQUEST";
@@ -3313,6 +3313,20 @@ namespace ChryslerCCDSCIScanner
                                                 break;
                                         }
                                         break;
+                                    case 0x0F:
+                                        descriptionToInsert = "INFORMATION REQUEST | SBEC INFO";
+                                        valueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        break;
+                                    case 0x17:
+                                        descriptionToInsert = "INFORMATION REQUEST | PCM PART NUMBER 9";
+                                        valueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        unitToInsert = string.Empty;
+                                        break;
+                                    case 0x18:
+                                        descriptionToInsert = "INFORMATION REQUEST | PCM PART NUMBER 10";
+                                        valueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        unitToInsert = string.Empty;
+                                        break;
                                     default:
                                         if (payload[0] != 0x00)
                                         {
@@ -3339,10 +3353,22 @@ namespace ChryslerCCDSCIScanner
                         case 0x2B: // get security seed
                             if (message.Length >= minLength)
                             {
-                                valueToInsert = Util.ByteToHexStringSimple(payload);
+                                byte checksum = (byte)(0x2B + payload[0] + payload[1]);
+
+                                if (checksum == payload[2])
+                                {
+                                    descriptionToInsert = "GET SECURITY SEED | CHECKSUM: OK";
+                                    valueToInsert = Util.ByteToHexString(payload, 0, 2);
+                                }
+                                else
+                                {
+                                    descriptionToInsert = "GET SECURITY SEED | CHECKSUM: ERROR";
+                                    valueToInsert = string.Empty;
+                                }
                             }
                             else // error
                             {
+                                descriptionToInsert = "GET SECURITY SEED";
                                 valueToInsert = "ERROR";
                             }
                             unitToInsert = string.Empty;
@@ -3352,8 +3378,17 @@ namespace ChryslerCCDSCIScanner
                             {
                                 switch (payload[3])
                                 {
+                                    case 0x00:
+                                        valueToInsert = "INCORRECT";
+                                        break;
+                                    case 0x01:
+                                        valueToInsert = "OK";
+                                        break;
                                     case 0x02:
-                                        valueToInsert = "FAILED";
+                                        valueToInsert = "CHECKSUM: ERROR";
+                                        break;
+                                    case 0x03:
+                                        valueToInsert = "BLOCKED | RESTART PCM";
                                         break;
                                     default:
                                         valueToInsert = "RESULT=" + Util.ByteToHexString(payload, 3, 1);

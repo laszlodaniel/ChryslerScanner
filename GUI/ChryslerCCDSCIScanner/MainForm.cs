@@ -3646,7 +3646,7 @@ namespace ChryslerCCDSCIScanner
                             Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                             Packet.tx.payload = message;
                             Packet.GeneratePacket();
-                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send a SCI-bus (PCM) message once:", Packet.tx.buffer);
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (PCM) message once:", Packet.tx.buffer);
                             if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
                                                                                    "       " + Util.ByteToHexStringSimple(message));
                             await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
@@ -3658,7 +3658,7 @@ namespace ChryslerCCDSCIScanner
                             Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                             Packet.tx.payload = message;
                             Packet.GeneratePacket();
-                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send a SCI-bus (TCM) message once:", Packet.tx.buffer);
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (TCM) message once:", Packet.tx.buffer);
                             if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine +
                                                                                    "       " + Util.ByteToHexStringSimple(message));
                             await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
