@@ -3262,28 +3262,32 @@ namespace ChryslerCCDSCIScanner
                             if (message.Length >= minLength)
                             {
                                 descriptionToInsert = "WRITE EEPROM | OFFSET: " + Util.ByteToHexString(payload, 0, 2);
-                                descriptionToInsert += " | VALUE: " + Util.ByteToHexString(payload, 2, 1);
-
+                                
                                 switch (payload[3])
                                 {
                                     case 0xE2:
-                                        valueToInsert = "OK";
+                                        valueToInsert = Util.ByteToHexString(payload, 2, 1);
+                                        unitToInsert = "OK";
                                         break;
                                     case 0xF0:
                                         valueToInsert = "DENIED (INVALID OFFSET)";
+                                        unitToInsert = string.Empty;
                                         break;
                                     case 0xF1:
-                                        valueToInsert = "DENIED (SEED SECURITY)";
+                                        valueToInsert = "DENIED (SECURITY LEVEL)";
+                                        unitToInsert = string.Empty;
+                                        break;
+                                    default:
+                                        valueToInsert = "RESULT=" + Util.ByteToHexString(payload, 3, 1);
+                                        unitToInsert = string.Empty;
                                         break;
                                 }
-                                
                             }
                             else // error
                             {
                                 descriptionToInsert = "WRITE EEPROM";
                                 valueToInsert = "ERROR";
                             }
-                            unitToInsert = string.Empty;
                             break;
                         case 0x28: // read EEPROM
                             if (message.Length >= minLength)
@@ -3606,23 +3610,18 @@ namespace ChryslerCCDSCIScanner
                                 switch (payload[3])
                                 {
                                     case 0x00:
-                                        descriptionToInsert = "SEND SECURITY SEED | EEPROM WRITE ALLOWED";
-                                        valueToInsert = "OK";
+                                        valueToInsert = "EEPROM WRITE ALLOWED";
                                         break;
                                     case 0x01:
-                                        descriptionToInsert = "SEND SECURITY SEED";
                                         valueToInsert = "INCORRECT";
                                         break;
                                     case 0x02:
-                                        descriptionToInsert = "SEND SECURITY SEED";
                                         valueToInsert = "CHECKSUM ERROR";
                                         break;
                                     case 0x03:
-                                        descriptionToInsert = "SEND SECURITY SEED";
                                         valueToInsert = "BLOCKED | RESTART PCM";
                                         break;
                                     default:
-                                        descriptionToInsert = "SEND SECURITY SEED";
                                         valueToInsert = "RESULT=" + Util.ByteToHexString(payload, 3, 1);
                                         break;
                                 }
