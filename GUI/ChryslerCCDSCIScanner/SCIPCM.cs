@@ -3578,13 +3578,17 @@ namespace ChryslerCCDSCIScanner
 
                                 if (checksum == payload[2])
                                 {
-                                    descriptionToInsert = "GET SECURITY SEED | CHECKSUM: OK";
+                                    ushort seed = (ushort)((payload[0] << 8) | payload[1]);
+                                    ushort solution = (ushort)((seed << 2) + 0x9018);
+                                    byte[] solutionArray = { (byte)(solution >> 8 & 0xFF), (byte)(solution & 0xFF) };
+                                    byte[] solutionChecksum = { (byte)((0x2C + solutionArray[0] + solutionArray[1]) & 0xFF) };
+                                    descriptionToInsert = "GET SECURITY SEED | SOLUTION: 2C " + Util.ByteToHexStringSimple(solutionArray) + " " + Util.ByteToHexStringSimple(solutionChecksum);
                                     valueToInsert = Util.ByteToHexString(payload, 0, 2);
                                 }
                                 else
                                 {
-                                    descriptionToInsert = "GET SECURITY SEED | CHECKSUM: ERROR";
-                                    valueToInsert = string.Empty;
+                                    descriptionToInsert = "GET SECURITY SEED";
+                                    valueToInsert = "CHECKSUM ERROR";
                                 }
                             }
                             else // error
@@ -3600,24 +3604,30 @@ namespace ChryslerCCDSCIScanner
                                 switch (payload[3])
                                 {
                                     case 0x00:
-                                        valueToInsert = "INCORRECT";
-                                        break;
-                                    case 0x01:
+                                        descriptionToInsert = "SEND SECURITY SEED | EEPROM WRITE ALLOWED";
                                         valueToInsert = "OK";
                                         break;
+                                    case 0x01:
+                                        descriptionToInsert = "SEND SECURITY SEED";
+                                        valueToInsert = "INCORRECT";
+                                        break;
                                     case 0x02:
-                                        valueToInsert = "CHECKSUM: ERROR";
+                                        descriptionToInsert = "SEND SECURITY SEED";
+                                        valueToInsert = "CHECKSUM ERROR";
                                         break;
                                     case 0x03:
+                                        descriptionToInsert = "SEND SECURITY SEED";
                                         valueToInsert = "BLOCKED | RESTART PCM";
                                         break;
                                     default:
+                                        descriptionToInsert = "SEND SECURITY SEED";
                                         valueToInsert = "RESULT=" + Util.ByteToHexString(payload, 3, 1);
                                         break;
                                 }
                             }
                             else // error
                             {
+                                descriptionToInsert = "SEND SECURITY SEED";
                                 valueToInsert = "ERROR";
                             }
                             unitToInsert = string.Empty;
