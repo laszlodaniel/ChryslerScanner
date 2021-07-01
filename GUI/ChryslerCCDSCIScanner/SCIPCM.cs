@@ -3269,7 +3269,7 @@ namespace ChryslerCCDSCIScanner
                                         valueToInsert = "OK";
                                         break;
                                     case 0xF0:
-                                        valueToInsert = "DENIED (MAX ATTEMPTS)";
+                                        valueToInsert = "DENIED (INVALID OFFSET)";
                                         break;
                                     case 0xF1:
                                         valueToInsert = "DENIED (SEED SECURITY)";
