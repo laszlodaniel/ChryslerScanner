@@ -4684,7 +4684,7 @@ namespace ChryslerCCDSCIScanner
 
                 if (line != null)
                 {
-                    string latestGUIVersionString = "v" + line.Substring(28, 5);
+                    string latestGUIVersionString = "v" + line.Substring(28, line.IndexOf(")") - 29);
 
                     if (latestGUIVersionString == GUIVersion)
                     {

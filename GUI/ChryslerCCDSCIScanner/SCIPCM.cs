@@ -4,6 +4,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Windows.Forms;
 
 namespace ChryslerCCDSCIScanner
 {
@@ -3582,7 +3583,8 @@ namespace ChryslerCCDSCIScanner
                                     ushort solution = (ushort)((seed << 2) + 0x9018);
                                     byte[] solutionArray = { (byte)(solution >> 8 & 0xFF), (byte)(solution & 0xFF) };
                                     byte[] solutionChecksum = { (byte)((0x2C + solutionArray[0] + solutionArray[1]) & 0xFF) };
-                                    descriptionToInsert = "GET SECURITY SEED | SOLUTION: 2C " + Util.ByteToHexStringSimple(solutionArray) + " " + Util.ByteToHexStringSimple(solutionChecksum);
+                                    string solutionString = "2C " + Util.ByteToHexStringSimple(solutionArray) + " " + Util.ByteToHexStringSimple(solutionChecksum);
+                                    descriptionToInsert = "GET SECURITY SEED | SOLUTION: " + solutionString;
                                     valueToInsert = Util.ByteToHexString(payload, 0, 2);
                                 }
                                 else
