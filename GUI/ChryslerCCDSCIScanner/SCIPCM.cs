@@ -539,12 +539,12 @@ namespace ChryslerCCDSCIScanner
 
             row = EngineDTC.NewRow();
             row["id"] = 0x03;
-            row["description"] = "O2 SENSOR STAYS ABOVE CENTER (RICH)";
+            row["description"] = "LEFT BANK O2 SENSOR STAYS ABOVE CENTER (RICH)";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
             row["id"] = 0x04;
-            row["description"] = "O2 SENSOR STAYS BELOW CENTER (LEAN)";
+            row["description"] = "LEFT BANK O2 SENSOR STAYS BELOW CENTER (LEAN)";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
@@ -564,12 +564,12 @@ namespace ChryslerCCDSCIScanner
 
             row = EngineDTC.NewRow();
             row["id"] = 0x08;
-            row["description"] = "RIGHT O2 SENSOR STAYS ABOVE CENTER (RICH)";
+            row["description"] = "RIGHT BANK O2 SENSOR STAYS ABOVE CENTER (RICH)";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
             row["id"] = 0x09;
-            row["description"] = "RIGHT O2 SENSOR STAYS BELOW CENTER (LEAN)";
+            row["description"] = "RIGHT BANK O2 SENSOR STAYS BELOW CENTER (LEAN)";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
@@ -749,7 +749,7 @@ namespace ChryslerCCDSCIScanner
 
             row = EngineDTC.NewRow();
             row["id"] = 0x2D;
-            row["description"] = "SYSTEM RICH, IDLE ADAPTIVE AT LEAN LIMIT";
+            row["description"] = "SYSTEM RICH, L-IDLE ADAPTIVE AT LEAN LIMIT";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
@@ -834,7 +834,7 @@ namespace ChryslerCCDSCIScanner
 
             row = EngineDTC.NewRow();
             row["id"] = 0x3E;
-            row["description"] = "UPSTREAM O2 SENSOR SHORTED TO VOLTAGE";
+            row["description"] = "LEFT BANK UPSTREAM O2 SENSOR SHORTED TO VOLTAGE";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
@@ -849,12 +849,12 @@ namespace ChryslerCCDSCIScanner
 
             row = EngineDTC.NewRow();
             row["id"] = 0x41;
-            row["description"] = "RIGHT O2 SENSOR STAYS AT CENTER";
+            row["description"] = "RIGHT BANK UPSTREAM O2 SENSOR STAYS AT CENTER";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
             row["id"] = 0x42;
-            row["description"] = "RIGHT O2 SENSOR SHORTED TO VOLTAGE";
+            row["description"] = "RIGHT BANK UPSTREAM O2 SENSOR SHORTED TO VOLTAGE";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
@@ -914,7 +914,7 @@ namespace ChryslerCCDSCIScanner
 
             row = EngineDTC.NewRow();
             row["id"] = 0x4E;
-            row["description"] = "FUEL SYSTEM LEAN, IDLE ADAPTIVE AT RICH LIMIT";
+            row["description"] = "FUEL SYSTEM LEAN, L-IDLE ADAPTIVE AT RICH LIMIT";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
@@ -1004,7 +1004,7 @@ namespace ChryslerCCDSCIScanner
 
             row = EngineDTC.NewRow();
             row["id"] = 0x60;
-            row["description"] = "NO CCD/J1850 MESSAGES FROM TCM";
+            row["description"] = "NO CCD/PCI BUS MESSAGES FROM TCM";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
@@ -1034,12 +1034,12 @@ namespace ChryslerCCDSCIScanner
 
             row = EngineDTC.NewRow();
             row["id"] = 0x66;
-            row["description"] = "UPSTREAM O2 SENSOR SLOW RESPONSE";
+            row["description"] = "LEFT BANK UPSTREAM O2 SENSOR SLOW RESPONSE";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
             row["id"] = 0x67;
-            row["description"] = "UPSTREAM O2 SENSOR HEATER FAILURE";
+            row["description"] = "LEFT BANK UPSTREAM O2 SENSOR HEATER FAILURE";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
@@ -1054,27 +1054,27 @@ namespace ChryslerCCDSCIScanner
 
             row = EngineDTC.NewRow();
             row["id"] = 0x6A;
-            row["description"] = "MULTIPLE CYLINDER MIS-FIRE";
+            row["description"] = "MULTIPLE CYLINDER MISFIRE";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
             row["id"] = 0x6B;
-            row["description"] = "CYLINDER #1 MIS-FIRE";
+            row["description"] = "CYLINDER #1 MISFIRE";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
             row["id"] = 0x6C;
-            row["description"] = "CYLINDER #2 MIS-FIRE";
+            row["description"] = "CYLINDER #2 MISFIRE";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
             row["id"] = 0x6D;
-            row["description"] = "CYLINDER #3 MIS-FIRE";
+            row["description"] = "CYLINDER #3 MISFIRE";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
             row["id"] = 0x6E;
-            row["description"] = "CYLINDER #4 MIS-FIRE";
+            row["description"] = "CYLINDER #4 MISFIRE";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
@@ -1114,12 +1114,12 @@ namespace ChryslerCCDSCIScanner
 
             row = EngineDTC.NewRow();
             row["id"] = 0x76;
-            row["description"] = "FUEL SYSTEM RICH";
+            row["description"] = "LEFT BANK FUEL SYSTEM RICH";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
             row["id"] = 0x77;
-            row["description"] = "FUEL SYSTEM LEAN";
+            row["description"] = "LEFT BANK FUEL SYSTEM LEAN";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
@@ -1169,7 +1169,7 @@ namespace ChryslerCCDSCIScanner
 
             row = EngineDTC.NewRow();
             row["id"] = 0x81;
-            row["description"] = "DOWNSTREAM O2 SENSOR STAYS AT CENTER";
+            row["description"] = "LEFT BANK DOWNSTREAM O2 SENSOR STAYS AT CENTER";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
@@ -1299,7 +1299,7 @@ namespace ChryslerCCDSCIScanner
 
             row = EngineDTC.NewRow();
             row["id"] = 0x9B;
-            row["description"] = "UPSTREAM O2 SENSOR SHORTED TO GROUND";
+            row["description"] = "LEFT BANK UPSTREAM O2 SENSOR SHORTED TO GROUND";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
@@ -1370,6 +1370,11 @@ namespace ChryslerCCDSCIScanner
             row = EngineDTC.NewRow();
             row["id"] = 0xA9;
             row["description"] = "GOVERNOR PRESSURE SENSOR OFFSET VOLTS TOO LOW OR HIGH";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xAA;
+            row["description"] = "PCM NOT PROGRAMMED";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
@@ -1449,7 +1454,7 @@ namespace ChryslerCCDSCIScanner
 
             row = EngineDTC.NewRow();
             row["id"] = 0xBA;
-            row["description"] = "MIS-FIRE ADAPTIVE NUMERATOR AT LIMIT";
+            row["description"] = "MISFIRE ADAPTIVE NUMERATOR AT LIMIT";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
@@ -1475,6 +1480,206 @@ namespace ChryslerCCDSCIScanner
             row = EngineDTC.NewRow();
             row["id"] = 0xC6;
             row["description"] = "ONE OF THE IGNITION COILS DRAWS TOO MUCH CURRENT";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xC7;
+            row["description"] = "AW4 TRANSMISSION SHIFT SOLENOID B FUNCTIONAL FAILURE";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xC8;
+            row["description"] = "RADIATOR TEMPERATURE SENSOR VOLTS TOO LOW";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xC9;
+            row["description"] = "RADIATOR TEMPERATURE SENSOR VOLTS TOO HIGH";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xCA;
+            row["description"] = "NO I/P CLUSTER CCD/PCI BUS MESSAGES RECEIVED";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xCB;
+            row["description"] = "AW4 TRANSMISSION INTERNAL FAILURE (ROM CHECK)";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xCC;
+            row["description"] = "UPSTREAM O2 SENSOR SLOW RESPONSE";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xCD;
+            row["description"] = "UPSTREAM O2 SENSOR HEATER FAILURE";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xCE;
+            row["description"] = "UPSTREAM O2 SENSOR SHORTED TO VOLTAGE";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xCF;
+            row["description"] = "UPSTREAM O2 SENSOR SHORTED TO GROUND";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xD0;
+            row["description"] = "NO CAM SYNC SIGNAL AT PCM";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xD1;
+            row["description"] = "GLOW PLUG RELAY CONTROL CIRCUIT";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xD2;
+            row["description"] = "HIGH SPEED CONDENSER FAN CONTROL RELAY CIRCUIT";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xD3;
+            row["description"] = "AW4 TRANSMISSION SHIFT SOLENOID B (2-3) SHORTED TO VOLTAGE (12V)";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xD4;
+            row["description"] = "EGR POSITION SENSOR VOLTS TOO LOW";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xD5;
+            row["description"] = "EGR POSITION SENSOR VOLTS TOO HIGH";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xD6;
+            row["description"] = "NO 5 VOLTS TO EGR POSITION SENSOR";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xD7;
+            row["description"] = "EGR POSITION SENSOR RATIONALITY FAILURE";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xD8;
+            row["description"] = "IGNITION COIL #6 PRIMARY CIRCUIT";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xD9;
+            row["description"] = "INTAKE MANIFOLD SHORT RUNNER SOLENOID CIRCUIT";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xDA;
+            row["description"] = "AIR ASSIST INJECTION SOLENOID CIRCUIT";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xDB;
+            row["description"] = "CATALYST TEMPERATURE SENSOR VOLTS TOO HIGH";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xDC;
+            row["description"] = "CATALYST TEMPERATURE SENSOR VOLTS TOO LOW";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xDD;
+            row["description"] = "EATX RPM PULSE PERFORMANCE CONDITION";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xDE;
+            row["description"] = "NO BUS MESSAGE RECEIVED FROM COMPANION MODULE";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xDF;
+            row["description"] = "MIL FAULT IN COMPANION MODULE";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xE0;
+            row["description"] = "COOLANT TEMPERATURE SENSOR PERFORMANCE";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xE1;
+            row["description"] = "NO MIC BUS MESSAGE";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xE2;
+            row["description"] = "NO SKIM BUS MESSAGE RECEIVED";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xE3;
+            row["description"] = "IGNITION COIL #7 PRIMARY CIRCUIT";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xE4;
+            row["description"] = "IGNITION COIL #8 PRIMARY CIRCUIT";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xE5;
+            row["description"] = "PCV SOLENOID CIRCUIT";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xE6;
+            row["description"] = "TRANSMISSION FAN RELAY CIRCUIT";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xE7;
+            row["description"] = "TCC OR O/D SOLENOID PERFORMANCE";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xE8;
+            row["description"] = "WRONG OR INVALID KEY MESSAGE RECEIVED FROM SKIM";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xEA;
+            row["description"] = "AW4 TRANSMISSION SOLENOID A 1-2/3-4 OR TCC SOLENOID C FUNCTIONAL FAIL";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xEB;
+            row["description"] = "AW4 TRANSMISSION TCC SOLENOID C SHORTED TO GROUND";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xEC;
+            row["description"] = "AW4 TRANSMISSION TCC SOLENOID C SHORTED TO VOLTAGE (12V)";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xED;
+            row["description"] = "AW4 TRANSMISSION BATTERY VOLTS SENSE TOO LOW";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xEE;
+            row["description"] = "AW4 TRANSMISSION BATTERY VOLTS SENSE TOO HIGH";
+            EngineDTC.Rows.Add(row);
+
+            row = EngineDTC.NewRow();
+            row["id"] = 0xEF;
+            row["description"] = "AISIN AW4 TRANSMISSION DTC PRESENT";
             EngineDTC.Rows.Add(row);
 
             #endregion
@@ -3052,13 +3257,29 @@ namespace ChryslerCCDSCIScanner
                             }
                             unitToInsert = string.Empty;
                             break;
-                        case 0x27: // write flash memory
+                        case 0x27: // write EEPROM
                             if (message.Length >= minLength)
                             {
-                                valueToInsert = "NOT SUPPORTED";
+                                descriptionToInsert = "WRITE EEPROM | OFFSET: " + Util.ByteToHexString(payload, 0, 2);
+                                descriptionToInsert += " | VALUE: " + Util.ByteToHexString(payload, 2, 1);
+
+                                switch (payload[3])
+                                {
+                                    case 0xE2:
+                                        valueToInsert = "OK";
+                                        break;
+                                    case 0xF0:
+                                        valueToInsert = "DENIED (MAX ATTEMPTS)";
+                                        break;
+                                    case 0xF1:
+                                        valueToInsert = "DENIED (SEED SECURITY)";
+                                        break;
+                                }
+                                
                             }
                             else // error
                             {
+                                descriptionToInsert = "WRITE EEPROM";
                                 valueToInsert = "ERROR";
                             }
                             unitToInsert = string.Empty;
