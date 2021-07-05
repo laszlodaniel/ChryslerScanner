@@ -4233,6 +4233,33 @@ namespace ChryslerCCDSCIScanner
                                             unitToInsert = string.Empty;
                                         }
                                         break;
+                                    case 0x41: // cam/crank sensor state
+                                        descriptionToInsert = "CRANKSHAFT/CAMSHAFT POSITION SENSOR STATE";
+
+                                        if (payload.Length >= 2)
+                                        {
+                                            if (Util.IsBitSet(payload[1], 5)) descriptionToInsert = "CKP: PRESENT | ";
+                                            else descriptionToInsert = "CKP: LOST | ";
+
+                                            if (Util.IsBitSet(payload[1], 6)) descriptionToInsert += "CMP: PRESENT | ";
+                                            else descriptionToInsert += "CMP: LOST | ";
+
+                                            if (Util.IsBitSet(payload[1], 4)) descriptionToInsert += "CKP/CMP: IN-SYNC";
+                                            else descriptionToInsert += "CKP/CMP: OUT-OF-SYNC";
+
+                                            if (Util.IsBitSet(payload[1], 0)) valueToInsert = "HISTORY: IN-SYNC";
+                                            else valueToInsert = "HISTORY: OUT-OF-SYNC";
+
+
+                                            //valueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        }
+                                        else // error
+                                        {
+                                            valueToInsert = "ERROR";
+                                        }
+
+                                        unitToInsert = string.Empty;
+                                        break;
                                     default:
                                         ushort num = (ushort)(payload.Length / 2);
                                         List<byte> offsets = new List<byte>();

@@ -67,6 +67,7 @@ namespace ChryslerCCDSCIScanner
         public List<int> TCMTableRowCountHistory = new List<int>();
 
         public ReadMemoryForm ReadMemory;
+        public WriteMemoryForm WriteMemory;
         public AboutForm About;
         public static Packet Packet = new Packet();
         public CCD CCD = new CCD();
@@ -221,8 +222,6 @@ namespace ChryslerCCDSCIScanner
                         CCDBusDiagnosticsListBox.Items.Insert(CCDTableBufferLocation[i], CCDTableBuffer[i]);
                     }
 
-                    //CCDBusDiagnosticsListBox.Items.Clear(); // bad idea
-                    //CCDBusDiagnosticsListBox.Items.AddRange(CCD.Diagnostics.Table.ToArray()); // bad idea
                     CCDBusDiagnosticsListBox.SetVerticalScrollPosition(lastCCDScrollBarPosition);
 
                     CCDBusDiagnosticsListBox.EndUpdate();
@@ -257,31 +256,6 @@ namespace ChryslerCCDSCIScanner
                         }
 
                         SCIBusPCMDiagnosticsListBox.Items.Insert(PCMTableBufferLocation[i], PCMTableBuffer[i]);
-                    }
-
-                    // Update RAM-table if applicable.
-                    if ((PCM.speed == "62500 baud") && PCM.Diagnostics.RAMDumpTableVisible)
-                    {
-                        // RAM-table has never been displayed.
-                        if (PCM.Diagnostics.Table.Count != SCIBusPCMDiagnosticsListBox.Items.Count)
-                        {
-                            for (int i = 0; i < 22; i++)
-                            {
-                                SCIBusPCMDiagnosticsListBox.Items.Add(PCM.Diagnostics.Table[PCM.Diagnostics.Table.Count - 22 + i]);
-                            }
-                        }
-                        else
-                        {
-                            for (int i = 0; i < 22; i++)
-                            {
-                                SCIBusPCMDiagnosticsListBox.Items.RemoveAt(SCIBusPCMDiagnosticsListBox.Items.Count - 1);
-                            }
-
-                            for (int i = 0; i < 22; i++)
-                            {
-                                SCIBusPCMDiagnosticsListBox.Items.Add(PCM.Diagnostics.Table[PCM.Diagnostics.Table.Count - 22 + i]);
-                            }
-                        }
                     }
 
                     SCIBusPCMDiagnosticsListBox.SetVerticalScrollPosition(lastPCMScrollBarPosition);
@@ -2216,6 +2190,17 @@ namespace ChryslerCCDSCIScanner
             PCMTableBuffer.Add(PCM.Diagnostics.Table[PCM.Diagnostics.lastUpdatedLine]);
             PCMTableBufferLocation.Add(PCM.Diagnostics.lastUpdatedLine);
             PCMTableRowCountHistory.Add(PCM.Diagnostics.Table.Count);
+
+            // Add visible RAM-table to the buffer.
+            if ((PCM.speed == "62500 baud") && PCM.Diagnostics.RAMDumpTableVisible)
+            {
+                for (int i = 0; i < 23; i++) // RAM-table has 22 lines + 1 empty line below main table
+                {
+                    PCMTableBuffer.Add(PCM.Diagnostics.Table[PCM.Diagnostics.Table.Count - 23 + i]);
+                    PCMTableBufferLocation.Add(PCM.Diagnostics.Table.Count - 23 + i);
+                    PCMTableRowCountHistory.Add(PCM.Diagnostics.Table.Count);
+                }
+            }
         }
 
         private void UpdateSCITCMTable(object sender, EventArgs e)
@@ -4869,6 +4854,25 @@ namespace ChryslerCCDSCIScanner
             {
                 ReadMemory.WindowState = FormWindowState.Normal;
                 ReadMemory.Focus();
+            }
+        }
+
+        private void WriteMemoryToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (WriteMemory == null)
+            {
+                WriteMemory = new WriteMemoryForm(this)
+                {
+                    StartPosition = FormStartPosition.CenterParent
+                };
+
+                WriteMemory.FormClosed += delegate { WriteMemory = null; };
+                WriteMemory.Show();
+            }
+            else
+            {
+                WriteMemory.WindowState = FormWindowState.Normal;
+                WriteMemory.Focus();
             }
         }
 

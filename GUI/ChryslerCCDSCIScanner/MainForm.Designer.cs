@@ -33,6 +33,7 @@
             this.ToolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UpdateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ReadMemoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.WriteMemoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.SettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UnitsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.MetricUnitsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -158,10 +159,10 @@
             this.DiagnosticsResetViewButton = new System.Windows.Forms.Button();
             this.DiagnosticsTabControl = new System.Windows.Forms.TabControl();
             this.CCDBusDiagnosticsTabPage = new System.Windows.Forms.TabPage();
-            this.SCIBusPCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
-            this.SCIBusTCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
             this.CCDBusDiagnosticsListBox = new ChryslerCCDSCIScanner.FlickerFreeListBox();
+            this.SCIBusPCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
             this.SCIBusPCMDiagnosticsListBox = new ChryslerCCDSCIScanner.FlickerFreeListBox();
+            this.SCIBusTCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
             this.SCIBusTCMDiagnosticsListBox = new ChryslerCCDSCIScanner.FlickerFreeListBox();
             this.MenuStrip.SuspendLayout();
             this.USBCommunicationGroupBox.SuspendLayout();
@@ -194,7 +195,8 @@
             // 
             this.ToolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.UpdateToolStripMenuItem,
-            this.ReadMemoryToolStripMenuItem});
+            this.ReadMemoryToolStripMenuItem,
+            this.WriteMemoryToolStripMenuItem});
             this.ToolsToolStripMenuItem.Name = "ToolsToolStripMenuItem";
             this.ToolsToolStripMenuItem.Size = new System.Drawing.Size(46, 20);
             this.ToolsToolStripMenuItem.Text = "Tools";
@@ -213,6 +215,14 @@
             this.ReadMemoryToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.ReadMemoryToolStripMenuItem.Text = "Read memory";
             this.ReadMemoryToolStripMenuItem.Click += new System.EventHandler(this.ReadMemoryToolStripMenuItem_Click);
+            // 
+            // WriteMemoryToolStripMenuItem
+            // 
+            this.WriteMemoryToolStripMenuItem.Enabled = false;
+            this.WriteMemoryToolStripMenuItem.Name = "WriteMemoryToolStripMenuItem";
+            this.WriteMemoryToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.WriteMemoryToolStripMenuItem.Text = "Write memory";
+            this.WriteMemoryToolStripMenuItem.Click += new System.EventHandler(this.WriteMemoryToolStripMenuItem_Click);
             // 
             // SettingsToolStripMenuItem
             // 
@@ -1598,28 +1608,6 @@
             this.CCDBusDiagnosticsTabPage.TabIndex = 0;
             this.CCDBusDiagnosticsTabPage.Text = "CCD-bus";
             // 
-            // SCIBusPCMDiagnosticsTabPage
-            // 
-            this.SCIBusPCMDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
-            this.SCIBusPCMDiagnosticsTabPage.Controls.Add(this.SCIBusPCMDiagnosticsListBox);
-            this.SCIBusPCMDiagnosticsTabPage.Location = new System.Drawing.Point(4, 22);
-            this.SCIBusPCMDiagnosticsTabPage.Name = "SCIBusPCMDiagnosticsTabPage";
-            this.SCIBusPCMDiagnosticsTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.SCIBusPCMDiagnosticsTabPage.Size = new System.Drawing.Size(877, 495);
-            this.SCIBusPCMDiagnosticsTabPage.TabIndex = 1;
-            this.SCIBusPCMDiagnosticsTabPage.Text = "SCI-bus (PCM)";
-            // 
-            // SCIBusTCMDiagnosticsTabPage
-            // 
-            this.SCIBusTCMDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
-            this.SCIBusTCMDiagnosticsTabPage.Controls.Add(this.SCIBusTCMDiagnosticsListBox);
-            this.SCIBusTCMDiagnosticsTabPage.Location = new System.Drawing.Point(4, 22);
-            this.SCIBusTCMDiagnosticsTabPage.Name = "SCIBusTCMDiagnosticsTabPage";
-            this.SCIBusTCMDiagnosticsTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.SCIBusTCMDiagnosticsTabPage.Size = new System.Drawing.Size(877, 495);
-            this.SCIBusTCMDiagnosticsTabPage.TabIndex = 2;
-            this.SCIBusTCMDiagnosticsTabPage.Text = "SCI-bus (TCM)";
-            // 
             // CCDBusDiagnosticsListBox
             // 
             this.CCDBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
@@ -1630,6 +1618,17 @@
             this.CCDBusDiagnosticsListBox.ScrollAlwaysVisible = true;
             this.CCDBusDiagnosticsListBox.Size = new System.Drawing.Size(873, 484);
             this.CCDBusDiagnosticsListBox.TabIndex = 0;
+            // 
+            // SCIBusPCMDiagnosticsTabPage
+            // 
+            this.SCIBusPCMDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
+            this.SCIBusPCMDiagnosticsTabPage.Controls.Add(this.SCIBusPCMDiagnosticsListBox);
+            this.SCIBusPCMDiagnosticsTabPage.Location = new System.Drawing.Point(4, 22);
+            this.SCIBusPCMDiagnosticsTabPage.Name = "SCIBusPCMDiagnosticsTabPage";
+            this.SCIBusPCMDiagnosticsTabPage.Padding = new System.Windows.Forms.Padding(3);
+            this.SCIBusPCMDiagnosticsTabPage.Size = new System.Drawing.Size(877, 495);
+            this.SCIBusPCMDiagnosticsTabPage.TabIndex = 1;
+            this.SCIBusPCMDiagnosticsTabPage.Text = "SCI-bus (PCM)";
             // 
             // SCIBusPCMDiagnosticsListBox
             // 
@@ -1642,6 +1641,17 @@
             this.SCIBusPCMDiagnosticsListBox.SelectionMode = System.Windows.Forms.SelectionMode.None;
             this.SCIBusPCMDiagnosticsListBox.Size = new System.Drawing.Size(873, 484);
             this.SCIBusPCMDiagnosticsListBox.TabIndex = 0;
+            // 
+            // SCIBusTCMDiagnosticsTabPage
+            // 
+            this.SCIBusTCMDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
+            this.SCIBusTCMDiagnosticsTabPage.Controls.Add(this.SCIBusTCMDiagnosticsListBox);
+            this.SCIBusTCMDiagnosticsTabPage.Location = new System.Drawing.Point(4, 22);
+            this.SCIBusTCMDiagnosticsTabPage.Name = "SCIBusTCMDiagnosticsTabPage";
+            this.SCIBusTCMDiagnosticsTabPage.Padding = new System.Windows.Forms.Padding(3);
+            this.SCIBusTCMDiagnosticsTabPage.Size = new System.Drawing.Size(877, 495);
+            this.SCIBusTCMDiagnosticsTabPage.TabIndex = 2;
+            this.SCIBusTCMDiagnosticsTabPage.Text = "SCI-bus (TCM)";
             // 
             // SCIBusTCMDiagnosticsListBox
             // 
@@ -1830,6 +1840,7 @@
         private System.Windows.Forms.Button DiagnosticsCopyToClipboardButton;
         private System.Windows.Forms.Button DiagnosticsSnapshotButton;
         private System.Windows.Forms.ToolStripMenuItem CCDBusOnDemandToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem WriteMemoryToolStripMenuItem;
     }
 }
 
