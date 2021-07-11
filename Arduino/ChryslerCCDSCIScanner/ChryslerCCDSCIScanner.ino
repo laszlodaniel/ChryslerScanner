@@ -40,12 +40,12 @@
 // 00: patch
 // (00: revision)
 // = v0.1.0(.0)
-#define FW_VERSION 0x00050500
+#define FW_VERSION 0x00050600
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x0005050060E86707
+#define FW_DATE 0x0005060060EAA291
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -4169,7 +4169,7 @@ void handle_usb_data(void)
                                         }
                                         break;
                                     }
-                                    case write_exteeprom_block: // 0x0A - write external EEPROM block
+                                    case write_exteeprom_block: // 0x09 - write external EEPROM block
                                     {
                                         if (!payload_bytes || (payload_length < 4))
                                         {
@@ -6193,6 +6193,15 @@ void handle_sci_data(void)
                 send_usb_packet(from_tcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, TIMESTAMP_LENGTH + tcm.message_length); // send message to laptop
                 //handle_lcd(from_tcm, usb_msg, 4, TIMESTAMP_LENGTH + tcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
 
+                if (usb_msg[4] == 0x12) // pay attention to special bytes (speed change)
+                {
+                    sbi(tcm.bus_settings, 5); // set change settings bit
+                    sbi(tcm.bus_settings, 4); // set enable bit
+                    sbi(tcm.bus_settings, 1); // set/clear speed bits (62500 baud)
+                    cbi(tcm.bus_settings, 0); // set/clear speed bits (62500 baud)
+                    configure_sci_bus(tcm.bus_settings);
+                }
+
                 if (tcm.repeat && !tcm.repeat_iterate) // prepare next repeated message
                 {
                     if (tcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
@@ -6332,6 +6341,15 @@ void handle_sci_data(void)
                     }
                     
                     send_usb_packet(from_tcm, to_usb, msg_rx, sci_hs_bytes, usb_msg, packet_length);
+                }
+
+                if (usb_msg[4] == 0xFE) // pay attention to special bytes (speed change)
+                {
+                    sbi(tcm.bus_settings, 5); // set change settings bit
+                    sbi(tcm.bus_settings, 4); // set enable bit
+                    cbi(tcm.bus_settings, 1); // set/clear speed bits (7812.5 baud)
+                    sbi(tcm.bus_settings, 0); // set/clear speed bits (7812.5 baud)
+                    configure_sci_bus(tcm.bus_settings);
                 }
 
                 if (tcm.repeat && !tcm.repeat_iterate)
