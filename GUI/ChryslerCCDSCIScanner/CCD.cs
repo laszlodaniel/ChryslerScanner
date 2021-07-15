@@ -386,7 +386,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 2;
             row["message"] = string.Empty;
-            row["description"] = "TRANSMISSION TEMPERATURE | ENGINE COOLANT TEMPERATURE";
+            row["description"] = "MAP SENSOR | ENGINE COOLANT TEMPERATURE";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -1351,18 +1351,18 @@ namespace ChryslerCCDSCIScanner
                             unitToInsert = string.Empty;
                         }
                         break;
-                    case 0x54: // Transmission temperature / Engine coolant temperature
+                    case 0x54: // Intake manifold absolute pressure / Engine coolant temperature
                         if (message.Length >= minLength)
                         {
                             if (MainForm.units == "imperial")
                             {
-                                valueToInsert = Math.Round((payload[0] * 1.8D) - 198.4D).ToString("0") + " | " + Math.Round((payload[1] * 1.8D) - 198.4D).ToString("0");
-                                unitToInsert = "°F | °F";
+                                valueToInsert = Math.Round(payload[0] * 0.1217D * 0.49109778D, 1).ToString("0.0").Replace(",", ".") + " | " + Math.Round((payload[1] * 1.8D) - 198.4D).ToString("0");
+                                unitToInsert = "PSI | °F";
                             }
                             else if (MainForm.units == "metric")
                             {
-                                valueToInsert = (payload[0] - 128).ToString("0") + " | " + (payload[1] - 128).ToString("0");
-                                unitToInsert = "°C | °C";
+                                valueToInsert = Math.Round(payload[0] * 0.1217D * 25.4D * 0.133322368D, 1).ToString("0.0").Replace(",", ".") + " | " + (payload[1] - 128).ToString("0");
+                                unitToInsert = "KPA | °C";
                             }
                         }
                         else

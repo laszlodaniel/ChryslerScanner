@@ -3269,6 +3269,14 @@ namespace ChryslerCCDSCIScanner
                                         valueToInsert = Util.ByteToHexString(payload, 2, 1);
                                         unitToInsert = "OK";
                                         break;
+                                    case 0xE4:
+                                        valueToInsert = "UNKNOWN RESULT";
+                                        unitToInsert = string.Empty;
+                                        break;
+                                    case 0xE5:
+                                        valueToInsert = "UNKNOWN RESULT";
+                                        unitToInsert = string.Empty;
+                                        break;
                                     case 0xF0:
                                         valueToInsert = "DENIED (INVALID OFFSET)";
                                         unitToInsert = string.Empty;
@@ -3292,8 +3300,7 @@ namespace ChryslerCCDSCIScanner
                         case 0x28: // read EEPROM
                             if (message.Length >= minLength)
                             {
-                                descriptionToInsert = "READ EEPROM | OFFSET: ";
-                                descriptionToInsert += Util.ByteToHexString(payload, 0, 2);
+                                descriptionToInsert = "READ EEPROM | OFFSET: " + Util.ByteToHexString(payload, 0, 2);
                                 valueToInsert = Util.ByteToHexString(payload, 2, 1);
                             }
                             else // error
@@ -3584,11 +3591,21 @@ namespace ChryslerCCDSCIScanner
                                 if (checksum == payload[2])
                                 {
                                     ushort seed = (ushort)((payload[0] << 8) | payload[1]);
-                                    ushort solution = (ushort)((seed << 2) + 0x9018);
-                                    byte[] solutionArray = { (byte)(solution >> 8 & 0xFF), (byte)(solution & 0xFF) };
-                                    byte[] solutionChecksum = { (byte)((0x2C + solutionArray[0] + solutionArray[1]) & 0xFF) };
-                                    string solutionString = "2C " + Util.ByteToHexStringSimple(solutionArray) + " " + Util.ByteToHexStringSimple(solutionChecksum);
-                                    descriptionToInsert = "GET SECURITY SEED | SOLUTION: " + solutionString;
+
+                                    if (seed != 0)
+                                    {
+                                        ushort solution = (ushort)((seed << 2) + 0x9018);
+                                        byte solutionHB = (byte)(solution >> 8);
+                                        byte solutionLB = (byte)(solution);
+                                        byte solutionChecksum = (byte)(0x2C + solutionHB + solutionLB);
+                                        byte[] solutionArray = { 0x2C, solutionHB, solutionLB, solutionChecksum };
+                                        descriptionToInsert = "GET SECURITY SEED | SOLUTION: " + Util.ByteToHexStringSimple(solutionArray);
+                                    }
+                                    else
+                                    {
+                                        descriptionToInsert = "GET SECURITY SEED | PCM ALREADY UNLOCKED";
+                                    }
+
                                     valueToInsert = Util.ByteToHexString(payload, 0, 2);
                                 }
                                 else
