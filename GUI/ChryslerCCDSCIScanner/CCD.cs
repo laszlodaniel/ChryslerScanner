@@ -386,7 +386,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 2;
             row["message"] = string.Empty;
-            row["description"] = "MAP SENSOR | ENGINE COOLANT TEMPERATURE";
+            row["description"] = "BAROMETRIC PRESSURE | TEMPERATURE";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -1380,7 +1380,7 @@ namespace ChryslerCCDSCIScanner
                             unitToInsert = string.Empty;
                         }
                         break;
-                    case 0x54: // Intake manifold absolute pressure / Engine coolant temperature
+                    case 0x54: // Barometric pressure / Temperature
                         if (message.Length >= minLength)
                         {
                             if (MainForm.units == "imperial")
