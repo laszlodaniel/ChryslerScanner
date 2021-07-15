@@ -156,6 +156,7 @@ namespace ChryslerCCDSCIScanner
             errorPacketChecksumInvalidValue = 0x05,
             errorPacketTimeoutOccured = 0x06,
             errorBufferOverflow = 0x07,
+            errorSCILsNoResponse = 0xF6,
             errorNotEnoughMCURAM = 0xF7,
             errorSCIHsMemoryPtrNoResponse = 0xF8,
             errorSCIHsInvalidMemoryPtr = 0xF9,

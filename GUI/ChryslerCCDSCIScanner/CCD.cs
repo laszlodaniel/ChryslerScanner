@@ -452,6 +452,16 @@ namespace ChryslerCCDSCIScanner
             MessageDatabase.Rows.Add(row);
 
             row = MessageDatabase.NewRow();
+            row["id"] = 0x7E;
+            row["length"] = 3;
+            row["parameterCount"] = 1;
+            row["message"] = string.Empty;
+            row["description"] = "A/C CLUTCH RELAY STATE";
+            row["value"] = string.Empty;
+            row["unit"] = string.Empty;
+            MessageDatabase.Rows.Add(row);
+
+            row = MessageDatabase.NewRow();
             row["id"] = 0x83;
             row["length"] = 4;
             row["parameterCount"] = 1;
@@ -1341,9 +1351,28 @@ namespace ChryslerCCDSCIScanner
                     case 0x50: // MIC lamp status
                         if (message.Length >= minLength)
                         {
-                            if ((payload[0] & 0x01) == 0x01) valueToInsert = "AIRBAG LAMP ON";
-                            else valueToInsert = "AIRBAG LAMP OFF";
-                            unitToInsert = string.Empty;
+                            List<string> lampList = new List<string>();
+                            lampList.Clear();
+
+                            if (payload[0] == 0)
+                            {
+                                valueToInsert = "-";
+                                unitToInsert = string.Empty;
+                            }
+                            else
+                            {
+                                if (Util.IsBitSet(payload[0], 0)) lampList.Add("AIRBAG");
+                                if (Util.IsBitSet(payload[0], 2)) lampList.Add("SEATBELT");
+                                valueToInsert = string.Empty;
+
+                                foreach (string s in lampList)
+                                {
+                                    valueToInsert += s + " | ";
+                                }
+
+                                valueToInsert = valueToInsert.Remove(valueToInsert.Length - 3); // remove last "|" character
+                                unitToInsert = string.Empty;
+                            }
                         }
                         else
                         {
@@ -1440,6 +1469,18 @@ namespace ChryslerCCDSCIScanner
                             valueToInsert = "ERROR";
                             unitToInsert = string.Empty;
                         }
+                        break;
+                    case 0x7E: // A/C clutch relay state
+                        if (message.Length >= minLength)
+                        {
+                            if (Util.IsBitSet(payload[0], 0)) valueToInsert = "OFF";
+                            else valueToInsert = "ON";
+                        }
+                        else
+                        {
+                            valueToInsert += "ERROR";
+                        }
+                        unitToInsert = string.Empty;
                         break;
                     case 0x84: // PCM to BCM message
                         valueToInsert = string.Empty;

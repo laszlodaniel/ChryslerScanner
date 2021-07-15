@@ -1990,6 +1990,9 @@ namespace ChryslerCCDSCIScanner
                                 case (byte)Packet.ErrorMode.errorBufferOverflow:
                                     Util.UpdateTextBox(USBTextBox, "[RX->] Error, buffer overflow:", Packet.rx.buffer);
                                     break;
+                                case (byte)Packet.ErrorMode.errorSCILsNoResponse:
+                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error, no response from SCI-bus:", Packet.rx.buffer);
+                                    break;
                                 case (byte)Packet.ErrorMode.errorNotEnoughMCURAM:
                                     Util.UpdateTextBox(USBTextBox, "[RX->] Error, not enough MCU RAM:", Packet.rx.buffer);
                                     break;
@@ -2039,7 +2042,7 @@ namespace ChryslerCCDSCIScanner
                                     Util.UpdateTextBox(USBTextBox, "[RX->] Error, fatal error:", Packet.rx.buffer);
                                     break;
                                 default:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", Packet.rx.buffer);
+                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error packet received:", Packet.rx.buffer);
                                     break;
                             }
                             break;
