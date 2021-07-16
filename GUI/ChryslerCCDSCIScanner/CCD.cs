@@ -1351,7 +1351,7 @@ namespace ChryslerCCDSCIScanner
 
                             if (payload[0] == 0)
                             {
-                                valueToInsert = "-";
+                                valueToInsert = string.Empty;
                                 unitToInsert = string.Empty;
                             }
                             else
@@ -1365,7 +1365,7 @@ namespace ChryslerCCDSCIScanner
                                     valueToInsert += s + " | ";
                                 }
 
-                                valueToInsert = valueToInsert.Remove(valueToInsert.Length - 3); // remove last "|" character
+                                if (valueToInsert.Length > 2) valueToInsert = valueToInsert.Remove(valueToInsert.Length - 3); // remove last "|" character
                                 unitToInsert = string.Empty;
                             }
                         }
@@ -1696,7 +1696,7 @@ namespace ChryslerCCDSCIScanner
                                     descriptionToInsert += s + " | ";
                                 }
 
-                                descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
+                                if (descriptionToInsert.Length > 2) descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
                                 unitToInsert = string.Empty;
                             }
                         }
@@ -2660,7 +2660,7 @@ namespace ChryslerCCDSCIScanner
                                     descriptionToInsert += s + " | ";
                                 }
 
-                                descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
+                                if (descriptionToInsert.Length > 2) descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
                             }
                             else
                             {
@@ -2744,7 +2744,7 @@ namespace ChryslerCCDSCIScanner
                                     descriptionToInsert += s + " | ";
                                 }
 
-                                descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
+                                if (descriptionToInsert.Length > 2) descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
                                 unitToInsert = string.Empty;
                             }
                         }
@@ -2825,7 +2825,7 @@ namespace ChryslerCCDSCIScanner
                                                             valueToInsert += s + " | ";
                                                         }
 
-                                                        valueToInsert = valueToInsert.Remove(valueToInsert.Length - 3); // remove last "|" character
+                                                        if (valueToInsert.Length > 2) valueToInsert = valueToInsert.Remove(valueToInsert.Length - 3); // remove last "|" character
                                                         valueToInsert += " LAMP";
                                                     }
                                                     else
@@ -3204,7 +3204,7 @@ namespace ChryslerCCDSCIScanner
                                                     valueToInsert += s + " | ";
                                                 }
 
-                                                valueToInsert = valueToInsert.Remove(valueToInsert.Length - 3); // remove last "|" character
+                                                if (valueToInsert.Length > 2) valueToInsert = valueToInsert.Remove(valueToInsert.Length - 3); // remove last "|" character
                                             }
 
                                             unitToInsert = string.Empty;

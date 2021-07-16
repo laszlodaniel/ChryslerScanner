@@ -2704,7 +2704,7 @@ namespace ChryslerCCDSCIScanner
                                                 descriptionToInsert += s + " | ";
                                             }
 
-                                            descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
+                                            if (descriptionToInsert.Length > 2) descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
                                         }
                                         else
                                         {
@@ -3875,7 +3875,7 @@ namespace ChryslerCCDSCIScanner
                                                     valueToInsert += s + " | ";
                                                 }
 
-                                                valueToInsert = valueToInsert.Remove(valueToInsert.Length - 3); // remove last "|" character
+                                                if (valueToInsert.Length > 2) valueToInsert = valueToInsert.Remove(valueToInsert.Length - 3); // remove last "|" character
                                             }
                                             else
                                             {
