@@ -31,6 +31,8 @@ namespace ChryslerCCDSCIScanner
         public string EmptyLine      = "│                         │                                                     │                         │             │";
         public string HeaderModified = string.Empty;
 
+        public bool transmissionTemperatureRequested = false;
+
         public CCD()
         {
             column = new DataColumn();
@@ -968,31 +970,24 @@ namespace ChryslerCCDSCIScanner
                 switch (ID)
                 {
                     case 0x02: // shift lever position
-                    case 0x52:
                         if (message.Length >= minLength)
                         {
-                            switch (payload[0] & 0xF0) // analyze the upper 4 bits only
+                            switch (payload[0])
                             {
-                                case 0x10:
-                                    valueToInsert = "OVERDRIVE";
+                                case 0x01:
+                                    valueToInsert = "PARK";
                                     break;
-                                case 0x20:
-                                    valueToInsert = "DRIVE";
-                                    break;
-                                case 0x30:
+                                case 0x02:
                                     valueToInsert = "REVERSE";
                                     break;
-                                case 0x40:
+                                case 0x03:
                                     valueToInsert = "NEUTRAL";
                                     break;
-                                case 0x60:
-                                    valueToInsert = "NEUTRAL";
+                                case 0x05:
+                                    valueToInsert = "DRIVE";
                                     break;
-                                case 0x80:
-                                    valueToInsert = "LOW";
-                                    break;
-                                case 0xC0:
-                                    valueToInsert = "PARK";
+                                case 0x06:
+                                    valueToInsert = "AUTOSHIFT";
                                     break;
                                 default:
                                     valueToInsert = "UNDEFINED";
@@ -1380,6 +1375,36 @@ namespace ChryslerCCDSCIScanner
                             unitToInsert = string.Empty;
                         }
                         break;
+                    case 0x52: // shift lever position
+                        if (message.Length >= minLength)
+                        {
+                            switch (payload[0])
+                            {
+                                case 0x10:
+                                    valueToInsert = "1ST";
+                                    break;
+                                case 0x20:
+                                    valueToInsert = "2ND";
+                                    break;
+                                case 0x30:
+                                    valueToInsert = "3RD";
+                                    break;
+                                case 0x40:
+                                    valueToInsert = "4TH";
+                                    break;
+                                default:
+                                    valueToInsert = "UNDEFINED";
+                                    break;
+                            }
+
+                            unitToInsert = string.Empty;
+                        }
+                        else
+                        {
+                            valueToInsert = "ERROR";
+                            unitToInsert = string.Empty;
+                        }
+                        break;
                     case 0x54: // Barometric pressure / Temperature
                         if (message.Length >= minLength)
                         {
@@ -1473,8 +1498,8 @@ namespace ChryslerCCDSCIScanner
                     case 0x7E: // A/C clutch relay state
                         if (message.Length >= minLength)
                         {
-                            if (Util.IsBitSet(payload[0], 0)) valueToInsert = "OFF";
-                            else valueToInsert = "ON";
+                            if (Util.IsBitSet(payload[0], 0)) valueToInsert = "ON";
+                            else valueToInsert = "OFF";
                         }
                         else
                         {
@@ -2277,6 +2302,20 @@ namespace ChryslerCCDSCIScanner
                                     {
                                         case 0x00: // reset
                                             descriptionToInsert = "REQUEST  | TRANSMISSION CONTROL MODULE | RESET";
+                                            valueToInsert = string.Empty;
+                                            unitToInsert = string.Empty;
+                                            break;
+                                        case 0x24: // read analog parameters
+                                            descriptionToInsert = "REQUEST  | TCM | READ ANALOG PARAMETER";
+
+                                            switch (payload[2])
+                                            {
+                                                case 0x10: // transmission temperature
+                                                    transmissionTemperatureRequested = true;
+                                                    descriptionToInsert = "REQUEST  | TCM | TRANSMISSION TEMPERATURE";
+                                                    break;
+                                            }
+
                                             valueToInsert = string.Empty;
                                             unitToInsert = string.Empty;
                                             break;
@@ -3205,6 +3244,27 @@ namespace ChryslerCCDSCIScanner
                                             descriptionToInsert = "RESPONSE | TCM | RESET COMPLETE";
                                             valueToInsert = string.Empty;
                                             unitToInsert = string.Empty;
+                                            break;
+                                        case 0x24: // read analog parameter
+                                            descriptionToInsert = "RESPONSE | TCM | READ ANALOG PARAMETER";
+
+                                            if (transmissionTemperatureRequested)
+                                            {
+                                                transmissionTemperatureRequested = false;
+                                                descriptionToInsert = "RESPONSE | TCM | TRANSMISSION TEMPERATURE";
+
+                                                if (MainForm.units == "imperial")
+                                                {
+                                                    valueToInsert = Math.Round(((payload[2] << 8) + payload[3]) * 0.0156D, 1).ToString("0.0").Replace(",", ".");
+                                                    unitToInsert = "°F";
+                                                }
+                                                else if (MainForm.units == "metric")
+                                                {
+                                                    valueToInsert = Math.Round((((payload[2] << 8) + payload[3]) * 0.0156D * 0.555556D) - 17.77778D, 1).ToString("0.0").Replace(",", ".");
+                                                    unitToInsert = "°C";
+                                                }
+                                            }
+
                                             break;
                                         case 0xFF: // command error
                                             descriptionToInsert = "RESPONSE | TCM | COMMAND ERROR";
