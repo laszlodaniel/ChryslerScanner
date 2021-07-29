@@ -115,10 +115,10 @@ namespace ChryslerCCDSCIScanner
 
             row = MessageDatabase.NewRow();
             row["id"] = 0x0B;
-            row["length"] = 4;
+            row["length"] = 3;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "SKIM PRESENT";
+            row["description"] = "SKIM STATUS";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -318,7 +318,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 2;
             row["message"] = string.Empty;
-            row["description"] = "THROTTLE POSITION SENSOR | CRUISE CONTROL";
+            row["description"] = "THROTTLE POSITION SENSOR | CRUISE SET SPEED";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -1006,12 +1006,10 @@ namespace ChryslerCCDSCIScanner
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
                         break;
-                    case 0x0B: // SKIM present
+                    case 0x0B: // SKIM status
                         if (message.Length >= minLength)
                         {
-                            if ((payload[0] == 0xFF) && (payload[1] == 0xFF)) valueToInsert = "OK";
-                            else valueToInsert = "ERROR";
-
+                            valueToInsert = Convert.ToString(payload[0], 2).PadLeft(8, '0');
                             unitToInsert = string.Empty;
                         }
                         else
@@ -1307,11 +1305,11 @@ namespace ChryslerCCDSCIScanner
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
                         break;
-                    case 0x42: // throttle position sensor, cruise state
+                    case 0x42: // throttle position sensor, cruise set speed
                         if (message.Length >= minLength)
                         {
-                            valueToInsert = Math.Round(payload[0] * 0.65D).ToString("0");
-                            unitToInsert = "%";
+                            valueToInsert = Math.Round(payload[0] * 0.65D).ToString("0") + " | " + payload[1].ToString("0");
+                            unitToInsert = "% | KM/H";
                         }
                         else
                         {

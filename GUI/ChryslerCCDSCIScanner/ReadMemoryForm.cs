@@ -1143,46 +1143,49 @@ namespace ChryslerCCDSCIScanner
                 {
                     UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "RX: " + Util.ByteToHexStringSimple(CCDBusResponseBytes));
 
-                    if ((CCDBusResponseBytes[1] == CCDBusModule) && (CCDBusResponseBytes[2] == CCDBusReadMemoryCommand))
+                    if (CCDBusResponseBytes.Length == 6) // correct response message's length is 6 bytes
                     {
-                        CCDBusResponse = true;
-
-                        if (CCDBusIncrement == 2) CCDBusMemoryValueBytes = CCDBusResponseBytes.Skip(3).Take(2).ToArray(); // get both payload bytes
-                        else CCDBusMemoryValueBytes = CCDBusResponseBytes.Skip(3).Take(1).ToArray(); // get first payload byte only
-
-                        CCDBusReadMemoryCurrentOffsetTextBox.Text = Util.ByteToHexStringSimple(CCDBusCurrentMemoryOffsetBytes);
-                        CCDBusReadMemoryCurrentOffsetTextBox.SelectionLength = 0;
-                        CCDBusReadMemoryValuesTextBox.Text = Util.ByteToHexStringSimple(CCDBusMemoryValueBytes);
-                        CCDBusReadMemoryValuesTextBox.SelectionLength = 0;
-
-                        if (CCDBusIncrement == 2) CCDBusBytesReadCount += 2;
-                        else CCDBusBytesReadCount++;
-
-                        CCDBusReadMemoryProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)CCDBusBytesReadCount / (double)CCDBusTotalBytes * 100.0)) + "% (" + CCDBusBytesReadCount.ToString() + "/" + CCDBusTotalBytes.ToString() + " bytes)";
-
-                        using (BinaryWriter writer = new BinaryWriter(File.Open(CCDBusMemoryBinaryFilename, FileMode.Append)))
+                        if ((CCDBusResponseBytes[1] == CCDBusModule) && (CCDBusResponseBytes[2] == CCDBusReadMemoryCommand))
                         {
-                            writer.Write(CCDBusMemoryValueBytes); // write byte(s) to file
-                            writer.Close();
+                            CCDBusResponse = true;
+
+                            if (CCDBusIncrement == 2) CCDBusMemoryValueBytes = CCDBusResponseBytes.Skip(3).Take(2).ToArray(); // get both payload bytes
+                            else CCDBusMemoryValueBytes = CCDBusResponseBytes.Skip(3).Take(1).ToArray(); // get first payload byte only
+
+                            CCDBusReadMemoryCurrentOffsetTextBox.Text = Util.ByteToHexStringSimple(CCDBusCurrentMemoryOffsetBytes);
+                            CCDBusReadMemoryCurrentOffsetTextBox.SelectionLength = 0;
+                            CCDBusReadMemoryValuesTextBox.Text = Util.ByteToHexStringSimple(CCDBusMemoryValueBytes);
+                            CCDBusReadMemoryValuesTextBox.SelectionLength = 0;
+
+                            if (CCDBusIncrement == 2) CCDBusBytesReadCount += 2;
+                            else CCDBusBytesReadCount++;
+
+                            CCDBusReadMemoryProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)CCDBusBytesReadCount / (double)CCDBusTotalBytes * 100.0)) + "% (" + CCDBusBytesReadCount.ToString() + "/" + CCDBusTotalBytes.ToString() + " bytes)";
+
+                            using (BinaryWriter writer = new BinaryWriter(File.Open(CCDBusMemoryBinaryFilename, FileMode.Append)))
+                            {
+                                writer.Write(CCDBusMemoryValueBytes); // write byte(s) to file
+                                writer.Close();
+                            }
+
+                            CCDBusCurrentMemoryOffset += CCDBusIncrement;
+                            CCDBusCurrentMemoryOffsetBytes[0] = (byte)(CCDBusCurrentMemoryOffset >> 8);
+                            CCDBusCurrentMemoryOffsetBytes[1] = (byte)CCDBusCurrentMemoryOffset;
+
+                            CCDBusTxPayload = new byte[6] { 0xB2, CCDBusModule, CCDBusReadMemoryCommand, CCDBusCurrentMemoryOffsetBytes[0], CCDBusCurrentMemoryOffsetBytes[1], 0x00 };
+                            byte checksum = 0;
+                            for (int i = 0; i < 5; i++) checksum += CCDBusTxPayload[i];
+                            CCDBusTxPayload[5] = checksum;
                         }
-
-                        CCDBusCurrentMemoryOffset += CCDBusIncrement;
-                        CCDBusCurrentMemoryOffsetBytes[0] = (byte)(CCDBusCurrentMemoryOffset >> 8);
-                        CCDBusCurrentMemoryOffsetBytes[1] = (byte)CCDBusCurrentMemoryOffset;
-
-                        CCDBusTxPayload = new byte[6] { 0xB2, CCDBusModule, CCDBusReadMemoryCommand, CCDBusCurrentMemoryOffsetBytes[0], CCDBusCurrentMemoryOffsetBytes[1], 0x00 };
-                        byte checksum = 0;
-                        for (int i = 0; i < 5; i++) checksum += CCDBusTxPayload[i];
-                        CCDBusTxPayload[5] = checksum;
-                    }
-                    else if (CCDBusResponseBytes[2] == 0xFF)
-                    {
-                        UpdateTextBox(CCDBusReadMemoryInfoTextBox, " | error: unknown command");
-                        CCDBusReadMemoryFinished = true;
-
-                        if (CCDBusReadMemoryWorker.IsBusy && CCDBusReadMemoryWorker.WorkerSupportsCancellation)
+                        else if (CCDBusResponseBytes[2] == 0xFF)
                         {
-                            CCDBusReadMemoryWorker.CancelAsync();
+                            UpdateTextBox(CCDBusReadMemoryInfoTextBox, " | error: unknown command");
+                            CCDBusReadMemoryFinished = true;
+
+                            if (CCDBusReadMemoryWorker.IsBusy && CCDBusReadMemoryWorker.WorkerSupportsCancellation)
+                            {
+                                CCDBusReadMemoryWorker.CancelAsync();
+                            }
                         }
                     }
 
