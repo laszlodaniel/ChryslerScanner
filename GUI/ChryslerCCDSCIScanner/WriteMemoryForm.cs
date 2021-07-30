@@ -48,5 +48,10 @@ namespace ChryslerCCDSCIScanner
                 // TODO
             }
         }
+
+        private void WriteMemoryForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            MainForm.Packet.PacketReceived -= PacketReceivedHandler; // unsubscribe from the OnPacketReceived event
+        }
     }
 }

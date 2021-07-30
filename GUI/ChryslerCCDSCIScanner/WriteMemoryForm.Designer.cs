@@ -90,6 +90,7 @@ namespace ChryslerCCDSCIScanner
             this.Controls.Add(this.WriteMemoryTabControl);
             this.Name = "WriteMemoryForm";
             this.Text = "Write memory";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.WriteMemoryForm_FormClosing);
             this.WriteMemoryTabControl.ResumeLayout(false);
             this.SCIBusPCMTabPage.ResumeLayout(false);
             this.SCIBusPCMTabPage.PerformLayout();

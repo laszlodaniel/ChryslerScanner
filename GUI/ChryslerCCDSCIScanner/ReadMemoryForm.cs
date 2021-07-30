@@ -1143,7 +1143,7 @@ namespace ChryslerCCDSCIScanner
                 {
                     UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "RX: " + Util.ByteToHexStringSimple(CCDBusResponseBytes));
 
-                    if (CCDBusResponseBytes.Length == 6) // correct response message's length is 6 bytes
+                    if ((CCDBusResponseBytes.Length == 6) && !CCDBusResponse) // correct response message's length is 6 bytes
                     {
                         if ((CCDBusResponseBytes[1] == CCDBusModule) && (CCDBusResponseBytes[2] == CCDBusReadMemoryCommand))
                         {
