@@ -368,7 +368,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 3;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "MIC LAMP STATUS";
+            row["description"] = "MIC LAMP STATE (AIRBAG | SEATBELT)";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -478,7 +478,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "PCM TO BCM MESSAGE: INCREMENT ODOMETER/TRIPMETER";
+            row["description"] = "PCM TO BCM MESSAGE | INCREMENT MILEAGE";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -538,7 +538,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "BCM TO MIC MESSAGE | GAUGE POSITION:";
+            row["description"] = "MIC GAUGE/LAMP STATE";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -618,7 +618,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "INTERVAL PROPORTIONAL TO VEHICLE SPEED";
+            row["description"] = "VEHICLE SPEED SENSOR";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -668,7 +668,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "DISTANCE PULSES PER 344 MS";
+            row["description"] = "VEHICLE SPEED SENSOR | DISTANCE PULSES PER 344 MS";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -678,7 +678,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 6;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "REQUEST EEPROM WRITE";
+            row["description"] = "STORE EEPROM VALUE";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -748,7 +748,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 3;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "INSTRUMENT CLUSTER LAMP STATES";
+            row["description"] = "MIC SWITCH/LAMP STATE";
             row["value"] = string.Empty;
             //0x02: TRIP ODO RESET ST: 1-YES, 0-NO
             //0x04: TRIP ODO RESET SWITCH: 1-CLOSED, 0-OPEN
@@ -764,7 +764,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "COMPASS CALL DATA A/C CLUTCH ON";
+            row["description"] = "COMPASS CALL DATA | A/C CLUTCH ON";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -1505,9 +1505,25 @@ namespace ChryslerCCDSCIScanner
                         }
                         unitToInsert = string.Empty;
                         break;
-                    case 0x84: // PCM to BCM message
-                        valueToInsert = string.Empty;
-                        unitToInsert = string.Empty;
+                    case 0x84: // PCM to BCM message: increment odometer/tripmeter
+                        if (message.Length >= minLength)
+                        {
+                            if (MainForm.units == "imperial")
+                            {
+                                valueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | " + Math.Round(payload[1] * 0.000125D, 6).ToString("0.000000").Replace(",", ".");
+                                unitToInsert = "N/A | MI";
+                            }
+                            else if (MainForm.units == "metric")
+                            {
+                                valueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | " + Math.Round(payload[1] * 0.000125D * 1.609334138D, 6).ToString("0.000000").Replace(",", ".");
+                                unitToInsert = "N/A | KM";
+                            }
+                        }
+                        else
+                        {
+                            valueToInsert = "ERROR";
+                            unitToInsert = string.Empty;
+                        }
                         break;
                     case 0x89: // Fuel efficiency
                         if (message.Length >= minLength)
@@ -1521,7 +1537,7 @@ namespace ChryslerCCDSCIScanner
                             unitToInsert = string.Empty;
                         }
                         break;
-                    case 0x8C:
+                    case 0x8C: // coolant  temperature, intake air temperature
                         if (message.Length >= minLength)
                         {
                             if (MainForm.units == "imperial")
@@ -2205,6 +2221,11 @@ namespace ChryslerCCDSCIScanner
                                             valueToInsert = string.Empty;
                                             unitToInsert = string.Empty;
                                             break;
+                                        case 0x60: // write EEPROM
+                                            descriptionToInsert = "REQUEST  | BCM | WRITE EEPROM | OFFSET: " + Util.ByteToHexStringSimple(new byte[2] { payload[2], payload[3] });
+                                            valueToInsert = string.Empty;
+                                            unitToInsert = string.Empty;
+                                            break;
                                         case 0xB0: // write settings
                                             descriptionToInsert = "REQUEST  | BCM | WRITE SETTINGS";
                                             valueToInsert = string.Empty;
@@ -2445,7 +2466,7 @@ namespace ChryslerCCDSCIScanner
                                     }
                                     break;
                                 default:
-                                    descriptionToInsert = "REQUEST  |";
+                                    descriptionToInsert = "REQUEST  | MODULE: " + Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | COMMAND: " + Util.ByteToHexStringSimple(new byte[1] { payload[1] }) + " | PARAMS: " + Util.ByteToHexStringSimple(new byte[2] { payload[2], payload[3] });
                                     valueToInsert = string.Empty;
                                     unitToInsert = string.Empty;
                                     break;
@@ -2468,9 +2489,42 @@ namespace ChryslerCCDSCIScanner
 
                         File.AppendAllText(MainForm.CCDB2F2LogFilename, Util.ByteToHexStringSimple(message) + Environment.NewLine);
                         break;
-                    case 0xB4: // interval proportional to vehicle speed
-                        valueToInsert = string.Empty;
-                        unitToInsert = string.Empty;
+                    case 0xB4: // vehicle speed sensor
+                    case 0xC4: // vehicle speed sensor
+                        if (message.Length >= minLength)
+                        {
+                            if (MainForm.units == "imperial")
+                            {
+                                if ((payload[0] != 0xFF) && (payload[1] != 0xFF))
+                                {
+                                    valueToInsert = Math.Round(28800.0D / ((payload[0] << 8) | payload[1]), 1).ToString("0.0").Replace(",", ".");
+                                }
+                                else
+                                {
+                                    valueToInsert = "0.0";
+                                }
+
+                                unitToInsert = "MPH";
+                            }
+                            else if (MainForm.units == "metric")
+                            {
+                                if ((payload[0] != 0xFF) && (payload[1] != 0xFF))
+                                {
+                                    valueToInsert = Math.Round(28800.0D / ((payload[0] << 8) | payload[1]) * 1.609334138D, 1).ToString("0.0").Replace(",", ".");
+                                }
+                                else
+                                {
+                                    valueToInsert = "0.0";
+                                }
+
+                                unitToInsert = "KM/H";
+                            }
+                        }
+                        else
+                        {
+                            valueToInsert = "ERROR";
+                            unitToInsert = string.Empty;
+                        }
                         break;
                     case 0xB6: // unknown feature present
                         valueToInsert = string.Empty;
@@ -2505,13 +2559,35 @@ namespace ChryslerCCDSCIScanner
                             unitToInsert = string.Empty;
                         }
                         break;
-                    case 0xC4: // distance pulses per 344 ms
-                        valueToInsert = string.Empty;
-                        unitToInsert = string.Empty;
-                        break;
-                    case 0xCA: // request EEPROM write
-                        valueToInsert = string.Empty;
-                        unitToInsert = string.Empty;
+                    case 0xCA: // store EEPROM byte to write later
+                        if (message.Length >= minLength)
+                        {
+                            switch (payload[0])
+                            {
+                                case 0x1B: // VTS
+                                    descriptionToInsert = "STORE EEPROM VALUE | VTS";
+                                    break;
+                                case 0x20: // BCM
+                                    descriptionToInsert = "STORE EEPROM VALUE | BCM";
+                                    break;
+                                case 0x43: // ABS
+                                    descriptionToInsert = "STORE EEPROM VALUE | ABS";
+                                    break;
+                                default:
+                                    descriptionToInsert = "STORE EEPROM VALUE | MODULE ID: " + Util.ByteToHexStringSimple(new byte[1] { payload[0] });
+                                    break;
+                            }
+
+                            descriptionToInsert += " | OFFSET: " + Util.ByteToHexStringSimple(new byte[2] { payload[1], payload[2] });
+                            valueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[3] });
+                            unitToInsert = string.Empty;
+                        }
+                        else
+                        {
+                            descriptionToInsert = "STORE EEPROM VALUE |";
+                            valueToInsert = "ERROR";
+                            unitToInsert = string.Empty;
+                        }
                         break;
                     case 0xCB: // send compass and last outside air temperature data
                         valueToInsert = string.Empty;
@@ -3123,6 +3199,11 @@ namespace ChryslerCCDSCIScanner
                                             else valueToInsert = "FAILED";
                                             unitToInsert = string.Empty;
                                             break;
+                                        case 0x60: // write EEPROM
+                                            descriptionToInsert = "RESPONSE | BCM | WRITE EEPROM RESULT";
+                                            valueToInsert = Util.ByteToHexStringSimple(new byte[2] { payload[2], payload[3] });
+                                            unitToInsert = string.Empty;
+                                            break;
                                         case 0xB0: // write settings
                                             descriptionToInsert = "RESPONSE | BCM | WRITE SETTINGS";
                                             valueToInsert = Util.ByteToHexString(payload, 2, 2);
@@ -3253,12 +3334,14 @@ namespace ChryslerCCDSCIScanner
 
                                                 if (MainForm.units == "imperial")
                                                 {
-                                                    valueToInsert = Math.Round(((payload[2] << 8) + payload[3]) * 0.0156D, 1).ToString("0.0").Replace(",", ".");
+                                                    if (payload[2] != 0xFF) valueToInsert = Math.Round(((payload[2] << 8) + payload[3]) * 0.0156D, 1).ToString("0.0").Replace(",", ".");
+                                                    else valueToInsert = "ERROR";
                                                     unitToInsert = "°F";
                                                 }
                                                 else if (MainForm.units == "metric")
                                                 {
-                                                    valueToInsert = Math.Round((((payload[2] << 8) + payload[3]) * 0.0156D * 0.555556D) - 17.77778D, 1).ToString("0.0").Replace(",", ".");
+                                                    if (payload[2] != 0xFF) valueToInsert = Math.Round((((payload[2] << 8) + payload[3]) * 0.0156D * 0.555556D) - 17.77778D, 1).ToString("0.0").Replace(",", ".");
+                                                    else valueToInsert = "ERROR";
                                                     unitToInsert = "°C";
                                                 }
                                             }
@@ -3417,7 +3500,7 @@ namespace ChryslerCCDSCIScanner
                                     }
                                     break;
                                 default:
-                                    descriptionToInsert = "RESPONSE |";
+                                    descriptionToInsert = "RESPONSE | MODULE: " + Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | COMMAND: " + Util.ByteToHexStringSimple(new byte[1] { payload[1] }) + " | PARAMS: " + Util.ByteToHexStringSimple(new byte[2] { payload[2], payload[3] });
                                     valueToInsert = string.Empty;
                                     unitToInsert = string.Empty;
                                     break;

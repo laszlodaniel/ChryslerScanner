@@ -99,7 +99,7 @@ namespace ChryslerCCDSCIScanner
             CCDBusAliveTimer.Start();
 
             CCDBusNextRequestTimer.Elapsed += new ElapsedEventHandler(CCDBusNextRequestHandler);
-            CCDBusNextRequestTimer.Interval = 50; // ms
+            CCDBusNextRequestTimer.Interval = 150; // ms
             CCDBusNextRequestTimer.AutoReset = false;
             CCDBusNextRequestTimer.Enabled = true;
             CCDBusNextRequestTimer.Start();
@@ -529,6 +529,11 @@ namespace ChryslerCCDSCIScanner
                     {
                         CCDBusRxRetryCount++;
 
+                        BeginInvoke((MethodInvoker)delegate
+                        {
+                            UpdateTextBox(CCDBusReadMemoryInfoTextBox, " | no response");
+                        });
+
                         if (CCDBusRxRetryCount > 9)
                         {
                             CCDBusRxRetryCount = 0;
@@ -551,8 +556,6 @@ namespace ChryslerCCDSCIScanner
         {
             if (e.ProgressPercentage == 0)
             {
-                UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "TX: " + Util.ByteToHexStringSimple(CCDBusTxPayload));
-
                 // Fill Packet class fields with data.
                 MainForm.Packet.tx.source = 0x00; // device
                 MainForm.Packet.tx.target = 0x01; // ccd
@@ -562,6 +565,7 @@ namespace ChryslerCCDSCIScanner
                 MainForm.Packet.GeneratePacket();
 
                 originalForm.TransmitUSBPacket("[<-TX] Send a CCD-bus message once:");
+
                 CCDBusTxTimeout = false;
                 CCDBusTxTimeoutTimer.Stop();
                 CCDBusTxTimeoutTimer.Start();
@@ -1027,11 +1031,6 @@ namespace ChryslerCCDSCIScanner
 
                 if (SCIBusPCMRxTimeout)
                 {
-                    BeginInvoke((MethodInvoker)delegate
-                    {
-                        UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, " | no response");
-                    });
-
                     SCIBusPCMRxRetryCount++;
 
                     if (SCIBusPCMRxRetryCount > 9)
@@ -1115,9 +1114,9 @@ namespace ChryslerCCDSCIScanner
         {
             if (MainForm.Packet.rx.payload.Length > 4)
             {
-                ElapsedMillis = TimeSpan.FromMilliseconds((MainForm.Packet.rx.payload[0] << 24) | (MainForm.Packet.rx.payload[1] << 16) | (MainForm.Packet.rx.payload[2] << 8) | MainForm.Packet.rx.payload[3]);
-                Timestamp = DateTime.Today.Add(ElapsedMillis);
-                TimestampString = Timestamp.ToString("HH:mm:ss.fff");
+                //ElapsedMillis = TimeSpan.FromMilliseconds((MainForm.Packet.rx.payload[0] << 24) | (MainForm.Packet.rx.payload[1] << 16) | (MainForm.Packet.rx.payload[2] << 8) | MainForm.Packet.rx.payload[3]);
+                //Timestamp = DateTime.Today.Add(ElapsedMillis);
+                //TimestampString = Timestamp.ToString("HH:mm:ss.fff");
                 //UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "T: " + TimestampString);
             }
 
@@ -1129,24 +1128,40 @@ namespace ChryslerCCDSCIScanner
 
                 byte[] CCDBusResponseBytes = MainForm.Packet.rx.payload.Skip(4).ToArray(); // skip 4 timestamp bytes
 
-                if (CCDBusResponseBytes.SequenceEqual(CCDBusTxPayload))
+                if (CCDBusResponseBytes[0] == 0xB2)
                 {
-                    CCDBusEcho = true;
-                    CCDBusResponse = false;
-                    UpdateTextBox(CCDBusReadMemoryInfoTextBox, " | echo OK");
-                    CCDBusTxTimeoutTimer.Stop();
-                    CCDBusRxTimeout = false;
-                    CCDBusRxTimeoutTimer.Start();
-                }
+                    UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "TX: " + Util.ByteToHexStringSimple(CCDBusResponseBytes));
 
+                    if (CCDBusResponseBytes.SequenceEqual(CCDBusTxPayload))
+                    {
+                        CCDBusEcho = true;
+                        CCDBusResponse = false;
+                        UpdateTextBox(CCDBusReadMemoryInfoTextBox, " | echo ok");
+                        CCDBusTxTimeoutTimer.Stop();
+                        CCDBusRxTimeout = false;
+                        CCDBusRxTimeoutTimer.Start();
+                    }
+                    else
+                    {
+                        UpdateTextBox(CCDBusReadMemoryInfoTextBox, " | error: invalid echo");
+                    }
+                }
+                
                 if (CCDBusResponseBytes[0] == 0xF2)
                 {
                     UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "RX: " + Util.ByteToHexStringSimple(CCDBusResponseBytes));
 
-                    if ((CCDBusResponseBytes.Length == 6) && !CCDBusResponse) // correct response message's length is 6 bytes
+                    if (CCDBusResponseBytes.Length == 6) // correct response message's length is 6 bytes
                     {
                         if ((CCDBusResponseBytes[1] == CCDBusModule) && (CCDBusResponseBytes[2] == CCDBusReadMemoryCommand))
                         {
+                            CCDBusRxTimeoutTimer.Stop();
+                            CCDBusNextRequest = false;
+                            CCDBusNextRequestTimer.Stop();
+                            CCDBusNextRequestTimer.Start();
+
+                            UpdateTextBox(CCDBusReadMemoryInfoTextBox, " | response ok");
+
                             CCDBusResponse = true;
 
                             if (CCDBusIncrement == 2) CCDBusMemoryValueBytes = CCDBusResponseBytes.Skip(3).Take(2).ToArray(); // get both payload bytes
@@ -1160,7 +1175,7 @@ namespace ChryslerCCDSCIScanner
                             if (CCDBusIncrement == 2) CCDBusBytesReadCount += 2;
                             else CCDBusBytesReadCount++;
 
-                            CCDBusReadMemoryProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)CCDBusBytesReadCount / (double)CCDBusTotalBytes * 100.0)) + "% (" + CCDBusBytesReadCount.ToString() + "/" + CCDBusTotalBytes.ToString() + " bytes)";
+                            CCDBusReadMemoryProgressLabel.Text = "Progress: " + (byte)((double)CCDBusBytesReadCount / (double)CCDBusTotalBytes * 100.0) + "% (" + CCDBusBytesReadCount.ToString() + "/" + CCDBusTotalBytes.ToString() + " bytes)";
 
                             using (BinaryWriter writer = new BinaryWriter(File.Open(CCDBusMemoryBinaryFilename, FileMode.Append)))
                             {
@@ -1188,11 +1203,10 @@ namespace ChryslerCCDSCIScanner
                             }
                         }
                     }
-
-                    CCDBusRxTimeoutTimer.Stop();
-                    CCDBusNextRequest = false;
-                    CCDBusNextRequestTimer.Stop();
-                    CCDBusNextRequestTimer.Start();
+                    else
+                    {
+                        UpdateTextBox(CCDBusReadMemoryInfoTextBox, " | error: invalid length");
+                    }
                 }
             }
 
@@ -1218,11 +1232,19 @@ namespace ChryslerCCDSCIScanner
                             {
                                 SCIBusPCMResponse = true;
                                 SCIBusPCMRxTimeoutTimer.Stop();
+
+                                UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, " | ok");
                             }
                             else
                             {
+                                UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, " | error: invalid offset");
                                 return; // try again next time
                             }
+                        }
+                        else
+                        {
+                            UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, " | error: invalid offset");
+                            return;
                         }
 
                         if (SCIBusPCMMemoryOffsetWidth == 16) SCIBusPCMMemoryValue = SCIBusPCMResponseBytes[3];
@@ -1234,7 +1256,7 @@ namespace ChryslerCCDSCIScanner
                         SCIBusPCMReadMemoryValueTextBox.SelectionLength = 0;
 
                         SCIBusPCMBytesReadCount++;
-                        SCIBusPCMReadMemoryProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusPCMBytesReadCount / (double)SCIBusPCMTotalBytes * 100.0)) + "% (" + SCIBusPCMBytesReadCount.ToString() + "/" + SCIBusPCMTotalBytes.ToString() + " bytes)";
+                        SCIBusPCMReadMemoryProgressLabel.Text = "Progress: " + (byte)((double)SCIBusPCMBytesReadCount / (double)SCIBusPCMTotalBytes * 100.0) + "% (" + SCIBusPCMBytesReadCount.ToString() + "/" + SCIBusPCMTotalBytes.ToString() + " bytes)";
 
                         using (BinaryWriter writer = new BinaryWriter(File.Open(SCIBusPCMMemoryBinaryFilename, FileMode.Append)))
                         {
@@ -1265,8 +1287,12 @@ namespace ChryslerCCDSCIScanner
                     }
                     else
                     {
-                        // TODO
+                        UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, " | error: no response");
                     }
+                }
+                else
+                {
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, " | error: invalid command");
                 }
             }
         }

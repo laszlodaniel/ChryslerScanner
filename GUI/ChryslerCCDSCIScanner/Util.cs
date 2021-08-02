@@ -78,13 +78,13 @@ namespace ChryslerCCDSCIScanner
         {
             if (!textBox.IsDisposed)
             {
-                string ret = string.Empty;
+                StringBuilder ret = new StringBuilder();
 
-                if (textBox.Text != "") ret += Environment.NewLine + Environment.NewLine;
+                if (textBox.Text != "") ret.Append(Environment.NewLine + Environment.NewLine);
 
-                ret += text;
+                ret.Append(text);
 
-                if (bytes != null) ret += Environment.NewLine + ByteToHexString(bytes, 0, bytes.Length);
+                if (bytes != null) ret.Append(Environment.NewLine + ByteToHexString(bytes, 0, bytes.Length));
 
                 if (textBox.TextLength + ret.Length > textBox.MaxLength)
                 {
@@ -92,10 +92,10 @@ namespace ChryslerCCDSCIScanner
                     GC.Collect();
                 }
 
-                textBox.AppendText(ret);
+                textBox.AppendText(ret.ToString());
 
                 // Save generated text to a logfile.
-                if (textBox.Name == "USBTextBox") File.AppendAllText(MainForm.USBTextLogFilename, ret);
+                if (textBox.Name == "USBTextBox") File.AppendAllText(MainForm.USBTextLogFilename, ret.ToString());
 
                 // Save raw USB packet to a binary logfile.
                 using (BinaryWriter writer = new BinaryWriter(File.Open(MainForm.USBBinaryLogFilename, FileMode.Append)))
