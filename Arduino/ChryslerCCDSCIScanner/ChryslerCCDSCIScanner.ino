@@ -29,6 +29,7 @@
 #include <avr/pgmspace.h>
 #include <avr/wdt.h>
 #include <util/atomic.h>
+#include <EEPROM.h>
 #include <LiquidCrystal_I2C.h> // https://github.com/fdebrabander/Arduino-LiquidCrystal-I2C-library
 #include <Wire.h>
 #include <extEEPROM.h> // https://github.com/JChristensen/extEEPROM
@@ -36,16 +37,16 @@
 
 // Firmware version (hexadecimal format):
 // 00: major
-// 01: minor
-// 00: patch
+// 05: minor
+// 07: patch
 // (00: revision)
-// = v0.1.0(.0)
-#define FW_VERSION 0x00050600
+// = v0.5.7(.0)
+#define FW_VERSION 0x00050700
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x0005060060EAA291
+#define FW_DATE 0x00050700611792E3
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -54,11 +55,12 @@
 
 #define to_uint16(hb, lb)           (uint16_t)(((uint8_t)hb << 8) | (uint8_t)lb)
 #define to_uint32(msb, hb, lb, lsb) (uint32_t)(((uint32_t)msb << 24) | ((uint32_t)hb << 16) | ((uint32_t)lb << 8) | (uint32_t)lsb)
+#define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 
-#define USB_RX0_BUFFER_SIZE 1024
-#define USB_TX0_BUFFER_SIZE 1024
-#define USB_RX0_BUFFER_MASK (USB_RX0_BUFFER_SIZE - 1)
-#define USB_TX0_BUFFER_MASK (USB_TX0_BUFFER_SIZE - 1)
+#define USB_RX_BUFFER_SIZE 1024
+#define USB_TX_BUFFER_SIZE 1024
+#define USB_RX_BUFFER_MASK (USB_RX_BUFFER_SIZE - 1)
+#define USB_TX_BUFFER_MASK (USB_TX_BUFFER_SIZE - 1)
 
 #define USB_RECEIVE_INTERRUPT  USART0_RX_vect
 #define USB_TRANSMIT_INTERRUPT USART0_UDRE_vect
@@ -67,10 +69,10 @@
 #define USB_DATA               UDR0
 #define USB_UDRIE              UDRIE0
 
-#define PCM_RX2_BUFFER_SIZE 256
-#define PCM_TX2_BUFFER_SIZE 256
-#define PCM_RX2_BUFFER_MASK (PCM_RX2_BUFFER_SIZE - 1)
-#define PCM_TX2_BUFFER_MASK (PCM_TX2_BUFFER_SIZE - 1)
+#define PCM_RX_BUFFER_SIZE 256
+#define PCM_TX_BUFFER_SIZE 256
+#define PCM_RX_BUFFER_MASK (PCM_RX_BUFFER_SIZE - 1)
+#define PCM_TX_BUFFER_MASK (PCM_TX_BUFFER_SIZE - 1)
 
 #define PCM_RECEIVE_INTERRUPT  USART2_RX_vect
 #define PCM_TRANSMIT_INTERRUPT USART2_UDRE_vect
@@ -79,10 +81,10 @@
 #define PCM_DATA               UDR2
 #define PCM_UDRIE              UDRIE2  
 
-#define TCM_RX3_BUFFER_SIZE 256
-#define TCM_TX3_BUFFER_SIZE 256
-#define TCM_RX3_BUFFER_MASK (TCM_RX3_BUFFER_SIZE - 1)
-#define TCM_TX3_BUFFER_MASK (TCM_TX3_BUFFER_SIZE - 1)
+#define TCM_RX_BUFFER_SIZE 256
+#define TCM_TX_BUFFER_SIZE 256
+#define TCM_RX_BUFFER_MASK (TCM_RX_BUFFER_SIZE - 1)
+#define TCM_TX_BUFFER_MASK (TCM_TX_BUFFER_SIZE - 1)
 
 #define TCM_RECEIVE_INTERRUPT  USART3_RX_vect
 #define TCM_TRANSMIT_INTERRUPT USART3_UDRE_vect
@@ -135,7 +137,7 @@
 
 #define PACKET_SYNC_BYTE   0x3D // "=" symbol
 #define ASCII_SYNC_BYTE    0x3E // ">" symbol
-#define MAX_PAYLOAD_LENGTH USB_RX0_BUFFER_SIZE - 6  // 1024-6 bytes
+#define MAX_PAYLOAD_LENGTH USB_RX_BUFFER_SIZE - 6  // 1024-6 bytes
 #define EMPTY_PAYLOAD      0xFE  // Random byte, could be anything
 #define TIMESTAMP_LENGTH   4
 
@@ -285,6 +287,7 @@ typedef struct {
     bool msg_tx_pending = false; // message is awaiting to be transmitted to the bus
     bool actuator_test_running = false; // actuator test (SCI-bus only)
     uint8_t actuator_test_byte = 0; // actuator test byte (SCI-bus only)
+    uint32_t sci_test_byte_last_millis = 0;
     bool ls_request_running = false; // low-speed request (SCI-bus only)
     uint8_t ls_request_byte = 0;
     bool repeat = false;
@@ -311,17 +314,12 @@ typedef struct {
 
 bus ccd, pcm, tcm;
 
-uint32_t sci_test_byte_last_millis = 0;
-
 // Construct an object called "eep" for the external 24LC32A EEPROM chip.
 extEEPROM eep(kbits_32, 1, 32, 0x50); // device size: 32 kilobits = 4 kilobytes, number of devices: 1, page size: 32 bytes (from datasheet), device address: 0x50 by default
 
 bool eep_present = false;
 uint8_t eep_status = 0; // extEEPROM connection status is stored here
 uint8_t eep_result = 0; // extEEPROM 
-uint8_t eep_checksum[1];
-uint8_t eep_calculated_checksum = 0;
-bool eep_checksum_ok = false;
 
 // Construct an object called "lcd" for the external display.
 LiquidCrystal_I2C lcd(0x27, 20, 4);
@@ -348,24 +346,24 @@ uint8_t degree_symbol[8]; // °
 char vin_characters[] = "-----------------"; // 17 character
 String vin_string;
 
-volatile uint8_t  USB_RxBuf[USB_RX0_BUFFER_SIZE];
-volatile uint8_t  USB_TxBuf[USB_TX0_BUFFER_SIZE];
+volatile uint8_t  USB_RxBuf[USB_RX_BUFFER_SIZE];
+volatile uint8_t  USB_TxBuf[USB_TX_BUFFER_SIZE];
 volatile uint16_t USB_RxHead; // since buffer size is bigger than 256 bytes it has to be a 16-bit (int) variable
 volatile uint16_t USB_RxTail;
 volatile uint16_t USB_TxHead;
 volatile uint16_t USB_TxTail;
 volatile uint8_t  USB_LastRxError;
 
-volatile uint8_t PCM_RxBuf[PCM_RX2_BUFFER_SIZE];
-volatile uint8_t PCM_TxBuf[PCM_TX2_BUFFER_SIZE];
+volatile uint8_t PCM_RxBuf[PCM_RX_BUFFER_SIZE];
+volatile uint8_t PCM_TxBuf[PCM_TX_BUFFER_SIZE];
 volatile uint8_t PCM_RxHead;
 volatile uint8_t PCM_RxTail;
 volatile uint8_t PCM_TxHead;
 volatile uint8_t PCM_TxTail;
 volatile uint8_t PCM_LastRxError;
 
-volatile uint8_t TCM_RxBuf[TCM_RX3_BUFFER_SIZE];
-volatile uint8_t TCM_TxBuf[TCM_TX3_BUFFER_SIZE];
+volatile uint8_t TCM_RxBuf[TCM_RX_BUFFER_SIZE];
+volatile uint8_t TCM_TxBuf[TCM_TX_BUFFER_SIZE];
 volatile uint8_t TCM_RxHead;
 volatile uint8_t TCM_RxTail;
 volatile uint8_t TCM_TxHead;
@@ -402,196 +400,185 @@ bool heartbeat_enabled = true;
 
 /*************************************************************************
 Function: eep_init()
-Purpose:  initialize LCD
+Purpose:  initialize external EEPROM
 **************************************************************************/
 void eep_init(void)
 {
-    // Initialize external EEPROM, read settings.
-    eep_status = eep.begin(extEEPROM::twiClock400kHz); // go fast!
+    eep_status = eep.begin(extEEPROM::twiClock400kHz);
 
     if (eep_status) // non-zero = bad
     { 
         eep_present = false;
-        default_eep_settings();
         send_usb_packet(from_usb, to_usb, ok_error, error_eep_not_found, err, 1);
     }
     else // zero = good
     {
         eep_present = true;
-
-        evaluate_eep_checksum();
-
-        if (eep_checksum_ok)
-        {
-            uint8_t data[2];
-            
-            eep.read(0x00, hw_version, 2);
-    
-            if (to_uint16(hw_version[0], hw_version[1]) < 150)
-            {
-                eep = extEEPROM(kbits_32, 1, 32, 0x50); // device size: 32 kilobits = 4 kilobytes, number of devices: 1, page size: 32 bytes (from datasheet), device address: 0x50 by default
-                eep.begin(extEEPROM::twiClock400kHz);
-            }
-            else
-            {
-                eep = extEEPROM(kbits_512, 1, 128, 0x50); // device size: 512 kilobits = 64 kilobytes, number of devices: 1, page size: 128 bytes (from datasheet), device address: 0x50 by default
-                eep.begin(extEEPROM::twiClock400kHz);
-            }
-    
-            eep.read(0x02, hw_date, 8);
-            eep.read(0x0A, assembly_date, 8);
-            eep.read(0x12, data, 2);
-            adc_supply_voltage = to_uint16(data[0], data[1]);
-            eep.read(0x14, data, 2);
-            rd_high_value = to_uint16(data[0], data[1]);
-            eep.read(0x16, data, 2);
-            rd_low_value = to_uint16(data[0], data[1]);
-            eep.read(0x18, data, 1);
-            data[0] ? (lcd_enabled = true) : (lcd_enabled = false);
-            eep.read(0x19, data, 1);
-            lcd_i2c_address = data[0];
-            eep.read(0x1A, data, 1);
-            lcd_char_width = data[0];
-            eep.read(0x1B, data, 1);
-            lcd_char_height = data[0];
-            eep.read(0x1C, data, 1);
-            lcd_refresh_rate = data[0];
-            lcd_update_interval = 1000 / lcd_refresh_rate;
-            eep.read(0x1D, data, 1);
-            lcd_units = data[0];
-            eep.read(0x1E, data, 1);
-            lcd_data_source = data[0];
-            eep.read(0x1F, data, 2);
-            heartbeat_interval = to_uint16(data[0], data[1]);
-            heartbeat_interval ? (heartbeat_enabled = true) : (heartbeat_enabled = false);
-            eep.read(0x21, data, 2);
-            led_blink_duration = to_uint16(data[0], data[1]);
-            eep.read(0x23, data, 1);
-            ccd.bus_settings = data[0];
-
-            if (ccd.bus_settings == 0x00)
-            {
-                ccd.bus_settings = 0x41;
-
-                // Save settings to external EEPROM.
-                DDRE |= (1 << PE2); // set PE2 pin as output (this pin can't be reached by pinMode and digitalWrite commands)
-                PORTE &= ~(1 << PE2); // pull PE2 pin low to disable write protection
-
-                eep.write(0x23, ccd.bus_settings);
-
-                uint8_t temp_checksum = 0; // re-calculate checksum
-
-                for (uint8_t i = 0; i < 255; i++) // add the first 255 bytes together
-                {
-                    temp_checksum += eep.read(i);
-                }
-
-                eep.write(255, temp_checksum); // write checksum byte at the last position of the settings block
-
-                PORTE |= (1 << PE2); // pull PE2 pin high to enable write protection
-
-                eep_checksum[0] = temp_checksum;
-                eep_calculated_checksum = temp_checksum;
-                eep_checksum_ok = true;
-            }
-            
-            (ccd.bus_settings & 0x10) ? (ccd.enabled = true) : (ccd.enabled = false);
-    
-            if (ccd.bus_settings & 0x04)
-            {
-                ccd.termination_bias_enabled = true;
-                digitalWrite(TBEN, LOW);
-            }
-            else
-            {
-                ccd.termination_bias_enabled = false;
-                digitalWrite(TBEN, HIGH);
-            }
-    
-            eep.read(0x24, data, 1);
-            pcm.bus_settings = data[0];
-            if (pcm.bus_settings == 0x00) pcm.bus_settings = 0x91;
-            eep.read(0x25, data, 1);
-            tcm.bus_settings = data[0];
-            if (tcm.bus_settings == 0x00) tcm.bus_settings = 0xC1;
-        }
-        else
-        {
-            default_eep_settings();
-        }
     }
 }
 
 /*************************************************************************
-Function: evaluate_eep_checksum()
-Purpose:  compare external eeprom checksum value to the calculated one
-          and send results to laptop
-Note:     compared values are read during setup() automatically
+Function: write_default_settings()
+Purpose:  write default settings to internal EEPROM
 **************************************************************************/
-void evaluate_eep_checksum(void)
+void write_default_settings(void)
 {
-    if (eep_present)
+    // Memory map:
+    // $00-$01: hardware version (multiplied by 100, example: V1.40 = 140(DEC) = $008C; V1.41 = 141(DEC) = $008D; V1.42 = 142(DEC) = $008E; V1.43 = 143(DEC) = $008F)
+    // $02-$09: hardware date (PCB order date, 64-bit UNIX time)
+    // $0A-$11: assembly date (Scanner assembly date, 64-bit UNIX time)
+    // $12-$13: ADC supply voltage multiplied by 100 (example 5.00V = 500(DEC) = $01F4)
+    // $14-$15: high resistor value in the voltage divider: 27 kOhm = 27000(DEC) = $6978
+    // $16-$17: low resistor value in the voltage divider: 5.1 kOhm = 5100(DEC) = $13EC
+    // $18:     LCD enabled/disabled
+    // $19:     LCD I2C address
+    // $1A:     LCD column size
+    // $1B:     LCD row size
+    // $1C:     LCD refresh rate (Hz)
+    // $1D:     LCD imperial/metric units (0: imperial, 1: metric)
+    // $1E:     LCD data source (1: CCD-bus, 2: SCI-bus (PCM), 3: SCI-bus (TCM))
+    // $1F-$20: LED heartbeat interval (5000 ms)
+    // $21-$22: LED blink duration (50 ms)
+    // $23:     CCD-bus settings
+    // $24:     SCI-bus (PCM) settings
+    // $25:     SCI-bus (TCM) settings
+    // $26-$FE: reserved for future data
+
+    uint8_t default_settings[38] =
+    { //  00    01    02    03    04    05    06    07    08    09    0A    0B    0C    0D    0E    0F
+        0x00, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 00
+        0x00, 0x00, 0x01, 0xF4, 0x69, 0x78, 0x13, 0xEC, 0x00, 0x27, 0x14, 0x04, 0x14, 0x00, 0x01, 0x13, // 10
+        0x88, 0x00, 0x32, 0x41, 0x91, 0xC1                                                              // 20
+    };
+
+    for (uint16_t i = 0; i < 38; i++)
     {
-        eep_calculated_checksum = 0;
+        EEPROM.update(i, default_settings[i]);
+    }
+}
 
-        for (uint8_t i = 0; i < 255; i++) // add all 255 bytes together and skip last byte (where checksum byte is located) by setting the second parameter to 255 instead of 256
+/*************************************************************************
+Function: load_settings()
+Purpose:  load settings from ATmega2560's internal EEPROM (V1.50+)
+          or copy settings from external EEPROM (V1.40 - V1.44)
+**************************************************************************/
+void load_settings(void)
+{
+    if (((EEPROM.read(0) == 0x00) && (EEPROM.read(1) == 0x00)) || (EEPROM.read(0) == 0xFF)) // V1.40 - V1.44, copy settings from external to internal EEPROM
+    {
+        if (eep_present)
         {
-            eep_calculated_checksum += eep.read(i);
+            if (eep.read(0) != 0xFF) // settings are present in external EEPROM
+            {
+                for (uint16_t i = 0; i < 38; i++) // copy first 38 bytes to internal EEPROM
+                {
+                    EEPROM.update(i, eep.read(i));
+                }
+            }
+            else // external EEPROM is empty
+            {
+                write_default_settings();
+            }
         }
+        else // external EEPROM is missing
+        {
+            write_default_settings();
+        }
+    }
 
-        eep.read(0xFF, eep_checksum, 1);
-        
-        if (eep_calculated_checksum == eep_checksum[0]) eep_checksum_ok = true;
-        else eep_checksum_ok = false;
+    // Load and apply settings.
+
+    uint8_t data[2] = { 0x00, 0x00 };
+
+    hw_version[0] = EEPROM.read(0x00);
+    hw_version[1] = EEPROM.read(0x01);
+
+    if (to_uint16(hw_version[0], hw_version[1]) < 150)
+    {
+        eep = extEEPROM(kbits_32, 1, 32, 0x50); // device size: 32 kilobits = 4 kilobytes, number of devices: 1, page size: 32 bytes (from datasheet), device address: 0x50 by default
+        eep.begin(extEEPROM::twiClock400kHz);
     }
     else
     {
-        send_usb_packet(from_usb, to_usb, ok_error, error_eep_not_found, err, 1);
+        eep = extEEPROM(kbits_512, 1, 128, 0x50); // device size: 512 kilobits = 64 kilobytes, number of devices: 1, page size: 128 bytes (from datasheet), device address: 0x50 by default
+        eep.begin(extEEPROM::twiClock400kHz);
     }
-}
 
-/*************************************************************************
-Function: default_eep_settings()
-Purpose:  load default settings in case of external EEPROM failure
-**************************************************************************/
-void default_eep_settings(void)
-{
-    hw_version[0] = 0; // zero out values
-    hw_version[1] = 0x90;
-    hw_date[0] = 0; // zero out values
-    hw_date[1] = 0;
-    hw_date[2] = 0;
-    hw_date[3] = 0;
-    hw_date[4] = 0;
-    hw_date[5] = 0;
-    hw_date[6] = 0;
-    hw_date[7] = 0;
-    assembly_date[0] = 0; // zero out values
-    assembly_date[1] = 0;
-    assembly_date[2] = 0;
-    assembly_date[3] = 0;
-    assembly_date[4] = 0;
-    assembly_date[5] = 0;
-    assembly_date[6] = 0;
-    assembly_date[7] = 0;
-    adc_supply_voltage = 500;
-    rd_high_value = 27000;
-    rd_low_value = 5000;
-    lcd_enabled = false;
-    lcd_i2c_address = 0x27;
-    lcd_char_width = 20;
-    lcd_char_height = 4;
-    lcd_refresh_rate = 20; // Hz
-    lcd_units = 1; // 0-imperial, 1-metric
-    ccd.bus_settings = 0x41; // CCD-bus disabled, non-inverted, termination/bias disabled, 7812.5 baud
-    ccd.enabled = false;
-    ccd.termination_bias_enabled = false;
-    digitalWrite(TBEN, HIGH);
-    ccd.repeated_msg_increment = 2;
-    pcm.bus_settings = 0x91; // PCM enabled, non-inverted, configuration "A", 7812.5 baud
-    tcm.bus_settings = 0xC1; // TCM disabled, non-inverted, configuration "A", 7812.5 baud
-    eep_checksum[0] = 0; // zero out value
-    eep_calculated_checksum = 0;
+    hw_date[0] = EEPROM.read(0x02);
+    hw_date[1] = EEPROM.read(0x03);
+    hw_date[2] = EEPROM.read(0x04);
+    hw_date[3] = EEPROM.read(0x05);
+    hw_date[4] = EEPROM.read(0x06);
+    hw_date[5] = EEPROM.read(0x07);
+    hw_date[6] = EEPROM.read(0x08);
+    hw_date[7] = EEPROM.read(0x09);
+
+    assembly_date[0] = EEPROM.read(0x0A);
+    assembly_date[1] = EEPROM.read(0x0B);
+    assembly_date[2] = EEPROM.read(0x0C);
+    assembly_date[3] = EEPROM.read(0x0D);
+    assembly_date[4] = EEPROM.read(0x0E);
+    assembly_date[5] = EEPROM.read(0x0F);
+    assembly_date[6] = EEPROM.read(0x10);
+    assembly_date[7] = EEPROM.read(0x11);
+
+    data[0] = EEPROM.read(0x12);
+    data[1] = EEPROM.read(0x13);
+    adc_supply_voltage = to_uint16(data[0], data[1]);
+
+    data[0] = EEPROM.read(0x14);
+    data[1] = EEPROM.read(0x15);
+    rd_high_value = to_uint16(data[0], data[1]);
+
+    data[0] = EEPROM.read(0x16);
+    data[1] = EEPROM.read(0x17);
+    rd_low_value = to_uint16(data[0], data[1]);
+
+    EEPROM.read(0x18) ? (lcd_enabled = true) : (lcd_enabled = false);
+
+    lcd_i2c_address = EEPROM.read(0x19);
+    lcd_char_width = EEPROM.read(0x1A);
+    lcd_char_height = EEPROM.read(0x1B);
+    lcd_refresh_rate = EEPROM.read(0x1C);
+    lcd_update_interval = 1000 / lcd_refresh_rate;
+    lcd_units = EEPROM.read(0x1D);
+    lcd_data_source = EEPROM.read(0x1E);
+
+    data[0] = EEPROM.read(0x1F);
+    data[1] = EEPROM.read(0x20);
+    heartbeat_interval = to_uint16(data[0], data[1]);
+    heartbeat_interval ? (heartbeat_enabled = true) : (heartbeat_enabled = false);
+
+    data[0] = EEPROM.read(0x21);
+    data[1] = EEPROM.read(0x22);
+    led_blink_duration = to_uint16(data[0], data[1]);
+
+    ccd.bus_settings = EEPROM.read(0x23);
+
+    if (ccd.bus_settings == 0x00)
+    {
+        ccd.bus_settings = 0x41;
+        EEPROM.update(0x23, ccd.bus_settings);
+    }
+
+    (ccd.bus_settings & 0x10) ? (ccd.enabled = true) : (ccd.enabled = false);
+
+    if (ccd.bus_settings & 0x04)
+    {
+        ccd.termination_bias_enabled = true;
+        digitalWrite(TBEN, LOW);
+    }
+    else
+    {
+        ccd.termination_bias_enabled = false;
+        digitalWrite(TBEN, HIGH);
+    }
+
+    pcm.bus_settings = EEPROM.read(0x24);
+    if (pcm.bus_settings == 0x00) pcm.bus_settings = 0x91;
+
+    tcm.bus_settings = EEPROM.read(0x25);
+    if (tcm.bus_settings == 0x00) tcm.bus_settings = 0xC1;
 }
 
 /*************************************************************************
@@ -1776,11 +1763,11 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
     }
 }
 
-ISR(USB_RECEIVE_INTERRUPT)
 /*************************************************************************
 Function: UART0 Receive Complete interrupt
 Purpose:  called when the UART0 has received a character
 **************************************************************************/
+ISR(USB_RECEIVE_INTERRUPT)
 {
     uint16_t tmphead;
     uint8_t data;
@@ -1795,7 +1782,7 @@ Purpose:  called when the UART0 has received a character
     lastRxError = (usr & (_BV(FE0)|_BV(DOR0)));
 
     /* calculate buffer index */ 
-    tmphead = (USB_RxHead + 1) & USB_RX0_BUFFER_MASK;
+    tmphead = (USB_RxHead + 1) & USB_RX_BUFFER_MASK;
     
     if (tmphead == USB_RxTail)
     {
@@ -1812,18 +1799,18 @@ Purpose:  called when the UART0 has received a character
     USB_LastRxError = lastRxError;
 }
 
-ISR(USB_TRANSMIT_INTERRUPT)
 /*************************************************************************
 Function: UART0 Data Register Empty interrupt
 Purpose:  called when the UART0 is ready to transmit the next byte
 **************************************************************************/
+ISR(USB_TRANSMIT_INTERRUPT)
 {
     uint16_t tmptail;
 
     if (USB_TxHead != USB_TxTail)
     {
         /* calculate and store new buffer index */
-        tmptail = (USB_TxTail + 1) & USB_TX0_BUFFER_MASK;
+        tmptail = (USB_TxTail + 1) & USB_TX_BUFFER_MASK;
         USB_TxTail = tmptail;
         /* get one byte from buffer and write it to UART */
         USB_DATA = USB_TxBuf[tmptail]; /* start transmission */
@@ -1832,6 +1819,7 @@ Purpose:  called when the UART0 is ready to transmit the next byte
     {
         /* tx buffer empty, disable UDRE interrupt */
         USB_CONTROL &= ~_BV(USB_UDRIE);
+        usb_tx_flush();
     }
 }
 
@@ -1884,7 +1872,7 @@ uint16_t usb_getc(void)
     }
   
     /* calculate / store buffer index */
-    tmptail = (USB_RxTail + 1) & USB_RX0_BUFFER_MASK;
+    tmptail = (USB_RxTail + 1) & USB_RX_BUFFER_MASK;
   
     USB_RxTail = tmptail;
   
@@ -1915,7 +1903,7 @@ uint16_t usb_peek(uint16_t index)
         }
     }
   
-    tmptail = (USB_RxTail + 1 + index) & USB_RX0_BUFFER_MASK;
+    tmptail = (USB_RxTail + 1 + index) & USB_RX_BUFFER_MASK;
 
     /* get data from receive buffer */
     data = USB_RxBuf[tmptail];
@@ -1934,7 +1922,7 @@ void usb_putc(uint8_t data)
     uint16_t tmphead;
     uint16_t txtail_tmp;
 
-    tmphead = (USB_TxHead + 1) & USB_TX0_BUFFER_MASK;
+    tmphead = (USB_TxHead + 1) & USB_TX_BUFFER_MASK;
 
     do
     {
@@ -1994,7 +1982,7 @@ uint16_t usb_rx_available(void)
   
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
-        ret = (USB_RX0_BUFFER_SIZE + USB_RxHead - USB_RxTail) & USB_RX0_BUFFER_MASK;
+        ret = (USB_RX_BUFFER_SIZE + USB_RxHead - USB_RxTail) & USB_RX_BUFFER_MASK;
     }
     return ret;
 }
@@ -2011,7 +1999,7 @@ uint16_t usb_tx_available(void)
   
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
-        ret = (USB_TX0_BUFFER_SIZE + USB_TxHead - USB_TxTail) & USB_TX0_BUFFER_MASK;
+        ret = (USB_TX_BUFFER_SIZE + USB_TxHead - USB_TxTail) & USB_TX_BUFFER_MASK;
     }
     return ret;
 }
@@ -2063,11 +2051,11 @@ void ccd_init()
     }
 }
 
-ISR(PCM_RECEIVE_INTERRUPT)
 /*************************************************************************
 Function: UART2 Receive Complete interrupt
 Purpose:  called when the UART2 has received a character
 **************************************************************************/
+ISR(PCM_RECEIVE_INTERRUPT)
 {
     uint16_t tmphead;
     uint8_t data;
@@ -2082,7 +2070,7 @@ Purpose:  called when the UART2 has received a character
     lastRxError = (usr & (_BV(FE2)|_BV(DOR2)));
 
     /* calculate buffer index */ 
-    tmphead = (PCM_RxHead + 1) & PCM_RX2_BUFFER_MASK;
+    tmphead = (PCM_RxHead + 1) & PCM_RX_BUFFER_MASK;
     
     if (tmphead == PCM_RxTail)
     {
@@ -2102,18 +2090,18 @@ Purpose:  called when the UART2 has received a character
     pcm.last_byte_millis = millis();
 }
 
-ISR(PCM_TRANSMIT_INTERRUPT)
 /*************************************************************************
 Function: UART2 Data Register Empty interrupt
 Purpose:  called when the UART2 is ready to transmit the next byte
 **************************************************************************/
+ISR(PCM_TRANSMIT_INTERRUPT)
 {
     uint16_t tmptail;
 
     if (PCM_TxHead != PCM_TxTail)
     {
         /* calculate and store new buffer index */
-        tmptail = (PCM_TxTail + 1) & PCM_TX2_BUFFER_MASK;
+        tmptail = (PCM_TxTail + 1) & PCM_TX_BUFFER_MASK;
         PCM_TxTail = tmptail;
         /* get one byte from buffer and write it to UART */
         if (!pcm.invert_logic) PCM_DATA = PCM_TxBuf[tmptail]; /* start transmission */
@@ -2175,7 +2163,7 @@ uint16_t pcm_getc(void)
     }
   
     /* calculate / store buffer index */
-    tmptail = (PCM_RxTail + 1) & PCM_RX2_BUFFER_MASK;
+    tmptail = (PCM_RxTail + 1) & PCM_RX_BUFFER_MASK;
   
     PCM_RxTail = tmptail;
   
@@ -2206,7 +2194,7 @@ uint16_t pcm_peek(uint16_t index = 0)
         }
     }
   
-    tmptail = (PCM_RxTail + 1 + index) & PCM_RX2_BUFFER_MASK;
+    tmptail = (PCM_RxTail + 1 + index) & PCM_RX_BUFFER_MASK;
 
     /* get data from receive buffer */
     data = PCM_RxBuf[tmptail];
@@ -2225,7 +2213,7 @@ void pcm_putc(uint8_t data)
     uint16_t tmphead;
     uint16_t txtail_tmp;
 
-    tmphead = (PCM_TxHead + 1) & PCM_TX2_BUFFER_MASK;
+    tmphead = (PCM_TxHead + 1) & PCM_TX_BUFFER_MASK;
 
     do
     {
@@ -2285,7 +2273,7 @@ uint8_t pcm_rx_available(void)
     
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
-        ret = (PCM_RX2_BUFFER_SIZE + PCM_RxHead - PCM_RxTail) & PCM_RX2_BUFFER_MASK;
+        ret = (PCM_RX_BUFFER_SIZE + PCM_RxHead - PCM_RxTail) & PCM_RX_BUFFER_MASK;
     }
     return ret;
 }
@@ -2302,7 +2290,7 @@ uint8_t pcm_tx_available(void)
   
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
-        ret = (PCM_TX2_BUFFER_SIZE + PCM_TxHead - PCM_TxTail) & PCM_TX2_BUFFER_MASK;
+        ret = (PCM_TX_BUFFER_SIZE + PCM_TxHead - PCM_TxTail) & PCM_TX_BUFFER_MASK;
     }
     return ret;
 }
@@ -2335,11 +2323,11 @@ void pcm_tx_flush(void)
     }
 }
 
-ISR(TCM_RECEIVE_INTERRUPT)
 /*************************************************************************
 Function: UART3 Receive Complete interrupt
 Purpose:  called when the UART3 has received a character
 **************************************************************************/
+ISR(TCM_RECEIVE_INTERRUPT)
 {
     uint16_t tmphead;
     uint8_t data;
@@ -2354,7 +2342,7 @@ Purpose:  called when the UART3 has received a character
     lastRxError = (usr & (_BV(FE3)|_BV(DOR3)));
 
     /* calculate buffer index */ 
-    tmphead = (TCM_RxHead + 1) & TCM_RX3_BUFFER_MASK;
+    tmphead = (TCM_RxHead + 1) & TCM_RX_BUFFER_MASK;
     
     if (tmphead == TCM_RxTail)
     {
@@ -2374,18 +2362,18 @@ Purpose:  called when the UART3 has received a character
     tcm.last_byte_millis = millis();
 }
 
-ISR(TCM_TRANSMIT_INTERRUPT)
 /*************************************************************************
 Function: UART3 Data Register Empty interrupt
 Purpose:  called when the UART3 is ready to transmit the next byte
 **************************************************************************/
+ISR(TCM_TRANSMIT_INTERRUPT)
 {
     uint16_t tmptail;
 
     if (TCM_TxHead != TCM_TxTail)
     {
         /* calculate and store new buffer index */
-        tmptail = (TCM_TxTail + 1) & TCM_TX3_BUFFER_MASK;
+        tmptail = (TCM_TxTail + 1) & TCM_TX_BUFFER_MASK;
         TCM_TxTail = tmptail;
         /* get one byte from buffer and write it to UART */
         if (!tcm.invert_logic) TCM_DATA = TCM_TxBuf[tmptail]; /* start transmission */
@@ -2447,7 +2435,7 @@ uint16_t tcm_getc(void)
     }
   
     /* calculate / store buffer index */
-    tmptail = (TCM_RxTail + 1) & TCM_RX3_BUFFER_MASK;
+    tmptail = (TCM_RxTail + 1) & TCM_RX_BUFFER_MASK;
   
     TCM_RxTail = tmptail;
   
@@ -2478,7 +2466,7 @@ uint16_t tcm_peek(uint16_t index = 0)
         }
     }
   
-    tmptail = (TCM_RxTail + 1 + index) & TCM_RX3_BUFFER_MASK;
+    tmptail = (TCM_RxTail + 1 + index) & TCM_RX_BUFFER_MASK;
 
     /* get data from receive buffer */
     data = TCM_RxBuf[tmptail];
@@ -2497,7 +2485,7 @@ void tcm_putc(uint8_t data)
     uint16_t tmphead;
     uint16_t txtail_tmp;
 
-    tmphead = (TCM_TxHead + 1) & TCM_TX3_BUFFER_MASK;
+    tmphead = (TCM_TxHead + 1) & TCM_TX_BUFFER_MASK;
 
     do
     {
@@ -2557,7 +2545,7 @@ uint8_t tcm_rx_available(void)
   
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
-        ret = (TCM_RX3_BUFFER_SIZE + TCM_RxHead - TCM_RxTail) & TCM_RX3_BUFFER_MASK;
+        ret = (TCM_RX_BUFFER_SIZE + TCM_RxHead - TCM_RxTail) & TCM_RX_BUFFER_MASK;
     }
     return ret;
 }
@@ -2574,7 +2562,7 @@ uint8_t tcm_tx_available(void)
   
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
-        ret = (TCM_TX3_BUFFER_SIZE + TCM_TxHead - TCM_TxTail) & TCM_TX3_BUFFER_MASK;
+        ret = (TCM_TX_BUFFER_SIZE + TCM_TxHead - TCM_TxTail) & TCM_TX_BUFFER_MASK;
     }
     return ret;
 }
@@ -3000,27 +2988,8 @@ void configure_sci_bus(uint8_t data = 0x00)
         }
     }
 
-    // Save settings to external EEPROM.
-    DDRE |= (1 << PE2); // set PE2 pin as output (this pin can't be reached by pinMode and digitalWrite commands)
-    PORTE &= ~(1 << PE2); // pull PE2 pin low to disable write protection
-    
-    eep.write(0x24, pcm.bus_settings);
-    eep.write(0x25, tcm.bus_settings);
-    
-    uint8_t temp_checksum = 0; // re-calculate checksum
-    
-    for (uint8_t i = 0; i < 255; i++) // add the first 255 bytes together
-    {
-        temp_checksum += eep.read(i);
-    }
-        
-    eep.write(255, temp_checksum); // write checksum byte at the last position of the settings block
-    
-    PORTE |= (1 << PE2); // pull PE2 pin high to enable write protection
-    
-    eep_checksum[0] = temp_checksum;
-    eep_calculated_checksum = temp_checksum;
-    eep_checksum_ok = true;
+    EEPROM.update(0x24, pcm.bus_settings);
+    EEPROM.update(0x25, tcm.bus_settings);
 
     uint8_t ret[2];
     ret[0] = 0x00;
@@ -3158,10 +3127,10 @@ void send_hwfw_info(void)
 }
 
 /*************************************************************************
-Function: scanner_reset()
+Function: reset_scanner()
 Purpose:  puts the scanner in an infinite loop and forces watchdog-reset
 **************************************************************************/
-int cmd_reset(void)
+void reset_scanner(void)
 {
     send_usb_packet(from_usb, to_usb, reset, reset_in_progress, ack, 1); // RX LED is on by now and this function lights up TX LED
     digitalWrite(ACT_LED, LOW); // blink all LEDs including this, good way to test if LEDs are working or not
@@ -3169,21 +3138,20 @@ int cmd_reset(void)
 }
 
 /*************************************************************************
-Function: cmd_handshake()
+Function: send_handshake()
 Purpose:  sends handshake message to laptop
 **************************************************************************/
-int cmd_handshake(void)
+void send_handshake(void)
 {
     uint8_t handshake_array[21] = { 0x43, 0x48, 0x52, 0x59, 0x53, 0x4C, 0x45, 0x52, 0x43, 0x43, 0x44, 0x53, 0x43, 0x49, 0x53, 0x43, 0x41, 0x4E, 0x4E, 0x45, 0x52 }; // CHRYSLERCCDSCISCANNER
     send_usb_packet(from_usb, to_usb, handshake, ok, handshake_array, 21);
-    return 0;
 }
 
 /*************************************************************************
-Function: cmd_status()
+Function: send_status()
 Purpose:  sends status message to laptop
 **************************************************************************/
-int cmd_status(void)
+void send_status(void)
 {
     uint8_t scanner_status[53];
     uint16_t free_ram_available = 0;
@@ -3194,8 +3162,8 @@ int cmd_status(void)
 
     if (eep_present) scanner_status[3] = 0x01;
     else scanner_status[3] = 0x00;
-    scanner_status[4] = eep_checksum[0];
-    scanner_status[5] = eep_calculated_checksum;
+    scanner_status[4] = 0; // eep checksum
+    scanner_status[5] = 0; // calculated eep checksum
 
     update_timestamp(current_timestamp);
     scanner_status[6] = current_timestamp[0];
@@ -3259,7 +3227,6 @@ int cmd_status(void)
     scanner_status[52] = led_blink_duration & 0xFF;
 
     send_usb_packet(from_usb, to_usb, status, ok, scanner_status, 53);
-    return 0;
 }
 
 /*************************************************************************
@@ -3498,7 +3465,7 @@ void handle_usb_data(void)
                         {
                             case reset: // 0x00 - reset scanner request
                             {
-                                cmd_reset();
+                                reset_scanner();
                                 break; // not necessary but every case needs a break
                             }
                             case handshake: // 0x01 - handshake request coming from an external computer
@@ -3507,14 +3474,14 @@ void handle_usb_data(void)
                                 {
                                     case 0x00:
                                     {
-                                        cmd_handshake();
+                                        send_handshake();
                                         break;
                                     }
                                     case 0x01:
                                     {
-                                        cmd_handshake();
+                                        send_handshake();
                                         send_hwfw_info();
-                                        cmd_status();
+                                        send_status();
                                         break;
                                     }
                                     default:
@@ -3527,7 +3494,7 @@ void handle_usb_data(void)
                             }
                             case status: // 0x02 - status report request
                             {
-                                cmd_status();
+                                send_status();
                                 break;
                             }
                             case settings: // 0x03 - change scanner settings
@@ -3556,28 +3523,10 @@ void handle_usb_data(void)
                                             cmd_payload[3] = 0x32;
                                         }
 
-                                        DDRE |= (1 << PE2); // set PE2 pin as output (this pin can't be reached by pinMode and digitalWrite commands)
-                                        PORTE &= ~(1 << PE2); // pull PE2 pin low to disable write protection
-
-                                        eep.write(0x1F, cmd_payload[0]); // write LED heartbeat interval high byte
-                                        eep.write(0x20, cmd_payload[1]); // write LED heartbeat interval low byte
-                                        eep.write(0x21, cmd_payload[2]); // write LED blink duration high byte
-                                        eep.write(0x22, cmd_payload[3]); // write LED blink duration low byte
-
-                                        uint8_t temp_checksum = 0; // re-calculate checksum
-
-                                        for (uint8_t i = 0; i < 255; i++) // add the first 255 bytes together
-                                        {
-                                            temp_checksum += eep.read(i);
-                                        }
-                                            
-                                        eep.write(255, temp_checksum); // write checksum byte at the last position of the settings block
-
-                                        PORTE |= (1 << PE2); // pull PE2 pin high to enable write protection
-
-                                        eep_checksum[0] = temp_checksum;
-                                        eep_calculated_checksum = temp_checksum;
-                                        eep_checksum_ok = true;
+                                        EEPROM.update(0x1F, cmd_payload[0]); // write LED heartbeat interval high byte
+                                        EEPROM.update(0x20, cmd_payload[1]); // write LED heartbeat interval low byte
+                                        EEPROM.update(0x21, cmd_payload[2]); // write LED blink duration high byte
+                                        EEPROM.update(0x22, cmd_payload[3]); // write LED blink duration low byte
 
                                         uint8_t ret[5] = { 0x00, cmd_payload[0], cmd_payload[1], cmd_payload[2], cmd_payload[3] };
                                         send_usb_packet(from_usb, to_usb, settings, heartbeat, ret, 5); // acknowledge
@@ -3646,25 +3595,7 @@ void handle_usb_data(void)
                                         cbi(ccd.bus_settings, 1); // clear speed bit
                                         sbi(ccd.bus_settings, 0); // set speed bit
 
-                                        DDRE |= (1 << PE2); // set PE2 pin as output (this pin can't be reached by pinMode and digitalWrite commands)
-                                        PORTE &= ~(1 << PE2); // pull PE2 pin low to disable write protection
-
-                                        eep.write(0x23, ccd.bus_settings); // write CCD-bus settings
-
-                                        uint8_t temp_checksum = 0; // re-calculate checksum
-
-                                        for (uint8_t i = 0; i < 255; i++) // add the first 255 bytes together
-                                        {
-                                            temp_checksum += eep.read(i);
-                                        }
-
-                                        eep.write(255, temp_checksum); // write checksum byte at the last position of the settings block
-
-                                        PORTE |= (1 << PE2); // pull PE2 pin high to enable write protection
-
-                                        eep_checksum[0] = temp_checksum;
-                                        eep_calculated_checksum = temp_checksum;
-                                        eep_checksum_ok = true;
+                                        EEPROM.update(0x23, ccd.bus_settings); // write CCD-bus settings
 
                                         uint8_t ret[3] = { 0x00, cmd_payload[0], cmd_payload[1] };
                                         send_usb_packet(from_usb, to_usb, settings, set_ccd_bus, ret, 3); // acknowledge
@@ -3755,31 +3686,13 @@ void handle_usb_data(void)
                                         lcd_units = cmd_payload[5];
                                         lcd_data_source = cmd_payload[6];
 
-                                        DDRE |= (1 << PE2); // set PE2 pin as output (this pin can't be reached by pinMode and digitalWrite commands)
-                                        PORTE &= ~(1 << PE2); // pull PE2 pin low to disable write protection
-
-                                        eep.write(0x18, cmd_payload[0]); // write LCD enabled/disabled state
-                                        eep.write(0x19, lcd_i2c_address); // write LCD I2C address
-                                        eep.write(0x1A, lcd_char_width); // write LCD width
-                                        eep.write(0x1B, lcd_char_height); // write LCD height
-                                        eep.write(0x1C, lcd_refresh_rate); // write LCD refresh rate
-                                        eep.write(0x1D, lcd_units); // write LCD units
-                                        eep.write(0x1E, lcd_data_source); // write LCD units
-
-                                        uint8_t temp_checksum = 0; // re-calculate checksum
-
-                                        for (uint8_t i = 0; i < 255; i++) // add the first 255 bytes together
-                                        {
-                                            temp_checksum += eep.read(i);
-                                        }
-                                            
-                                        eep.write(255, temp_checksum); // write checksum byte at the last position of the settings block
-
-                                        PORTE |= (1 << PE2); // pull PE2 pin high to enable write protection
-
-                                        eep_checksum[0] = temp_checksum;
-                                        eep_calculated_checksum = temp_checksum;
-                                        eep_checksum_ok = true;
+                                        EEPROM.update(0x18, cmd_payload[0]); // write LCD enabled/disabled state
+                                        EEPROM.update(0x19, lcd_i2c_address); // write LCD I2C address
+                                        EEPROM.update(0x1A, lcd_char_width); // write LCD width
+                                        EEPROM.update(0x1B, lcd_char_height); // write LCD height
+                                        EEPROM.update(0x1C, lcd_refresh_rate); // write LCD refresh rate
+                                        EEPROM.update(0x1D, lcd_units); // write LCD units
+                                        EEPROM.update(0x1E, lcd_data_source); // write LCD units
 
                                         lcd_init();
 
@@ -3831,18 +3744,6 @@ void handle_usb_data(void)
                                     {
                                         check_battery_volts();
                                         send_usb_packet(from_usb, to_usb, response, battery_voltage, battery_volts_array, 2);
-                                        break;
-                                    }
-                                    case exteeprom_checksum: // 0x04
-                                    {
-                                        evaluate_eep_checksum();
-
-                                        uint8_t eep_checksum_response[3];
-                                        if (eep_present) eep_checksum_response[0] = 0x01;
-                                        else eep_checksum_response[0] = 0x00;
-                                        eep_checksum_response[1] = eep_checksum[0]; // checksum reading
-                                        eep_checksum_response[2] = eep_calculated_checksum; // calculated checksum
-                                        send_usb_packet(from_usb, to_usb, response, exteeprom_checksum, eep_checksum_response, 3);
                                         break;
                                     }
                                     case ccd_bus_voltages: // 0x05
@@ -3925,7 +3826,7 @@ void handle_usb_data(void)
                                         
                                         uint8_t value = eeprom_read_byte((const uint8_t*)offset);
                                         uint8_t payload[4] = { 0x00, offset_hb, offset_lb, value };
-                                        send_usb_packet(from_usb, to_usb, debug, read_inteeprom_byte, payload, 4); // send external EEPROM value back to the laptop
+                                        send_usb_packet(from_usb, to_usb, debug, read_inteeprom_byte, payload, 4); // send internal EEPROM value back to the laptop
                                         break;
                                     }
                                     case read_inteeprom_block: // 0x03 - read internal EEPROM block
@@ -3961,7 +3862,7 @@ void handle_usb_data(void)
                                             payload[3 + i] = values[i];
                                         }
 
-                                        send_usb_packet(from_usb, to_usb, debug, read_inteeprom_block, payload, p_length); // send external EEPROM block back to the laptop
+                                        send_usb_packet(from_usb, to_usb, debug, read_inteeprom_block, payload, p_length); // send internal EEPROM block back to the laptop
                                         break;
                                     }
                                     case read_exteeprom_byte: // 0x04 - read external EEPROM byte
@@ -4065,7 +3966,7 @@ void handle_usb_data(void)
 
                                         uint8_t reading = eeprom_read_byte((const uint8_t*)offset);
                                         uint8_t payload[4] = { 0x00, offset_hb, offset_lb, reading };
-                                        send_usb_packet(from_usb, to_usb, debug, write_inteeprom_byte, payload, 4); // send external EEPROM value back to the laptop for confirmation
+                                        send_usb_packet(from_usb, to_usb, debug, write_inteeprom_byte, payload, 4); // send internal EEPROM value back to the laptop for confirmation
                                         break;
                                     }
                                     case write_inteeprom_block: // 0x07 - write internal EEPROM block
@@ -4105,7 +4006,7 @@ void handle_usb_data(void)
                                             payload[3 + i] = values[i];
                                         }
 
-                                        send_usb_packet(from_usb, to_usb, debug, write_inteeprom_block, payload, p_length); // send external EEPROM block back to the laptop
+                                        send_usb_packet(from_usb, to_usb, debug, write_inteeprom_block, payload, p_length); // send internal EEPROM block back to the laptop
                                         break;
                                     }
                                     case write_exteeprom_byte: // 0x08 - write external EEPROM byte
@@ -4139,22 +4040,6 @@ void handle_usb_data(void)
                                             if (eep_result) // error
                                             {
                                                 send_usb_packet(from_usb, to_usb, ok_error, error_eep_write, err, 1); // send error packet back to the laptop
-                                            }
-                                            else // ok, calculate checksum again
-                                            {
-                                                uint8_t temp_checksum = 0;
-
-                                                for (uint8_t i = 0; i < 255; i++) // add the first 255 bytes together and skip last byte (where the result of this calculation goes) by setting the second parameter to 255 instead of 256
-                                                {
-                                                    temp_checksum += eep.read(i); // checksum variable will roll over several times but it's okay, this is its purpose
-                                                }
-                                                
-                                                eep_result = eep.write(255, temp_checksum); // place checksum byte at the last position of the array
-
-                                                if (eep_result) // error
-                                                {
-                                                    send_usb_packet(from_usb, to_usb, ok_error, error_eep_write, err, 1); // send error packet back to the laptop
-                                                }
                                             }
 
                                             PORTE |= (1 << PE2); // pull PE2 pin high to enable write protection
@@ -4206,22 +4091,6 @@ void handle_usb_data(void)
                                             if (eep_result) // error
                                             {
                                                 send_usb_packet(from_usb, to_usb, ok_error, error_eep_write, err, 1); // send error packet back to the laptop
-                                            }
-                                            else // ok, calculate checksum again
-                                            {
-                                                uint8_t temp_checksum = 0;
-
-                                                for (uint8_t i = 0; i < 255; i++) // add the first 255 bytes together and skip last byte (where the result of this calculation goes) by setting the second parameter to 255 instead of 256
-                                                {
-                                                    temp_checksum += eep.read(i); // checksum variable will roll over several times but it's okay, this is its purpose
-                                                }
-                                                
-                                                eep_result = eep.write(255, temp_checksum); // place checksum byte at the last position of the array
-
-                                                if (eep_result) // error
-                                                {
-                                                    send_usb_packet(from_usb, to_usb, ok_error, error_eep_write, err, 1); // send error packet back to the laptop
-                                                }
                                             }
 
                                             PORTE |= (1 << PE2); // pull PE2 pin high to enable write protection
@@ -4531,7 +4400,7 @@ void handle_usb_data(void)
                                     }
                                     case single_msg: // 0x02 - send message to the SCI-bus once
                                     {
-                                        if (!payload_bytes || (payload_length > PCM_RX2_BUFFER_SIZE))
+                                        if (!payload_bytes || (payload_length > PCM_RX_BUFFER_SIZE))
                                         {
                                             send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error
                                             break;
@@ -4553,7 +4422,7 @@ void handle_usb_data(void)
                                     }
                                     case repeated_single_msg: // 0x04 - send repeated message(s) to the SCI-bus (PCM)
                                     {
-                                        if ((payload_length < 4) || (payload_length > PCM_RX2_BUFFER_SIZE))
+                                        if ((payload_length < 4) || (payload_length > PCM_RX_BUFFER_SIZE))
                                         {
                                             send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error
                                             break;
@@ -4738,7 +4607,7 @@ void handle_usb_data(void)
                                     }
                                     case single_msg: // 0x02 - send message to the SCI-bus once
                                     {
-                                        if (!payload_bytes || (payload_length > TCM_RX3_BUFFER_SIZE))
+                                        if (!payload_bytes || (payload_length > TCM_RX_BUFFER_SIZE))
                                         {
                                             send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error
                                             break;
@@ -4760,7 +4629,7 @@ void handle_usb_data(void)
                                     }
                                     case repeated_single_msg: // 0x04 - send repeated message(s) to the SCI-bus (TCM)
                                     {
-                                        if ((payload_length < 4) || (payload_length > TCM_RX3_BUFFER_SIZE))
+                                        if ((payload_length < 4) || (payload_length > TCM_RX_BUFFER_SIZE))
                                         {
                                             send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // error
                                             break;
@@ -4927,10 +4796,12 @@ void handle_usb_data(void)
                 break;
             }
         }
+
+        usb_rx_flush();
     }
     else
     {
-      // TODO
+        // TODO
     }
 }
 
@@ -5402,9 +5273,9 @@ void handle_sci_data(void)
                     }
                     else // only ID-bytes are received, the beginning of the messages must be supplemented so that the GUI understands what it is about
                     {
-                        if ((uint32_t)(millis() - sci_test_byte_last_millis) >= 200) // test bytes are broadcasted way too fast, filter them by transmitting every 200 ms
+                        if ((uint32_t)(millis() - pcm.sci_test_byte_last_millis) >= 200) // test bytes are broadcasted way too fast, filter them by transmitting every 200 ms
                         {
-                            sci_test_byte_last_millis = millis();
+                            pcm.sci_test_byte_last_millis = millis();
 
                             pcm.message_length = pcm_rx_available();
                             uint8_t usb_msg[7]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
@@ -7037,19 +6908,18 @@ void handle_leds(void)
 
 void setup()
 {
-    // Define digital pin states.
     pinMode(RX_LED, OUTPUT);      // Data received LED
     pinMode(TX_LED, OUTPUT);      // Data transmitted LED
     // PWR LED is tied to +5V directly, stays on when the scanner has power, draws about 2mA current.
     pinMode(ACT_LED, OUTPUT);     // Activity (heartbeat) LED
-    pinMode(BATT, INPUT);         // This analog input pin measures battery voltage through a resistor divider (it tolerates 24V batteries!)
-    pinMode(CCD_POSITIVE, INPUT); // 
-    pinMode(CCD_NEGATIVE, INPUT); // 
-    pinMode(TBEN, OUTPUT);        // 
     digitalWrite(TBEN, HIGH);     // disable CCD-bus termination and bias
     blink_led(RX_LED);            // 
     blink_led(TX_LED);            // 
     blink_led(ACT_LED);           // 
+    pinMode(BATT, INPUT);         // This analog input pin measures battery voltage through a resistor divider (it tolerates 24V batteries!)
+    pinMode(CCD_POSITIVE, INPUT); // 
+    pinMode(CCD_NEGATIVE, INPUT); // 
+    pinMode(TBEN, OUTPUT);        // 
 
     // SCI-bus A/B-configuration selector outputs.
     pinMode(A_PCM_RX_EN, OUTPUT);
@@ -7062,7 +6932,8 @@ void setup()
     pinMode(B_TCM_TX_EN, OUTPUT);
 
     usb_init(USBBAUD);// 250000 baud, an external serial monitor should have the same speed
-    eep_init(); // initialize external EEPROM chip and load settings
+    eep_init(); // initialize external EEPROM chip
+    load_settings(); // load settings
     ccd_init(); // 7812.5 baud
     pcm_init(LOBAUD); // 7812.5 baud
     tcm_init(LOBAUD); // 7812.5 baud
@@ -7111,7 +6982,7 @@ void setup()
     send_usb_packet(from_usb, to_usb, reset, reset_done, ack, 1); // scanner ready
     configure_sci_bus(); // apply last saved sci-bus settings for PCM and TCM
     send_hwfw_info(); // send hardware/firmware information to laptop
-    cmd_status(); // send status
+    send_status(); // send status
     wdt_enable(WDTO_2S); // enable watchdog timer that resets program if its timer reaches 2 seconds (useful if the code hangs for some reason and needs auto-reset)
 }
 
