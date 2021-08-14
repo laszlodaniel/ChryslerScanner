@@ -547,8 +547,6 @@ namespace ChryslerCCDSCIScanner
                         CCDBusRxTimeoutTimer.Start();
                     }
                 }
-
-                if (CCDBusCurrentMemoryOffset > (CCDBusEndMemoryOffset - CCDBusIncrement)) CCDBusReadMemoryFinished = true;
             }
         }
 
@@ -1191,6 +1189,8 @@ namespace ChryslerCCDSCIScanner
                             byte checksum = 0;
                             for (int i = 0; i < 5; i++) checksum += CCDBusTxPayload[i];
                             CCDBusTxPayload[5] = checksum;
+
+                            if (CCDBusCurrentMemoryOffset > (CCDBusEndMemoryOffset - CCDBusIncrement)) CCDBusReadMemoryFinished = true;
                         }
                         else if (CCDBusResponseBytes[2] == 0xFF)
                         {

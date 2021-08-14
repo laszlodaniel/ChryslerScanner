@@ -678,7 +678,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 6;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "STORE EEPROM VALUE";
+            row["description"] = "WRITE EEPROM";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -1591,6 +1591,9 @@ namespace ChryslerCCDSCIScanner
                                 case 0x03: // tachometer
                                 case 0x23:
                                 case 0x33:
+                                case 0x07:
+                                case 0x27:
+                                case 0x37:
                                     descriptionToInsert = "MIC GAUGE POSITION: TACHOMETER";
                                     valueToInsert = Util.ByteToHexString(payload, 0, 1);
                                     break;
@@ -2559,22 +2562,22 @@ namespace ChryslerCCDSCIScanner
                             unitToInsert = string.Empty;
                         }
                         break;
-                    case 0xCA: // store EEPROM byte to write later
+                    case 0xCA: // write EEPROM byte
                         if (message.Length >= minLength)
                         {
                             switch (payload[0])
                             {
                                 case 0x1B: // VTS
-                                    descriptionToInsert = "STORE EEPROM VALUE | VTS";
+                                    descriptionToInsert = "WRITE EEPROM | VTS";
                                     break;
                                 case 0x20: // BCM
-                                    descriptionToInsert = "STORE EEPROM VALUE | BCM";
+                                    descriptionToInsert = "WRITE EEPROM | BCM";
                                     break;
                                 case 0x43: // ABS
-                                    descriptionToInsert = "STORE EEPROM VALUE | ABS";
+                                    descriptionToInsert = "WRITE EEPROM | ABS";
                                     break;
                                 default:
-                                    descriptionToInsert = "STORE EEPROM VALUE | MODULE ID: " + Util.ByteToHexStringSimple(new byte[1] { payload[0] });
+                                    descriptionToInsert = "WRITE EEPROM | MODULE ID: " + Util.ByteToHexStringSimple(new byte[1] { payload[0] });
                                     break;
                             }
 
@@ -2584,7 +2587,7 @@ namespace ChryslerCCDSCIScanner
                         }
                         else
                         {
-                            descriptionToInsert = "STORE EEPROM VALUE |";
+                            descriptionToInsert = "WRITE EEPROM |";
                             valueToInsert = "ERROR";
                             unitToInsert = string.Empty;
                         }
@@ -3200,7 +3203,7 @@ namespace ChryslerCCDSCIScanner
                                             unitToInsert = string.Empty;
                                             break;
                                         case 0x60: // write EEPROM
-                                            descriptionToInsert = "RESPONSE | BCM | WRITE EEPROM RESULT";
+                                            descriptionToInsert = "RESPONSE | BCM | WRITE EEPROM OFFSET";
                                             valueToInsert = Util.ByteToHexStringSimple(new byte[2] { payload[2], payload[3] });
                                             unitToInsert = string.Empty;
                                             break;
@@ -3334,15 +3337,29 @@ namespace ChryslerCCDSCIScanner
 
                                                 if (MainForm.units == "imperial")
                                                 {
-                                                    if (payload[2] != 0xFF) valueToInsert = Math.Round(((payload[2] << 8) + payload[3]) * 0.0156D, 1).ToString("0.0").Replace(",", ".");
-                                                    else valueToInsert = "ERROR";
-                                                    unitToInsert = "°F";
+                                                    if (payload[2] != 0xFF)
+                                                    {
+                                                        valueToInsert = Math.Round(((payload[2] << 8) + payload[3]) * 0.0156D, 1).ToString("0.0").Replace(",", ".");
+                                                        unitToInsert = "°F";
+                                                    }
+                                                    else
+                                                    {
+                                                        valueToInsert = "ERROR";
+                                                        unitToInsert = string.Empty;
+                                                    }
                                                 }
                                                 else if (MainForm.units == "metric")
                                                 {
-                                                    if (payload[2] != 0xFF) valueToInsert = Math.Round((((payload[2] << 8) + payload[3]) * 0.0156D * 0.555556D) - 17.77778D, 1).ToString("0.0").Replace(",", ".");
-                                                    else valueToInsert = "ERROR";
-                                                    unitToInsert = "°C";
+                                                    if (payload[2] != 0xFF)
+                                                    {
+                                                        valueToInsert = Math.Round((((payload[2] << 8) + payload[3]) * 0.0156D * 0.555556D) - 17.77778D, 1).ToString("0.0").Replace(",", ".");
+                                                        unitToInsert = "°C";
+                                                    }
+                                                    else
+                                                    {
+                                                        valueToInsert = "ERROR";
+                                                        unitToInsert = string.Empty;
+                                                    }
                                                 }
                                             }
 
