@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 05: minor
-// 09: patch
+// 0A: patch
 // (00: revision)
-// = v0.5.9(.0)
-#define FW_VERSION 0x00050900
+// = v0.5.10(.0)
+#define FW_VERSION 0x00050A00
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00050900611903C4
+#define FW_DATE 0x00050A00611A86F2
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
