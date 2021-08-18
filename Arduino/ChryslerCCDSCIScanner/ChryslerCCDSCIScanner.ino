@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 05: minor
-// 0A: patch
+// 0B: patch
 // (00: revision)
-// = v0.5.10(.0)
-#define FW_VERSION 0x00050A00
+// = v0.5.11(.0)
+#define FW_VERSION 0x00050B00
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00050A00611A86F2
+#define FW_DATE 0x00050B00611CC247
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -4856,6 +4856,7 @@ void handle_ccd_data(void)
                 {
                     usb_msg[i] = current_timestamp[i];
                 }
+
                 for (uint8_t i = 0; i < ccd.last_message_length; i++) // put every byte in the CCD-bus message after the timestamp
                 {
                     usb_msg[TIMESTAMP_LENGTH + i] = ccd.last_message[i]; // new message bytes may arrive in the circular buffer but this way only one message is removed
@@ -4871,19 +4872,23 @@ void handle_ccd_data(void)
                     if (ccd.msg_to_transmit_count == 1) // if there's only one message in the buffer
                     {
                         bool match = true;
-                        for (uint8_t i = 0; i < ccd.last_message_length; i++)
-                        {
-                            if (ccd.msg_buffer[i] != usb_msg[TIMESTAMP_LENGTH + i]) match = false; // compare received bytes with message sent
-                        }
+
+//                        for (uint8_t i = 0; i < ccd.last_message_length; i++)
+//                        {
+//                            if (ccd.msg_buffer[i] != usb_msg[TIMESTAMP_LENGTH + i]) match = false; // compare received bytes with message sent
+//                        }
+
                         if (match) ccd.repeat_next = true; // if echo is correct prepare next message
                     }
                     else if (ccd.msg_to_transmit_count > 1) // multiple messages
                     {
                         bool match = true;
-                        for (uint8_t i = 0; i < ccd.last_message_length; i++)
-                        {
-                            if (ccd.msg_buffer[ccd.msg_buffer_ptr + 1 + i] != usb_msg[TIMESTAMP_LENGTH + i]) match = false; // compare received bytes with message sent
-                        }
+
+//                        for (uint8_t i = 0; i < ccd.last_message_length; i++)
+//                        {
+//                            if (ccd.msg_buffer[ccd.msg_buffer_ptr + 1 + i] != usb_msg[TIMESTAMP_LENGTH + i]) match = false; // compare received bytes with message sent
+//                        }
+
                         if (match)
                         {
                             ccd.repeat_next = true; // if echo is correct prepare next message
@@ -4941,14 +4946,17 @@ void handle_ccd_data(void)
         if (ccd.random_msg && (ccd.random_msg_interval > 0))
         {
             current_millis = millis(); // check current time
+
             if ((uint32_t)(current_millis - ccd.random_msg_last_millis) >= ccd.random_msg_interval)
             {
                 ccd.random_msg_last_millis = current_millis;
                 ccd.msg_buffer_ptr = random(3, 7); // random message length between 3 and 6 bytes
+
                 for (uint8_t i = 0; i < ccd.msg_buffer_ptr - 2; i++)
                 {
                     ccd.msg_buffer[i] = random(256); // generate random bytes
                 }
+
                 uint8_t checksum_position = ccd.msg_buffer_ptr - 1;
                 ccd.msg_buffer[checksum_position] = calculate_checksum(ccd.msg_buffer, 0, checksum_position);
                 ccd.msg_tx_pending = true;
@@ -4963,6 +4971,7 @@ void handle_ccd_data(void)
             if ((uint32_t)(current_millis - ccd.repeated_msg_last_millis) >= ccd.repeated_msg_interval) // wait between messages
             {
                 ccd.repeated_msg_last_millis = current_millis;
+
                 if (ccd.repeat_next && !ccd.repeat_iterate) // no iteration, same message over and over again
                 {
                     // The message is already in the ccd.msg_buffer array, just set flags
@@ -5007,7 +5016,7 @@ void handle_ccd_data(void)
         {     
             if (ccd.msg_to_transmit_count == 1) // if there's only one message in the buffer
             {
-                CCD.write(ccd.msg_buffer, ccd.msg_buffer_ptr); // send message on the CCD-bus
+                while (CCD.write(ccd.msg_buffer, ccd.msg_buffer_ptr)); // send message on the CCD-bus
             }
             else if (ccd.msg_to_transmit_count > 1) // multiple messages, send one at a time
             {
@@ -5020,7 +5029,7 @@ void handle_ccd_data(void)
                     j++;
                 }
 
-                CCD.write(current_message, ccd.repeated_msg_length); // send message on the CCD-bus
+                while (CCD.write(current_message, ccd.repeated_msg_length)); // send message on the CCD-bus
             }
             
             ccd.msg_tx_pending = false; // re-arm, make it possible to send a message again, TODO: same as above
@@ -5139,10 +5148,12 @@ void handle_sci_data(void)
                         if (pcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                         {
                             bool match = true;
+
                             for (uint8_t i = 0; i < pcm.repeated_msg_length; i++)
                             {
                                 if (pcm.msg_buffer[i] != usb_msg[TIMESTAMP_LENGTH + i]) match = false; // compare received bytes with message sent
                             }
+
                             if (match) pcm.repeat_next = true; // if echo is correct prepare next message
                         }
                         else if (pcm.msg_to_transmit_count > 1) // multiple messages
@@ -5195,6 +5206,7 @@ void handle_sci_data(void)
                         {
                             pcm.msg_tx_pending = true; // send the same message again if no answer is received
                             pcm.repeat_retry_counter++;
+
                             if (pcm.repeat_retry_counter > 10)
                             {
                                 //pcm.repeat = false; // don't repeat after 10 failed attempts
@@ -5202,6 +5214,7 @@ void handle_sci_data(void)
                                 pcm.repeat_next = true; // give up this parameter and jump to the next one
                                 pcm.repeat_retry_counter = 0;
                             }
+
                             delay(200);
                         }
 
@@ -6078,10 +6091,12 @@ void handle_sci_data(void)
                     if (tcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                     {
                         bool match = true;
+
                         for (uint8_t i = 0; i < tcm.repeated_msg_length; i++)
                         {
                             if (tcm.msg_buffer[i] != usb_msg[TIMESTAMP_LENGTH + i]) match = false; // compare received bytes with message sent
                         }
+
                         if (match) tcm.repeat_next = true; // if echo is correct prepare next message
                     }
                     else if (tcm.msg_to_transmit_count > 1) // multiple messages
@@ -6134,6 +6149,7 @@ void handle_sci_data(void)
                     {
                         tcm.msg_tx_pending = true; // send the same message again if no answer is received
                         tcm.repeat_retry_counter++;
+
                         if (tcm.repeat_retry_counter > 10)
                         {
                             //tcm.repeat = false; // don't repeat after 10 failed attempts
@@ -6141,6 +6157,7 @@ void handle_sci_data(void)
                             tcm.repeat_next = true; // give up this parameter and jump to the next one
                             tcm.repeat_retry_counter = 0;
                         }
+
                         delay(200);
                     }
 

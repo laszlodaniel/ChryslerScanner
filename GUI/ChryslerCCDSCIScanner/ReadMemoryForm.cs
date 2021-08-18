@@ -1141,6 +1141,8 @@ namespace ChryslerCCDSCIScanner
                     }
                     else
                     {
+                        CCDBusEcho = false;
+                        CCDBusResponse = false;
                         UpdateTextBox(CCDBusReadMemoryInfoTextBox, " | error: invalid echo");
                     }
                 }
@@ -1151,7 +1153,7 @@ namespace ChryslerCCDSCIScanner
 
                     if (CCDBusResponseBytes.Length == 6) // correct response message's length is 6 bytes
                     {
-                        if ((CCDBusResponseBytes[1] == CCDBusModule) && (CCDBusResponseBytes[2] == CCDBusReadMemoryCommand))
+                        if ((CCDBusResponseBytes[1] == CCDBusModule) && (CCDBusResponseBytes[2] == CCDBusReadMemoryCommand) && CCDBusEcho)
                         {
                             CCDBusRxTimeoutTimer.Stop();
                             CCDBusNextRequest = false;
@@ -1160,6 +1162,7 @@ namespace ChryslerCCDSCIScanner
 
                             UpdateTextBox(CCDBusReadMemoryInfoTextBox, " | response ok");
 
+                            CCDBusEcho = false;
                             CCDBusResponse = true;
 
                             if (CCDBusIncrement == 2) CCDBusMemoryValueBytes = CCDBusResponseBytes.Skip(3).Take(2).ToArray(); // get both payload bytes
@@ -1201,6 +1204,12 @@ namespace ChryslerCCDSCIScanner
                             {
                                 CCDBusReadMemoryWorker.CancelAsync();
                             }
+                        }
+                        else
+                        {
+                            CCDBusEcho = false;
+                            CCDBusResponse = false;
+                            UpdateTextBox(CCDBusReadMemoryInfoTextBox, " | error: skip response");
                         }
                     }
                     else
