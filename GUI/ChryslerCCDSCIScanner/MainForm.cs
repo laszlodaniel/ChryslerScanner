@@ -1257,7 +1257,7 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         else
                                         {
-                                            Text = Text.Remove(Text.Length - 20);
+                                            Text = Text.Remove(Text.Length - 21);
                                             Text += FirmwareVersionString + "  |  HW " + HardwareVersionString;
                                         }
 
@@ -2424,6 +2424,7 @@ namespace ChryslerCCDSCIScanner
                         timeout = false;
                         Util.UpdateTextBox(USBTextBox, "[INFO] Device disconnected (" + Packet.Serial.PortName + ").");
                         if (ReadMemory != null) ReadMemory.Close();
+                        Text = "Chrysler CCD/SCI Scanner  |  GUI " + GUIVersion;
                     }
                 }
             }
