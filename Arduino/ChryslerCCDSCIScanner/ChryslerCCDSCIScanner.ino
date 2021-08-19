@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 05: minor
-// 0D: patch
+// 0E: patch
 // (00: revision)
-// = v0.5.13(.0)
-#define FW_VERSION 0x00050D00
+// = v0.5.14(.0)
+#define FW_VERSION 0x00050E00
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00050D00611E046B
+#define FW_DATE 0x00050E00611E70D6
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -341,7 +341,7 @@ uint8_t down_symbol[8]   = { 0x00, 0x04, 0x04, 0x15, 0x0E, 0x04, 0x00, 0x00 }; /
 uint8_t left_symbol[8]   = { 0x00, 0x04, 0x08, 0x1F, 0x08, 0x04, 0x00, 0x00 }; // ←
 uint8_t right_symbol[8]  = { 0x00, 0x04, 0x02, 0x1F, 0x02, 0x04, 0x00, 0x00 }; // →
 uint8_t enter_symbol[8]  = { 0x00, 0x01, 0x05, 0x09, 0x1F, 0x08, 0x04, 0x00 }; // 
-uint8_t degree_symbol[8]; // °
+uint8_t degree_symbol[8] = { 0x06, 0x09, 0x09, 0x06, 0x00, 0x00, 0x00, 0x00 }; // °
 
 char vin_characters[] = "-----------------"; // 17 character
 String vin_string;
@@ -589,9 +589,9 @@ void lcd_init(void)
 {
     lcd = LiquidCrystal_I2C(lcd_i2c_address, lcd_char_width, lcd_char_height);
     lcd.begin();
-    lcd.backlight();  // backlight on
-    lcd.clear();      // clear display
-    lcd.home();       // set cursor in home position (0, 0)
+    lcd.backlight(); // backlight on
+    lcd.clear(); // clear display
+    lcd.home(); // set cursor in home position (0, 0)
     float hw_ver = to_uint16(hw_version[0], hw_version[1]) / 100.0;
         
     if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
