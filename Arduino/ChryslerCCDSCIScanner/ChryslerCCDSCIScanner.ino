@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 05: minor
-// 0F: patch
+// 10: patch
 // (00: revision)
-// = v0.5.15(.0)
-#define FW_VERSION 0x00050F00
+// = v0.5.16(.0)
+#define FW_VERSION 0x00051000
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00050F0061210478
+#define FW_DATE 0x0005100061210B08
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -3716,6 +3716,8 @@ void handle_usb_data(void)
                                                     break;
                                                 }
                                             }
+
+                                            lcd_splash_screen_on = false;
                                         }
                                         
                                         uint8_t ret[8] = { 0x00, cmd_payload[0], lcd_i2c_address, lcd_char_width, lcd_char_height, lcd_refresh_rate, lcd_units, lcd_data_source };
