@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 05: minor
-// 0E: patch
+// 0F: patch
 // (00: revision)
-// = v0.5.14(.0)
-#define FW_VERSION 0x00050E00
+// = v0.5.15(.0)
+#define FW_VERSION 0x00050F00
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00050E00611E70D6
+#define FW_DATE 0x00050F0061210478
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -333,6 +333,7 @@ uint8_t lcd_units = 0; // 0-imperial, 1-metric
 uint8_t lcd_data_source = 1; // 1: CCD-bus, 2: SCI-bus (PCM), 3: SCI-bus (TCM)
 uint32_t lcd_last_update = 0;
 uint16_t lcd_update_interval = 0;
+bool lcd_splash_screen_on = true;
 
 // Custom LCD-characters
 // https://maxpromer.github.io/LCD-Character-Creator/
@@ -587,6 +588,7 @@ Purpose:  initialize LCD
 **************************************************************************/
 void lcd_init(void)
 {
+    lcd_splash_screen_on = true;
     lcd = LiquidCrystal_I2C(lcd_i2c_address, lcd_char_width, lcd_char_height);
     lcd.begin();
     lcd.backlight(); // backlight on
@@ -2041,6 +2043,9 @@ Returns:  none
 **************************************************************************/
 void ccd_init()
 {
+    CCD.onMessageReceived(handle_received_ccd_msg); // callback function when CCD-bus message is received
+    CCD.onError(handle_ccd_error); // callback function when error occurs
+
     if (to_uint16(hw_version[0], hw_version[1]) >= 144) // hardware version V1.44 and up
     {
         CCD.begin(CCD_DEFAULT_SPEED, CUSTOM_TRANSCEIVER, IDLE_BITS_10, ENABLE_RX_CHECKSUM, ENABLE_TX_CHECKSUM);
@@ -4839,110 +4844,157 @@ void check_ccd_volts(void)
 Function: handle_ccd_data()
 Purpose:  handle CCD-bus messages
 **************************************************************************/
-void handle_ccd_data(void)
+void handle_received_ccd_msg(uint8_t* message, uint8_t message_length)
 {
     if (ccd.enabled)
     {
-        if (CCD.available())
+        ccd.last_message_length = message_length;
+
+        for (uint8_t i = 0; i < message_length; i++)
         {
-            ccd.last_message_length = CCD.read(ccd.last_message);
+            ccd.last_message[i] = message[i];
+        }
 
-            if (ccd.last_message_length > 0) // valid message length is always greater than 0
+        uint8_t usb_msg[TIMESTAMP_LENGTH + ccd.last_message_length]; // create local array which will hold the timestamp and the CCD-bus message
+        update_timestamp(current_timestamp); // get current time for the timestamp
+
+        for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+        {
+            usb_msg[i] = current_timestamp[i];
+        }
+
+        for (uint8_t i = 0; i < ccd.last_message_length; i++) // put every byte in the CCD-bus message after the timestamp
+        {
+            usb_msg[TIMESTAMP_LENGTH + i] = ccd.last_message[i]; // new message bytes may arrive in the circular buffer but this way only one message is removed
+        }
+
+        // TODO: check here if echo is expected from a pending message, otherwise good to know if a custom message is heard by the other modules
+        send_usb_packet(from_ccd, to_usb, msg_rx, single_msg, usb_msg, TIMESTAMP_LENGTH + ccd.last_message_length); // send CCD-bus message back to the laptop
+
+        if (!lcd_splash_screen_on) handle_lcd(from_ccd, usb_msg, 4, TIMESTAMP_LENGTH + ccd.last_message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+
+        if (ccd.repeat && !ccd.repeat_iterate)
+        {
+            if (ccd.msg_to_transmit_count == 1) // if there's only one message in the buffer
             {
-                uint8_t usb_msg[TIMESTAMP_LENGTH + ccd.last_message_length]; // create local array which will hold the timestamp and the CCD-bus message
-                update_timestamp(current_timestamp); // get current time for the timestamp
-                
-                for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+                bool match = true;
+
+//                for (uint8_t i = 0; i < ccd.last_message_length; i++)
+//                {
+//                    if (ccd.msg_buffer[i] != usb_msg[TIMESTAMP_LENGTH + i]) match = false; // compare received bytes with message sent
+//                }
+
+                if (match) ccd.repeat_next = true; // if echo is correct prepare next message
+            }
+            else if (ccd.msg_to_transmit_count > 1) // multiple messages
+            {
+                bool match = true;
+
+//                for (uint8_t i = 0; i < ccd.last_message_length; i++)
+//                {
+//                    if (ccd.msg_buffer[ccd.msg_buffer_ptr + 1 + i] != usb_msg[TIMESTAMP_LENGTH + i]) match = false; // compare received bytes with message sent
+//                }
+
+                if (match)
                 {
-                    usb_msg[i] = current_timestamp[i];
-                }
+                    ccd.repeat_next = true; // if echo is correct prepare next message
 
-                for (uint8_t i = 0; i < ccd.last_message_length; i++) // put every byte in the CCD-bus message after the timestamp
-                {
-                    usb_msg[TIMESTAMP_LENGTH + i] = ccd.last_message[i]; // new message bytes may arrive in the circular buffer but this way only one message is removed
-                }
-                
-                // TODO: check here if echo is expected from a pending message, otherwise good to know if a custom message is heard by the other modules
-                send_usb_packet(from_ccd, to_usb, msg_rx, single_msg, usb_msg, TIMESTAMP_LENGTH + ccd.last_message_length); // send CCD-bus message back to the laptop
-                
-                handle_lcd(from_ccd, usb_msg, 4, TIMESTAMP_LENGTH + ccd.last_message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                    // Increase the current message counter and set the buffer pointer to the next message length
+                    ccd.msg_to_transmit_count_ptr++;
+                    ccd.msg_buffer_ptr += ccd.repeated_msg_length + 1;
+                    ccd.repeated_msg_length = ccd.msg_buffer[ccd.msg_buffer_ptr]; // re-calculate new message length
 
-                if (ccd.repeat && !ccd.repeat_iterate)
-                {
-                    if (ccd.msg_to_transmit_count == 1) // if there's only one message in the buffer
+                    // After the last message reset everything to zero to start at the beginning
+                    if (ccd.msg_to_transmit_count_ptr == ccd.msg_to_transmit_count)
                     {
-                        bool match = true;
-
-//                        for (uint8_t i = 0; i < ccd.last_message_length; i++)
-//                        {
-//                            if (ccd.msg_buffer[i] != usb_msg[TIMESTAMP_LENGTH + i]) match = false; // compare received bytes with message sent
-//                        }
-
-                        if (match) ccd.repeat_next = true; // if echo is correct prepare next message
-                    }
-                    else if (ccd.msg_to_transmit_count > 1) // multiple messages
-                    {
-                        bool match = true;
-
-//                        for (uint8_t i = 0; i < ccd.last_message_length; i++)
-//                        {
-//                            if (ccd.msg_buffer[ccd.msg_buffer_ptr + 1 + i] != usb_msg[TIMESTAMP_LENGTH + i]) match = false; // compare received bytes with message sent
-//                        }
-
-                        if (match)
-                        {
-                            ccd.repeat_next = true; // if echo is correct prepare next message
-
-                            // Increase the current message counter and set the buffer pointer to the next message length
-                            ccd.msg_to_transmit_count_ptr++;
-                            ccd.msg_buffer_ptr += ccd.repeated_msg_length + 1;
-                            ccd.repeated_msg_length = ccd.msg_buffer[ccd.msg_buffer_ptr]; // re-calculate new message length
-        
-                            // After the last message reset everything to zero to start at the beginning
-                            if (ccd.msg_to_transmit_count_ptr == ccd.msg_to_transmit_count)
-                            {
-                                ccd.msg_to_transmit_count_ptr = 0;
-                                ccd.msg_buffer_ptr = 0;
-                                ccd.repeated_msg_length = ccd.msg_buffer[ccd.msg_buffer_ptr]; // re-calculate new message length
-
-                                if (ccd.repeat_list_once) ccd.repeat_stop = true;
-                            }
-                        }
-                    }
-                    
-                    if (ccd.repeat_stop) // one-shot message list is terminated here
-                    {
+                        ccd.msg_to_transmit_count_ptr = 0;
                         ccd.msg_buffer_ptr = 0;
-                        ccd.repeat = false;
-                        ccd.repeat_next = false;
-                        ccd.repeat_iterate = false;
-                        ccd.repeat_list_once = false;
-                    }
-                }
-                else if (ccd.repeat && ccd.repeat_iterate)
-                {
-                    if (usb_msg[4] == 0xF2) ccd.repeat_next = true; // response received, prepare next request
-                    //if (usb_msg[4] == 0xB2) ccd.repeat_next = true; // DEBUG
-                    
-                    if (ccd.repeat_stop) // don't request more data if the list ends
-                    {
-                        ccd.msg_buffer_ptr = 0;
-                        ccd.repeat = false;
-                        ccd.repeat_next = false;
-                        ccd.repeat_iterate = false;
-                        ccd.repeat_list_once = false;
+                        ccd.repeated_msg_length = ccd.msg_buffer[ccd.msg_buffer_ptr]; // re-calculate new message length
 
-                        uint8_t ret[2] = { 0x00, to_ccd }; // improvised payload array with only 1 element which is the target bus
-                        send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 2);
+                        if (ccd.repeat_list_once) ccd.repeat_stop = true;
                     }
                 }
-                
-                ccd.last_message_length = 0; // force ISR to update this value again so we don't end up here in the next program loop
-                ccd.message_count = 0;
-                ccd.msg_rx_count++;
+            }
+
+            if (ccd.repeat_stop) // one-shot message list is terminated here
+            {
+                ccd.msg_buffer_ptr = 0;
+                ccd.repeat = false;
+                ccd.repeat_next = false;
+                ccd.repeat_iterate = false;
+                ccd.repeat_list_once = false;
+            }
+        }
+        else if (ccd.repeat && ccd.repeat_iterate)
+        {
+            if (usb_msg[4] == 0xF2) ccd.repeat_next = true; // response received, prepare next request
+            //if (usb_msg[4] == 0xB2) ccd.repeat_next = true; // DEBUG
+
+            if (ccd.repeat_stop) // don't request more data if the list ends
+            {
+                ccd.msg_buffer_ptr = 0;
+                ccd.repeat = false;
+                ccd.repeat_next = false;
+                ccd.repeat_iterate = false;
+                ccd.repeat_list_once = false;
+
+                uint8_t ret[2] = { 0x00, to_ccd }; // improvised payload array with only 1 element which is the target bus
+                send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 2);
             }
         }
 
+        ccd.message_count = 0;
+        ccd.msg_rx_count++;
+    }
+}
+
+void handle_ccd_error(CCD_Operations op, CCD_Errors err)
+{
+    if (ccd.enabled)
+    {    
+        if (err == CCD_OK) return;
+    
+        String s = op == CCD_Read ? "READ " : "WRITE ";
+    
+        switch (err)
+        {
+            case CCD_ERR_BUS_IS_BUSY:
+            {
+                //Serial.println(s + "CCD_ERR_BUS_IS_BUSY");
+                break;
+            }
+            case CCD_ERR_BUS_ERROR:
+            {
+                //Serial.println(s + "CCD_ERR_BUS_ERROR");
+                break;
+            }
+            case CCD_ERR_ARBITRATION_LOST:
+            {
+                //Serial.println(s + "CCD_ERR_ARBITRATION_LOST");
+                break;
+            }
+            case CCD_ERR_CHECKSUM:
+            {
+                //Serial.println(s + "CCD_ERR_CHECKSUM");
+                break;
+            }
+            default: // unknown error
+            {
+                //Serial.println(s + "ERR: " + String(err, HEX));
+                break;
+            }
+        }
+    }
+}
+
+/*************************************************************************
+Function: handle_ccd_data()
+Purpose:  handle CCD-bus messages
+**************************************************************************/
+void handle_ccd_data()
+{
+    if (ccd.enabled)
+    {
         if (ccd.random_msg && (ccd.random_msg_interval > 0))
         {
             current_millis = millis(); // check current time
@@ -6978,6 +7030,8 @@ void setup()
                 break;
             }
         }
+
+        lcd_splash_screen_on = false;
     }
 
     analogReference(DEFAULT);   // use default voltage reference applied to AVCC (+5V)
