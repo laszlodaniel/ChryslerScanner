@@ -1,13 +1,11 @@
 # ChryslerCCDSCIScanner
 Hardware and software for interfacing Chrysler's legacy CCD/SCI-bus.
 
-**Arduino** folder contains the source code and compiled binaries for the scanner written in Arduino IDE 1.8.7.
+![V1.50 box](https://chryslerccdsci.files.wordpress.com/2021/08/img_20210819_170230_02.jpg)
 
-**GUI** folder contains the C# source code and compiled binary for an external computer written in Visual Studio 2017.
+![GUI CCD](https://chryslerccdsci.files.wordpress.com/2021/08/gui_ccd-bus_table_01.png)
 
-**PCB** folder contains everything to manufacture and assemble the hardware.
-
-![V1.42 Assembly 01](https://chryslerccdsci.files.wordpress.com/2019/11/img_20191026_140922_02.jpg)
+![GUI SCI](https://chryslerccdsci.files.wordpress.com/2021/08/gui_sci-bus_pcm_table_01.png)
 
 Make sure to check out katemonster33's scanner too: https://github.com/katemonster33/CDJPScanMaster
 
