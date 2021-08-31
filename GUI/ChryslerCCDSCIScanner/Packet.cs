@@ -193,7 +193,8 @@ namespace ChryslerCCDSCIScanner
 
         public Packet()
         {
-            
+            rx.buffer = new byte[] { };
+            tx.buffer = new byte[] { };
         }
 
         protected virtual void Dispose(bool disposing)
