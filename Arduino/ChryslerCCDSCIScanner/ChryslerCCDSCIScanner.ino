@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 05: minor
-// 13: patch
+// 14: patch
 // (00: revision)
-// = v0.5.19(.0)
-#define FW_VERSION 0x00051300
+// = v0.5.20(.0)
+#define FW_VERSION 0x00051400
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x000513006125DF85
+#define FW_DATE 0x00051400612DE82B
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -4843,8 +4843,8 @@ void check_ccd_volts(void)
 }
 
 /*************************************************************************
-Function: handle_ccd_data()
-Purpose:  handle CCD-bus messages
+Function: handle_received_ccd_msg()
+Purpose:  save last received CCD-bus message to process later
 **************************************************************************/
 void handle_received_ccd_msg(uint8_t* message, uint8_t message_length)
 {
@@ -4856,100 +4856,13 @@ void handle_received_ccd_msg(uint8_t* message, uint8_t message_length)
         {
             ccd.last_message[i] = message[i];
         }
-
-        uint8_t usb_msg[TIMESTAMP_LENGTH + ccd.last_message_length]; // create local array which will hold the timestamp and the CCD-bus message
-        update_timestamp(current_timestamp); // get current time for the timestamp
-
-        for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
-        {
-            usb_msg[i] = current_timestamp[i];
-        }
-
-        for (uint8_t i = 0; i < ccd.last_message_length; i++) // put every byte in the CCD-bus message after the timestamp
-        {
-            usb_msg[TIMESTAMP_LENGTH + i] = ccd.last_message[i]; // new message bytes may arrive in the circular buffer but this way only one message is removed
-        }
-
-        // TODO: check here if echo is expected from a pending message, otherwise good to know if a custom message is heard by the other modules
-        send_usb_packet(from_ccd, to_usb, msg_rx, single_msg, usb_msg, TIMESTAMP_LENGTH + ccd.last_message_length); // send CCD-bus message back to the laptop
-
-        if (!lcd_splash_screen_on) handle_lcd(from_ccd, usb_msg, 4, TIMESTAMP_LENGTH + ccd.last_message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
-
-        if (ccd.repeat && !ccd.repeat_iterate)
-        {
-            if (ccd.msg_to_transmit_count == 1) // if there's only one message in the buffer
-            {
-                bool match = true;
-
-//                for (uint8_t i = 0; i < ccd.last_message_length; i++)
-//                {
-//                    if (ccd.msg_buffer[i] != usb_msg[TIMESTAMP_LENGTH + i]) match = false; // compare received bytes with message sent
-//                }
-
-                if (match) ccd.repeat_next = true; // if echo is correct prepare next message
-            }
-            else if (ccd.msg_to_transmit_count > 1) // multiple messages
-            {
-                bool match = true;
-
-//                for (uint8_t i = 0; i < ccd.last_message_length; i++)
-//                {
-//                    if (ccd.msg_buffer[ccd.msg_buffer_ptr + 1 + i] != usb_msg[TIMESTAMP_LENGTH + i]) match = false; // compare received bytes with message sent
-//                }
-
-                if (match)
-                {
-                    ccd.repeat_next = true; // if echo is correct prepare next message
-
-                    // Increase the current message counter and set the buffer pointer to the next message length
-                    ccd.msg_to_transmit_count_ptr++;
-                    ccd.msg_buffer_ptr += ccd.repeated_msg_length + 1;
-                    ccd.repeated_msg_length = ccd.msg_buffer[ccd.msg_buffer_ptr]; // re-calculate new message length
-
-                    // After the last message reset everything to zero to start at the beginning
-                    if (ccd.msg_to_transmit_count_ptr == ccd.msg_to_transmit_count)
-                    {
-                        ccd.msg_to_transmit_count_ptr = 0;
-                        ccd.msg_buffer_ptr = 0;
-                        ccd.repeated_msg_length = ccd.msg_buffer[ccd.msg_buffer_ptr]; // re-calculate new message length
-
-                        if (ccd.repeat_list_once) ccd.repeat_stop = true;
-                    }
-                }
-            }
-
-            if (ccd.repeat_stop) // one-shot message list is terminated here
-            {
-                ccd.msg_buffer_ptr = 0;
-                ccd.repeat = false;
-                ccd.repeat_next = false;
-                ccd.repeat_iterate = false;
-                ccd.repeat_list_once = false;
-            }
-        }
-        else if (ccd.repeat && ccd.repeat_iterate)
-        {
-            if (usb_msg[4] == 0xF2) ccd.repeat_next = true; // response received, prepare next request
-            //if (usb_msg[4] == 0xB2) ccd.repeat_next = true; // DEBUG
-
-            if (ccd.repeat_stop) // don't request more data if the list ends
-            {
-                ccd.msg_buffer_ptr = 0;
-                ccd.repeat = false;
-                ccd.repeat_next = false;
-                ccd.repeat_iterate = false;
-                ccd.repeat_list_once = false;
-
-                uint8_t ret[2] = { 0x00, to_ccd }; // improvised payload array with only 1 element which is the target bus
-                send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 2);
-            }
-        }
-
-        ccd.message_count = 0;
-        ccd.msg_rx_count++;
     }
 }
 
+/*************************************************************************
+Function: handle_ccd_error()
+Purpose:  process errors with CCD-bus
+**************************************************************************/
 void handle_ccd_error(CCD_Operations op, CCD_Errors err)
 {
     if (ccd.enabled)
@@ -4997,6 +4910,100 @@ void handle_ccd_data()
 {
     if (ccd.enabled)
     {
+        if (ccd.last_message_length > 0) // last received message was not sent back to laptop yet
+        {
+            uint8_t usb_msg[TIMESTAMP_LENGTH + ccd.last_message_length]; // create local array which will hold the timestamp and the CCD-bus message
+            update_timestamp(current_timestamp); // get current time for the timestamp
+
+            for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+            {
+                usb_msg[i] = current_timestamp[i];
+            }
+
+            for (uint8_t i = 0; i < ccd.last_message_length; i++) // put every byte in the CCD-bus message after the timestamp
+            {
+                usb_msg[TIMESTAMP_LENGTH + i] = ccd.last_message[i]; // new message bytes may arrive in the circular buffer but this way only one message is removed
+            }
+
+            send_usb_packet(from_ccd, to_usb, msg_rx, single_msg, usb_msg, TIMESTAMP_LENGTH + ccd.last_message_length); // send CCD-bus message back to the laptop
+
+            if (!lcd_splash_screen_on) handle_lcd(from_ccd, usb_msg, 4, TIMESTAMP_LENGTH + ccd.last_message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+
+            if (ccd.repeat && !ccd.repeat_iterate)
+            {
+                if (ccd.msg_to_transmit_count == 1) // if there's only one message in the buffer
+                {
+                    bool match = true;
+
+//                    for (uint8_t i = 0; i < ccd.last_message_length; i++)
+//                    {
+//                        if (ccd.msg_buffer[i] != usb_msg[TIMESTAMP_LENGTH + i]) match = false; // compare received bytes with message sent
+//                    }
+    
+                    if (match) ccd.repeat_next = true; // if echo is correct prepare next message
+                }
+                else if (ccd.msg_to_transmit_count > 1) // multiple messages
+                {
+                    bool match = true;
+    
+//                    for (uint8_t i = 0; i < ccd.last_message_length; i++)
+//                    {
+//                        if (ccd.msg_buffer[ccd.msg_buffer_ptr + 1 + i] != usb_msg[TIMESTAMP_LENGTH + i]) match = false; // compare received bytes with message sent
+//                    }
+    
+                    if (match)
+                    {
+                        ccd.repeat_next = true; // if echo is correct prepare next message
+    
+                        // Increase the current message counter and set the buffer pointer to the next message length
+                        ccd.msg_to_transmit_count_ptr++;
+                        ccd.msg_buffer_ptr += ccd.repeated_msg_length + 1;
+                        ccd.repeated_msg_length = ccd.msg_buffer[ccd.msg_buffer_ptr]; // re-calculate new message length
+    
+                        // After the last message reset everything to zero to start at the beginning
+                        if (ccd.msg_to_transmit_count_ptr == ccd.msg_to_transmit_count)
+                        {
+                            ccd.msg_to_transmit_count_ptr = 0;
+                            ccd.msg_buffer_ptr = 0;
+                            ccd.repeated_msg_length = ccd.msg_buffer[ccd.msg_buffer_ptr]; // re-calculate new message length
+    
+                            if (ccd.repeat_list_once) ccd.repeat_stop = true;
+                        }
+                    }
+                }
+    
+                if (ccd.repeat_stop) // one-shot message list is terminated here
+                {
+                    ccd.msg_buffer_ptr = 0;
+                    ccd.repeat = false;
+                    ccd.repeat_next = false;
+                    ccd.repeat_iterate = false;
+                    ccd.repeat_list_once = false;
+                }
+            }
+            else if (ccd.repeat && ccd.repeat_iterate)
+            {
+                if (usb_msg[4] == 0xF2) ccd.repeat_next = true; // response received, prepare next request
+                //if (usb_msg[4] == 0xB2) ccd.repeat_next = true; // DEBUG
+    
+                if (ccd.repeat_stop) // don't request more data if the list ends
+                {
+                    ccd.msg_buffer_ptr = 0;
+                    ccd.repeat = false;
+                    ccd.repeat_next = false;
+                    ccd.repeat_iterate = false;
+                    ccd.repeat_list_once = false;
+    
+                    uint8_t ret[2] = { 0x00, to_ccd }; // improvised payload array with only 1 element which is the target bus
+                    send_usb_packet(from_usb, to_usb, msg_tx, stop_msg_flow, ret, 2);
+                }
+            }
+    
+            ccd.last_message_length = 0;
+            ccd.message_count = 0;
+            ccd.msg_rx_count++;
+        }
+        
         if (ccd.random_msg && (ccd.random_msg_interval > 0))
         {
             current_millis = millis(); // check current time
