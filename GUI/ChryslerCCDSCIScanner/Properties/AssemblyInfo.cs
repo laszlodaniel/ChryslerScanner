@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Chrysler CCD/SCI Scanner GUI")]
-[assembly: AssemblyDescription("This GUI can be used to interface Chrysler's legacy CCD/SCI-bus for diagnostics purposes using the ChryslerCCDSCIScanner_V14X hardware.")]
+[assembly: AssemblyDescription("Software for interfacing Chrysler's legacy CCD/SCI-bus.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Boundary Condition")]
 [assembly: AssemblyProduct("Chrysler CCD/SCI Scanner GUI")]
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.6.25")]
+[assembly: AssemblyVersion("0.6.26")]
 //[assembly: AssemblyFileVersion("1.0.0")]

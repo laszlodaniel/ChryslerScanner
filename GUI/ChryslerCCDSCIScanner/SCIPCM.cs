@@ -178,7 +178,7 @@ namespace ChryslerCCDSCIScanner
 
             row = MessageDatabase.NewRow();
             row["id"] = 0x18;
-            row["length"] = 2;
+            row["length"] = 3;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
             row["description"] = "CONTROL ASD RELAY";
@@ -257,11 +257,21 @@ namespace ChryslerCCDSCIScanner
             MessageDatabase.Rows.Add(row);
 
             row = MessageDatabase.NewRow();
+            row["id"] = 0x25;
+            row["length"] = 4;
+            row["parameterCount"] = 1;
+            row["message"] = string.Empty;
+            row["description"] = "WRITE ROM SETTING";
+            row["value"] = string.Empty;
+            row["unit"] = string.Empty;
+            MessageDatabase.Rows.Add(row);
+
+            row = MessageDatabase.NewRow();
             row["id"] = 0x26;
             row["length"] = 5;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "READ FLASH MEMORY";
+            row["description"] = "READ ROM";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -282,6 +292,16 @@ namespace ChryslerCCDSCIScanner
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
             row["description"] = "READ EEPROM";
+            row["value"] = string.Empty;
+            row["unit"] = string.Empty;
+            MessageDatabase.Rows.Add(row);
+
+            row = MessageDatabase.NewRow();
+            row["id"] = 0x29;
+            row["length"] = 5;
+            row["parameterCount"] = 1;
+            row["message"] = string.Empty;
+            row["description"] = "WRITE RAM";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -1290,12 +1310,12 @@ namespace ChryslerCCDSCIScanner
 
             row = EngineDTC.NewRow();
             row["id"] = 0x99;
-            row["description"] = "AMBIENT / BATTERY TEMPERATURE SENSOR VOLTS TOO LOW";
+            row["description"] = "BATTERY TEMPERATURE SENSOR VOLTS TOO LOW";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
             row["id"] = 0x9A;
-            row["description"] = "AMBIENT / BATTERY TEMPERATURE SENSOR VOLTS TOO HIGH";
+            row["description"] = "BATTERY TEMPERATURE SENSOR VOLTS TOO HIGH";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
@@ -2110,24 +2130,14 @@ namespace ChryslerCCDSCIScanner
                             {
                                 switch (payload[0])
                                 {
-                                    case 0x01: // ambient air temperature sensor
-                                        descriptionToInsert = "AMBIENT AIR TEMPERATURE";
-
-                                        if (MainForm.units == "imperial")
-                                        {
-                                            valueToInsert = payload[1].ToString("0");
-                                            unitToInsert = "°F";
-                                        }
-                                        else if (MainForm.units == "metric")
-                                        {
-                                            valueToInsert = Math.Round((payload[1] * 0.555556D) - 17.77778D).ToString("0");
-                                            unitToInsert = "°C";
-                                        }
-
+                                    case 0x01: // ambient air temperature sensor voltage
+                                        descriptionToInsert = "BATTERY/AMBIENT AIR TEMPERATURE SENSOR VOLTAGE";
+                                        valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
+                                        unitToInsert = "V";
                                         break;
                                     case 0x02: // upstream (pre-cat) o2 sensor voltage
                                         descriptionToInsert = "UPSTREAM O2 SENSOR VOLTAGE (PRE-CATALISATOR)";
-                                        valueToInsert = Math.Round(payload[1] * 0.019607843D, 3).ToString("0.000").Replace(",", ".");
+                                        valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
                                         unitToInsert = "V";
                                         break;
                                     case 0x05: // engine coolant temperature
@@ -2146,27 +2156,27 @@ namespace ChryslerCCDSCIScanner
                                         break;
                                     case 0x06: // engine coolant temperature sensor voltage
                                         descriptionToInsert = "ENGINE COOLANT TEMPERATURE SENSOR VOLTAGE";
-                                        valueToInsert = Math.Round(payload[1] * 0.019607843D, 3).ToString("0.000").Replace(",", ".");
+                                        valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
                                         unitToInsert = "V";
                                         break;
                                     case 0x07: // throttle position sensor voltage
                                         descriptionToInsert = "THROTTLE POSITION SENSOR VOLTAGE";
-                                        valueToInsert = Math.Round(payload[1] * 0.019607843D, 3).ToString("0.000").Replace(",", ".");
+                                        valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
                                         unitToInsert = "V";
                                         break;
                                     case 0x08: // minimum throttle position sensor voltage
                                         descriptionToInsert = "MINIMUM TPS VOLTAGE";
-                                        valueToInsert = Math.Round(payload[1] * 0.019607843D, 3).ToString("0.000").Replace(",", ".");
+                                        valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
                                         unitToInsert = "V";
                                         break;
                                     case 0x09: // knock sensor voltage
                                         descriptionToInsert = "KNOCK SENSOR VOLTAGE";
-                                        valueToInsert = Math.Round(payload[1] * 0.019607843D, 3).ToString("0.000").Replace(",", ".");
+                                        valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
                                         unitToInsert = "V";
                                         break;
                                     case 0x0A: // battery voltage
                                         descriptionToInsert = "BATTERY VOLTAGE";
-                                        valueToInsert = Math.Round(payload[1] * 0.0592D, 1).ToString("0.0").Replace(",", ".");
+                                        valueToInsert = Math.Round(payload[1] * 0.0625D, 3).ToString("0.000").Replace(",", ".");
                                         unitToInsert = "V";
                                         break;
                                     case 0x0B: // map value
@@ -2209,10 +2219,13 @@ namespace ChryslerCCDSCIScanner
                                         }
 
                                         break;
-                                    case 0x10: // minimum engine speed
-                                        descriptionToInsert = "MINIMUM ENGINE SPEED (IDLE)";
-                                        valueToInsert = (payload[1] * 32).ToString("0");
-                                        unitToInsert = "RPM";
+                                    case 0x10: // minimum air flow
+                                        descriptionToInsert = "MINIMUM AIR FLOW TEST";
+
+                                        if (payload[1] == 0) valueToInsert = "STOPPED";
+                                        else valueToInsert = "RUNNING";
+
+                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x11: // engine speed
                                         descriptionToInsert = "ENGINE SPEED";
@@ -2220,10 +2233,10 @@ namespace ChryslerCCDSCIScanner
                                         unitToInsert = "RPM";
                                         break;
                                     case 0x12: // sync sense
-                                        descriptionToInsert = "SYNC SENSE";
+                                        descriptionToInsert = "CAM/CRANK SYNC STATE";
 
-                                        if ((payload[1] & 0x10) == 0x10) valueToInsert = "IN SYNC";
-                                        else if ((payload[1] & 0x10) != 0x10) valueToInsert = "ENGINE STOPPED";
+                                        if (Util.IsBitSet(payload[1], 4)) valueToInsert = "IN-SYNC";
+                                        else valueToInsert = "ENGINE STOPPED";
                                         unitToInsert = string.Empty;
 
                                         break;
@@ -2234,7 +2247,7 @@ namespace ChryslerCCDSCIScanner
                                         break;
                                     case 0x15: // spark advance
                                         descriptionToInsert = "SPARK ADVANCE";
-                                        valueToInsert = Math.Round((payload[1] * 0.5D) - 64, 1).ToString("0.0").Replace(",", ".");
+                                        valueToInsert = Math.Round((payload[1] * 0.5D), 1).ToString("0.0").Replace(",", ".");
                                         unitToInsert = "DEG";
                                         break;
                                     case 0x16: // cylinder 1 retard
@@ -2420,7 +2433,7 @@ namespace ChryslerCCDSCIScanner
                                         break;
                                     case 0x24: // target battery charging voltage
                                         descriptionToInsert = "TARGET BATTERY CHARGING VOLTAGE";
-                                        valueToInsert = Math.Round(payload[1] * 0.0592D, 1).ToString("0.0").Replace(",", ".");
+                                        valueToInsert = Math.Round(payload[1] * 0.0625D, 3).ToString("0.000").Replace(",", ".");
                                         unitToInsert = "V";
                                         break;
                                     case 0x25: // over 5 psi boost timer
@@ -2439,9 +2452,14 @@ namespace ChryslerCCDSCIScanner
                                         valueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0');
                                         unitToInsert = string.Empty;
                                         break;
+                                    case 0x2F: // upstream (pre-cat) o2 sensor voltage
+                                        descriptionToInsert = "UPSTREAM O2 SENSOR VOLTAGE (PRE-CATALISATOR)";
+                                        valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
+                                        unitToInsert = "V";
+                                        break;
                                     case 0x32: // A/C high side pressure sensor voltage
                                         descriptionToInsert = "A/C HIGH SIDE PRESSURE SENSOR VOLTAGE";
-                                        valueToInsert = Math.Round(payload[1] * 0.019607843D, 3).ToString("0.000").Replace(",", ".");
+                                        valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
                                         unitToInsert = "V";
                                         break;
                                     case 0x33: // A/C high side pressure
@@ -2459,9 +2477,14 @@ namespace ChryslerCCDSCIScanner
                                         }
 
                                         break;
+                                    case 0x3F: // downstream (post-cat) o2 sensor voltage
+                                        descriptionToInsert = "DOWNSTREAM O2 SENSOR VOLTAGE (POST-CATALISATOR)";
+                                        valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
+                                        unitToInsert = "V";
+                                        break;
                                     case 0x40: // intake map sensor volts
                                         descriptionToInsert = "INTAKE MAP SENSOR VOLTAGE";
-                                        valueToInsert = Math.Round(payload[1] * 0.019607843D, 3).ToString("0.000").Replace(",", ".");
+                                        valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
                                         unitToInsert = "V";
                                         break;
                                     case 0x41: // vehicle speed
@@ -2528,7 +2551,7 @@ namespace ChryslerCCDSCIScanner
                                         break;
                                     case 0x4E: // fuel level sensor voltage
                                         descriptionToInsert = "FUEL LEVEL SENSOR VOLTAGE";
-                                        valueToInsert = Math.Round(payload[1] * 0.019607843D, 3).ToString("0.000").Replace(",", ".");
+                                        valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
                                         unitToInsert = "V";
                                         break;
                                     case 0x4F: // fuel level
@@ -2563,17 +2586,17 @@ namespace ChryslerCCDSCIScanner
                                         break;
                                     case 0x6D: // T-case switch voltage
                                         descriptionToInsert = "T-CASE SWITCH VOLTAGE";
-                                        valueToInsert = Math.Round(payload[1] * 0.019607843D, 3).ToString("0.000").Replace(",", ".");
+                                        valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
                                         unitToInsert = "V";
                                         break;
                                     case 0x7A: // FCA current
                                         descriptionToInsert = "FCA CURRENT";
-                                        valueToInsert = Math.Round(payload[1] * 0.019607843D, 1).ToString("0.0").Replace(",", ".");
+                                        valueToInsert = Math.Round(payload[1] * 0.0196D, 1).ToString("0.0").Replace(",", ".");
                                         unitToInsert = "A";
                                         break;
                                     case 0x7C: // oil temperature sensor voltage
                                         descriptionToInsert = "OIL TEMPERATURE SENSOR VOLTAGE";
-                                        valueToInsert = Math.Round(payload[1] * 0.019607843D, 3).ToString("0.000").Replace(",", ".");
+                                        valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
                                         unitToInsert = "V";
                                         break;
                                     case 0x7D: // oil temperature sensor
@@ -2651,7 +2674,7 @@ namespace ChryslerCCDSCIScanner
                         case 0x18: // control ASD relay
                             if (message.Length >= minLength)
                             {
-                                // TODO
+                                valueToInsert = "RESULT=" + Util.ByteToHexString(payload, 2, 1); ;
                             }
                             else // error
                             {
@@ -3004,48 +3027,48 @@ namespace ChryslerCCDSCIScanner
                                         unitToInsert = string.Empty;
                                         break;
                                     case 0x02:
-                                        descriptionToInsert = "ADAPTIVE / RAM";
+                                        descriptionToInsert = "RESET ADAPTIVE / RAM";
                                         if (payload[1] != 0x00)
                                         {
-                                            valueToInsert = "ON";
+                                            valueToInsert = "OK";
                                         }
                                         else
                                         {
-                                            valueToInsert = "OFF";
+                                            valueToInsert = "FAILED";
                                         }
                                         unitToInsert = string.Empty;
                                         break;
                                     case 0x03:
-                                        descriptionToInsert = "IAC (IDLE AIR CONTROL) COUNTER";
+                                        descriptionToInsert = "RESET IAC (IDLE AIR CONTROL) COUNTER";
                                         if (payload[1] != 0x00)
                                         {
-                                            valueToInsert = "ON";
+                                            valueToInsert = "OK";
                                         }
                                         else
                                         {
-                                            valueToInsert = "OFF";
+                                            valueToInsert = "FAILED";
                                         }
                                         unitToInsert = string.Empty;
                                         break;
                                     case 0x04:
-                                        descriptionToInsert = "MINIMUM TPS (THROTTLE POSITION SENSOR)";
+                                        descriptionToInsert = "RESET MINIMUM TPS (THROTTLE POSITION SENSOR)";
                                         if (payload[1] != 0x00)
                                         {
-                                            valueToInsert = "ON";
+                                            valueToInsert = "OK";
                                         }
                                         else
                                         {
-                                            valueToInsert = "OFF";
+                                            valueToInsert = "FAILED";
                                         }
                                         unitToInsert = string.Empty;
                                         break;
                                     case 0x05:
-                                        descriptionToInsert = "FLEX FUEL PERCENT";
+                                        descriptionToInsert = "RESET FLEX FUEL PERCENT";
                                         valueToInsert = payload[1].ToString("0");
                                         unitToInsert = "%";
                                         break;
                                     case 0x06:
-                                        descriptionToInsert = "CAM/CRANK & SYNC";
+                                        descriptionToInsert = "RESET CAM/CRANK SYNC";
                                         if (payload[1] != 0x00)
                                         {
                                             valueToInsert = "ON (IN SYNC)";
@@ -3057,19 +3080,19 @@ namespace ChryslerCCDSCIScanner
                                         unitToInsert = string.Empty;
                                         break;
                                     case 0x07:
-                                        descriptionToInsert = "FUEL SHUTOFF";
+                                        descriptionToInsert = "RESET FUEL SHUTOFF";
                                         if (payload[1] != 0x00)
                                         {
-                                            valueToInsert = "ON";
+                                            valueToInsert = "OK";
                                         }
                                         else
                                         {
-                                            valueToInsert = "OFF";
+                                            valueToInsert = "FAILED";
                                         }
                                         unitToInsert = string.Empty;
                                         break;
                                     case 0x08:
-                                        descriptionToInsert = "RUNTIME AT STALL";
+                                        descriptionToInsert = "RESET RUNTIME AT STALL";
                                         if (payload[1] != 0x00)
                                         {
                                             valueToInsert = "ON";
@@ -3172,62 +3195,62 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         break;
                                     case 0x20:
-                                        descriptionToInsert = "TPS ADAPTATION FOR ETC";
+                                        descriptionToInsert = "RESET TPS ADAPTATION FOR ETC";
                                         if (payload[1] != 0x00)
                                         {
-                                            valueToInsert = "ON";
+                                            valueToInsert = "OK";
                                         }
                                         else
                                         {
-                                            valueToInsert = "OFF";
+                                            valueToInsert = "FAILED";
                                         }
                                         unitToInsert = string.Empty;
                                         break;
                                     case 0x21:
-                                        descriptionToInsert = "MIN PEDAL VALUE";
+                                        descriptionToInsert = "RESET MIN PEDAL VALUE";
                                         if (payload[1] != 0x00)
                                         {
-                                            valueToInsert = "ON";
+                                            valueToInsert = "OK";
                                         }
                                         else
                                         {
-                                            valueToInsert = "OFF";
+                                            valueToInsert = "FAILED";
                                         }
                                         unitToInsert = string.Empty;
                                         break;
                                     case 0x22:
-                                        descriptionToInsert = "LEARNED KNOCK CORRECTION";
+                                        descriptionToInsert = "RESET LEARNED KNOCK CORRECTION";
                                         if (payload[1] != 0x00)
                                         {
-                                            valueToInsert = "ON";
+                                            valueToInsert = "OK";
                                         }
                                         else
                                         {
-                                            valueToInsert = "OFF";
+                                            valueToInsert = "FAILED";
                                         }
                                         unitToInsert = string.Empty;
                                         break;
                                     case 0x23:
-                                        descriptionToInsert = "LEARNED MISFIRE CORRECTION";
+                                        descriptionToInsert = "RESET LEARNED MISFIRE CORRECTION";
                                         if (payload[1] != 0x00)
                                         {
-                                            valueToInsert = "ON";
+                                            valueToInsert = "OK";
                                         }
                                         else
                                         {
-                                            valueToInsert = "OFF";
+                                            valueToInsert = "FAILED";
                                         }
                                         unitToInsert = string.Empty;
                                         break;
                                     case 0x24:
-                                        descriptionToInsert = "IDLE ADAPTATION";
+                                        descriptionToInsert = "RESET IDLE ADAPTATION";
                                         if (payload[1] != 0x00)
                                         {
-                                            valueToInsert = "ON";
+                                            valueToInsert = "OK";
                                         }
                                         else
                                         {
-                                            valueToInsert = "OFF";
+                                            valueToInsert = "FAILED";
                                         }
                                         unitToInsert = string.Empty;
                                         break;
@@ -3245,15 +3268,88 @@ namespace ChryslerCCDSCIScanner
                                 unitToInsert = string.Empty;
                             }
                             break;
-                        case 0x26: // read flash memory
+                        case 0x25: // write ROM setting
                             if (message.Length >= minLength)
                             {
-                                descriptionToInsert = "READ FLASH MEMORY | OFFSET: " + Util.ByteToHexString(payload, 0, 3);
+                                switch (payload[0])
+                                {
+                                    case 0x01:
+                                        descriptionToInsert = "WRITE ROM SETTING | CALPOT LEAD";
+                                        break;
+                                    case 0x02:
+                                        descriptionToInsert = "WRITE ROM SETTING | CALPOT MEX";
+                                        break;
+                                    case 0x04:
+                                        descriptionToInsert = "WRITE ROM SETTING | EGR SYSTEM";
+                                        break;
+                                    case 0x05:
+                                        descriptionToInsert = "WRITE ROM SETTING | FUEL INJECTOR #1";
+                                        break;
+                                    case 0x0F:
+                                        descriptionToInsert = "WRITE ROM SETTING | MINIMUM AIR FLOW";
+                                        break;
+                                    case 0x10:
+                                        descriptionToInsert = "WRITE ROM SETTING | CALPOT LHBL";
+                                        break;
+                                    case 0x1C:
+                                        descriptionToInsert = "WRITE ROM SETTING | MISFIRE MONITOR";
+                                        break;
+                                    case 0x21:
+                                        descriptionToInsert = "WRITE ROM SETTING | LINEAR IAC MOTOR";
+                                        break;
+                                    case 0x25:
+                                        descriptionToInsert = "WRITE ROM SETTING | CYLINDER PERFORMANCE TEST";
+                                        break;
+                                    case 0x26:
+                                        descriptionToInsert = "WRITE ROM SETTING | HIGH-PRESSURE SAFETY VALVE TEST";
+                                        break;
+                                    default:
+                                        descriptionToInsert = "WRITE ROM SETTING | OFFSET: " + Util.ByteToHexString(payload, 0, 1);
+                                        break;
+                                }
+
+                                switch (payload[1])
+                                {
+                                    case 0x00:
+                                        valueToInsert = "RESET";
+                                        break;
+                                    case 0x01:
+                                        valueToInsert = "ENABLED";
+                                        break;
+                                    case 0x02:
+                                        valueToInsert = "DISABLED";
+                                        break;
+                                    default:
+                                        valueToInsert = "UNKNOWN";
+                                        break;
+                                }
+
+                                switch (payload[2])
+                                {
+                                    case 0x01:
+                                        unitToInsert = "OK";
+                                        break;
+                                    default:
+                                        unitToInsert = "DENIED (" + Util.ByteToHexString(payload, 2, 1) + ")";
+                                        break;
+                                }
+                            }
+                            else // error
+                            {
+                                descriptionToInsert = "WRITE ROM SETTING";
+                                valueToInsert = "ERROR";
+                                unitToInsert = string.Empty;
+                            }
+                            break;
+                        case 0x26: // read ROM
+                            if (message.Length >= minLength)
+                            {
+                                descriptionToInsert = "READ ROM | OFFSET: " + Util.ByteToHexString(payload, 0, 3);
                                 valueToInsert = Util.ByteToHexString(payload, 3, 1);
                             }
                             else // error
                             {
-                                descriptionToInsert = "READ FLASH MEMORY";
+                                descriptionToInsert = "READ ROM";
                                 valueToInsert = "ERROR";
                             }
                             unitToInsert = string.Empty;
@@ -3295,6 +3391,7 @@ namespace ChryslerCCDSCIScanner
                             {
                                 descriptionToInsert = "WRITE EEPROM";
                                 valueToInsert = "ERROR";
+                                unitToInsert = string.Empty;
                             }
                             break;
                         case 0x28: // read EEPROM
@@ -3309,6 +3406,38 @@ namespace ChryslerCCDSCIScanner
                                 valueToInsert = "ERROR";
                             }
                             unitToInsert = string.Empty;
+                            break;
+                        case 0x29: // write RAM
+                            if (message.Length >= minLength)
+                            {
+                                descriptionToInsert = "WRITE RAM | OFFSET: " + Util.ByteToHexString(payload, 0, 2);
+
+                                switch (payload[3])
+                                {
+                                    case 0xE5:
+                                        valueToInsert = Util.ByteToHexString(payload, 2, 1);
+                                        unitToInsert = "OK";
+                                        break;
+                                    case 0xF0:
+                                        valueToInsert = "DENIED (INVALID OFFSET)";
+                                        unitToInsert = string.Empty;
+                                        break;
+                                    case 0xF1:
+                                        valueToInsert = "DENIED (SECURITY LEVEL)";
+                                        unitToInsert = string.Empty;
+                                        break;
+                                    default:
+                                        valueToInsert = "RESULT=" + Util.ByteToHexString(payload, 3, 1);
+                                        unitToInsert = string.Empty;
+                                        break;
+                                }
+                            }
+                            else // error
+                            {
+                                descriptionToInsert = "WRITE RAM";
+                                valueToInsert = "ERROR";
+                                unitToInsert = string.Empty;
+                            }
                             break;
                         case 0x2A: // information request
                             if (message.Length >= minLength)
@@ -3627,10 +3756,10 @@ namespace ChryslerCCDSCIScanner
                                 switch (payload[3])
                                 {
                                     case 0x00:
-                                        valueToInsert = "EEPROM WRITE ALLOWED";
+                                        valueToInsert = "MEMORY WRITE ALLOWED";
                                         break;
                                     case 0x01:
-                                        valueToInsert = "INCORRECT";
+                                        valueToInsert = "INCORRECT SOLUTION";
                                         break;
                                     case 0x02:
                                         valueToInsert = "CHECKSUM ERROR";
@@ -3645,7 +3774,6 @@ namespace ChryslerCCDSCIScanner
                             }
                             else // error
                             {
-                                descriptionToInsert = "SEND SECURITY SEED";
                                 valueToInsert = "ERROR";
                             }
                             unitToInsert = string.Empty;

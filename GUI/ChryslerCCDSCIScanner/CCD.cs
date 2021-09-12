@@ -378,7 +378,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 4;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "SHIFT LEVER POSITION";
+            row["description"] = "TRANSMISSION STATUS / SELECTED GEAR";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -774,7 +774,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 3;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "SHIFT LEVER POSITION";
+            row["description"] = "TRANSMISSION STATUS / SELECTED GEAR";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -1373,7 +1373,7 @@ namespace ChryslerCCDSCIScanner
                             unitToInsert = string.Empty;
                         }
                         break;
-                    case 0x52: // shift lever position
+                    case 0x52: // transmission status / selected gear
                         if (message.Length >= minLength)
                         {
                             switch (payload[0])
@@ -1403,7 +1403,7 @@ namespace ChryslerCCDSCIScanner
                             unitToInsert = string.Empty;
                         }
                         break;
-                    case 0x54: // Barometric pressure / Temperature
+                    case 0x54: // barometric pressure / Temperature
                         if (message.Length >= minLength)
                         {
                             if (MainForm.units == "imperial")
@@ -1515,7 +1515,7 @@ namespace ChryslerCCDSCIScanner
                             }
                             else if (MainForm.units == "metric")
                             {
-                                valueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | " + Math.Round(payload[1] * 0.000125D * 1.609334138D, 6).ToString("0.000000").Replace(",", ".");
+                                valueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | " + Math.Round(payload[1] * 0.000125D * 1.609344D, 6).ToString("0.000000").Replace(",", ".");
                                 unitToInsert = "N/A | KM";
                             }
                         }
@@ -2513,7 +2513,7 @@ namespace ChryslerCCDSCIScanner
                             {
                                 if ((payload[0] != 0xFF) && (payload[1] != 0xFF))
                                 {
-                                    valueToInsert = Math.Round(28800.0D / ((payload[0] << 8) | payload[1]) * 1.609334138D, 1).ToString("0.0").Replace(",", ".");
+                                    valueToInsert = Math.Round(28800.0D / ((payload[0] << 8) | payload[1]) * 1.609344D, 1).ToString("0.0").Replace(",", ".");
                                 }
                                 else
                                 {
@@ -2622,7 +2622,7 @@ namespace ChryslerCCDSCIScanner
                             }
                             else if (MainForm.units == "metric")
                             {
-                                valueToInsert = Math.Round((UInt32)(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]) * 0.000125D * 1.609334138D, 3).ToString("0.000").Replace(",", ".");
+                                valueToInsert = Math.Round((UInt32)(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]) * 0.000125D * 1.609344D, 3).ToString("0.000").Replace(",", ".");
                                 unitToInsert = "KILOMETER";
                             }
                         }
@@ -2639,7 +2639,7 @@ namespace ChryslerCCDSCIScanner
                     case 0xD4: // battery voltage / calculated charging voltage
                         if (message.Length >= minLength)
                         {
-                            valueToInsert = Math.Round(payload[0] * 0.0592D, 1).ToString("0.0").Replace(",", ".") + " | " + Math.Round(payload[1] * 0.0592D, 1).ToString("0.0").Replace(",", ".");
+                            valueToInsert = Math.Round(payload[0] * 0.0625D, 1).ToString("0.0").Replace(",", ".") + " | " + Math.Round(payload[1] * 0.0625D, 1).ToString("0.0").Replace(",", ".");
                             unitToInsert = "V | V";
                         }
                         else
@@ -2665,7 +2665,7 @@ namespace ChryslerCCDSCIScanner
                         valueToInsert = string.Empty;
                         unitToInsert = string.Empty;
                         break;
-                    case 0xDC: // shift lever position
+                    case 0xDC: // transmission status
                         if (message.Length >= minLength)
                         {
                             valueToInsert = string.Empty;
@@ -2685,6 +2685,9 @@ namespace ChryslerCCDSCIScanner
                                     break;
                                 case 2:
                                     valueToInsert += "| LOCK: FULL";
+                                    break;
+                                default:
+                                    valueToInsert += "| LOCK: N/A";
                                     break;
                             }
 
@@ -2784,7 +2787,7 @@ namespace ChryslerCCDSCIScanner
                             }
                             else if (MainForm.units == "metric")
                             {
-                                valueToInsert = Math.Round((UInt32)(payload[0] << 16 | payload[1] << 8 | payload[2]) * 0.016D * 1.609334138D, 3).ToString("0.000").Replace(",", ".");
+                                valueToInsert = Math.Round((UInt32)(payload[0] << 16 | payload[1] << 8 | payload[2]) * 0.016D * 1.609344D, 3).ToString("0.000").Replace(",", ".");
                                 unitToInsert = "KILOMETER";
                             }
                         }
