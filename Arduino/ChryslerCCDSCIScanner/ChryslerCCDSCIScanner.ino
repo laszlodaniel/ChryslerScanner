@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 05: minor
-// 14: patch
+// 15: patch
 // (00: revision)
-// = v0.5.20(.0)
-#define FW_VERSION 0x00051400
+// = v0.5.21(.0)
+#define FW_VERSION 0x00051500
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00051400612DE82B
+#define FW_DATE 0x00051500613F67A9
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -967,7 +967,7 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                     }
                                     else if (lcd_units == 1) // metric
                                     {
-                                        odometer = roundf(odometer_raw * 1609.334138 / 8000.0);
+                                        odometer = roundf(odometer_raw * 1609.344 / 8000.0);
                                         odometer = odometer / 1000.0;
                                     }
         
@@ -1024,10 +1024,10 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                             {
                                 if (message_length > 3)
                                 {
-                                    float batt_volts = roundf(message[1] * 10.0 * 0.0592);
+                                    float batt_volts = roundf(message[1] * 10.0 * 0.0625);
                                     batt_volts = batt_volts / 10.0;
                                     
-                                    float charge_volts = roundf(message[2] * 10.0 * 0.0592);
+                                    float charge_volts = roundf(message[2] * 10.0 * 0.0625);
                                     charge_volts = charge_volts / 10.0;
                                     
                                     if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
@@ -1423,7 +1423,7 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                         }
                                         case 0x0A: // battery voltage
                                         {
-                                            float batt_volts = roundf(message[2] * 10.0 * 0.0592);
+                                            float batt_volts = roundf(message[2] * 10.0 * 0.0625);
                                             batt_volts = batt_volts / 10.0;
                                             
                                             if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
@@ -1456,12 +1456,12 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                             
                                             if (lcd_units == 0) // imperial
                                             {
-                                                map_value = roundf(message[2] * 0.059756 * 10.0);
+                                                map_value = roundf(message[2] * 10.0 * 0.059756);
                                                 map_value = map_value / 10.0;
                                             }
                                             else if (lcd_units == 1) // metric
                                             {
-                                                map_value = roundf(message[2] * 0.059756 * 6.894757 * 10.0);
+                                                map_value = roundf(message[2] * 6.894757 * 10.0 * 0.059756);
                                                 map_value = map_value / 10.0;
                                             }
                 
@@ -1644,7 +1644,7 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                         }
                                         case 0x24: // battery charging voltage
                                         {
-                                            float charge_volts = roundf(message[2] * 10.0 * 0.0592);
+                                            float charge_volts = roundf(message[2] * 10.0 * 0.0625);
                                             charge_volts = charge_volts / 10.0;
                                             
                                             if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
@@ -1677,11 +1677,11 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                             
                                             if (lcd_units == 0) // imperial
                                             {
-                                                vehicle_speed = round(message[2] / 2.0);
+                                                vehicle_speed = round(message[2] * 0.5);
                                             }
                                             else if (lcd_units == 1) // metric
                                             {
-                                                vehicle_speed = round(message[2] * 1.609344 / 2.0 );
+                                                vehicle_speed = round(message[2] * 1.609344 * 0.5 );
                                             }
                 
                                             if (((lcd_char_width == 20) && (lcd_char_height == 4)) || ((lcd_char_width == 16) && (lcd_char_height == 2))) // 20x4 / 16x2 LCD
@@ -5172,9 +5172,10 @@ void handle_sci_data(void)
         // Handle completed messages
         if (pcm.speed == LOBAUD) // handle low-speed mode first (7812.5 baud)
         {
-            if (!pcm.actuator_test_running && !pcm.ls_request_running) // send message back to laptop normally
+            //if (!pcm.actuator_test_running && !pcm.ls_request_running) // send message back to laptop normally
+            if (!pcm.actuator_test_running) // send message back to laptop normally
             {
-                if ((pcm.echo_received || pcm.response_received) && (pcm_rx_available() > 0))
+                if ((pcm.echo_received || pcm.response_received || (pcm_rx_available() == 16)) && (pcm_rx_available() > 0))
                 {
                     pcm.echo_received = false;
                     pcm.response_received = false;
@@ -5323,28 +5324,28 @@ void handle_sci_data(void)
                         send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, TIMESTAMP_LENGTH+pcm.message_length);
                         handle_lcd(from_pcm, usb_msg, 4, TIMESTAMP_LENGTH + pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
                     }
-                    // Stop broadcasting request bytes command is accepted
-                    else if ((pcm_peek(0) == 0x2A) && (pcm_peek(1) == 0x00)) // The 0x00 byte is not echoed back by the PCM so don't look for a third byte
-                    {
-                        pcm.message_length = pcm_rx_available();
-                        uint8_t usb_msg[TIMESTAMP_LENGTH + pcm.message_length]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
-                        update_timestamp(current_timestamp); // get current time for the timestamp
-                        pcm.ls_request_running = false;
-                        pcm.ls_request_byte = 0;
-
-                        for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
-                        {
-                            usb_msg[i] = current_timestamp[i];
-                        }
-
-                        for (uint8_t i = 0; i < pcm.message_length; i++) // put every byte in the SCI-bus message after the timestamp
-                        {
-                            usb_msg[TIMESTAMP_LENGTH + i] = pcm_getc() & 0xFF;
-                        }
-
-                        send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, TIMESTAMP_LENGTH + pcm.message_length);
-                        handle_lcd(from_pcm, usb_msg, 4, TIMESTAMP_LENGTH + pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
-                    }
+//                    // Stop broadcasting request bytes command is accepted
+//                    else if ((pcm_peek(0) == 0x2A) && (pcm_peek(1) == 0x00)) // The 0x00 byte is not echoed back by the PCM so don't look for a third byte
+//                    {
+//                        pcm.message_length = pcm_rx_available();
+//                        uint8_t usb_msg[TIMESTAMP_LENGTH + pcm.message_length]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
+//                        update_timestamp(current_timestamp); // get current time for the timestamp
+//                        pcm.ls_request_running = false;
+//                        pcm.ls_request_byte = 0;
+//
+//                        for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+//                        {
+//                            usb_msg[i] = current_timestamp[i];
+//                        }
+//
+//                        for (uint8_t i = 0; i < pcm.message_length; i++) // put every byte in the SCI-bus message after the timestamp
+//                        {
+//                            usb_msg[TIMESTAMP_LENGTH + i] = pcm_getc() & 0xFF;
+//                        }
+//
+//                        send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, TIMESTAMP_LENGTH + pcm.message_length);
+//                        handle_lcd(from_pcm, usb_msg, 4, TIMESTAMP_LENGTH + pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+//                    }
                     else // only ID-bytes are received, the beginning of the messages must be supplemented so that the GUI understands what it is about
                     {
                         if ((uint32_t)(millis() - pcm.sci_test_byte_last_millis) >= 200) // test bytes are broadcasted way too fast, filter them by transmitting every 200 ms
@@ -5366,11 +5367,11 @@ void handle_sci_data(void)
                                 usb_msg[5] = pcm.actuator_test_byte;
                             }
 
-                            if (pcm.ls_request_running && !pcm.actuator_test_running) // if the request mode is active then put two bytes before the received byte; this is kind of annying, why isn't one time response enough... there's nothing "running" like in the case of actuator tests
-                            {
-                                usb_msg[4] = 0x2A;
-                                usb_msg[5] = pcm.ls_request_byte;
-                            }
+//                            if (pcm.ls_request_running && !pcm.actuator_test_running) // if the request mode is active then put two bytes before the received byte; this is kind of annying, why isn't one time response enough... there's nothing "running" like in the case of actuator tests
+//                            {
+//                                usb_msg[4] = 0x2A;
+//                                usb_msg[5] = pcm.ls_request_byte;
+//                            }
 
                             usb_msg[6] = pcm_getc() & 0xFF; // BUG: this byte is different at first when the PCM begins to broadcast a single byte repeatedly, but it should be overwritten very soon after
 
@@ -5785,6 +5786,7 @@ void handle_sci_data(void)
                             {
                                 pcm.actuator_test_running = true;
                                 pcm.actuator_test_byte = pcm.msg_buffer[1];
+                                pcm.response_received = true;
                                 pcm_rx_flush(); // workaround for the first false received message
                             }
                             else
@@ -5794,30 +5796,31 @@ void handle_sci_data(void)
                             }
                         }
 
-                        // Special information request.
-                        // Note: some PCMs don't repeat this request message.
-                        if ((pcm.msg_buffer_ptr > 1) && (pcm_rx_available() > 1) && (pcm_peek(0) == 0x2A) && (pcm_peek(1) != 0x00))
-                        {
-                            timeout_reached = false;
-
-                            while ((pcm_rx_available() <= 2) && !timeout_reached)
-                            {
-                                // wait here for response
-                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= 100) timeout_reached = true;
-                            }
-
-                            if (!timeout_reached)
-                            {
-                                pcm.ls_request_running = true;
-                                pcm.ls_request_byte = pcm.msg_buffer[1];
-                                pcm_rx_flush(); // workaround for the first false received message
-                            }
-                            else
-                            {
-                                pcm_rx_flush();
-                                send_usb_packet(from_usb, to_usb, ok_error, error_sci_ls_no_response, err, 1);
-                            }
-                        }
+//                        // Special information request.
+//                        // Note: some PCMs don't repeat this request message.
+//                        if ((pcm.msg_buffer_ptr > 1) && (pcm_rx_available() > 1) && (pcm_peek(0) == 0x2A) && (pcm_peek(1) != 0x00))
+//                        {
+//                            timeout_reached = false;
+//
+//                            while ((pcm_rx_available() <= 2) && !timeout_reached)
+//                            {
+//                                // wait here for response
+//                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= 100) timeout_reached = true;
+//                            }
+//
+//                            if (!timeout_reached)
+//                            {
+//                                pcm.ls_request_running = true;
+//                                pcm.ls_request_byte = pcm.msg_buffer[1];
+//                                pcm.response_received = true;
+//                                pcm_rx_flush(); // workaround for the first false received message
+//                            }
+//                            else
+//                            {
+//                                pcm_rx_flush();
+//                                send_usb_packet(from_usb, to_usb, ok_error, error_sci_ls_no_response, err, 1);
+//                            }
+//                        }
                     }
                 }
                 else if (pcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
