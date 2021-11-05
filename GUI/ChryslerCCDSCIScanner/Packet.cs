@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Ports;
+using System.Threading;
 
 namespace ChryslerCCDSCIScanner
 {
@@ -255,19 +256,19 @@ namespace ChryslerCCDSCIScanner
         {
             if ((packet.Length > 5) && (packet[0] == 0x3D))
             {
-                    int length = (packet[1] << 8) + packet[2] + 4;
+                int length = (packet[1] << 8) + packet[2] + 4;
 
-                    if (packet.Length < length) return false;
-                    else
-                    {
-                        byte checksum = 0;
-                        int checksumLocation = length - 1;
+                if (packet.Length < length) return false;
+                else
+                {
+                    byte checksum = 0;
+                    int checksumLocation = length - 1;
 
-                        for (int i = 1; i < checksumLocation; i++) checksum += packet[i];
+                    for (int i = 1; i < checksumLocation; i++) checksum += packet[i];
 
-                        if (checksum == packet[checksumLocation]) return true;
-                        else return false;
-                    }
+                    if (checksum == packet[checksumLocation]) return true;
+                    else return false;
+                }
             }
             else return false;
         }

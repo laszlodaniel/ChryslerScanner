@@ -31,6 +31,10 @@ namespace ChryslerCCDSCIScanner
         public string EmptyLine      = "│                         │                                                     │                         │             │";
         public string HeaderModified = string.Empty;
 
+        public bool transmissionLRCVIRequested = false;
+        public bool transmission24CVIRequested = false;
+        public bool transmissionODCVIRequested = false;
+        public bool transmissionUDCVIRequested = false;
         public bool transmissionTemperatureRequested = false;
 
         public CCD()
@@ -1021,7 +1025,7 @@ namespace ChryslerCCDSCIScanner
                     case 0x0C: // battery voltage, oil pressure, coolant temperature, intake air temperature
                         if (message.Length >= minLength)
                         {
-                            if (MainForm.units == "imperial")
+                            if (Properties.Settings.Default.Units == "imperial")
                             {
                                 string batteryVoltage = Math.Round(payload[0] * 0.125D, 1).ToString("0.0").Replace(",", ".");
                                 string oilPressure = Math.Round(payload[1] * 0.5D, 1).ToString("0.0").Replace(",", ".");
@@ -1031,7 +1035,7 @@ namespace ChryslerCCDSCIScanner
                                 descriptionToInsert = "BATTERY: " + batteryVoltage + " V | " + "OIL: " + oilPressure + " PSI | " + "COOLANT: " + coolantTemperature + " °F";
                                 valueToInsert = "IAT: " + intakeAirTemperature + " °F";
                             }
-                            else if (MainForm.units == "metric")
+                            else if (Properties.Settings.Default.Units == "metric")
                             {
                                 string batteryVoltage = Math.Round(payload[0] * 0.125D, 1).ToString("0.0").Replace(",", ".");
                                 string oilPressure = Math.Round(payload[1] * 0.5D * 6.894757D, 1).ToString("0.0").Replace(",", ".");
@@ -1165,12 +1169,12 @@ namespace ChryslerCCDSCIScanner
                     case 0x24: // vehicle speed
                         if (message.Length >= minLength)
                         {
-                            if (MainForm.units == "imperial")
+                            if (Properties.Settings.Default.Units == "imperial")
                             {
                                 valueToInsert = payload[0].ToString("0");
                                 unitToInsert = "MPH";
                             }
-                            else if (MainForm.units == "metric")
+                            else if (Properties.Settings.Default.Units == "metric")
                             {
                                 valueToInsert = payload[1].ToString("0");
                                 unitToInsert = "KM/H";
@@ -1406,12 +1410,12 @@ namespace ChryslerCCDSCIScanner
                     case 0x54: // barometric pressure / Temperature
                         if (message.Length >= minLength)
                         {
-                            if (MainForm.units == "imperial")
+                            if (Properties.Settings.Default.Units == "imperial")
                             {
                                 valueToInsert = Math.Round(payload[0] * 0.1217D * 0.49109778D, 1).ToString("0.0").Replace(",", ".") + " | " + Math.Round((payload[1] * 1.8D) - 198.4D).ToString("0");
                                 unitToInsert = "PSI | °F";
                             }
-                            else if (MainForm.units == "metric")
+                            else if (Properties.Settings.Default.Units == "metric")
                             {
                                 valueToInsert = Math.Round(payload[0] * 0.1217D * 25.4D * 0.133322368D, 1).ToString("0.0").Replace(",", ".") + " | " + (payload[1] - 128).ToString("0");
                                 unitToInsert = "KPA | °C";
@@ -1451,12 +1455,12 @@ namespace ChryslerCCDSCIScanner
                     case 0x75: // A/C high side pressure
                         if (message.Length >= minLength)
                         {
-                            if (MainForm.units == "imperial")
+                            if (Properties.Settings.Default.Units == "imperial")
                             {
                                 valueToInsert = Math.Round(payload[0] * 1.961D, 1).ToString("0.0").Replace(",", ".");
                                 unitToInsert = "PSI";
                             }
-                            else if (MainForm.units == "metric")
+                            else if (Properties.Settings.Default.Units == "metric")
                             {
                                 valueToInsert = Math.Round(payload[0] * 1.961D * 6.894757D, 1).ToString("0.0").Replace(",", ".");
                                 unitToInsert = "KPA";
@@ -1476,12 +1480,12 @@ namespace ChryslerCCDSCIScanner
                     case 0x83:
                         if (message.Length >= minLength)
                         {
-                            if (MainForm.units == "imperial") // default unit for this message
+                            if (Properties.Settings.Default.Units == "imperial") // default unit for this message
                             {
                                 valueToInsert = Math.Round(payload[0] - 70.0D).ToString("0");
                                 unitToInsert = "°F";
                             }
-                            else if (MainForm.units == "metric") // manual conversion
+                            else if (Properties.Settings.Default.Units == "metric") // manual conversion
                             {
                                 valueToInsert = Math.Round(((payload[0] - 70.0D) - 32) / 1.8D).ToString("0");
                                 unitToInsert = "°C";
@@ -1508,12 +1512,12 @@ namespace ChryslerCCDSCIScanner
                     case 0x84: // PCM to BCM message: increment odometer/tripmeter
                         if (message.Length >= minLength)
                         {
-                            if (MainForm.units == "imperial")
+                            if (Properties.Settings.Default.Units == "imperial")
                             {
                                 valueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | " + Math.Round(payload[1] * 0.000125D, 6).ToString("0.000000").Replace(",", ".");
                                 unitToInsert = "N/A | MI";
                             }
-                            else if (MainForm.units == "metric")
+                            else if (Properties.Settings.Default.Units == "metric")
                             {
                                 valueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | " + Math.Round(payload[1] * 0.000125D * 1.609344D, 6).ToString("0.000000").Replace(",", ".");
                                 unitToInsert = "N/A | KM";
@@ -1540,12 +1544,12 @@ namespace ChryslerCCDSCIScanner
                     case 0x8C: // coolant  temperature, intake air temperature
                         if (message.Length >= minLength)
                         {
-                            if (MainForm.units == "imperial")
+                            if (Properties.Settings.Default.Units == "imperial")
                             {
                                 valueToInsert = Math.Round((payload[0] * 1.8D) - 198.4D).ToString("0") + " | " + Math.Round((payload[1] * 1.8D) - 198.4D).ToString("0");
                                 unitToInsert = "°F | °F";
                             }
-                            else if (MainForm.units == "metric")
+                            else if (Properties.Settings.Default.Units == "metric")
                             {
                                 valueToInsert = (payload[0] - 128).ToString("0") + " | " + (payload[1] - 128).ToString("0");
                                 unitToInsert = "°C | °C";
@@ -2332,6 +2336,22 @@ namespace ChryslerCCDSCIScanner
 
                                             switch (payload[2])
                                             {
+                                                case 0x0B: // LR Clutch Volume Index (CVI)
+                                                    transmissionLRCVIRequested = true;
+                                                    descriptionToInsert = "REQUEST  | TCM | LR CLUTCH VOLUME INDEX (CVI)";
+                                                    break;
+                                                case 0x0C: // 24 CVI
+                                                    transmission24CVIRequested = true;
+                                                    descriptionToInsert = "REQUEST  | TCM | 24 CLUTCH VOLUME INDEX (CVI)";
+                                                    break;
+                                                case 0x0D: // OD CVI
+                                                    transmissionODCVIRequested = true;
+                                                    descriptionToInsert = "REQUEST  | TCM | OD CLUTCH VOLUME INDEX (CVI)";
+                                                    break;
+                                                case 0x0E: // UD CVI
+                                                    transmissionUDCVIRequested = true;
+                                                    descriptionToInsert = "REQUEST  | TCM | UD CLUTCH VOLUME INDEX (CVI)";
+                                                    break;
                                                 case 0x10: // transmission temperature
                                                     transmissionTemperatureRequested = true;
                                                     descriptionToInsert = "REQUEST  | TCM | TRANSMISSION TEMPERATURE";
@@ -2496,7 +2516,7 @@ namespace ChryslerCCDSCIScanner
                     case 0xC4: // vehicle speed sensor
                         if (message.Length >= minLength)
                         {
-                            if (MainForm.units == "imperial")
+                            if (Properties.Settings.Default.Units == "imperial")
                             {
                                 if ((payload[0] != 0xFF) && (payload[1] != 0xFF))
                                 {
@@ -2509,7 +2529,7 @@ namespace ChryslerCCDSCIScanner
 
                                 unitToInsert = "MPH";
                             }
-                            else if (MainForm.units == "metric")
+                            else if (Properties.Settings.Default.Units == "metric")
                             {
                                 if ((payload[0] != 0xFF) && (payload[1] != 0xFF))
                                 {
@@ -2615,12 +2635,12 @@ namespace ChryslerCCDSCIScanner
                     case 0xCE: // vehicle distance / odometer
                         if (message.Length >= minLength)
                         {
-                            if (MainForm.units == "imperial")
+                            if (Properties.Settings.Default.Units == "imperial")
                             {
                                 valueToInsert = Math.Round((UInt32)(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]) * 0.000125D, 3).ToString("0.000").Replace(",", ".");
                                 unitToInsert = "MILE";
                             }
-                            else if (MainForm.units == "metric")
+                            else if (Properties.Settings.Default.Units == "metric")
                             {
                                 valueToInsert = Math.Round((UInt32)(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]) * 0.000125D * 1.609344D, 3).ToString("0.000").Replace(",", ".");
                                 unitToInsert = "KILOMETER";
@@ -2702,12 +2722,12 @@ namespace ChryslerCCDSCIScanner
                     case 0xE4: // engine speed (RPM) / intake manifold absolute pressure (MAP)
                         if (message.Length >= minLength)
                         {
-                            if (MainForm.units == "imperial")
+                            if (Properties.Settings.Default.Units == "imperial")
                             {
                                 valueToInsert = (payload[0] * 32D).ToString("0") + " | " + Math.Round(payload[1] * 0.1217D * 0.49109778D, 1).ToString("0.0").Replace(",", ".");
                                 unitToInsert = "RPM | PSI";
                             }
-                            else if (MainForm.units == "metric")
+                            else if (Properties.Settings.Default.Units == "metric")
                             {
                                 valueToInsert = (payload[0] * 32D).ToString("0") + " | " + Math.Round(payload[1] * 0.1217D * 25.4D * 0.133322368D, 1).ToString("0.0").Replace(",", ".");
                                 unitToInsert = "RPM | KPA";
@@ -2780,12 +2800,12 @@ namespace ChryslerCCDSCIScanner
                     case 0xEE: // trip distance, tripmeter
                         if (message.Length >= minLength)
                         {
-                            if (MainForm.units == "imperial")
+                            if (Properties.Settings.Default.Units == "imperial")
                             {
                                 valueToInsert = Math.Round((UInt32)(payload[0] << 16 | payload[1] << 8 | payload[2]) * 0.016D, 3).ToString("0.000").Replace(",", ".");
                                 unitToInsert = "MILE";
                             }
-                            else if (MainForm.units == "metric")
+                            else if (Properties.Settings.Default.Units == "metric")
                             {
                                 valueToInsert = Math.Round((UInt32)(payload[0] << 16 | payload[1] << 8 | payload[2]) * 0.016D * 1.609344D, 3).ToString("0.000").Replace(",", ".");
                                 unitToInsert = "KILOMETER";
@@ -3053,12 +3073,12 @@ namespace ChryslerCCDSCIScanner
 
                                                     string temperature = string.Empty;
 
-                                                    if (MainForm.units == "imperial")
+                                                    if (Properties.Settings.Default.Units == "imperial")
                                                     {
                                                         temperature = (payload[3] - 40).ToString("0");
                                                         unitToInsert = "°F";
                                                     }
-                                                    else if (MainForm.units == "metric")
+                                                    else if (Properties.Settings.Default.Units == "metric")
                                                     {
                                                         temperature = Math.Round(((payload[3] - 40) * 0.555556) - 17.77778).ToString("0");
                                                         unitToInsert = "°C";
@@ -3333,36 +3353,128 @@ namespace ChryslerCCDSCIScanner
                                         case 0x24: // read analog parameter
                                             descriptionToInsert = "RESPONSE | TCM | READ ANALOG PARAMETER";
 
+                                            if (transmissionLRCVIRequested)
+                                            {
+                                                transmissionLRCVIRequested = false;
+                                                descriptionToInsert = "RESPONSE | TCM | LR CLUTCH VOLUME INDEX (CVI)";
+
+                                                if (payload[2] != 0xFF)
+                                                {
+                                                    if (Properties.Settings.Default.Units == "imperial")
+                                                    {
+                                                        valueToInsert = payload[2].ToString("0") + " = " + Math.Round(payload[2] / 64.0D, 3).ToString("0.000").Replace(",", ".");
+                                                        unitToInsert = "IN^3";
+                                                    }
+                                                    else if (Properties.Settings.Default.Units == "metric")
+                                                    {
+                                                        valueToInsert = payload[2].ToString("0") + " = " + Math.Round(payload[2] / 64.0D * 16.387064D, 3).ToString("0.000").Replace(",", ".");
+                                                        unitToInsert = "CM^3";
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    valueToInsert = "ERROR";
+                                                    unitToInsert = string.Empty;
+                                                }
+                                            }
+
+                                            if (transmission24CVIRequested)
+                                            {
+                                                transmission24CVIRequested = false;
+                                                descriptionToInsert = "RESPONSE | TCM | 24 CLUTCH VOLUME INDEX (CVI)";
+
+                                                if (payload[2] != 0xFF)
+                                                {
+                                                    if (Properties.Settings.Default.Units == "imperial")
+                                                    {
+                                                        valueToInsert = payload[2].ToString("0") + " = " + Math.Round(payload[2] / 64.0D, 3).ToString("0.000").Replace(",", ".");
+                                                        unitToInsert = "IN^3";
+                                                    }
+                                                    else if (Properties.Settings.Default.Units == "metric")
+                                                    {
+                                                        valueToInsert = payload[2].ToString("0") + " = " + Math.Round(payload[2] / 64.0D * 16.387064D, 3).ToString("0.000").Replace(",", ".");
+                                                        unitToInsert = "CM^3";
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    valueToInsert = "ERROR";
+                                                    unitToInsert = string.Empty;
+                                                }
+                                            }
+
+                                            if (transmissionODCVIRequested)
+                                            {
+                                                transmissionODCVIRequested = false;
+                                                descriptionToInsert = "RESPONSE | TCM | OD CLUTCH VOLUME INDEX (CVI)";
+
+                                                if (payload[2] != 0xFF)
+                                                {
+                                                    if (Properties.Settings.Default.Units == "imperial")
+                                                    {
+                                                        valueToInsert = payload[2].ToString("0") + " = " + Math.Round(payload[2] / 64.0D, 3).ToString("0.000").Replace(",", ".");
+                                                        unitToInsert = "IN^3";
+                                                    }
+                                                    else if (Properties.Settings.Default.Units == "metric")
+                                                    {
+                                                        valueToInsert = payload[2].ToString("0") + " = " + Math.Round(payload[2] / 64.0D * 16.387064D, 3).ToString("0.000").Replace(",", ".");
+                                                        unitToInsert = "CM^3";
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    valueToInsert = "ERROR";
+                                                    unitToInsert = string.Empty;
+                                                }
+                                            }
+
+                                            if (transmissionUDCVIRequested)
+                                            {
+                                                transmissionUDCVIRequested = false;
+                                                descriptionToInsert = "RESPONSE | TCM | UD CLUTCH VOLUME INDEX (CVI)";
+
+                                                if (payload[2] != 0xFF)
+                                                {
+                                                    if (Properties.Settings.Default.Units == "imperial")
+                                                    {
+                                                        valueToInsert = payload[2].ToString("0") + " = " + Math.Round(payload[2] / 64.0D, 3).ToString("0.000").Replace(",", ".");
+                                                        unitToInsert = "IN^3";
+                                                    }
+                                                    else if (Properties.Settings.Default.Units == "metric")
+                                                    {
+                                                        valueToInsert = payload[2].ToString("0") + " = " + Math.Round(payload[2] / 64.0D * 16.387064D, 3).ToString("0.000").Replace(",", ".");
+                                                        unitToInsert = "CM^3";
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    valueToInsert = "ERROR";
+                                                    unitToInsert = string.Empty;
+                                                }
+                                            }
+
                                             if (transmissionTemperatureRequested)
                                             {
                                                 transmissionTemperatureRequested = false;
                                                 descriptionToInsert = "RESPONSE | TCM | TRANSMISSION TEMPERATURE";
 
-                                                if (MainForm.units == "imperial")
+                                                if (payload[2] != 0xFF)
                                                 {
-                                                    if (payload[2] != 0xFF)
+                                                    if (Properties.Settings.Default.Units == "imperial")
                                                     {
                                                         valueToInsert = Math.Round(((payload[2] << 8) + payload[3]) * 0.0156D, 1).ToString("0.0").Replace(",", ".");
                                                         unitToInsert = "°F";
                                                     }
-                                                    else
-                                                    {
-                                                        valueToInsert = "ERROR";
-                                                        unitToInsert = string.Empty;
-                                                    }
-                                                }
-                                                else if (MainForm.units == "metric")
-                                                {
-                                                    if (payload[2] != 0xFF)
+                                                    else if (Properties.Settings.Default.Units == "metric")
                                                     {
                                                         valueToInsert = Math.Round((((payload[2] << 8) + payload[3]) * 0.0156D * 0.555556D) - 17.77778D, 1).ToString("0.0").Replace(",", ".");
                                                         unitToInsert = "°C";
                                                     }
-                                                    else
-                                                    {
-                                                        valueToInsert = "ERROR";
-                                                        unitToInsert = string.Empty;
-                                                    }
+                                                }
+                                                else
+                                                {
+                                                    valueToInsert = "ERROR";
+                                                    unitToInsert = string.Empty;
                                                 }
                                             }
 

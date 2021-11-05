@@ -28,8 +28,8 @@ namespace ChryslerCCDSCIScanner
         public string selectedPort = string.Empty;
         public bool timeout = false;
         public bool deviceFound = false;
-        public const int intEEPROMsize = 4096;
-        public const int extEEPROMsize = 4096;
+        public const uint intEEPROMsize = 4096;
+        public const uint extEEPROMsize = 4096;
 
         public static string USBTextLogFilename;
         public static string USBBinaryLogFilename;
@@ -50,7 +50,6 @@ namespace ChryslerCCDSCIScanner
         public int lastPCMScrollBarPosition = 0;
         public int lastTCMScrollBarPosition = 0;
 
-        public static string units = string.Empty;
         public static bool includeTimestampInLogFiles = false;
         public static ushort tableRefreshRate = 0;
 
@@ -161,13 +160,11 @@ namespace ChryslerCCDSCIScanner
             {
                 MetricUnitsToolStripMenuItem.Checked = true;
                 ImperialUnitsToolStripMenuItem.Checked = false;
-                units = "metric";
             }
             else if (Properties.Settings.Default.Units == "imperial")
             {
                 MetricUnitsToolStripMenuItem.Checked = false;
                 ImperialUnitsToolStripMenuItem.Checked = true;
-                units = "imperial";
             }
 
             if (Properties.Settings.Default.Timestamp == true)
@@ -1593,59 +1590,14 @@ namespace ChryslerCCDSCIScanner
                                     {
                                         if (Packet.rx.payload[0] == 0x00) // OK
                                         {
-                                            string offset = Util.ByteToHexString(Packet.rx.payload, 1, 2);
-                                            string values = Util.ByteToHexString(Packet.rx.payload, 3, Packet.rx.payload.Length - 3);
-                                            string count = (Packet.rx.payload.Length - 3).ToString();
-
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM block read response:", Packet.rx.buffer);
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] Internal EEPROM block information:" + Environment.NewLine +
-                                                                           "       Offset: " + offset + " | Count: " + count + Environment.NewLine + values);
-                                        }
-                                        else // error
-                                        {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM block read error:", Packet.rx.buffer);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.DebugMode.readExtEEPROMbyte:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 3))
-                                    {
-                                        if (Packet.rx.payload[0] == 0x00) // OK
-                                        {
-                                            string offset = Util.ByteToHexString(Packet.rx.payload, 1, 2);
-                                            string value = Util.ByteToHexString(Packet.rx.payload, 3, 1);
-
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM byte read response:", Packet.rx.buffer);
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM byte information:" + Environment.NewLine +
-                                                                           "       Offset: " + offset + " | Value: " + value);
-                                        }
-                                        else // error
-                                        {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM byte read error:", Packet.rx.buffer);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.DebugMode.readExtEEPROMblock:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 4))
-                                    {
-                                        if (Packet.rx.payload[0] == 0x00) // OK
-                                        {
                                             int start = (Packet.rx.payload[1] << 8) + Packet.rx.payload[2];
                                             int length = Packet.rx.payload.Length - 3;
                                             string offset = Util.ByteToHexString(Packet.rx.payload, 1, 2);
                                             string values = Util.ByteToHexString(Packet.rx.payload, 3, Packet.rx.payload.Length - 3);
                                             string count = length.ToString();
 
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM block read response:", Packet.rx.buffer);
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM block information:" + Environment.NewLine +
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM block read response:", Packet.rx.buffer);
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Internal EEPROM block information:" + Environment.NewLine +
                                                                            "       Offset: " + offset + " | Count: " + count + Environment.NewLine + values);
 
                                             if ((start == 0) && (length == 256))
@@ -1717,9 +1669,55 @@ namespace ChryslerCCDSCIScanner
                                                                                "       LED blink:     " + Util.ByteToHexString(Packet.rx.payload, 36, 2) + " | " + LEDBlinkDuration + Environment.NewLine +
                                                                                "       CCD settings:     " + Util.ByteToHexString(Packet.rx.payload, 38, 1) + Environment.NewLine +
                                                                                "       PCM settings:     " + Util.ByteToHexString(Packet.rx.payload, 39, 1) + Environment.NewLine +
-                                                                               "       TCM settings:     " + Util.ByteToHexString(Packet.rx.payload, 40, 1) + Environment.NewLine +
-                                                                               "       Checksum:         " + Util.ByteToHexString(Packet.rx.payload, 258, 1));
+                                                                               "       TCM settings:     " + Util.ByteToHexString(Packet.rx.payload, 40, 1));
                                             }
+                                        }
+                                        else // error
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM block read error:", Packet.rx.buffer);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", Packet.rx.buffer);
+                                    }
+                                    break;
+                                case (byte)Packet.DebugMode.readExtEEPROMbyte:
+                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 3))
+                                    {
+                                        if (Packet.rx.payload[0] == 0x00) // OK
+                                        {
+                                            string offset = Util.ByteToHexString(Packet.rx.payload, 1, 2);
+                                            string value = Util.ByteToHexString(Packet.rx.payload, 3, 1);
+
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM byte read response:", Packet.rx.buffer);
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM byte information:" + Environment.NewLine +
+                                                                           "       Offset: " + offset + " | Value: " + value);
+                                        }
+                                        else // error
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM byte read error:", Packet.rx.buffer);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", Packet.rx.buffer);
+                                    }
+                                    break;
+                                case (byte)Packet.DebugMode.readExtEEPROMblock:
+                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 4))
+                                    {
+                                        if (Packet.rx.payload[0] == 0x00) // OK
+                                        {
+                                            int start = (Packet.rx.payload[1] << 8) + Packet.rx.payload[2];
+                                            int length = Packet.rx.payload.Length - 3;
+                                            string offset = Util.ByteToHexString(Packet.rx.payload, 1, 2);
+                                            string values = Util.ByteToHexString(Packet.rx.payload, 3, Packet.rx.payload.Length - 3);
+                                            string count = length.ToString();
+
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM block read response:", Packet.rx.buffer);
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM block information:" + Environment.NewLine +
+                                                                           "       Offset: " + offset + " | Count: " + count + Environment.NewLine + values);
                                         }
                                         else // error
                                         {
@@ -2296,6 +2294,8 @@ namespace ChryslerCCDSCIScanner
 
                     while (ConnectionCounter < 5) // try connecting to the scanner 5 times before giving up
                     {
+                        Thread.Sleep(1);
+
                         if (Packet.Serial.IsOpen) Packet.Serial.Close(); // can't overwrite fields if serial port is open
                         Packet.Serial.PortName = COMPortsComboBox.Text;
                         Packet.Serial.BaudRate = 250000;
@@ -2333,6 +2333,8 @@ namespace ChryslerCCDSCIScanner
 
                             while (!timeout && !deviceFound)
                             {
+                                Thread.Sleep(1);
+                                
                                 if (Packet.Serial.BytesToRead == Packet.expectedHandshake.Length)
                                 {
                                     try
@@ -2363,6 +2365,7 @@ namespace ChryslerCCDSCIScanner
                                         DeviceCCDSCILCDTabControl.Enabled = true;
                                         DiagnosticsGroupBox.Enabled = true;
                                         ReadMemoryToolStripMenuItem.Enabled = true;
+                                        WriteMemoryToolStripMenuItem.Enabled = true;
                                         Packet.PacketReceived += AnalyzePacket; // subscribe to the OnPacketReceived event
                                         CCD.Diagnostics.TableUpdated += UpdateCCDTable; // subscribe to the CCD-bus OnTableUpdated event
                                         PCM.Diagnostics.TableUpdated += UpdateSCIPCMTable; // subscribe to the SCI-bus (PCM) OnTableUpdated event
@@ -2420,6 +2423,7 @@ namespace ChryslerCCDSCIScanner
                         DeviceCCDSCILCDTabControl.Enabled = false;
                         DiagnosticsGroupBox.Enabled = false;
                         ReadMemoryToolStripMenuItem.Enabled = false;
+                        WriteMemoryToolStripMenuItem.Enabled = false;
                         deviceFound = false;
                         timeout = false;
                         Util.UpdateTextBox(USBTextBox, "[INFO] Device disconnected (" + Packet.Serial.PortName + ").");
@@ -4522,8 +4526,8 @@ namespace ChryslerCCDSCIScanner
             }
 
             byte LCDUnits;
-            if (units == "imperial") LCDUnits = 0;
-            else if (units == "metric") LCDUnits = 1;
+            if (Properties.Settings.Default.Units == "imperial") LCDUnits = 0;
+            else if (Properties.Settings.Default.Units == "metric") LCDUnits = 1;
             else LCDUnits = 0;
 
             byte LCDDataSource = (byte)(LCDDataSourceComboBox.SelectedIndex + 1);
@@ -4559,14 +4563,14 @@ namespace ChryslerCCDSCIScanner
                         LCDPreviewTextBox.Clear();
                         LCDPreviewTextBox.AppendText("--------------------" + Environment.NewLine);
                         LCDPreviewTextBox.AppendText("  CHRYSLER CCD/SCI  " + Environment.NewLine);
-                        LCDPreviewTextBox.AppendText("   SCANNER V1.4X    " + Environment.NewLine);
+                        LCDPreviewTextBox.AppendText("   SCANNER VX.XX    " + Environment.NewLine);
                         LCDPreviewTextBox.AppendText("--------------------");
                     }
                     else if ((LCDWidthTextBox.Text == "16") && (LCDHeightTextBox.Text == "2"))
                     {
                         LCDPreviewTextBox.Clear();
                         LCDPreviewTextBox.AppendText("CHRYSLER CCD/SCI" + Environment.NewLine);
-                        LCDPreviewTextBox.AppendText(" SCANNER V1.4X  ");
+                        LCDPreviewTextBox.AppendText(" SCANNER VX.XX  ");
                     }
                     else
                     {
@@ -4577,7 +4581,7 @@ namespace ChryslerCCDSCIScanner
                 case 1: // enabled
                     if ((LCDWidthTextBox.Text == "20") && (LCDHeightTextBox.Text == "4"))
                     {
-                        if (units == "imperial")
+                        if (Properties.Settings.Default.Units == "imperial")
                         {
                             LCDPreviewTextBox.Clear();
                             LCDPreviewTextBox.AppendText("  0mph     0rpm   0%" + Environment.NewLine);
@@ -4585,7 +4589,7 @@ namespace ChryslerCCDSCIScanner
                             LCDPreviewTextBox.AppendText(" 0.0/ 0.0V          " + Environment.NewLine);
                             LCDPreviewTextBox.AppendText("     0.000mi        ");
                         }
-                        else if (units == "metric")
+                        else if (Properties.Settings.Default.Units == "metric")
                         {
                             LCDPreviewTextBox.Clear();
                             LCDPreviewTextBox.AppendText("  0km/h    0rpm   0%" + Environment.NewLine);
@@ -4596,13 +4600,13 @@ namespace ChryslerCCDSCIScanner
                     }
                     else if ((LCDWidthTextBox.Text == "16") && (LCDHeightTextBox.Text == "2"))
                     {
-                        if (units == "imperial")
+                        if (Properties.Settings.Default.Units == "imperial")
                         {
                             LCDPreviewTextBox.Clear();
                             LCDPreviewTextBox.AppendText("  0mph      0rpm" + Environment.NewLine);
                             LCDPreviewTextBox.AppendText("  0°F     0.0psi");
                         }
-                        else if (units == "metric")
+                        else if (Properties.Settings.Default.Units == "metric")
                         {
                             LCDPreviewTextBox.Clear();
                             LCDPreviewTextBox.AppendText("  0km/h     0rpm" + Environment.NewLine);
@@ -4654,6 +4658,8 @@ namespace ChryslerCCDSCIScanner
                     {
                         while (!done)
                         {
+                            Thread.Sleep(1);
+                            
                             line = reader.ReadLine();
 
                             if (line != null)
@@ -4736,6 +4742,8 @@ namespace ChryslerCCDSCIScanner
                     {
                         while (!done)
                         {
+                            Thread.Sleep(1);
+                            
                             line = reader.ReadLine();
 
                             if (line != null)
@@ -4887,7 +4895,8 @@ namespace ChryslerCCDSCIScanner
 
             Properties.Settings.Default.Units = "metric";
             Properties.Settings.Default.Save(); // save setting in application configuration file
-            units = "metric";
+
+            if (WriteMemory != null) WriteMemory.UpdateMileageUnit();
         }
 
         private void ImperialUnitsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -4897,7 +4906,8 @@ namespace ChryslerCCDSCIScanner
 
             Properties.Settings.Default.Units = "imperial";
             Properties.Settings.Default.Save(); // save setting in application configuration file
-            units = "imperial";
+
+            if (WriteMemory != null) WriteMemory.UpdateMileageUnit();
         }
 
         private void IncludeTimestampInLogFilesToolStripMenuItem_Click(object sender, EventArgs e)
@@ -4942,5 +4952,10 @@ namespace ChryslerCCDSCIScanner
         }
 
         #endregion
+    }
+
+    public static class StringExt
+    {
+        public static bool IsNumeric(this string text) => double.TryParse(text, out _);
     }
 }

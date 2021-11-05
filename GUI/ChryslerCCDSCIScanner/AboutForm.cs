@@ -7,21 +7,21 @@ namespace ChryslerCCDSCIScanner
 {
     public partial class AboutForm : Form
     {
-        public MainForm originalForm;
+        public MainForm OriginalForm;
 
-        public AboutForm(MainForm incomingForm)
+        public AboutForm(MainForm IncomingForm)
         {
-            originalForm = incomingForm;
+            OriginalForm = IncomingForm;
             InitializeComponent();
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
             GUIFWHWVersionLabel.Text = "GUI v" + Assembly.GetExecutingAssembly().GetName().Version.ToString(3) + "   |   FW ";
 
-            if (originalForm.FWVersion != String.Empty) GUIFWHWVersionLabel.Text += originalForm.FWVersion;
+            if (OriginalForm.FWVersion != string.Empty) GUIFWHWVersionLabel.Text += OriginalForm.FWVersion;
             else GUIFWHWVersionLabel.Text += "N/A";
 
             GUIFWHWVersionLabel.Text += "   |   HW ";
 
-            if (originalForm.HWVersion != String.Empty) GUIFWHWVersionLabel.Text += originalForm.HWVersion;
+            if (OriginalForm.HWVersion != string.Empty) GUIFWHWVersionLabel.Text += OriginalForm.HWVersion;
             else GUIFWHWVersionLabel.Text += "N/A";
         }
 

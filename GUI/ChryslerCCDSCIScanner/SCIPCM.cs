@@ -2143,12 +2143,12 @@ namespace ChryslerCCDSCIScanner
                                     case 0x05: // engine coolant temperature
                                         descriptionToInsert = "ENGINE COOLANT TEMPERATURE";
 
-                                        if (MainForm.units == "imperial")
+                                        if (Properties.Settings.Default.Units == "imperial")
                                         {
                                             valueToInsert = Math.Round((payload[1] * 1.8D) - 198.4D).ToString("0");
                                             unitToInsert = "°F";
                                         }
-                                        else if (MainForm.units == "metric")
+                                        else if (Properties.Settings.Default.Units == "metric")
                                         {
                                             valueToInsert = (payload[1] - 128).ToString("0");
                                             unitToInsert = "°C";
@@ -2182,12 +2182,12 @@ namespace ChryslerCCDSCIScanner
                                     case 0x0B: // map value
                                         descriptionToInsert = "INTAKE MANIFOLD ABSOLUTE PRESSURE (MAP)";
 
-                                        if (MainForm.units == "imperial")
+                                        if (Properties.Settings.Default.Units == "imperial")
                                         {
                                             valueToInsert = Math.Round(payload[1] * 0.059756D, 1).ToString("0.0").Replace(",", ".");
                                             unitToInsert = "PSI";
                                         }
-                                        else if (MainForm.units == "metric")
+                                        else if (Properties.Settings.Default.Units == "metric")
                                         {
                                             valueToInsert = Math.Round(payload[1] * 0.059756D * 6.894757D, 1).ToString("0.0").Replace(",", ".");
                                             unitToInsert = "KPA";
@@ -2207,12 +2207,12 @@ namespace ChryslerCCDSCIScanner
                                     case 0x0F: // barometric pressure sensor
                                         descriptionToInsert = "BAROMETRIC PRESSURE";
 
-                                        if (MainForm.units == "imperial")
+                                        if (Properties.Settings.Default.Units == "imperial")
                                         {
                                             valueToInsert = Math.Round(payload[1] * 0.059756D, 1).ToString("0.0").Replace(",", ".");
                                             unitToInsert = "PSI";
                                         }
-                                        else if (MainForm.units == "metric")
+                                        else if (Properties.Settings.Default.Units == "metric")
                                         {
                                             valueToInsert = Math.Round(payload[1] * 0.059756D * 6.894757D, 1).ToString("0.0").Replace(",", ".");
                                             unitToInsert = "KPA";
@@ -2273,12 +2273,12 @@ namespace ChryslerCCDSCIScanner
                                     case 0x1A: // target boost
                                         descriptionToInsert = "TARGET BOOST";
 
-                                        if (MainForm.units == "imperial")
+                                        if (Properties.Settings.Default.Units == "imperial")
                                         {
                                             valueToInsert = Math.Round(payload[1] * 0.115294117D, 1).ToString("0.0").Replace(",", ".");
                                             unitToInsert = "PSI";
                                         }
-                                        else if (MainForm.units == "metric")
+                                        else if (Properties.Settings.Default.Units == "metric")
                                         {
                                             valueToInsert = Math.Round((payload[1] * 0.115294117D) * 6.89475729D, 1).ToString("0.0").Replace(",", ".");
                                             unitToInsert = "KPA";
@@ -2465,12 +2465,12 @@ namespace ChryslerCCDSCIScanner
                                     case 0x33: // A/C high side pressure
                                         descriptionToInsert = "A/C HIGH SIDE PRESSURE SENSOR";
 
-                                        if (MainForm.units == "imperial")
+                                        if (Properties.Settings.Default.Units == "imperial")
                                         {
                                             valueToInsert = Math.Round(payload[1] * 1.961D, 1).ToString("0.0").Replace(",", ".");
                                             unitToInsert = "PSI";
                                         }
-                                        else if (MainForm.units == "metric")
+                                        else if (Properties.Settings.Default.Units == "metric")
                                         {
                                             valueToInsert = Math.Round(payload[1] * 1.961D * 6.894757D, 1).ToString("0.0").Replace(",", ".");
                                             unitToInsert = "KPA";
@@ -2490,12 +2490,12 @@ namespace ChryslerCCDSCIScanner
                                     case 0x41: // vehicle speed
                                         descriptionToInsert = "VEHICLE SPEED";
 
-                                        if (MainForm.units == "imperial")
+                                        if (Properties.Settings.Default.Units == "imperial")
                                         {
                                             valueToInsert = Math.Round(payload[1] / 2.0D).ToString("0");
                                             unitToInsert = "MPH";
                                         }
-                                        else if (MainForm.units == "metric")
+                                        else if (Properties.Settings.Default.Units == "metric")
                                         {
                                             valueToInsert = Math.Round(payload[1] / 2.0D * 1.609344D).ToString("0");
                                             unitToInsert = "KM/H";
@@ -2557,12 +2557,12 @@ namespace ChryslerCCDSCIScanner
                                     case 0x4F: // fuel level
                                         descriptionToInsert = "FUEL LEVEL";
 
-                                        if (MainForm.units == "imperial")
+                                        if (Properties.Settings.Default.Units == "imperial")
                                         {
                                             valueToInsert = Math.Round(payload[1] * 0.125D, 1).ToString("0.0").Replace(",", ".");
                                             unitToInsert = "GALLON";
                                         }
-                                        else if (MainForm.units == "metric")
+                                        else if (Properties.Settings.Default.Units == "metric")
                                         {
                                             valueToInsert = Math.Round(payload[1] * 0.125D * 3.785412D, 1).ToString("0.0").Replace(",", ".");
                                             unitToInsert = "LITER";
@@ -2602,12 +2602,12 @@ namespace ChryslerCCDSCIScanner
                                     case 0x7D: // oil temperature sensor
                                         descriptionToInsert = "OIL TEMPERATURE SENSOR";
 
-                                        if (MainForm.units == "imperial")
+                                        if (Properties.Settings.Default.Units == "imperial")
                                         {
                                             valueToInsert = Math.Round((payload[1] * 1.8D) - 83.2D).ToString("0");
                                             unitToInsert = "°F";
                                         }
-                                        else if (MainForm.units == "metric")
+                                        else if (Properties.Settings.Default.Units == "metric")
                                         {
                                             valueToInsert = (payload[1] - 64).ToString("0");
                                             unitToInsert = "°C";
@@ -2674,7 +2674,7 @@ namespace ChryslerCCDSCIScanner
                         case 0x18: // control ASD relay
                             if (message.Length >= minLength)
                             {
-                                valueToInsert = "RESULT=" + Util.ByteToHexString(payload, 2, 1); ;
+                                valueToInsert = "RESULT=" + Util.ByteToHexString(payload, 1, 1);
                             }
                             else // error
                             {
@@ -3964,12 +3964,12 @@ namespace ChryslerCCDSCIScanner
 
                                         if ((payload.Length >= 4) && (payload[2] == 0x0D))
                                         {
-                                            if (MainForm.units == "imperial")
+                                            if (Properties.Settings.Default.Units == "imperial")
                                             {
                                                 valueToInsert = Math.Round(((payload[1] << 8) + payload[3]) * 0.0156D, 3).ToString("0.000").Replace(",", ".");
                                                 unitToInsert = "MPH";
                                             }
-                                            else if (MainForm.units == "metric")
+                                            else if (Properties.Settings.Default.Units == "metric")
                                             {
                                                 valueToInsert = Math.Round(((payload[1] << 8) + payload[3]) * 0.0156D * 1.609344D, 3).ToString("0.000").Replace(",", ".");
                                                 unitToInsert = "KM/H";
@@ -4050,12 +4050,12 @@ namespace ChryslerCCDSCIScanner
 
                                         if (payload.Length >= 2)
                                         {
-                                            if (MainForm.units == "imperial")
+                                            if (Properties.Settings.Default.Units == "imperial")
                                             {
                                                 valueToInsert = Math.Round((payload[1] * 1.8D) - 198.4D).ToString("0");
                                                 unitToInsert = "°F";
                                             }
-                                            else if (MainForm.units == "metric")
+                                            else if (Properties.Settings.Default.Units == "metric")
                                             {
                                                 valueToInsert = (payload[1] - 128).ToString("0");
                                                 unitToInsert = "°C";
@@ -4128,12 +4128,12 @@ namespace ChryslerCCDSCIScanner
 
                                         if (payload.Length >= 2)
                                         {
-                                            if (MainForm.units == "imperial")
+                                            if (Properties.Settings.Default.Units == "imperial")
                                             {
                                                 valueToInsert = Math.Round((payload[1] * 1.8D) - 198.4D).ToString("0");
                                                 unitToInsert = "°F";
                                             }
-                                            else if (MainForm.units == "metric")
+                                            else if (Properties.Settings.Default.Units == "metric")
                                             {
                                                 valueToInsert = (payload[1] - 128).ToString("0");
                                                 unitToInsert = "°C";
@@ -4206,12 +4206,12 @@ namespace ChryslerCCDSCIScanner
 
                                         if (payload.Length >= 2)
                                         {
-                                            if (MainForm.units == "imperial")
+                                            if (Properties.Settings.Default.Units == "imperial")
                                             {
                                                 valueToInsert = Math.Round(payload[1] / 2.0D, 1).ToString("0.0").Replace(",", ".");
                                                 unitToInsert = "MPH";
                                             }
-                                            else if (MainForm.units == "metric")
+                                            else if (Properties.Settings.Default.Units == "metric")
                                             {
                                                 valueToInsert = Math.Round((payload[1] / 2.0D) * 1.609344D, 1).ToString("0.0").Replace(",", ".");
                                                 unitToInsert = "KM/H";

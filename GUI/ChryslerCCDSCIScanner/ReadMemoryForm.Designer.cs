@@ -49,9 +49,10 @@ namespace ChryslerCCDSCIScanner
             this.CCDBusReadMemoryCommandLabel = new System.Windows.Forms.Label();
             this.CCDBusReadMemoryCommandTextBox = new System.Windows.Forms.TextBox();
             this.CCDBusReadMemoryModuleLabel = new System.Windows.Forms.Label();
-            this.CCDBusReadMemoryTargetModuleTextBox = new System.Windows.Forms.TextBox();
+            this.CCDBusReadMemoryModuleTextBox = new System.Windows.Forms.TextBox();
             this.CCDBusReadMemoryInitializeSessionButton = new System.Windows.Forms.Button();
             this.SCIBusPCMTabPage = new System.Windows.Forms.TabPage();
+            this.SCIBusPCMReadMemoryPresetComboBox = new System.Windows.Forms.ComboBox();
             this.SCIBusPCMReadMemoryHelpButton = new System.Windows.Forms.Button();
             this.SCIBusPCMReadMemoryProgressLabel = new System.Windows.Forms.Label();
             this.SCIBusPCMReadMemoryInfoTextBox = new System.Windows.Forms.TextBox();
@@ -69,8 +70,7 @@ namespace ChryslerCCDSCIScanner
             this.SCIBusPCMReadMemoryStartOffsetTextBox = new System.Windows.Forms.TextBox();
             this.SCIBusPCMReadMemoryCommandLabel = new System.Windows.Forms.Label();
             this.SCIBusPCMReadMemoryCommandTextBox = new System.Windows.Forms.TextBox();
-            this.SCIBusPCMReadMemoryModuleLabel = new System.Windows.Forms.Label();
-            this.SCIBusPCMReadMemoryTargetModuleTextBox = new System.Windows.Forms.TextBox();
+            this.SCIBusPCMReadMemoryPresetLabel = new System.Windows.Forms.Label();
             this.SCIBusPCMReadMemoryInitializeSessionButton = new System.Windows.Forms.Button();
             this.ReadMemoryTabControl.SuspendLayout();
             this.CCDBusTabPage.SuspendLayout();
@@ -108,7 +108,7 @@ namespace ChryslerCCDSCIScanner
             this.CCDBusTabPage.Controls.Add(this.CCDBusReadMemoryCommandLabel);
             this.CCDBusTabPage.Controls.Add(this.CCDBusReadMemoryCommandTextBox);
             this.CCDBusTabPage.Controls.Add(this.CCDBusReadMemoryModuleLabel);
-            this.CCDBusTabPage.Controls.Add(this.CCDBusReadMemoryTargetModuleTextBox);
+            this.CCDBusTabPage.Controls.Add(this.CCDBusReadMemoryModuleTextBox);
             this.CCDBusTabPage.Controls.Add(this.CCDBusReadMemoryInitializeSessionButton);
             this.CCDBusTabPage.Location = new System.Drawing.Point(4, 22);
             this.CCDBusTabPage.Name = "CCDBusTabPage";
@@ -291,14 +291,14 @@ namespace ChryslerCCDSCIScanner
             this.CCDBusReadMemoryModuleLabel.TabIndex = 2;
             this.CCDBusReadMemoryModuleLabel.Text = "Module:";
             // 
-            // CCDBusReadMemoryTargetModuleTextBox
+            // CCDBusReadMemoryModuleTextBox
             // 
-            this.CCDBusReadMemoryTargetModuleTextBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
-            this.CCDBusReadMemoryTargetModuleTextBox.Location = new System.Drawing.Point(78, 9);
-            this.CCDBusReadMemoryTargetModuleTextBox.Name = "CCDBusReadMemoryTargetModuleTextBox";
-            this.CCDBusReadMemoryTargetModuleTextBox.Size = new System.Drawing.Size(27, 21);
-            this.CCDBusReadMemoryTargetModuleTextBox.TabIndex = 3;
-            this.CCDBusReadMemoryTargetModuleTextBox.Text = "20";
+            this.CCDBusReadMemoryModuleTextBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.CCDBusReadMemoryModuleTextBox.Location = new System.Drawing.Point(78, 9);
+            this.CCDBusReadMemoryModuleTextBox.Name = "CCDBusReadMemoryModuleTextBox";
+            this.CCDBusReadMemoryModuleTextBox.Size = new System.Drawing.Size(27, 21);
+            this.CCDBusReadMemoryModuleTextBox.TabIndex = 3;
+            this.CCDBusReadMemoryModuleTextBox.Text = "20";
             // 
             // CCDBusReadMemoryInitializeSessionButton
             // 
@@ -313,6 +313,7 @@ namespace ChryslerCCDSCIScanner
             // SCIBusPCMTabPage
             // 
             this.SCIBusPCMTabPage.BackColor = System.Drawing.Color.Transparent;
+            this.SCIBusPCMTabPage.Controls.Add(this.SCIBusPCMReadMemoryPresetComboBox);
             this.SCIBusPCMTabPage.Controls.Add(this.SCIBusPCMReadMemoryHelpButton);
             this.SCIBusPCMTabPage.Controls.Add(this.SCIBusPCMReadMemoryProgressLabel);
             this.SCIBusPCMTabPage.Controls.Add(this.SCIBusPCMReadMemoryInfoTextBox);
@@ -330,8 +331,7 @@ namespace ChryslerCCDSCIScanner
             this.SCIBusPCMTabPage.Controls.Add(this.SCIBusPCMReadMemoryStartOffsetTextBox);
             this.SCIBusPCMTabPage.Controls.Add(this.SCIBusPCMReadMemoryCommandLabel);
             this.SCIBusPCMTabPage.Controls.Add(this.SCIBusPCMReadMemoryCommandTextBox);
-            this.SCIBusPCMTabPage.Controls.Add(this.SCIBusPCMReadMemoryModuleLabel);
-            this.SCIBusPCMTabPage.Controls.Add(this.SCIBusPCMReadMemoryTargetModuleTextBox);
+            this.SCIBusPCMTabPage.Controls.Add(this.SCIBusPCMReadMemoryPresetLabel);
             this.SCIBusPCMTabPage.Controls.Add(this.SCIBusPCMReadMemoryInitializeSessionButton);
             this.SCIBusPCMTabPage.Location = new System.Drawing.Point(4, 22);
             this.SCIBusPCMTabPage.Name = "SCIBusPCMTabPage";
@@ -339,6 +339,23 @@ namespace ChryslerCCDSCIScanner
             this.SCIBusPCMTabPage.Size = new System.Drawing.Size(516, 271);
             this.SCIBusPCMTabPage.TabIndex = 1;
             this.SCIBusPCMTabPage.Text = "SCI-bus (PCM)";
+            // 
+            // SCIBusPCMReadMemoryPresetComboBox
+            // 
+            this.SCIBusPCMReadMemoryPresetComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.SCIBusPCMReadMemoryPresetComboBox.FormattingEnabled = true;
+            this.SCIBusPCMReadMemoryPresetComboBox.Items.AddRange(new object[] {
+            "ROM/32kB",
+            "ROM/64kB",
+            "ROM/128kB",
+            "ROM/256kB",
+            "EEPROM",
+            "RAM"});
+            this.SCIBusPCMReadMemoryPresetComboBox.Location = new System.Drawing.Point(53, 9);
+            this.SCIBusPCMReadMemoryPresetComboBox.Name = "SCIBusPCMReadMemoryPresetComboBox";
+            this.SCIBusPCMReadMemoryPresetComboBox.Size = new System.Drawing.Size(87, 21);
+            this.SCIBusPCMReadMemoryPresetComboBox.TabIndex = 66;
+            this.SCIBusPCMReadMemoryPresetComboBox.SelectedIndexChanged += new System.EventHandler(this.SCIBusPCMReadMemoryPresetComboBox_SelectedIndexChanged);
             // 
             // SCIBusPCMReadMemoryHelpButton
             // 
@@ -367,6 +384,7 @@ namespace ChryslerCCDSCIScanner
             this.SCIBusPCMReadMemoryInfoTextBox.Location = new System.Drawing.Point(148, 9);
             this.SCIBusPCMReadMemoryInfoTextBox.Multiline = true;
             this.SCIBusPCMReadMemoryInfoTextBox.Name = "SCIBusPCMReadMemoryInfoTextBox";
+            this.SCIBusPCMReadMemoryInfoTextBox.ReadOnly = true;
             this.SCIBusPCMReadMemoryInfoTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.SCIBusPCMReadMemoryInfoTextBox.Size = new System.Drawing.Size(359, 224);
             this.SCIBusPCMReadMemoryInfoTextBox.TabIndex = 63;
@@ -505,24 +523,14 @@ namespace ChryslerCCDSCIScanner
             this.SCIBusPCMReadMemoryCommandTextBox.TabIndex = 49;
             this.SCIBusPCMReadMemoryCommandTextBox.Text = "26";
             // 
-            // SCIBusPCMReadMemoryModuleLabel
+            // SCIBusPCMReadMemoryPresetLabel
             // 
-            this.SCIBusPCMReadMemoryModuleLabel.AutoSize = true;
-            this.SCIBusPCMReadMemoryModuleLabel.Enabled = false;
-            this.SCIBusPCMReadMemoryModuleLabel.Location = new System.Drawing.Point(32, 13);
-            this.SCIBusPCMReadMemoryModuleLabel.Name = "SCIBusPCMReadMemoryModuleLabel";
-            this.SCIBusPCMReadMemoryModuleLabel.Size = new System.Drawing.Size(45, 13);
-            this.SCIBusPCMReadMemoryModuleLabel.TabIndex = 46;
-            this.SCIBusPCMReadMemoryModuleLabel.Text = "Module:";
-            // 
-            // SCIBusPCMReadMemoryTargetModuleTextBox
-            // 
-            this.SCIBusPCMReadMemoryTargetModuleTextBox.Enabled = false;
-            this.SCIBusPCMReadMemoryTargetModuleTextBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
-            this.SCIBusPCMReadMemoryTargetModuleTextBox.Location = new System.Drawing.Point(78, 9);
-            this.SCIBusPCMReadMemoryTargetModuleTextBox.Name = "SCIBusPCMReadMemoryTargetModuleTextBox";
-            this.SCIBusPCMReadMemoryTargetModuleTextBox.Size = new System.Drawing.Size(27, 21);
-            this.SCIBusPCMReadMemoryTargetModuleTextBox.TabIndex = 47;
+            this.SCIBusPCMReadMemoryPresetLabel.AutoSize = true;
+            this.SCIBusPCMReadMemoryPresetLabel.Location = new System.Drawing.Point(12, 13);
+            this.SCIBusPCMReadMemoryPresetLabel.Name = "SCIBusPCMReadMemoryPresetLabel";
+            this.SCIBusPCMReadMemoryPresetLabel.Size = new System.Drawing.Size(40, 13);
+            this.SCIBusPCMReadMemoryPresetLabel.TabIndex = 46;
+            this.SCIBusPCMReadMemoryPresetLabel.Text = "Preset:";
             // 
             // SCIBusPCMReadMemoryInitializeSessionButton
             // 
@@ -534,13 +542,14 @@ namespace ChryslerCCDSCIScanner
             this.SCIBusPCMReadMemoryInitializeSessionButton.UseVisualStyleBackColor = true;
             this.SCIBusPCMReadMemoryInitializeSessionButton.Click += new System.EventHandler(this.SCIBusPCMReadMemoryInitializeSessionButton_Click);
             // 
-            // MemoryReaderForm
+            // ReadMemoryForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(534, 308);
             this.Controls.Add(this.ReadMemoryTabControl);
-            this.Name = "MemoryReaderForm";
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Name = "ReadMemoryForm";
             this.Text = "Read memory";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ReadMemoryForm_FormClosing);
             this.ReadMemoryTabControl.ResumeLayout(false);
@@ -559,7 +568,7 @@ namespace ChryslerCCDSCIScanner
         private System.Windows.Forms.TabPage SCIBusPCMTabPage;
         private System.Windows.Forms.Button CCDBusReadMemoryInitializeSessionButton;
         private System.Windows.Forms.Label CCDBusReadMemoryModuleLabel;
-        private System.Windows.Forms.TextBox CCDBusReadMemoryTargetModuleTextBox;
+        private System.Windows.Forms.TextBox CCDBusReadMemoryModuleTextBox;
         private System.Windows.Forms.Label CCDBusReadMemoryCommandLabel;
         private System.Windows.Forms.TextBox CCDBusReadMemoryCommandTextBox;
         private System.Windows.Forms.Label CCDBusReadMemoryIncrementLabel;
@@ -592,10 +601,10 @@ namespace ChryslerCCDSCIScanner
         private System.Windows.Forms.TextBox SCIBusPCMReadMemoryStartOffsetTextBox;
         private System.Windows.Forms.Label SCIBusPCMReadMemoryCommandLabel;
         private System.Windows.Forms.TextBox SCIBusPCMReadMemoryCommandTextBox;
-        private System.Windows.Forms.Label SCIBusPCMReadMemoryModuleLabel;
-        private System.Windows.Forms.TextBox SCIBusPCMReadMemoryTargetModuleTextBox;
+        private System.Windows.Forms.Label SCIBusPCMReadMemoryPresetLabel;
         private System.Windows.Forms.Button SCIBusPCMReadMemoryInitializeSessionButton;
         private System.Windows.Forms.Button CCDBusReadMemoryHelpButton;
         private System.Windows.Forms.Button SCIBusPCMReadMemoryHelpButton;
+        private System.Windows.Forms.ComboBox SCIBusPCMReadMemoryPresetComboBox;
     }
 }
