@@ -2278,7 +2278,7 @@ namespace ChryslerCCDSCIScanner
             selectedPort = COMPortsComboBox.Text;
         }
 
-        private async void ConnectButton_Click(object sender, EventArgs e)
+        private void ConnectButton_Click(object sender, EventArgs e)
         {
             UpdateCOMPortList();
 
@@ -2320,42 +2320,42 @@ namespace ChryslerCCDSCIScanner
 
                         if (Packet.Serial.IsOpen)
                         {
-                            Packet.tx.source = (byte)Packet.Source.device;
-                            Packet.tx.target = (byte)Packet.Target.device;
-                            Packet.tx.command = (byte)Packet.Command.handshake;
-                            Packet.tx.mode = (byte)Packet.HandshakeMode.handshakeOnly;
-                            Packet.tx.payload = null;
-                            Packet.GeneratePacket();
-                            Util.UpdateTextBox(USBTextBox, "[<-TX] Handshake request (" + Packet.Serial.PortName + "):", Packet.tx.buffer);
-                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            //Packet.tx.source = (byte)Packet.Source.device;
+                            //Packet.tx.target = (byte)Packet.Target.device;
+                            //Packet.tx.command = (byte)Packet.Command.handshake;
+                            //Packet.tx.mode = (byte)Packet.HandshakeMode.handshakeOnly;
+                            //Packet.tx.payload = null;
+                            //Packet.GeneratePacket();
+                            //Util.UpdateTextBox(USBTextBox, "[<-TX] Handshake request (" + Packet.Serial.PortName + "):", Packet.tx.buffer);
+                            //await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
 
-                            TimeoutTimer.Start();
+                            //TimeoutTimer.Start();
 
                             while (!timeout && !deviceFound)
                             {
                                 Thread.Sleep(1);
                                 
-                                if (Packet.Serial.BytesToRead == Packet.expectedHandshake.Length)
-                                {
-                                    try
-                                    {
-                                        Packet.Serial.Read(buffer, 0, Packet.expectedHandshake.Length);
-                                    }
-                                    catch
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Cannot read enough bytes from " + Packet.Serial.PortName + ".");
-                                        break;
-                                    }
+                                //if (Packet.Serial.BytesToRead == Packet.expectedHandshake.Length)
+                                //{
+                                //    try
+                                //    {
+                                //        Packet.Serial.Read(buffer, 0, Packet.expectedHandshake.Length);
+                                //    }
+                                //    catch
+                                //    {
+                                //        Util.UpdateTextBox(USBTextBox, "[INFO] Cannot read enough bytes from " + Packet.Serial.PortName + ".");
+                                //        break;
+                                //    }
 
-                                    string expectedHandshake = "CHRYSLERCCDSCISCANNER";
-                                    string receivedHandshake = Encoding.ASCII.GetString(buffer, 5, 21);
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Handshake response:", buffer);
+                                //    string expectedHandshake = "CHRYSLERCCDSCISCANNER";
+                                //    string receivedHandshake = Encoding.ASCII.GetString(buffer, 5, 21);
+                                //    Util.UpdateTextBox(USBTextBox, "[RX->] Handshake response:", buffer);
 
-                                    if (receivedHandshake == expectedHandshake)
-                                    {
-                                        TimeoutTimer.Stop();
-                                        timeout = false;
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Handshake OK: " + receivedHandshake);
+                                //    if (receivedHandshake == expectedHandshake)
+                                //    {
+                                        //TimeoutTimer.Stop();
+                                        //timeout = false;
+                                        //Util.UpdateTextBox(USBTextBox, "[INFO] Handshake OK: " + receivedHandshake);
                                         Util.UpdateTextBox(USBTextBox, "[INFO] Device connected (" + Packet.Serial.PortName + ").");
                                         deviceFound = true;
                                         ConnectButton.Text = "Disconnect";
@@ -2374,22 +2374,22 @@ namespace ChryslerCCDSCIScanner
                                         VersionInfoButton_Click(this, EventArgs.Empty);
                                         StatusButton_Click(this, EventArgs.Empty);
                                         //UpdateToolStripMenuItem_Click(this, EventArgs.Empty); // check for updates
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Handshake ERROR: " + receivedHandshake);
-                                    }
-                                }
+                                //    }
+                                //    else
+                                //    {
+                                //        Util.UpdateTextBox(USBTextBox, "[INFO] Handshake ERROR: " + receivedHandshake);
+                                //    }
+                                //}
                             }
 
-                            if (timeout)
-                            {
-                                TimeoutTimer.Stop();
-                                timeout = false;
-                                Packet.Serial.Close();
-                                ConnectionCounter++; // increase counter value and try again
-                                Util.UpdateTextBox(USBTextBox, "[INFO] Device is not responding on " + Packet.Serial.PortName + ".");
-                            }
+                            //if (timeout)
+                            //{
+                            //    TimeoutTimer.Stop();
+                            //    timeout = false;
+                            //    Packet.Serial.Close();
+                            //    ConnectionCounter++; // increase counter value and try again
+                            //    Util.UpdateTextBox(USBTextBox, "[INFO] Device is not responding on " + Packet.Serial.PortName + ".");
+                            //}
 
                             if (deviceFound) break;
                         }
