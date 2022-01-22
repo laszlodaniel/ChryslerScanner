@@ -2588,26 +2588,26 @@ namespace ChryslerCCDSCIScanner
                             switch (payload[0])
                             {
                                 case 0x1B: // VTS
-                                    descriptionToInsert = "WRITE EEPROM | VTS";
+                                    descriptionToInsert = "WRITE EEPROM | VTS | ";
                                     break;
                                 case 0x20: // BCM
-                                    descriptionToInsert = "WRITE EEPROM | BCM";
+                                    descriptionToInsert = "WRITE EEPROM | BCM | ";
                                     break;
                                 case 0x43: // ABS
-                                    descriptionToInsert = "WRITE EEPROM | ABS";
+                                    descriptionToInsert = "WRITE EEPROM | ABS | ";
                                     break;
                                 default:
-                                    descriptionToInsert = "WRITE EEPROM | MODULE ID: " + Util.ByteToHexStringSimple(new byte[1] { payload[0] });
+                                    descriptionToInsert = "WRITE EEPROM | MODULE ID: " + Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | ";
                                     break;
                             }
 
-                            descriptionToInsert += " | OFFSET: " + Util.ByteToHexStringSimple(new byte[2] { payload[1], payload[2] });
+                            descriptionToInsert += "OFFSET: " + Util.ByteToHexStringSimple(new byte[2] { payload[1], payload[2] });
                             valueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[3] });
                             unitToInsert = string.Empty;
                         }
                         else
                         {
-                            descriptionToInsert = "WRITE EEPROM |";
+                            descriptionToInsert = "WRITE EEPROM";
                             valueToInsert = "ERROR";
                             unitToInsert = string.Empty;
                         }
@@ -3228,7 +3228,7 @@ namespace ChryslerCCDSCIScanner
                                         case 0x60: // write EEPROM
                                             descriptionToInsert = "RESPONSE | BCM | WRITE EEPROM OFFSET";
                                             valueToInsert = Util.ByteToHexStringSimple(new byte[2] { payload[2], payload[3] });
-                                            unitToInsert = string.Empty;
+                                            unitToInsert = "OK";
                                             break;
                                         case 0xB0: // write settings
                                             descriptionToInsert = "RESPONSE | BCM | WRITE SETTINGS";

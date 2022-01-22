@@ -1254,7 +1254,7 @@ namespace ChryslerCCDSCIScanner
                                         }
                                         else
                                         {
-                                            Text = Text.Remove(Text.Length - 21);
+                                            Text = Text.Remove(Text.Length - 20);
                                             Text += FirmwareVersionString + "  |  HW " + HardwareVersionString;
                                         }
 

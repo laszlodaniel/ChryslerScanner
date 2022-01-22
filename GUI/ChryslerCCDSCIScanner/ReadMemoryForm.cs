@@ -927,6 +927,8 @@ namespace ChryslerCCDSCIScanner
             {
                 Thread.Sleep(1);
 
+                if (SCIBusPCMCurrentMemoryOffset > (SCIBusPCMMemoryOffsetEnd - SCIBusPCMIncrement)) SCIBusPCMReadMemoryFinished = true;
+
                 if (SCIBusPCMReadMemoryWorker.CancellationPending)
                 {
                     e.Cancel = true;
@@ -981,8 +983,6 @@ namespace ChryslerCCDSCIScanner
                 {
                     SCIBusPCMRxRetryCount = 0;
                 }
-
-                if (SCIBusPCMCurrentMemoryOffset > (SCIBusPCMMemoryOffsetEnd - SCIBusPCMIncrement)) SCIBusPCMReadMemoryFinished = true;
             }
         }
 
