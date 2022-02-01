@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 06: minor
-// 00: patch
+// 01: patch
 // (00: revision)
-// = v0.6.0(.0)
-#define FW_VERSION 0x00060000
+// = v0.6.1(.0)
+#define FW_VERSION 0x00060100
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00060000614740FE
+#define FW_DATE 0x0006010061F90837
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -447,8 +447,8 @@ void write_default_settings(void)
 
     uint8_t default_settings[38] =
     { //  00    01    02    03    04    05    06    07    08    09    0A    0B    0C    0D    0E    0F
-        0x00, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 00
-        0x00, 0x00, 0x01, 0xF4, 0x69, 0x78, 0x13, 0xEC, 0x00, 0x27, 0x14, 0x04, 0x14, 0x00, 0x01, 0x13, // 10
+        0x00, 0x96, 0x00, 0x00, 0x00, 0x00, 0x61, 0xF9, 0x08, 0x37, 0x00, 0x00, 0x00, 0x00, 0x61, 0xF9, // 00
+        0x08, 0x37, 0x01, 0xF4, 0x69, 0x78, 0x13, 0xEC, 0x00, 0x27, 0x14, 0x04, 0x14, 0x00, 0x01, 0x13, // 10
         0x88, 0x00, 0x32, 0x41, 0x91, 0xC1                                                              // 20
     };
 
@@ -3355,7 +3355,7 @@ void handle_usb_data(void)
         uint8_t sync = usb_getc() & 0xFF; // read the next available byte in the USB receive buffer, it's supposed to be the first byte of a message
         uint32_t command_timeout_start = 0;
         bool command_timeout_reached = false;
-        
+
         switch (sync)
         {
             case PACKET_SYNC_BYTE: // 0x3D, "=" symbol
@@ -3380,13 +3380,13 @@ void handle_usb_data(void)
 
                 length_hb = usb_getc() & 0xFF; // read first length byte
                 length_lb = usb_getc() & 0xFF; // read second length byte
-        
+
                 // Calculate how much more bytes should we read by combining the two length bytes into a word.
                 bytes_to_read = to_uint16(length_hb, length_lb) + 1; // +1 CHECKSUM byte
-                
+
                 // Calculate the exact size of the payload.
                 payload_length = bytes_to_read - 3; // in this case we have to be careful not to count data code byte, sub-data code byte and checksum byte
-        
+
                 // Maximum packet length is 1024 bytes; can't accept larger packets 
                 // and can't accept packet without datacode and subdatacode.
                 if ((payload_length > MAX_PAYLOAD_LENGTH) || ((bytes_to_read - 1) < 2))
@@ -3406,17 +3406,17 @@ void handle_usb_data(void)
                     send_usb_packet(from_usb, to_usb, ok_error, error_packet_timeout_occurred, err, 1);
                     return; // exit, let the loop call this function again
                 }
-        
+
                 // There's at least one full command in the buffer now.
                 // Go ahead and read one DATA CODE byte (next in the row).
                 datacode = usb_getc() & 0xFF;
-        
+
                 // Read one SUB-DATA CODE byte that's following.
                 subdatacode = usb_getc() & 0xFF;
-        
+
                 // Make some space for the payload bytes (even if there is none).
                 uint8_t cmd_payload[payload_length];
-        
+
                 // If the payload length is greater than zero then read those bytes too.
                 if (payload_length > 0)
                 {
@@ -3430,13 +3430,13 @@ void handle_usb_data(void)
                 }
                 // Set flag if there are no PAYLOAD bytes available.
                 else payload_bytes = false;
-        
+
                 // Read last CHECKSUM byte.
                 checksum = usb_getc() & 0xFF;
-        
+
                 // Verify the received packet by calculating what the checksum byte should be.
                 calculated_checksum = length_hb + length_lb + datacode + subdatacode; // add the first few bytes together manually
-        
+
                 // Add payload bytes here together if present
                 if (payload_bytes)
                 {
@@ -3445,7 +3445,7 @@ void handle_usb_data(void)
                         calculated_checksum += cmd_payload[j];
                     }
                 }
-    
+
                 // Compare calculated checksum to the received CHECKSUM byte
                 if (calculated_checksum != checksum) // if they are not the same
                 {
@@ -3457,10 +3457,10 @@ void handle_usb_data(void)
                 // Find out the source and the target of the packet by examining the DATA CODE byte's high nibble (upper 4 bits).
                 uint8_t source = (datacode >> 6) & 0x03; // keep the upper two bits
                 uint8_t target = (datacode >> 4) & 0x03; // keep the lower two bits
-            
+
                 // Extract command value from the low nibble (lower 4 bits).
                 uint8_t command = datacode & 0x0F;
-            
+
                 // Source is ignored, the packet must come from an external computer through USB
                 switch (target) // evaluate target value
                 {
@@ -4201,8 +4201,8 @@ void handle_usb_data(void)
                                         ccd.msg_to_transmit_count = 1;
                                         ccd.msg_tx_pending  = true; // set flag so the main loop knows there's something to do
 
-                                        uint8_t ret[2] = { 0x00, to_ccd }; // improvised payload array with only 1 element which is the target bus
-                                        send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 2);
+                                        //uint8_t ret[2] = { 0x00, to_ccd }; // improvised payload array with only 1 element which is the target bus
+                                        //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 2);
                                         break;
                                     }
                                     case repeated_single_msg: // 0x04 - send a message to the CCD-bus repeatedly forever
@@ -4247,8 +4247,8 @@ void handle_usb_data(void)
                                                 ccd.repeat_list_once = false;
                                                 ccd.repeat_stop = false;
 
-                                                uint8_t ret[2] = { 0x00, to_ccd };
-                                                send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
+                                                //uint8_t ret[2] = { 0x00, to_ccd };
+                                                //send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
                                                 break;
                                             }
                                             case 0x01: // message iteration needed, 1 message only (with B2 ID-byte)!
@@ -4289,8 +4289,8 @@ void handle_usb_data(void)
                                                     ccd.repeat_stop = false;
                                                     ccd.msg_to_transmit_count = 1;
 
-                                                    uint8_t ret[2] = { 0x00, to_ccd };
-                                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
+                                                    //uint8_t ret[2] = { 0x00, to_ccd };
+                                                    //send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
                                                 }
                                                 else
                                                 {
@@ -4358,9 +4358,9 @@ void handle_usb_data(void)
                                         
                                         ccd.repeat_stop = false;
 
-                                        uint8_t ret[2] = { 0x00, to_ccd };
-                                        if (subdatacode == list_msg) send_usb_packet(from_usb, to_usb, msg_tx, list_msg, ret, 2); // acknowledge
-                                        else if (subdatacode == repeated_list_msg) send_usb_packet(from_usb, to_usb, msg_tx, repeated_list_msg, ret, 2); // acknowledge
+                                        //uint8_t ret[2] = { 0x00, to_ccd };
+                                        //if (subdatacode == list_msg) send_usb_packet(from_usb, to_usb, msg_tx, list_msg, ret, 2); // acknowledge
+                                        //else if (subdatacode == repeated_list_msg) send_usb_packet(from_usb, to_usb, msg_tx, repeated_list_msg, ret, 2); // acknowledge
                                         break;
                                     }
                                     default:
@@ -4423,8 +4423,8 @@ void handle_usb_data(void)
                                         pcm.msg_to_transmit_count = 1;
                                         pcm.msg_tx_pending  = true; // set flag so the main loop knows there's something to do
 
-                                        uint8_t ret[2] = { 0x00, to_pcm };
-                                        send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 2);
+                                        //uint8_t ret[2] = { 0x00, to_pcm };
+                                        //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 2);
                                         break;
                                     }
                                     case repeated_single_msg: // 0x04 - send repeated message(s) to the SCI-bus (PCM)
@@ -4461,8 +4461,8 @@ void handle_usb_data(void)
                                                 pcm.repeat_list_once = false;
                                                 pcm.repeat_stop = false;
 
-                                                uint8_t ret[2] = { 0x00, to_pcm };
-                                                send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
+                                                //uint8_t ret[2] = { 0x00, to_pcm };
+                                                //send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
                                                 break;
                                             }
                                             case 0x01: // message iteration needed, 1 message only!
@@ -4509,8 +4509,8 @@ void handle_usb_data(void)
                                                         pcm.repeated_msg_raw_end = cmd_payload[4];
                                                     }
 
-                                                    uint8_t ret[2] = { 0x00, to_pcm };
-                                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
+                                                    //uint8_t ret[2] = { 0x00, to_pcm };
+                                                    //send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
                                                 }
                                                 else
                                                 {
@@ -4565,10 +4565,9 @@ void handle_usb_data(void)
                                         
                                         pcm.repeat_stop = false;
 
-                                        uint8_t ret[2] = { 0x00, to_pcm };
-
-                                        if (subdatacode == list_msg) send_usb_packet(from_usb, to_usb, msg_tx, list_msg, ret, 2); // acknowledge
-                                        else if (subdatacode == repeated_list_msg) send_usb_packet(from_usb, to_usb, msg_tx, repeated_list_msg, ret, 2); // acknowledge
+                                        //uint8_t ret[2] = { 0x00, to_pcm };
+                                        //if (subdatacode == list_msg) send_usb_packet(from_usb, to_usb, msg_tx, list_msg, ret, 2); // acknowledge
+                                        //else if (subdatacode == repeated_list_msg) send_usb_packet(from_usb, to_usb, msg_tx, repeated_list_msg, ret, 2); // acknowledge
                                         break;
                                     }
                                     default:
@@ -4630,8 +4629,8 @@ void handle_usb_data(void)
                                         tcm.msg_to_transmit_count = 1;
                                         tcm.msg_tx_pending  = true; // set flag so the main loop knows there's something to do
 
-                                        uint8_t ret[2] = { 0x00, to_tcm };
-                                        send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 2);
+                                        //uint8_t ret[2] = { 0x00, to_tcm };
+                                        //send_usb_packet(from_usb, to_usb, msg_tx, single_msg, ret, 2);
                                         break;
                                     }
                                     case repeated_single_msg: // 0x04 - send repeated message(s) to the SCI-bus (TCM)
@@ -4668,8 +4667,8 @@ void handle_usb_data(void)
                                                 tcm.repeat_list_once = false;
                                                 tcm.repeat_stop = false;
 
-                                                uint8_t ret[2] = { 0x00, to_tcm };
-                                                send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
+                                                //uint8_t ret[2] = { 0x00, to_tcm };
+                                                //send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
                                                 break;
                                             }
                                             case 0x01: // message iteration needed, 1 message only!
@@ -4716,8 +4715,8 @@ void handle_usb_data(void)
                                                         tcm.repeated_msg_raw_end = cmd_payload[4];
                                                     }
 
-                                                    uint8_t ret[2] = { 0x00, to_tcm };
-                                                    send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
+                                                    //uint8_t ret[2] = { 0x00, to_tcm };
+                                                    //send_usb_packet(from_usb, to_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
                                                 }
                                                 else
                                                 {
@@ -4772,10 +4771,9 @@ void handle_usb_data(void)
                                         
                                         tcm.repeat_stop = false;
 
-                                        uint8_t ret[2] = { 0x00, to_tcm };
-
-                                        if (subdatacode == list_msg) send_usb_packet(from_usb, to_usb, msg_tx, list_msg, ret, 2); // acknowledge
-                                        else if (subdatacode == repeated_list_msg) send_usb_packet(from_usb, to_usb, msg_tx, repeated_list_msg, ret, 2); // acknowledge
+                                        //uint8_t ret[2] = { 0x00, to_tcm };
+                                        //if (subdatacode == list_msg) send_usb_packet(from_usb, to_usb, msg_tx, list_msg, ret, 2); // acknowledge
+                                        //else if (subdatacode == repeated_list_msg) send_usb_packet(from_usb, to_usb, msg_tx, repeated_list_msg, ret, 2); // acknowledge
                                         break;
                                     }
                                     default:
@@ -5551,6 +5549,7 @@ void handle_sci_data(void)
         if (pcm.repeat && (pcm_rx_available() == 0))
         {
             current_millis = millis(); // check current time
+
             if ((uint32_t)(current_millis - pcm.repeated_msg_last_millis) >= pcm.repeated_msg_interval) // wait between messages
             {
                 pcm.repeated_msg_last_millis = current_millis;
@@ -5674,6 +5673,7 @@ void handle_sci_data(void)
                         if (timeout_reached) // exit for-loop if there's no echo
                         {
                             send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                            pcm_rx_flush();
                             break;
                         }
                     }
@@ -5691,7 +5691,7 @@ void handle_sci_data(void)
                             while ((pcm_rx_available() <= num_bytes) && !timeout_reached) // wait for 1 byte response only
                             {
                                 // wait here for response
-                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
                             }
 
                             if (!timeout_reached)
@@ -5701,6 +5701,7 @@ void handle_sci_data(void)
                             else
                             {
                                 send_usb_packet(from_usb, to_usb, ok_error, error_sci_ls_no_response, err, 1);
+                                pcm_rx_flush();
                             }
                         }
                         else
@@ -5710,7 +5711,7 @@ void handle_sci_data(void)
                             while (!timeout_reached && (pcm_rx_available() < 17)) // wait until all bytes are received
                             {
                                 // wait here for response
-                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
                             }
 
                             timeout_reached = false;
@@ -5762,6 +5763,7 @@ void handle_sci_data(void)
                         if (timeout_reached) // exit for-loop if there's no echo
                         {
                             send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                            pcm_rx_flush();
                             break;
                         }
                     }
@@ -5779,7 +5781,7 @@ void handle_sci_data(void)
                             while ((pcm_rx_available() <= num_bytes) && !timeout_reached) // wait for 1 byte response only
                             {
                                 // wait here for response
-                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
                             }
 
                             if (!timeout_reached)
@@ -5789,6 +5791,7 @@ void handle_sci_data(void)
                             else
                             {
                                 send_usb_packet(from_usb, to_usb, ok_error, error_sci_ls_no_response, err, 1);
+                                pcm_rx_flush();
                             }
                         }
                         else
@@ -5798,7 +5801,7 @@ void handle_sci_data(void)
                             while (!timeout_reached) // wait until all bytes are received
                             {
                                 // wait here for response
-                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
                             }
 
                             timeout_reached = false;
@@ -5856,6 +5859,7 @@ void handle_sci_data(void)
                                 else
                                 {
                                     send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_memory_ptr_no_response, pcm.msg_buffer, 1); // send error packet back to the laptop
+                                    pcm_rx_flush();
                                     break;
                                 }
                             }
@@ -5870,6 +5874,7 @@ void handle_sci_data(void)
                     {
                         // Messsage doesn't start with a RAM-table value, invalid
                         send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_invalid_memory_ptr, pcm.msg_buffer, 1); // send error packet back to the laptop
+                        pcm_rx_flush();
                     }
                 }
                 else if (pcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
@@ -5945,8 +5950,8 @@ void handle_sci_data(void)
 
                         if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                         {
-                            pcm_rx_flush();
                             send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                            pcm_rx_flush();
                             break;
                         }
                     }
@@ -5973,6 +5978,7 @@ void handle_sci_data(void)
                         else
                         {
                             send_usb_packet(from_usb, to_usb, ok_error, error_sci_ls_no_response, err, 1);
+                            pcm_rx_flush();
                         }
                     }
                 }
@@ -6026,6 +6032,7 @@ void handle_sci_data(void)
                         else
                         {
                             send_usb_packet(from_usb, to_usb, ok_error, error_sci_ls_no_response, err, 1);
+                            pcm_rx_flush();
                         }
                     }
                 }
@@ -6503,6 +6510,7 @@ void handle_sci_data(void)
                         if (timeout_reached) // exit for-loop if there's no echo
                         {
                             send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                            tcm_rx_flush();
                             break;
                         }
                     }
@@ -6530,6 +6538,7 @@ void handle_sci_data(void)
                             else
                             {
                                 send_usb_packet(from_usb, to_usb, ok_error, error_sci_ls_no_response, err, 1);
+                                tcm_rx_flush();
                             }
                         }
                         else
@@ -6565,6 +6574,7 @@ void handle_sci_data(void)
                         if (timeout_reached) // exit for-loop if there's no echo
                         {
                             send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                            tcm_rx_flush();
                             break;
                         }
                     }
@@ -6592,6 +6602,7 @@ void handle_sci_data(void)
                             else
                             {
                                 send_usb_packet(from_usb, to_usb, ok_error, error_sci_ls_no_response, err, 1);
+                                tcm_rx_flush();
                             }
                         }
                         else
@@ -6748,8 +6759,8 @@ void handle_sci_data(void)
 
                         if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                         {
-                            tcm_rx_flush();
                             send_usb_packet(from_usb, to_usb, ok_error, error_internal, err, 1);
+                            tcm_rx_flush();
                             break;
                         }
                     }
@@ -6776,6 +6787,7 @@ void handle_sci_data(void)
                         else
                         {
                             send_usb_packet(from_usb, to_usb, ok_error, error_sci_ls_no_response, err, 1);
+                            tcm_rx_flush();
                         }
                     }
                 }
@@ -6829,6 +6841,7 @@ void handle_sci_data(void)
                         else
                         {
                             send_usb_packet(from_usb, to_usb, ok_error, error_sci_ls_no_response, err, 1);
+                            tcm_rx_flush();
                         }
                     }
                 }
