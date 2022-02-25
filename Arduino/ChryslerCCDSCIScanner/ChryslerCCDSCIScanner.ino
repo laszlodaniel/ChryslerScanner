@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 06: minor
-// 03: patch
+// 04: patch
 // (00: revision)
-// = v0.6.3(.0)
-#define FW_VERSION 0x00060300
+// = v0.6.4(.0)
+#define FW_VERSION 0x00060400
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x000603006218C945
+#define FW_DATE 0x000604006218E547
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -5366,15 +5366,16 @@ void handle_sci_data(void)
                 // 00: RAM value at 0B
 
                 // Custom bootloader by dino2gnt:
-                // TX: 45 AA BB CC DD
-                // RX: 46 AA BB CC DD XX YY ZZ
+                // TX: 45 AA BB CC DD EE
+                // RX: 46 AA BB CC DD EE XX YY ZZ
                 // ---------------------------
                 // 45: request flash memory block
                 // 46: flash memory block response
                 // AA: memory bank
                 // BB: offset HB
                 // CC: offset LB
-                // DD: block length (max. 255 bytes)
+                // DD: block length HB
+                // EE: block length LB
                 // XX YY ZZ: flash memory values
 
                 for (uint8_t i = 0; i < TIMESTAMP_LENGTH; i++) // put 4 timestamp bytes in the front
@@ -5865,15 +5866,16 @@ void handle_sci_data(void)
 
                         if (pcm.msg_buffer[0] == 0x45) // custom bootloader by dino2gnt
                         {
-                            // TX: 45 AA BB CC DD
-                            // RX: 46 AA BB CC DD XX YY ZZ
+                            // TX: 45 AA BB CC DD EE
+                            // RX: 46 AA BB CC DD EE XX YY ZZ
                             // ---------------------------
                             // 45: request flash memory block
                             // 46: flash memory block response
                             // AA: memory bank
                             // BB: offset HB
                             // CC: offset LB
-                            // DD: block length (max. 255 bytes)
+                            // DD: block length HB
+                            // EE: block length LB
                             // XX YY ZZ: flash memory values
                             
                             for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
@@ -5898,7 +5900,7 @@ void handle_sci_data(void)
 
                             if (!timeout_reached)
                             {
-                                uint8_t block_length = pcm.msg_buffer[4];
+                                uint16_t block_length = to_uint16(pcm.msg_buffer[4], pcm.msg_buffer[5]);
 
                                 timeout_reached = false;
                                 timeout_start = millis();
