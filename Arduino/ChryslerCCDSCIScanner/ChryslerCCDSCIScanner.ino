@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 06: minor
-// 02: patch
+// 03: patch
 // (00: revision)
-// = v0.6.2(.0)
-#define FW_VERSION 0x00060200
+// = v0.6.3(.0)
+#define FW_VERSION 0x00060300
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x0006020062189D68
+#define FW_DATE 0x000603006218C945
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -5386,7 +5386,7 @@ void handle_sci_data(void)
                 {
                     if (pcm.msg_buffer[0] == 0x46) // custom bootloader by dino2gnt
                     {
-                        for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) 
+                        for (uint8_t i = 0; i < pcm.message_length; i++) 
                         {
                             usb_msg[TIMESTAMP_LENGTH + i] = pcm_getc() & 0xFF;
                         }
