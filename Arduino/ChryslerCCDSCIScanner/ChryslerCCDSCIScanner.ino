@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 06: minor
-// 05: patch
+// 06: patch
 // (00: revision)
-// = v0.6.5(.0)
-#define FW_VERSION 0x00060500
+// = v0.6.6(.0)
+#define FW_VERSION 0x00060600
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00060500621A2907
+#define FW_DATE 0x00060600621A461B
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -521,6 +521,8 @@ void unlock_bootstrap_mode()
     // 5 = security seed solution status timeout
     // 6 = security seed solution not accepted
     // 7 = bootloader upload timeout
+    // 8 = start bootloader timeout
+    // 9 = unexpected bootloader status byte
 
     wdt_reset(); // feed the watchdog
     pcm_rx_flush();
@@ -694,6 +696,46 @@ void unlock_bootstrap_mode()
     {
         ret[0] = 7;
         send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
+        return;
+    }
+
+    pcm_rx_flush(); // get rid of header echos
+    wdt_reset(); // feed the watchdog
+
+    uint8_t start_bootloader[3] = { 0x47, 0x01, 0x00 };
+
+    // Write start bootloader message.
+    for (uint8_t i = 0; i < 3; i++)
+    {
+        pcm_putc(req_seed[i]);
+    }
+
+    timeout_start = millis();
+
+    while ((pcm_rx_available() <= 3) && !timeout_reached)
+    {
+        // wait here for echo and response
+        if ((uint32_t)(millis() - timeout_start) >= 500) timeout_reached = true;
+    }
+
+    if (timeout_reached)
+    {
+        ret[0] = 8;
+        send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
+        pcm_rx_flush();
+        return;
+    }
+
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        resp[i] = pcm_getc() & 0xFF;
+    }
+
+    if (resp[3] != 0x22)
+    {
+        ret[0] = 9;
+        send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
+        pcm_rx_flush();
         return;
     }
 
