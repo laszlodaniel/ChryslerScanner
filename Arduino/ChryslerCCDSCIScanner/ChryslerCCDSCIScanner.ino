@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 06: minor
-// 06: patch
+// 07: patch
 // (00: revision)
-// = v0.6.6(.0)
-#define FW_VERSION 0x00060600
+// = v0.6.7(.0)
+#define FW_VERSION 0x00060700
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00060600621A461B
+#define FW_DATE 0x00060700621A63F6
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -707,7 +707,7 @@ void unlock_bootstrap_mode()
     // Write start bootloader message.
     for (uint8_t i = 0; i < 3; i++)
     {
-        pcm_putc(req_seed[i]);
+        pcm_putc(start_bootloader[i]);
     }
 
     timeout_start = millis();
