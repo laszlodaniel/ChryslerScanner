@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 06: minor
-// 07: patch
+// 08: patch
 // (00: revision)
-// = v0.6.7(.0)
-#define FW_VERSION 0x00060700
+// = v0.6.8(.0)
+#define FW_VERSION 0x00060800
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00060700621A63F6
+#define FW_DATE 0x00060800621B3476
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -587,7 +587,7 @@ void unlock_bootstrap_mode()
     uint8_t resp[7];
     uint8_t checksum = 0;
 
-    // Read security seed resp.
+    // Read security seed response.
     for (uint8_t i = 0; i < 7; i++)
     {
         resp[i] = pcm_getc() & 0xFF;
@@ -674,7 +674,7 @@ void unlock_bootstrap_mode()
 
     while (!upload_finished && !timeout_reached)
     {
-        delay(100);
+        delay(20);
         wdt_reset(); // feed the watchdog
         
         for (uint8_t i = 0; i < 16; i++)
@@ -686,6 +686,7 @@ void unlock_bootstrap_mode()
             }
             
             pcm_putc(pgm_read_byte(bootloader[BL_idx + i]));
+            delay(10); // wait for echo
             BL_idx++;
         }
 
@@ -699,8 +700,8 @@ void unlock_bootstrap_mode()
         return;
     }
 
-    pcm_rx_flush(); // get rid of header echos
     wdt_reset(); // feed the watchdog
+    pcm_rx_flush();
 
     uint8_t start_bootloader[3] = { 0x47, 0x01, 0x00 };
 
@@ -708,13 +709,14 @@ void unlock_bootstrap_mode()
     for (uint8_t i = 0; i < 3; i++)
     {
         pcm_putc(start_bootloader[i]);
+        while (pcm_rx_available() <= i); // wait for echo
     }
 
     timeout_start = millis();
 
     while ((pcm_rx_available() <= 3) && !timeout_reached)
     {
-        // wait here for echo and response
+        // wait here for response
         if ((uint32_t)(millis() - timeout_start) >= 500) timeout_reached = true;
     }
 
@@ -726,6 +728,7 @@ void unlock_bootstrap_mode()
         return;
     }
 
+    // Read response.
     for (uint8_t i = 0; i < 4; i++)
     {
         resp[i] = pcm_getc() & 0xFF;
@@ -739,6 +742,10 @@ void unlock_bootstrap_mode()
         return;
     }
 
+    wdt_reset(); // feed the watchdog
+    pcm_rx_flush();
+
+    // Success.
     send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
 }
 
