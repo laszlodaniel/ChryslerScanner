@@ -485,6 +485,7 @@ const uint8_t bootloader[621] PROGMEM =
     0x76, 0x37, 0x87, 0xfd, 0xa2, 0x37, 0x30, 0x00, 0x01, 0xb0, 0xe8, 0x27, 0x4c
 };
 
+
 uint16_t bootloader_length = 621;
 
 /*************************************************************************
@@ -520,9 +521,8 @@ void unlock_bootstrap_mode()
     // 4 = security seed response checksum error
     // 5 = security seed solution status timeout
     // 6 = security seed solution not accepted
-    // 7 = bootloader upload timeout
-    // 8 = start bootloader timeout
-    // 9 = unexpected bootloader status byte
+    // 7 = start bootloader timeout
+    // 8 = unexpected bootloader status byte
 
     wdt_reset(); // feed the watchdog
     pcm_rx_flush();
@@ -665,42 +665,14 @@ void unlock_bootstrap_mode()
     wdt_reset(); // feed the watchdog
     pcm_rx_flush();
 
-    // Upload bootloader in 16 byte chunks.
-
-    bool upload_finished = false;
-    uint16_t BL_idx = 0;
-
-    timeout_start = millis();
-
-    while (!upload_finished && !timeout_reached)
+    // Upload bootloader.
+    for (uint16_t i = 0; i < bootloader_length; i++)
     {
-        delay(50);
-        wdt_reset(); // feed the watchdog
-        
-        for (uint8_t i = 0; i < 16; i++)
-        {
-            if ((BL_idx + i) >= bootloader_length)
-            {
-                upload_finished = true;
-                break;
-            }
-            
-            pcm_putc(pgm_read_byte(bootloader[BL_idx + i]));
+        pcm_putc(pgm_read_byte(bootloader + i));
 
-            while (pcm_rx_available() == 0); // wait for echo
+        while (pcm_rx_available() == 0); // wait for echo
 
-            pcm_rx_flush();
-            BL_idx++;
-        }
-
-        if ((uint32_t)(millis() - timeout_start) >= 10000) timeout_reached = true; // 10 seconds timeout
-    }
-
-    if (timeout_reached)
-    {
-        ret[0] = 7;
-        send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
-        return;
+        pcm_rx_flush();
     }
 
     wdt_reset(); // feed the watchdog
@@ -725,7 +697,7 @@ void unlock_bootstrap_mode()
 
     if (timeout_reached)
     {
-        ret[0] = 8;
+        ret[0] = 7;
         send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
         pcm_rx_flush();
         return;
@@ -739,7 +711,7 @@ void unlock_bootstrap_mode()
 
     if (resp[3] != 0x22)
     {
-        ret[0] = 9;
+        ret[0] = 8;
         send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
         pcm_rx_flush();
         return;
@@ -6288,7 +6260,7 @@ void handle_sci_data(void)
                                 timeout_reached = false;
                                 timeout_start = millis();
 
-                                while ((pcm_rx_available() < (5 + block_length)) && !timeout_reached)
+                                while ((pcm_rx_available() <= (5 + block_length)) && !timeout_reached)
                                 {
                                     // wait here until all bytes are received or timeout occurs (500 ms)
                                     if ((uint32_t)(millis() - timeout_start) >= 500) timeout_reached = true;
@@ -6327,6 +6299,8 @@ void handle_sci_data(void)
                                     break;
                                 }
                             }
+
+                            delay(100); // there may be another status byte returned, wait for it as well
 
                             if (!timeout_reached)
                             {
