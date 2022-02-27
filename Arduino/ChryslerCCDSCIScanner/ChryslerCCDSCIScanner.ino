@@ -674,7 +674,7 @@ void unlock_bootstrap_mode()
 
     while (!upload_finished && !timeout_reached)
     {
-        delay(20);
+        delay(50);
         wdt_reset(); // feed the watchdog
         
         for (uint8_t i = 0; i < 16; i++)
@@ -686,7 +686,10 @@ void unlock_bootstrap_mode()
             }
             
             pcm_putc(pgm_read_byte(bootloader[BL_idx + i]));
-            delay(10); // wait for echo
+
+            while (pcm_rx_available() == 0); // wait for echo
+
+            pcm_rx_flush();
             BL_idx++;
         }
 
