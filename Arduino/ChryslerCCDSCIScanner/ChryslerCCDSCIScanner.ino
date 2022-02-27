@@ -7287,6 +7287,7 @@ Note:     this only turns on the chosen LED, handle_leds() turns it off
 void blink_led(uint8_t led)
 {
     digitalWrite(led, LOW); // turn on LED
+
     switch (led) // save time when LED was turned on
     {
         case RX_LED:
@@ -7325,6 +7326,7 @@ Note:     ACT heartbeat is handled here too;
 void handle_leds(void)
 {
     current_millis = millis(); // check current time
+
     if (heartbeat_enabled)
     {
         if ((uint32_t)(current_millis - previous_act_blink) >= heartbeat_interval)
@@ -7353,7 +7355,6 @@ void setup()
     pinMode(TX_LED, OUTPUT);      // Data transmitted LED
     // PWR LED is tied to +5V directly, stays on when the scanner has power, draws about 2mA current.
     pinMode(ACT_LED, OUTPUT);     // Activity (heartbeat) LED
-    digitalWrite(TBEN, HIGH);     // disable CCD-bus termination and bias
     blink_led(RX_LED);            // 
     blink_led(TX_LED);            // 
     blink_led(ACT_LED);           // 
@@ -7361,6 +7362,7 @@ void setup()
     pinMode(CCD_POSITIVE, INPUT); // 
     pinMode(CCD_NEGATIVE, INPUT); // 
     pinMode(TBEN, OUTPUT);        // 
+    digitalWrite(TBEN, HIGH);     // disable CCD-bus termination and bias
 
     // SCI-bus A/B-configuration selector outputs.
     pinMode(A_PCM_RX_EN, OUTPUT);
