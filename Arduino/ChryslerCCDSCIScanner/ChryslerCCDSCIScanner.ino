@@ -440,7 +440,7 @@ const uint8_t bootloader[521] PROGMEM =
     0x3b, 0x01, 0x00, 0x37, 0xfc, 0xf5, 0xa5, 0x27, 0xf7
 };
 */
-    
+
 // Custom SBEC3 bootloader for flash dumping by dino2gnt.
 const uint8_t bootloader[621] PROGMEM =
 {
@@ -5701,13 +5701,13 @@ void handle_sci_data(void)
 
                 uint16_t packet_length = 0;
 
-                if (pcm.msg_buffer[0] == 0x46) // custom bootloader by dino2gnt
-                {
-                    packet_length = TIMESTAMP_LENGTH + pcm.message_length;
-                }
-                else
+                if (array_contains(sci_hi_speed_memarea, 16, pcm.msg_buffer[0])) // normal mode
                 {
                     packet_length = TIMESTAMP_LENGTH + (2 * pcm.message_length) - 1;
+                }
+                else // bootstrap mode
+                {
+                    packet_length = TIMESTAMP_LENGTH + pcm.message_length;
                 }
 
                 uint8_t usb_msg[packet_length]; // create local array which will hold the timestamp and the SCI-bus (PCM) message
@@ -5742,14 +5742,7 @@ void handle_sci_data(void)
 
                 if (pcm.msg_to_transmit_count == 1)
                 {
-                    if (pcm.msg_buffer[0] == 0x46) // custom bootloader by dino2gnt
-                    {
-                        for (uint8_t i = 0; i < pcm.message_length; i++) 
-                        {
-                            usb_msg[TIMESTAMP_LENGTH + i] = pcm_getc() & 0xFF;
-                        }
-                    }
-                    else
+                    if (array_contains(sci_hi_speed_memarea, 16, pcm.msg_buffer[0])) // normal mode
                     {
                         usb_msg[4] = pcm.msg_buffer[0]; // put RAM table byte first
                         pcm_getc(); // get rid of the first byte in the receive buffer, it's the RAM table byte
@@ -5758,6 +5751,13 @@ void handle_sci_data(void)
                         {
                             usb_msg[5 + (i * 2)] = pcm.msg_buffer[i + 1]; // put original request message byte next
                             usb_msg[5 + (i * 2) + 1] = pcm_getc() & 0xFF; // put response byte after the request byte
+                        }
+                    }
+                    else // bootstrap mode
+                    {
+                        for (uint8_t i = 0; i < pcm.message_length; i++) 
+                        {
+                            usb_msg[TIMESTAMP_LENGTH + i] = pcm_getc() & 0xFF;
                         }
                     }
 
@@ -6204,23 +6204,49 @@ void handle_sci_data(void)
             }
             else if (pcm.speed == HIBAUD) // high speed mode (62500 baud), full-duplex mode approach
             {
-//                uint8_t echo_retry_counter = 0;
-
                 if (pcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                 {
-//                    if (array_contains(sci_hi_speed_memarea, 16, pcm.msg_buffer[0])) // make sure that the memory table select byte is approved by the PCM before sending the full message
-//                    {
-                        if ((pcm.msg_buffer_ptr > 1) && (pcm.msg_buffer[1] == 0xFF)) // return full RAM-table if the first address is an invalid 0xFF
+                    if ((pcm.msg_buffer_ptr > 1) && (pcm.msg_buffer[1] == 0xFF)) // return full RAM-table if the first address is an invalid 0xFF
+                    {
+                        // Prepare message buffer as if it was filled with data beforehand
+                        for (uint8_t i = 0; i < 240; i++)
                         {
-                            // Prepare message buffer as if it was filled with data beforehand
-                            for (uint8_t i = 0; i < 240; i++)
-                            {
-                                pcm.msg_buffer[1 + i] = i; // put the address byte after the memory table pointer
-                            }
-
-                            pcm.msg_buffer_ptr = 241;
+                            pcm.msg_buffer[1 + i] = i; // put the address byte after the memory table pointer
                         }
 
+                        pcm.msg_buffer_ptr = 241;
+                    }
+
+                    if (array_contains(sci_hi_speed_memarea, 16, pcm.msg_buffer[0])) // normal mode
+                    {
+                        for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
+                        {
+                            timeout_reached = false;
+                            timeout_start = millis(); // save current time
+                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
+
+                            while ((pcm_rx_available() <= i) && !timeout_reached)
+                            {
+                                // wait here for response (echo in case of F0...FF)
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_HS_T3_DELAY) timeout_reached = true;
+                            }
+
+                            if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
+                            {
+                                uint8_t ret[2] = { pcm.msg_buffer[0], pcm.msg_buffer[i] };
+                                send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_no_response, ret, 2); // return two bytes to determine which table and which address is unresponsive
+                                pcm_rx_flush();
+                                break;
+                            }
+                        }
+
+                        if (!timeout_reached)
+                        {
+                            pcm.response_received = true;
+                        }
+                    }
+                    else // bootstrap mode
+                    {
                         if (pcm.msg_buffer[0] == 0x45) // custom bootloader by dino2gnt
                         {
                             // TX: 45 AA BB CC DD EE
@@ -6234,7 +6260,7 @@ void handle_sci_data(void)
                             // DD: block length HB
                             // EE: block length LB
                             // XX YY ZZ: flash memory values
-                            
+
                             for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
                             {
                                 timeout_reached = false;
@@ -6283,106 +6309,64 @@ void handle_sci_data(void)
                         {
                             for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
                             {
-//                                pcm_again_01:
                                 timeout_reached = false;
                                 timeout_start = millis(); // save current time
                                 pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
-    
+
                                 while ((pcm_rx_available() <= i) && !timeout_reached)
                                 {
-                                    // wait here for response (echo in case of F0...FF)
-                                    if ((uint32_t)(millis() - timeout_start) >= SCI_HS_T3_DELAY) timeout_reached = true;
+                                    // wait for echo or response
+                                    if ((uint32_t)(millis() - timeout_start) >= 500) timeout_reached = true;
                                 }
-    
+
                                 if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                                 {
-                                    uint8_t ret[2] = { pcm.msg_buffer[0], pcm.msg_buffer[i] };
-                                    send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_no_response, ret, 2); // return two bytes to determine which table and which address is unresponsive
+                                    uint8_t ret[1] = { 0xFF };
+                                    send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_no_response, ret, 1);
                                     pcm_rx_flush();
                                     break;
                                 }
-    
-//                                if (pcm_peek(0) != pcm.msg_buffer[0]) // make sure the first RAM-table byte is echoed back correctly
-//                                {
-//                                    pcm_rx_flush();
-//                                    echo_retry_counter++;
-//
-//                                    if (echo_retry_counter < 10) goto pcm_again_01;
-//                                    else
-//                                    {
-//                                        send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_memory_ptr_no_response, pcm.msg_buffer, 1); // send error packet back to the laptop
-//                                        pcm_rx_flush();
-//                                        break;
-//                                    }
-//                                }
                             }
-    
+
                             if (!timeout_reached)
                             {
                                 pcm.response_received = true;
                             }
-//                        }
-//                        else
-//                        {
-//                            // Messsage doesn't start with a RAM-table value, invalid
-//                            send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_invalid_memory_ptr, pcm.msg_buffer, 1); // send error packet back to the laptop
-//                            pcm_rx_flush();
-//                        }
                         }
+                    }
                 }
                 else if (pcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
                 {
-                    // Navigate in the main buffer after the message length byte and start sending those bytes
-//                    if (array_contains(sci_hi_speed_memarea, 16, pcm.msg_buffer[pcm.msg_buffer_ptr + 1])) // make sure that the memory table select byte is approved by the PCM before sending the full message
-//                    {
-                        uint8_t j = 0;
-                        
-                        for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++) // repeat for the length of the message
+                    // Navigate in the main buffer after the message length byte and start sending those bytes.
+                    uint8_t j = 0;
+
+                    for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++) // repeat for the length of the message
+                    {
+                        timeout_reached = false;
+                        timeout_start = millis(); // save current time
+                        pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
+
+                        while ((pcm_rx_available() <= j) && !timeout_reached)
                         {
-//                            pcm_again_02:
-                            timeout_reached = false;
-                            timeout_start = millis(); // save current time
-                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
-                           
-                            while ((pcm_rx_available() <= j) && !timeout_reached)
-                            {
-                                // wait here for response (echo in case of F0...FF)
-                                if ((uint32_t)(millis() - timeout_start) >= SCI_HS_T3_DELAY) timeout_reached = true;
-                            }
-
-                            if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
-                            {
-                                uint8_t ret[2] = { pcm.msg_buffer[pcm.msg_buffer_ptr + 1], pcm.msg_buffer[pcm.msg_buffer_ptr + 1 + j] };
-                                send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_no_response, ret, 2); // return two bytes to determine which table and which address is unresponsive
-                                pcm_rx_flush();
-                                break;
-                            }
-
-//                            if (pcm_peek(0) != pcm.msg_buffer[pcm.msg_buffer_ptr + 1]) // make sure the first RAM-table byte is echoed back correctly
-//                            {
-//                                pcm_rx_flush();
-//                                echo_retry_counter++;
-//                                if (echo_retry_counter < 10) goto pcm_again_02;
-//                                else
-//                                {
-//                                    send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_memory_ptr_no_response, pcm.msg_buffer, 1); // send error packet back to the laptop
-//                                    break;
-//                                }
-//                            }
-                            
-                            j++;
+                            // wait here for response (echo in case of F0...FF)
+                            if ((uint32_t)(millis() - timeout_start) >= SCI_HS_T3_DELAY) timeout_reached = true;
                         }
 
-                        if (!timeout_reached)
+                        if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                         {
-                            pcm.response_received = true;
+                            uint8_t ret[2] = { pcm.msg_buffer[pcm.msg_buffer_ptr + 1], pcm.msg_buffer[pcm.msg_buffer_ptr + 1 + j] };
+                            send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_no_response, ret, 2); // return two bytes to determine which table and which address is unresponsive
+                            pcm_rx_flush();
+                            break;
                         }
-//                    }
-//                    else
-//                    {
-//                        // Messsage doesn't start with a RAM-table value, invalid
-//                        send_usb_packet(from_usb, to_usb, ok_error, error_sci_hs_invalid_memory_ptr, pcm.msg_buffer, 1); // send error packet back to the laptop
-//                    }
+
+                        j++;
+                    }
+
+                    if (!timeout_reached)
+                    {
+                        pcm.response_received = true;
+                    }
                 }
             }
             else // non-standard speeds
@@ -6412,7 +6396,7 @@ void handle_sci_data(void)
                     if (!timeout_reached)
                     {
                         pcm.echo_received = true;
-                        
+
                         // Wait here for the general 1-byte response
                         uint8_t num_bytes = pcm_rx_available();
                         timeout_reached = false;
@@ -6438,14 +6422,14 @@ void handle_sci_data(void)
                 else if (pcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
                 {
                     uint8_t j = 0;
-                    
+
                     // Navigate in the main buffer after the message length byte and start sending those bytes 
                     for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++) // repeat for the length of the message
                     {
                         timeout_reached = false;
                         timeout_start = millis(); // save current time
                         pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
-                       
+
                         while ((pcm_rx_available() <= j) && !timeout_reached)
                         {
                             // wait here for response (echo in case of F0...FF)
@@ -6459,14 +6443,14 @@ void handle_sci_data(void)
                             pcm_rx_flush();
                             break;
                         }
-                        
+
                         j++;
                     }
 
                     if (!timeout_reached)
                     {
                         pcm.echo_received = true;
-                        
+
                         // Wait here for the general 1-byte response
                         uint8_t num_bytes = pcm_rx_available();
                         timeout_reached = false;
@@ -6490,12 +6474,12 @@ void handle_sci_data(void)
                     }
                 }
             }
-            
+
             pcm.msg_tx_pending = false; // re-arm, make it possible to send a message again
             pcm.msg_tx_count++;
         }
     }
-    
+
     if (tcm.enabled)
     {
         // Handle completed messages
