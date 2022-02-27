@@ -5168,7 +5168,7 @@ void check_ccd_volts(void)
         ccd_positive_adc += analogRead(CCD_POSITIVE);
     }
 
-    for (uint16_t i = 0; i < 128; i++) // get 200 samples in quick succession
+    for (uint16_t i = 0; i < 128; i++) // get 128 samples in quick succession
     {
         ccd_negative_adc += analogRead(CCD_NEGATIVE);
     }
@@ -6192,19 +6192,19 @@ void handle_sci_data(void)
             {
                 if (pcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                 {
-                    if ((pcm.msg_buffer_ptr > 1) && (pcm.msg_buffer[1] == 0xFF)) // return full RAM-table if the first address is an invalid 0xFF
-                    {
-                        // Prepare message buffer as if it was filled with data beforehand
-                        for (uint8_t i = 0; i < 240; i++)
-                        {
-                            pcm.msg_buffer[1 + i] = i; // put the address byte after the memory table pointer
-                        }
-
-                        pcm.msg_buffer_ptr = 241;
-                    }
-
                     if (array_contains(sci_hi_speed_memarea, 16, pcm.msg_buffer[0])) // normal mode
                     {
+                        if ((pcm.msg_buffer_ptr > 1) && (pcm.msg_buffer[1] == 0xFF)) // return full RAM-table if the first address is an invalid 0xFF
+                        {
+                            // Prepare message buffer as if it was filled with data beforehand
+                            for (uint8_t i = 0; i < 240; i++)
+                            {
+                                pcm.msg_buffer[1 + i] = i; // put the address byte after the memory table pointer
+                            }
+
+                            pcm.msg_buffer_ptr = 241;
+                        }
+
                         for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
                         {
                             timeout_reached = false;
