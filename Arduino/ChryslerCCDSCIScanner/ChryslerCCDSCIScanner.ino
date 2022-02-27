@@ -401,9 +401,8 @@ uint16_t led_blink_duration = 50; // milliseconds
 uint16_t heartbeat_interval = 5000; // milliseconds
 bool heartbeat_enabled = true;
 
-/*
 // Stock SBEC3 bootloder.
-const uint8_t bootloader[521] PROGMEM =
+const uint8_t bootloader_stock[] PROGMEM =
 {
     0x4c, 0x01, 0x00, 0x03, 0x03, 0x37, 0x80, 0x00, 0xac, 0xfa, 0x00, 0x01, 0x98, 0xf8, 0x10, 0xb7, 
     0x02, 0xf8, 0x20, 0xb7, 0x58, 0xb6, 0xee, 0xf5, 0x11, 0xfa, 0x00, 0x01, 0x82, 0xfa, 0x00, 0x01, 
@@ -439,10 +438,9 @@ const uint8_t bootloader[521] PROGMEM =
     0x0a, 0x2a, 0x80, 0x7c, 0x1f, 0xff, 0xf6, 0x28, 0x80, 0x7c, 0x1f, 0x37, 0x06, 0xb0, 0x04, 0x37, 
     0x3b, 0x01, 0x00, 0x37, 0xfc, 0xf5, 0xa5, 0x27, 0xf7
 };
-*/
 
 // Custom SBEC3 bootloader for flash dumping by dino2gnt.
-const uint8_t bootloader[621] PROGMEM =
+const uint8_t bootloader_custom_01[] PROGMEM =
 {
     0x4c, 0x01, 0x00, 0x03, 0x68, 0x37, 0x80, 0x00, 0xb2, 0xfa, 0x00, 0x01, 0x9e, 0xf8, 0x10, 0xb7, 
     0x08, 0xf8, 0x20, 0xb7, 0x5e, 0xf8, 0x45, 0x37, 0x87, 0x01, 0xf2, 0xb6, 0xe8, 0xf5, 0x11, 0xfa, 
@@ -485,9 +483,6 @@ const uint8_t bootloader[621] PROGMEM =
     0x76, 0x37, 0x87, 0xfd, 0xa2, 0x37, 0x30, 0x00, 0x01, 0xb0, 0xe8, 0x27, 0x4c
 };
 
-
-uint16_t bootloader_length = 621;
-
 /*************************************************************************
 Function: Math_Seed()
 Purpose:  solve the bootstrap security seed
@@ -511,7 +506,7 @@ uint16_t Math_Seed(uint16_t input)
 Function: unlock_bootstrap_mode()
 Purpose:  solve the bootstrap security seed and upload bootloader
 **************************************************************************/
-void unlock_bootstrap_mode()
+void unlock_bootstrap_mode(uint8_t *bootloader_src)
 {
     uint8_t ret[1] = { 0 };
     // 0 = ok
@@ -613,12 +608,7 @@ void unlock_bootstrap_mode()
     }
 
     uint8_t send_seed_sol[7] = { 0x24, 0xD0, 0x27, 0xC2, seed_sol[0], seed_sol[1], 0 };
-
-    // Calculate and place checksum.
-    for (uint8_t i = 0; i < 6; i++)
-    {
-        send_seed_sol[6] += send_seed_sol[i];
-    }
+    send_seed_sol[6] = calculate_checksum(send_seed_sol, 0, ARRAY_SIZE(send_seed_sol) - 1);
 
     wdt_reset(); // feed the watchdog
     pcm_rx_flush();
@@ -666,9 +656,9 @@ void unlock_bootstrap_mode()
     pcm_rx_flush();
 
     // Upload bootloader.
-    for (uint16_t i = 0; i < bootloader_length; i++)
+    for (uint16_t i = 0; i < ARRAY_SIZE(&bootloader_src); i++)
     {
-        pcm_putc(pgm_read_byte(bootloader + i));
+        pcm_putc(pgm_read_byte(&bootloader_src + i));
 
         while (pcm_rx_available() == 0); // wait for echo
 
@@ -4454,7 +4444,31 @@ void handle_usb_data(void)
                                     }
                                     case init_bootstrap_mode: // 0x0A - init SBEC3 bootstrap mode
                                     {
-                                        unlock_bootstrap_mode();
+                                        if (!payload_bytes)
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            break;
+                                        }
+
+                                        switch (cmd_payload[0])
+                                        {
+                                            case 0x00: // stock bootloader
+                                            {
+                                                unlock_bootstrap_mode(bootloader_stock);
+                                                break;
+                                            }
+                                            case 0x01: // custom bootloader by dino2gnt
+                                            {
+                                                unlock_bootstrap_mode(bootloader_custom_01);
+                                                break;
+                                            }
+                                            default:
+                                            {
+                                                unlock_bootstrap_mode(bootloader_stock);
+                                                break;
+                                            }
+                                        }
+
                                         break;
                                     }
                                     default:
