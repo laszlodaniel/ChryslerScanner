@@ -506,7 +506,7 @@ uint16_t Math_Seed(uint16_t input)
 Function: unlock_bootstrap_mode()
 Purpose:  solve the bootstrap security seed and upload bootloader
 **************************************************************************/
-void unlock_bootstrap_mode(uint8_t *bootloader_src)
+void unlock_bootstrap_mode(uint8_t bootloader_src)
 {
     uint8_t ret[1] = { 0 };
     // 0 = ok
@@ -656,13 +656,38 @@ void unlock_bootstrap_mode(uint8_t *bootloader_src)
     pcm_rx_flush();
 
     // Upload bootloader.
-    for (uint16_t i = 0; i < ARRAY_SIZE(&bootloader_src); i++)
+    switch (bootloader_src)
     {
-        pcm_putc(pgm_read_byte(&bootloader_src + i));
-
-        while (pcm_rx_available() == 0); // wait for echo
-
-        pcm_rx_flush();
+        case 0:
+        {
+            for (uint16_t i = 0; i < ARRAY_SIZE(bootloader_stock); i++)
+            {
+                pcm_putc(pgm_read_byte(bootloader_stock + i));
+                while (pcm_rx_available() == 0); // wait for echo
+                pcm_rx_flush();
+            }
+            break;
+        }
+        case 1:
+        {
+            for (uint16_t i = 0; i < ARRAY_SIZE(bootloader_custom_01); i++)
+            {
+                pcm_putc(pgm_read_byte(bootloader_custom_01 + i));
+                while (pcm_rx_available() == 0); // wait for echo
+                pcm_rx_flush();
+            }
+            break;
+        }
+        default:
+        {
+            for (uint16_t i = 0; i < ARRAY_SIZE(bootloader_stock); i++)
+            {
+                pcm_putc(pgm_read_byte(bootloader_stock + i));
+                while (pcm_rx_available() == 0); // wait for echo
+                pcm_rx_flush();
+            }
+            break;
+        }
     }
 
     wdt_reset(); // feed the watchdog
@@ -4450,25 +4475,7 @@ void handle_usb_data(void)
                                             break;
                                         }
 
-                                        switch (cmd_payload[0])
-                                        {
-                                            case 0x00: // stock bootloader
-                                            {
-                                                unlock_bootstrap_mode(bootloader_stock);
-                                                break;
-                                            }
-                                            case 0x01: // custom bootloader by dino2gnt
-                                            {
-                                                unlock_bootstrap_mode(bootloader_custom_01);
-                                                break;
-                                            }
-                                            default:
-                                            {
-                                                unlock_bootstrap_mode(bootloader_stock);
-                                                break;
-                                            }
-                                        }
-
+                                        unlock_bootstrap_mode(cmd_payload[0]);
                                         break;
                                     }
                                     default:
