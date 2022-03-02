@@ -144,7 +144,8 @@ namespace ChryslerCCDSCIScanner
             writeIntEEPROMblock = 0x07,
             writeExtEEPROMbyte = 0x08,
             writeExtEEPROMblock = 0x09,
-            setArbitraryUARTSpeed = 0x0A
+            setArbitraryUARTSpeed = 0x0A,
+            initBootstrapMode = 0x0B
         }
 
         public enum ErrorMode : byte

@@ -85,6 +85,12 @@
     <Compile Include="FlickerFreeListBox.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="SecuritySeedCalculatorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SecuritySeedCalculatorForm.Designer.cs">
+      <DependentUpon>SecuritySeedCalculatorForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="ReadMemoryForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -131,6 +137,9 @@
     </Compile>
     <EmbeddedResource Include="ReadMemoryForm.resx">
       <DependentUpon>ReadMemoryForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SecuritySeedCalculatorForm.resx">
+      <DependentUpon>SecuritySeedCalculatorForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="WriteMemoryForm.resx">
       <DependentUpon>WriteMemoryForm.cs</DependentUpon>

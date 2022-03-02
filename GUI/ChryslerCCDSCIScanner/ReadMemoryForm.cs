@@ -65,6 +65,7 @@ namespace ChryslerCCDSCIScanner
         public byte[] SCIBusPCMCurrentMemoryOffsetBytes = new byte[3];
         public uint SCIBusPCMCurrentMemoryOffset = 0;
         public byte SCIBusPCMMemoryValue = 0;
+        public byte[] SCIBusPCMMemoryArray;
         public uint SCIBusPCMBytesReadCount = 0;
         public uint SCIBusPCMTotalBytes = 0;
         public byte[] SCIBusPCMTxPayload = new byte[4] { 0x26, 0x00, 0x00, 0x00 };
@@ -794,47 +795,59 @@ namespace ChryslerCCDSCIScanner
             SCIBusPCMReadMemoryCurrentOffsetTextBox.Text = Util.ByteToHexStringSimple(SCIBusPCMCurrentMemoryOffsetBytes);
             SCIBusPCMReadMemoryCurrentOffsetTextBox.SelectionLength = 0;
 
-            SCIBusPCMTotalBytes = (SCIBusPCMMemoryOffsetEnd - SCIBusPCMMemoryOffsetStart + SCIBusPCMIncrement) / SCIBusPCMIncrement;
+            SCIBusPCMReadMemoryValueTextBox.Text = "00";
+
+            SCIBusPCMTotalBytes = SCIBusPCMMemoryOffsetEnd - SCIBusPCMMemoryOffsetStart + 1;
             SCIBusPCMBytesReadCount = 0;
             SCIBusPCMReadMemoryProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusPCMBytesReadCount / (double)SCIBusPCMTotalBytes * 100.0)) + "% (" + SCIBusPCMBytesReadCount.ToString() + "/" + SCIBusPCMTotalBytes.ToString() + " bytes)";
 
             SCIBusPCMReadMemoryInfoTextBox.Clear();
-            UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "Initialize memory reading session.");
-            UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Preset: ");
 
             string DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
             switch (SCIBusPCMReadMemoryPresetComboBox.SelectedIndex)
             {
                 case 0: // ROM/32kB
-                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "ROM/32kB");
                     SCIBusPCMMemoryBinaryFilename = @"ROMs/PCM/pcm_eprom_" + DateTimeNow + ".bin";
                     SCIBusPCMMemoryTextFilename = @"ROMs/PCM/pcm_eprom_" + DateTimeNow + ".txt";
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "Initialize memory reading session.");
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Preset: ");
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "ROM/32kB");
                     break;
                 case 1: // ROM/64kB
-                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "ROM/64kB");
                     SCIBusPCMMemoryBinaryFilename = @"ROMs/PCM/pcm_eprom_" + DateTimeNow + ".bin";
                     SCIBusPCMMemoryTextFilename = @"ROMs/PCM/pcm_eprom_" + DateTimeNow + ".txt";
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "Initialize memory reading session.");
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Preset: ");
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "ROM/64kB");
                     break;
                 case 2: // ROM/128kB
-                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "ROM/128kB");
                     SCIBusPCMMemoryBinaryFilename = @"ROMs/PCM/pcm_eprom_" + DateTimeNow + ".bin";
                     SCIBusPCMMemoryTextFilename = @"ROMs/PCM/pcm_eprom_" + DateTimeNow + ".txt";
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "Initialize memory reading session.");
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Preset: ");
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "ROM/128kB");
                     break;
                 case 3: // ROM/256kB
-                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "ROM/256kB");
                     SCIBusPCMMemoryBinaryFilename = @"ROMs/PCM/pcm_eprom_" + DateTimeNow + ".bin";
                     SCIBusPCMMemoryTextFilename = @"ROMs/PCM/pcm_eprom_" + DateTimeNow + ".txt";
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "Initialize memory reading session.");
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Preset: ");
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "ROM/256kB");
                     break;
                 case 4: // EEPROM (512B)
-                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "EEPROM");
                     SCIBusPCMMemoryBinaryFilename = @"ROMs/PCM/pcm_eeprom_" + DateTimeNow + ".bin";
                     SCIBusPCMMemoryTextFilename = @"ROMs/PCM/pcm_eeprom_" + DateTimeNow + ".txt";
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "Initialize memory reading session.");
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Preset: ");
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "EEPROM");
                     break;
                 case 5: // RAM (6kB)
-                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "RAM");
                     SCIBusPCMMemoryBinaryFilename = @"ROMs/PCM/pcm_ram_" + DateTimeNow + ".bin";
                     SCIBusPCMMemoryTextFilename = @"ROMs/PCM/pcm_ram_" + DateTimeNow + ".txt";
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "Initialize memory reading session.");
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Preset: ");
+                    UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "RAM");
                     break;
             }
 
@@ -858,7 +871,8 @@ namespace ChryslerCCDSCIScanner
                 SCIBusPCMTxRetryCount = 0;
 
                 if (SCIBusPCMMemoryOffsetWidth == 16) SCIBusPCMTxPayload = new byte[3] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1] };
-                if (SCIBusPCMMemoryOffsetWidth == 24) SCIBusPCMTxPayload = new byte[4] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2] };
+                if ((SCIBusPCMMemoryOffsetWidth == 24) && (SCIBusPCMReadMemoryCommand == 0x45)) SCIBusPCMTxPayload = new byte[6] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2], SCIBusPCMIncrementBytes[1], SCIBusPCMIncrementBytes[2] };
+                else SCIBusPCMTxPayload = new byte[4] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2] };
             }
             else
             {
@@ -867,6 +881,9 @@ namespace ChryslerCCDSCIScanner
                 SCIBusPCMReadMemoryStopButton.Enabled = false;
                 UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Failed to initialize session.");
             }
+
+            if (SCIBusPCMReadMemoryCommand == 0x45) SCIBusPCMNextRequestTimer.Interval = 10; // ms
+            else SCIBusPCMNextRequestTimer.Interval = 25; // ms
 
             SCIBusPCMReadMemoryHelpButton.Enabled = true;
         }
@@ -877,7 +894,8 @@ namespace ChryslerCCDSCIScanner
             SCIBusPCMReadMemoryCurrentOffsetTextBox.SelectionLength = 0;
 
             if (SCIBusPCMMemoryOffsetWidth == 16) SCIBusPCMTxPayload = new byte[3] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1] };
-            if (SCIBusPCMMemoryOffsetWidth == 24) SCIBusPCMTxPayload = new byte[4] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2] };
+            if ((SCIBusPCMMemoryOffsetWidth == 24) && (SCIBusPCMReadMemoryCommand == 0x45)) SCIBusPCMTxPayload = new byte[6] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2], SCIBusPCMIncrementBytes[1], SCIBusPCMIncrementBytes[2] };
+            else SCIBusPCMTxPayload = new byte[4] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2] };
 
             SCIBusPCMReadMemoryInitializeSessionButton.Enabled = false;
             SCIBusPCMReadMemoryStartButton.Enabled = false;
@@ -1219,14 +1237,59 @@ namespace ChryslerCCDSCIScanner
             {
                 byte[] SCIBusPCMResponseBytes = MainForm.Packet.rx.payload.Skip(4).ToArray(); // skip 4 timestamp bytes
 
-                UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "RX: " + Util.ByteToHexStringSimple(SCIBusPCMResponseBytes));
+                if (SCIBusPCMReadMemoryCommand == 0x45) UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "RX: " + Environment.NewLine + Util.ByteToHexStringSimple(SCIBusPCMResponseBytes));
+                else UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "RX: " + Util.ByteToHexStringSimple(SCIBusPCMResponseBytes));
 
                 if (SCIBusPCMResponseBytes[0] == 0xFE)
                 {
                     SCIBusPCMRxTimeoutTimer.Stop();
                 }
 
-                if (SCIBusPCMResponseBytes[0] == SCIBusPCMReadMemoryCommand)
+                if (SCIBusPCMResponseBytes[0] == 0x46)
+                {
+                    if ((SCIBusPCMResponseBytes[1] == SCIBusPCMCurrentMemoryOffsetBytes[0]) && (SCIBusPCMResponseBytes[2] == SCIBusPCMCurrentMemoryOffsetBytes[1]) && (SCIBusPCMResponseBytes[3] == SCIBusPCMCurrentMemoryOffsetBytes[2])) // check if response has the offset we are currently waiting for
+                    {
+                        SCIBusPCMResponse = true;
+                        SCIBusPCMRxTimeoutTimer.Stop();
+
+                        UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, " | ok");
+                    }
+                    else
+                    {
+                        UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, " | error: invalid offset");
+                        return;
+                    }
+
+                    ushort length = (ushort)((SCIBusPCMResponseBytes[4] << 8) | SCIBusPCMResponseBytes[5]);
+                    SCIBusPCMMemoryArray = new byte[length];
+                    Array.Copy(SCIBusPCMResponseBytes, 6, SCIBusPCMMemoryArray, 0, length);
+
+                    SCIBusPCMReadMemoryCurrentOffsetTextBox.Text = Util.ByteToHexStringSimple(SCIBusPCMCurrentMemoryOffsetBytes);
+                    SCIBusPCMReadMemoryCurrentOffsetTextBox.SelectionLength = 0;
+                    SCIBusPCMReadMemoryValueTextBox.Text = Util.ByteToHexStringSimple(SCIBusPCMMemoryArray);
+                    SCIBusPCMReadMemoryValueTextBox.SelectionLength = 0;
+
+                    SCIBusPCMBytesReadCount += SCIBusPCMIncrement;
+                    SCIBusPCMReadMemoryProgressLabel.Text = "Progress: " + (byte)((double)SCIBusPCMBytesReadCount / (double)SCIBusPCMTotalBytes * 100.0) + "% (" + SCIBusPCMBytesReadCount.ToString() + "/" + SCIBusPCMTotalBytes.ToString() + " bytes)";
+
+                    using (BinaryWriter writer = new BinaryWriter(File.Open(SCIBusPCMMemoryBinaryFilename, FileMode.Append)))
+                    {
+                        writer.Write(SCIBusPCMMemoryArray); // write bytes to file
+                        writer.Close();
+                    }
+
+                    SCIBusPCMCurrentMemoryOffset += SCIBusPCMIncrement;
+
+                    SCIBusPCMCurrentMemoryOffsetBytes[0] = (byte)(SCIBusPCMCurrentMemoryOffset >> 16);
+                    SCIBusPCMCurrentMemoryOffsetBytes[1] = (byte)(SCIBusPCMCurrentMemoryOffset >> 8);
+                    SCIBusPCMCurrentMemoryOffsetBytes[2] = (byte)SCIBusPCMCurrentMemoryOffset;
+                    SCIBusPCMTxPayload = new byte[6] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2], SCIBusPCMIncrementBytes[1], SCIBusPCMIncrementBytes[2] };
+
+                    SCIBusPCMNextRequest = false;
+                    SCIBusPCMNextRequestTimer.Stop();
+                    SCIBusPCMNextRequestTimer.Start();
+                }
+                else if (SCIBusPCMResponseBytes[0] == SCIBusPCMReadMemoryCommand)
                 {
                     if (SCIBusPCMResponseBytes.Length == (SCIBusPCMTxPayload.Length + 1))
                     {

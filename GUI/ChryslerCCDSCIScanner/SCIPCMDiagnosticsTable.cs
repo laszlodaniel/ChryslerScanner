@@ -109,6 +109,9 @@ namespace ChryslerCCDSCIScanner
             // Don't update table if speed change byte is received.
             if (data[4] == 0xFE) return;
 
+            // Don't update table in bootstrap mode.
+            if (data[4] < 0xF0) return;
+
             // Clear table on RAM table change.
             if (data[4] != RAMTableAddress) InitRAMDumpTable();
             RAMTableAddress = data[4];

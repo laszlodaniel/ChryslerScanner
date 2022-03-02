@@ -67,6 +67,7 @@ namespace ChryslerCCDSCIScanner
 
         public ReadMemoryForm ReadMemory;
         public WriteMemoryForm WriteMemory;
+        public SecuritySeedCalculatorForm SecuritySeedCalculator;
         public AboutForm About;
         public static Packet Packet = new Packet();
         public CCD CCD = new CCD();
@@ -154,6 +155,7 @@ namespace ChryslerCCDSCIScanner
             SCIBusSpeedComboBox.SelectedIndex = 2;
             LCDStateComboBox.SelectedIndex = 0;
             LCDDataSourceComboBox.SelectedIndex = 0;
+            SCIBusPCMBootloaderComboBox.SelectedIndex = 0;
 
             // Load saved settings.
             if (Properties.Settings.Default.Units == "metric")
@@ -614,12 +616,12 @@ namespace ChryslerCCDSCIScanner
                                     if (Util.IsBitClear(Packet.rx.payload[24], 3))
                                     {
                                         SCIBusPCMLogicString += "non-inverted";
-                                        SCIBusOBD1EngineCableUsedCheckBox.Checked = false;
+                                        SCIBusOBD1EngineCableCheckBox.Checked = false;
                                     }
                                     else
                                     {
                                         SCIBusPCMLogicString += "inverted";
-                                        SCIBusOBD1EngineCableUsedCheckBox.Checked = true;
+                                        SCIBusOBD1EngineCableCheckBox.Checked = true;
                                     }
 
                                     if (Util.IsBitClear(Packet.rx.payload[24], 2))
@@ -1954,6 +1956,46 @@ namespace ChryslerCCDSCIScanner
                                     else
                                     {
                                         Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", Packet.rx.buffer);
+                                    }
+                                    break;
+                                case (byte)Packet.DebugMode.initBootstrapMode:
+                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Init SCI-bus bootstrap mode:", Packet.rx.buffer);
+
+                                        switch (Packet.rx.payload[0])
+                                        {
+                                            case 0:
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus bootstrap init success.");
+                                                break;
+                                            case 1:
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: no response to magic byte.");
+                                                break;
+                                            case 2:
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: unexpected response to magic byte.");
+                                                break;
+                                            case 3:
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: security seed response timeout.");
+                                                break;
+                                            case 4:
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: security seed response checksum.");
+                                                break;
+                                            case 5:
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: security seed solution status timeout.");
+                                                break;
+                                            case 6:
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: security seed solution not accepted.");
+                                                break;
+                                            case 7:
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: start bootloader timeout.");
+                                                break;
+                                            case 8:
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: unexpected bootloader status byte.");
+                                                break;
+                                            default:
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: unknown status.");
+                                                break;
+                                        }
                                     }
                                     break;
                                 default:
@@ -3955,7 +3997,7 @@ namespace ChryslerCCDSCIScanner
                     config = Util.ClearBit(config, 6); // PCM
                     config = Util.SetBit(config, 5); // set change bit
 
-                    if (SCIBusOBD1EngineCableUsedCheckBox.Checked)
+                    if (SCIBusOBD1EngineCableCheckBox.Checked)
                     {
                         config = Util.SetBit(config, 3);
                     }
@@ -4148,7 +4190,7 @@ namespace ChryslerCCDSCIScanner
                     SCIBusFaultCodesLabel.Enabled = true;
                     SCIBusReadFaultCodesButton.Enabled = true;
                     SCIBusEraseFaultCodesButton.Enabled = true;
-                    SCIBusOBD1EngineCableUsedCheckBox.Enabled = true;
+                    SCIBusOBD1EngineCableCheckBox.Enabled = true;
 
                     if (PCM.state == "enabled")
                     {
@@ -4162,8 +4204,8 @@ namespace ChryslerCCDSCIScanner
                         SCIBusSpeedComboBox.SelectedIndex = 0; // off
                     }
 
-                    if (PCM.logic == "non-inverted") SCIBusOBD1EngineCableUsedCheckBox.Checked = false;
-                    else if (PCM.logic == "inverted") SCIBusOBD1EngineCableUsedCheckBox.Checked = true;
+                    if (PCM.logic == "non-inverted") SCIBusOBD1EngineCableCheckBox.Checked = false;
+                    else if (PCM.logic == "inverted") SCIBusOBD1EngineCableCheckBox.Checked = true;
 
                     if (PCM.configuration == "A") SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
                     else if (PCM.configuration == "B") SCIBusOBDConfigurationComboBox.SelectedIndex = 1;
@@ -4173,7 +4215,7 @@ namespace ChryslerCCDSCIScanner
                     SCIBusFaultCodesLabel.Enabled = false;
                     SCIBusReadFaultCodesButton.Enabled = false;
                     SCIBusEraseFaultCodesButton.Enabled = false;
-                    SCIBusOBD1EngineCableUsedCheckBox.Enabled = false;
+                    SCIBusOBD1EngineCableCheckBox.Enabled = false;
 
                     if (TCM.state == "enabled")
                     {
@@ -4187,8 +4229,8 @@ namespace ChryslerCCDSCIScanner
                         SCIBusSpeedComboBox.SelectedIndex = 0; // off
                     }
 
-                    if (TCM.logic == "non-inverted") SCIBusOBD1EngineCableUsedCheckBox.Checked = false;
-                    else if (TCM.logic == "inverted") SCIBusOBD1EngineCableUsedCheckBox.Checked = true;
+                    if (TCM.logic == "non-inverted") SCIBusOBD1EngineCableCheckBox.Checked = false;
+                    else if (TCM.logic == "inverted") SCIBusOBD1EngineCableCheckBox.Checked = true;
 
                     if (TCM.configuration == "A") SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
                     else if (TCM.configuration == "B") SCIBusOBDConfigurationComboBox.SelectedIndex = 1;
@@ -4330,6 +4372,65 @@ namespace ChryslerCCDSCIScanner
                     SCIBusTxMessageComboBox.Items.Add(SCIBusTxMessageComboBox.Text); // add message to the list so it can be selected later
                 }
             }
+        }
+
+        private async void SCIBusLowSpeedSelectButton_Click(object sender, EventArgs e)
+        {
+            Packet.tx.source = (byte)Packet.Source.device;
+            Packet.tx.target = (byte)Packet.Target.pcm;
+            Packet.tx.command = (byte)Packet.Command.msgTx;
+            Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+            Packet.tx.payload = new byte[1] { 0xFE };
+            Packet.GeneratePacket();
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Select SCI-bus low-speed mode:", Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+        }
+
+        private async void SCIBusHighSpeedSelectButton_Click(object sender, EventArgs e)
+        {
+            Packet.tx.source = (byte)Packet.Source.device;
+            Packet.tx.target = (byte)Packet.Target.pcm;
+            Packet.tx.command = (byte)Packet.Command.msgTx;
+            Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+            Packet.tx.payload = new byte[1] { 0x12 };
+            Packet.GeneratePacket();
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Select SCI-bus high-speed mode:", Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+        }
+
+        private async void SCIBusPCMBootstrapButton_Click(object sender, EventArgs e)
+        {
+            Packet.tx.source = (byte)Packet.Source.device;
+            Packet.tx.target = (byte)Packet.Target.device;
+            Packet.tx.command = (byte)Packet.Command.debug;
+            Packet.tx.mode = (byte)Packet.DebugMode.initBootstrapMode;
+            Packet.tx.payload = new byte[1] { (byte)SCIBusPCMBootloaderComboBox.SelectedIndex };
+            Packet.GeneratePacket();
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Init SCI-bus bootstrap mode:", Packet.tx.buffer);
+
+            switch ((byte)SCIBusPCMBootloaderComboBox.SelectedIndex)
+            {
+                case 0:
+                    Util.UpdateTextBox(USBTextBox, "[INFO] Bootloader: stock SBEC3.");
+                    break;
+                case 1:
+                    Util.UpdateTextBox(USBTextBox, "[INFO] Bootloader: custom SBEC3 #1.");
+                    break;
+                case 2:
+                    Util.UpdateTextBox(USBTextBox, "[INFO] Bootloader: custom SBEC3 #2.");
+                    break;
+                case 3:
+                    Util.UpdateTextBox(USBTextBox, "[INFO] Bootloader: custom SBEC3 #3.");
+                    break;
+                case 4:
+                    Util.UpdateTextBox(USBTextBox, "[INFO] Bootloader: custom SBEC3 #4.");
+                    break;
+                default:
+                    Util.UpdateTextBox(USBTextBox, "[INFO] Bootloader: stock SBEC3.");
+                    break;
+            }
+
+            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
         }
 
         #endregion
@@ -4952,6 +5053,25 @@ namespace ChryslerCCDSCIScanner
         }
 
         #endregion
+
+        private void SecuritySeedCalculatorToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (SecuritySeedCalculator == null)
+            {
+                SecuritySeedCalculator = new SecuritySeedCalculatorForm(this)
+                {
+                    StartPosition = FormStartPosition.CenterParent
+                };
+
+                SecuritySeedCalculator.FormClosed += delegate { SecuritySeedCalculator = null; };
+                SecuritySeedCalculator.Show();
+            }
+            else
+            {
+                SecuritySeedCalculator.WindowState = FormWindowState.Normal;
+                SecuritySeedCalculator.Focus();
+            }
+        }
     }
 
     public static class StringExt
