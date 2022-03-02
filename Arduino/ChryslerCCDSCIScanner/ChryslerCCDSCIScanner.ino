@@ -37,16 +37,16 @@
 
 // Firmware version (hexadecimal format):
 // 00: major
-// 06: minor
-// 08: patch
+// 07: minor
+// 00: patch
 // (00: revision)
-// = v0.6.8(.0)
-#define FW_VERSION 0x00060800
+// = v0.7.0(.0)
+#define FW_VERSION 0x00070000
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00060800621B3476
+#define FW_DATE 0x00070000621F2C03
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -224,8 +224,9 @@
 #define write_inteeprom_block     0x07
 #define write_exteeprom_byte      0x08
 #define write_exteeprom_block     0x09
-#define init_bootstrap_mode       0x0A
-// 0x0A-0xFF reserved
+#define set_arbitrary_uart_speed  0x0A
+#define init_bootstrap_mode       0x0B
+// 0x0C-0xFF reserved
 
 // SUB-DATA CODE byte
 // Command 0x0F (ok_error)
@@ -401,7 +402,7 @@ uint16_t led_blink_duration = 50; // milliseconds
 uint16_t heartbeat_interval = 5000; // milliseconds
 bool heartbeat_enabled = true;
 
-// Stock SBEC3 bootloder.
+// Stock SBEC3 bootloader.
 const uint8_t bootloader_stock[] PROGMEM =
 {
     0x4c, 0x01, 0x00, 0x03, 0x03, 0x37, 0x80, 0x00, 0xac, 0xfa, 0x00, 0x01, 0x98, 0xf8, 0x10, 0xb7, 
@@ -4467,7 +4468,11 @@ void handle_usb_data(void)
                                         }
                                         break;
                                     }
-                                    case init_bootstrap_mode: // 0x0A - init SBEC3 bootstrap mode
+                                    case set_arbitrary_uart_speed: // 0x0A
+                                    {
+                                        break;
+                                    }
+                                    case init_bootstrap_mode: // 0x0B - init SBEC3 bootstrap mode
                                     {
                                         if (!payload_bytes)
                                         {
