@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 07: minor
-// 01: patch
+// 02: patch
 // (00: revision)
-// = v0.7.1(.0)
-#define FW_VERSION 0x00070100
+// = v0.7.2(.0)
+#define FW_VERSION 0x00070200
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00070100621FF1D1
+#define FW_DATE 0x0007020062249757
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -122,6 +122,7 @@
 #define SCI_HS_T3_DELAY 5
 #define SCI_HS_T4_DELAY 0
 #define SCI_HS_T5_DELAY 0
+#define SCI_BTSTRP_DLY  20
 
 //#define UART_FRAME_ERROR        0x1000  /**< Framing Error by UART          00010000 00000000 - FIXED BIT */ 
 //#define UART_OVERRUN_ERROR      0x0800  /**< Overrun condition by UART      00001000 00000000 - FIXED BIT */
@@ -402,8 +403,8 @@ uint16_t led_blink_duration = 50; // milliseconds
 uint16_t heartbeat_interval = 5000; // milliseconds
 bool heartbeat_enabled = true;
 
-// Stock SBEC3 bootloader.
-const uint8_t bootloader_stock[] PROGMEM =
+// Stock SBEC3 bootloader (256k).
+const uint8_t bootloader_stock_256k[] PROGMEM =
 {
     0x4c, 0x01, 0x00, 0x03, 0x03, 0x37, 0x80, 0x00, 0xac, 0xfa, 0x00, 0x01, 0x98, 0xf8, 0x10, 0xb7, 
     0x02, 0xf8, 0x20, 0xb7, 0x58, 0xb6, 0xee, 0xf5, 0x11, 0xfa, 0x00, 0x01, 0x82, 0xfa, 0x00, 0x01, 
@@ -419,7 +420,7 @@ const uint8_t bootloader_stock[] PROGMEM =
     0x01, 0xb6, 0xf6, 0x27, 0xf7, 0x27, 0x4c, 0x37, 0x3b, 0x00, 0xe0, 0xf5, 0x0f, 0x37, 0x9e, 0x37, 
     0xbe, 0x80, 0x00, 0xf5, 0x00, 0x37, 0x9f, 0x37, 0xbf, 0x07, 0xf6, 0x37, 0x15, 0x27, 0xfa, 0x37, 
     0x9d, 0xf5, 0x04, 0x37, 0x9c, 0x37, 0xbc, 0x80, 0x00, 0x37, 0xb5, 0x01, 0x48, 0x37, 0xea, 0x7a, 
-    0x00, 0x28, 0x80, 0x7a, 0x21, 0x37, 0xb5, 0x00, 0xcf, 0x37, 0xea, 0x7a, 0x44, 0x37, 0xb5, 0x04,
+    0x00, 0x28, 0x80, 0x7a, 0x21, 0x37, 0xb5, 0x00, 0xcf, 0x37, 0xea, 0x7a, 0x44, 0x37, 0xb5, 0x04, 
     0x05, 0x37, 0xea, 0x7a, 0x48, 0x37, 0xea, 0x7a, 0x4c, 0x37, 0xb5, 0x68, 0xf0, 0x37, 0xea, 0x7a, 
     0x4a, 0x37, 0xb5, 0x70, 0xf0, 0x37, 0xea, 0x7a, 0x4e, 0x37, 0xb5, 0xff, 0x88, 0x37, 0xea, 0x7a, 
     0x54, 0x37, 0xb5, 0x78, 0x30, 0x37, 0xea, 0x7a, 0x56, 0x37, 0xb5, 0xf8, 0x81, 0x37, 0xea, 0x08, 
@@ -434,14 +435,14 @@ const uint8_t bootloader_stock[] PROGMEM =
     0xb5, 0x00, 0x00, 0x37, 0xea, 0x7c, 0x1c, 0x75, 0x00, 0x17, 0x6a, 0x7c, 0x1e, 0x37, 0x35, 0x42, 
     0x42, 0x37, 0x6a, 0x7d, 0x41, 0x37, 0x35, 0x02, 0x02, 0x37, 0x6a, 0x7d, 0x43, 0x37, 0x35, 0xc2, 
     0x02, 0x37, 0x6a, 0x7d, 0x45, 0x37, 0x35, 0xc2, 0x42, 0x37, 0x6a, 0x7d, 0x48, 0x37, 0xb5, 0x01, 
-    0x00, 0x37, 0xea, 0x7d, 0x24, 0x37, 0xb5, 0x02, 0x02, 0x37, 0xea, 0x7c, 0x1c, 0xfa, 0x00, 0x02,
+    0x00, 0x37, 0xea, 0x7d, 0x24, 0x37, 0xb5, 0x02, 0x02, 0x37, 0xea, 0x7c, 0x1c, 0xfa, 0x00, 0x02, 
     0xde, 0x27, 0xf7, 0x28, 0x80, 0x7c, 0x1f, 0x29, 0x80, 0x7c, 0x1a, 0x37, 0x05, 0x37, 0x01, 0xb7, 
     0x0a, 0x2a, 0x80, 0x7c, 0x1f, 0xff, 0xf6, 0x28, 0x80, 0x7c, 0x1f, 0x37, 0x06, 0xb0, 0x04, 0x37, 
     0x3b, 0x01, 0x00, 0x37, 0xfc, 0xf5, 0xa5, 0x27, 0xf7
 };
 
-// Custom SBEC3 bootloader for flash dumping by dino2gnt.
-const uint8_t bootloader_custom_01[] PROGMEM =
+// Custom SBEC3 bootloader (256k) for flash dumping by dino2gnt.
+const uint8_t bootloader_custom_256k_01[] PROGMEM =
 {
     0x4c, 0x01, 0x00, 0x03, 0x61, 0x37, 0x80, 0x00, 0xb2, 0xfa, 0x00, 0x01, 0x9e, 0xf8, 0x10, 0xb7, 
     0x08, 0xf8, 0x20, 0xb7, 0x5e, 0xf8, 0x45, 0x37, 0x87, 0x01, 0xf2, 0xb6, 0xe8, 0xf5, 0x11, 0xfa, 
@@ -485,11 +486,11 @@ const uint8_t bootloader_custom_01[] PROGMEM =
 };
 
 /*************************************************************************
-Function: Math_Seed()
-Purpose:  solve the bootstrap security seed
+Function: solve_sbec3_bootstrap_seed()
+Purpose:  solve the bootstrap security challenge
 Note:     provided by Konstantin aka Piton
 **************************************************************************/
-uint16_t Math_Seed(uint16_t input)
+uint16_t solve_sbec3_bootstrap_seed(uint16_t input)
 {
     uint16_t seed = (input + 0x247c) | 5;
     int i = seed & 0xF;
@@ -503,11 +504,37 @@ uint16_t Math_Seed(uint16_t input)
     return (seed | 0x247c);
 }
 
+void dump_pcm_buffer()
+{
+    if (pcm_rx_available() > 0)
+    {
+        uint8_t response_length = pcm_rx_available();
+        uint16_t payload_length = TIMESTAMP_LENGTH + response_length;
+        uint8_t buff[payload_length];
+
+        update_timestamp(current_timestamp); // get current time for the timestamp
+
+        for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+        {
+            buff[i] = current_timestamp[i];
+        }
+
+        for (uint8_t i = 0; i < response_length; i++)
+        {
+            buff[TIMESTAMP_LENGTH + i] = pcm_getc() & 0xFF;
+        }
+
+        send_usb_packet(from_pcm, to_usb, msg_rx, sci_hs_bytes, buff, payload_length);
+    }
+}
+
+uint16_t pcm_peek(uint16_t index = 0); // function prototype
+
 /*************************************************************************
 Function: unlock_bootstrap_mode()
 Purpose:  solve the bootstrap security seed and upload bootloader
 **************************************************************************/
-void unlock_bootstrap_mode(uint8_t bootloader_src)
+void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
 {
     uint8_t ret[1] = { 0 };
     // 0 = ok
@@ -520,23 +547,21 @@ void unlock_bootstrap_mode(uint8_t bootloader_src)
     // 7 = start bootloader timeout
     // 8 = unexpected bootloader status byte
 
+    uint8_t buff[16];
+    uint8_t checksum = 0;
+    bool seed_required = true;
+
     wdt_reset(); // feed the watchdog
     pcm_rx_flush();
     pcm_tx_flush();
+    pcm.last_byte_millis = millis();
 
     // Write magic byte to set 62500 baud.
     pcm_putc(0x7F);
 
-    bool timeout_reached = false;
-    uint32_t timeout_start = millis();
+    while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_BTSTRP_DLY); // wait for response
 
-    while ((pcm_rx_available() == 0) && !timeout_reached)
-    {
-        // wait here for response
-        if ((uint32_t)(millis() - timeout_start) >= 500) timeout_reached = true;
-    }
-
-    if (timeout_reached)
+    if (pcm_rx_available() == 0)
     {
         ret[0] = 1;
         send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
@@ -544,114 +569,115 @@ void unlock_bootstrap_mode(uint8_t bootloader_src)
         return;
     }
 
-    // Expect 0x06 as response.
-    if ((pcm_getc() & 0xFF) != 0x06)
+    buff[0] = pcm_getc() & 0xFF;
+
+    if (buff[0] != 0x06)
     {
+        dump_pcm_buffer();
         ret[0] = 2;
         send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
         pcm_rx_flush();
         return;
     }
 
-    uint8_t req_seed[5] = { 0x24, 0xD0, 0x27, 0xC1, 0xDC };
+    uint8_t req_seed_cmd[5] = { 0x24, 0xD0, 0x27, 0xC1, 0xDC };
 
     wdt_reset(); // feed the watchdog
     pcm_rx_flush();
+    pcm.last_byte_millis = millis();
 
     // Write security seed request message.
     for (uint8_t i = 0; i < 5; i++)
     {
-        pcm_putc(req_seed[i]);
+        pcm_putc(req_seed_cmd[i]);
     }
 
-    timeout_start = millis();
+    while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_BTSTRP_DLY); // wait for response
 
-    while ((pcm_rx_available() <= 6) && !timeout_reached)
+    if (pcm_rx_available() < 7)
     {
-        // wait here for response
-        if ((uint32_t)(millis() - timeout_start) >= 500) timeout_reached = true;
+        if ((pcm_rx_available() == 5) && (pcm_peek(0) == 0xDB) && (pcm_peek(1) == 0x2F) && (pcm_peek(2) == 0xD8) && (pcm_peek(3) == 0x3E) && (pcm_peek(4) == 0x23))
+        {
+            seed_required = false;
+        }
+        else
+        {
+            dump_pcm_buffer();
+            ret[0] = 3;
+            send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
+            pcm_rx_flush();
+            return;
+        }
     }
 
-    if (timeout_reached)
+    if (seed_required)
     {
-        ret[0] = 3;
-        send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
+        // Read security seed response.
+        for (uint8_t i = 0; i < 7; i++)
+        {
+            buff[i] = pcm_getc() & 0xFF;
+    
+            if (i < 6) checksum += buff[i]; // calculate checksum
+        }
+
+        uint8_t seed_solution[2];
+
+        // Evaluate seed response message and solve the puzzle.
+        if ((buff[0] == 0x26) && (buff[1] == 0xD0) && (buff[2] == 0x67) && (buff[3] == 0xC1) && (buff[6] == checksum))
+        {
+            uint16_t data = solve_sbec3_bootstrap_seed(to_uint16(buff[4], buff[5]));
+            seed_solution[0] = (data >> 8) & 0xFF;
+            seed_solution[1] = data & 0xFF;
+        }
+        else
+        {
+            dump_pcm_buffer();
+            ret[0] = 4;
+            send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
+            pcm_rx_flush();
+            return;
+        }
+
+        uint8_t send_seed_solution_cmd[7] = { 0x24, 0xD0, 0x27, 0xC2, seed_solution[0], seed_solution[1], 0 };
+        send_seed_solution_cmd[6] = calculate_checksum(send_seed_solution_cmd, 0, ARRAY_SIZE(send_seed_solution_cmd) - 1);
+
+        wdt_reset(); // feed the watchdog
         pcm_rx_flush();
-        return;
+        pcm.last_byte_millis = millis();
+
+        // Write security seed solution message.
+        for (uint8_t i = 0; i < 7; i++)
+        {
+            pcm_putc(send_seed_solution_cmd[i]);
+        }
+
+        while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_BTSTRP_DLY); // wait for response
+
+        if (pcm_rx_available() < 5)
+        {
+            dump_pcm_buffer();
+            ret[0] = 5;
+            send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
+            pcm_rx_flush();
+            return;
+        }
+
+        // Read seed solution status.
+        for (uint8_t i = 0; i < 5; i++)
+        {
+            buff[i] = pcm_getc() & 0xFF;
+        }
+
+        // Seed solution not accepted.
+        if (!((buff[0] == 0x26) && (buff[1] == 0xD0) && (buff[2] == 0x67) && (buff[3] == 0xC2) && (buff[4] == 0x1F)))
+        {
+            dump_pcm_buffer();
+            ret[0] = 6;
+            send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
+            pcm_rx_flush();
+            return;
+        }
     }
-
-    uint8_t resp[7];
-    uint8_t checksum = 0;
-
-    // Read security seed response.
-    for (uint8_t i = 0; i < 7; i++)
-    {
-        resp[i] = pcm_getc() & 0xFF;
-
-        if (i < 6) checksum += resp[i]; // calculate checksum
-    }
-
-    uint8_t seed_sol[2];
-
-    // Evaluate seed response message and solve the puzzle.
-    if ((resp[0] == 0x26) && (resp[1] == 0xD0) && (resp[2] == 0x67) && (resp[3] == 0xC1) && (resp[6] == checksum))
-    {
-        uint16_t sol = Math_Seed(to_uint16(resp[4], resp[5]));
-        seed_sol[0] = (sol >> 8) & 0xFF;
-        seed_sol[1] = sol & 0xFF;
-    }
-    else
-    {
-        ret[0] = 4;
-        send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
-        pcm_rx_flush();
-        return;
-    }
-
-    uint8_t send_seed_sol[7] = { 0x24, 0xD0, 0x27, 0xC2, seed_sol[0], seed_sol[1], 0 };
-    send_seed_sol[6] = calculate_checksum(send_seed_sol, 0, ARRAY_SIZE(send_seed_sol) - 1);
-
-    wdt_reset(); // feed the watchdog
-    pcm_rx_flush();
-
-    // Write security seed solution message.
-    for (uint8_t i = 0; i < 7; i++)
-    {
-        pcm_putc(send_seed_sol[i]);
-    }
-
-    timeout_start = millis();
-
-    while ((pcm_rx_available() <= 4) && !timeout_reached)
-    {
-        // wait here for response
-        if ((uint32_t)(millis() - timeout_start) >= 500) timeout_reached = true;
-    }
-
-    if (timeout_reached)
-    {
-        ret[0] = 5;
-        send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
-        pcm_rx_flush();
-        return;
-    }
-
-    // Read seed solution status.
-    for (uint8_t i = 0; i < 5; i++)
-    {
-        resp[i] = pcm_getc() & 0xFF;
-    }
-
-    // Seed solution not accepted.
-    if (!((resp[0] == 0x26) && (resp[1] == 0xD0) && (resp[2] == 0x67) && (resp[3] == 0xC2) && (resp[4] == 0x1F)))
-    {
-        ret[0] = 6;
-        send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
-        pcm_rx_flush();
-        return;
-    }
-
-    // Seed solution accepted.
 
     wdt_reset(); // feed the watchdog
     pcm_rx_flush();
@@ -661,31 +687,31 @@ void unlock_bootstrap_mode(uint8_t bootloader_src)
     {
         case 0:
         {
-            for (uint16_t i = 0; i < ARRAY_SIZE(bootloader_stock); i++)
+            for (uint16_t i = 0; i < ARRAY_SIZE(bootloader_stock_256k); i++)
             {
-                pcm_putc(pgm_read_byte(bootloader_stock + i));
+                pcm_putc(pgm_read_byte(bootloader_stock_256k + i));
                 while (pcm_rx_available() == 0); // wait for echo
-                pcm_rx_flush();
+                pcm_getc(); // read echo into oblivion
             }
             break;
         }
         case 1:
         {
-            for (uint16_t i = 0; i < ARRAY_SIZE(bootloader_custom_01); i++)
+            for (uint16_t i = 0; i < ARRAY_SIZE(bootloader_custom_256k_01); i++)
             {
-                pcm_putc(pgm_read_byte(bootloader_custom_01 + i));
+                pcm_putc(pgm_read_byte(bootloader_custom_256k_01 + i));
                 while (pcm_rx_available() == 0); // wait for echo
-                pcm_rx_flush();
+                pcm_getc(); // read echo into oblivion
             }
             break;
         }
         default:
         {
-            for (uint16_t i = 0; i < ARRAY_SIZE(bootloader_stock); i++)
+            for (uint16_t i = 0; i < ARRAY_SIZE(bootloader_stock_256k); i++)
             {
-                pcm_putc(pgm_read_byte(bootloader_stock + i));
+                pcm_putc(pgm_read_byte(bootloader_stock_256k + i));
                 while (pcm_rx_available() == 0); // wait for echo
-                pcm_rx_flush();
+                pcm_getc(); // read echo into oblivion
             }
             break;
         }
@@ -694,39 +720,32 @@ void unlock_bootstrap_mode(uint8_t bootloader_src)
     wdt_reset(); // feed the watchdog
     pcm_rx_flush();
 
-    uint8_t start_bootloader[3] = { 0x47, 0x01, 0x00 };
+    uint8_t start_bootloader_cmd[3] = { 0x47, 0x01, 0x00 };
 
     // Write start bootloader message.
     for (uint8_t i = 0; i < 3; i++)
     {
-        pcm_putc(start_bootloader[i]);
-        while (pcm_rx_available() <= i); // wait for echo
+        pcm_putc(start_bootloader_cmd[i]);
+        while (pcm_rx_available() == 0); // wait for echo
+        pcm_getc(); // read echo into oblivion
     }
 
-    timeout_start = millis();
+    while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_BTSTRP_DLY); // wait for response
 
-    while ((pcm_rx_available() <= 3) && !timeout_reached)
+    if (pcm_rx_available == 0)
     {
-        // wait here for response
-        if ((uint32_t)(millis() - timeout_start) >= 500) timeout_reached = true;
-    }
-
-    if (timeout_reached)
-    {
+        dump_pcm_buffer();
         ret[0] = 7;
         send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
         pcm_rx_flush();
         return;
     }
 
-    // Read response.
-    for (uint8_t i = 0; i < 4; i++)
-    {
-        resp[i] = pcm_getc() & 0xFF;
-    }
+    uint8_t bootloader_status = pcm_getc() & 0xFF;
 
-    if (resp[3] != 0x22)
+    if (bootloader_status != 0x22)
     {
+        dump_pcm_buffer();
         ret[0] = 8;
         send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
         pcm_rx_flush();
@@ -4480,7 +4499,7 @@ void handle_usb_data(void)
                                             break;
                                         }
 
-                                        unlock_bootstrap_mode(cmd_payload[0]);
+                                        unlock_sbec3_bootstrap_mode(cmd_payload[0]);
                                         break;
                                     }
                                     default:
@@ -6314,7 +6333,7 @@ void handle_sci_data(void)
                                 while ((pcm_rx_available() <= i) && !timeout_reached)
                                 {
                                     // wait for echo or response
-                                    if ((uint32_t)(millis() - timeout_start) >= 500) timeout_reached = true;
+                                    if ((uint32_t)(millis() - timeout_start) >= 100) timeout_reached = true;
                                 }
 
                                 if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
@@ -6326,7 +6345,7 @@ void handle_sci_data(void)
                                 }
                             }
 
-                            delay(100); // there may be another status byte returned, wait for it as well
+                            while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_BTSTRP_DLY); // there may be another status byte returned, wait for it as well
 
                             if (!timeout_reached)
                             {
