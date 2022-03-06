@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 07: minor
-// 02: patch
+// 03: patch
 // (00: revision)
-// = v0.7.2(.0)
-#define FW_VERSION 0x00070200
+// = v0.7.3(.0)
+#define FW_VERSION 0x00070300
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x0007020062249757
+#define FW_DATE 0x000703006224EED6
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -289,10 +289,10 @@ typedef struct {
     volatile uint32_t last_byte_millis = 0;
     bool msg_tx_pending = false; // message is awaiting to be transmitted to the bus
     bool actuator_test_running = false; // actuator test (SCI-bus only)
-    uint8_t actuator_test_byte = 0; // actuator test byte (SCI-bus only)
-    uint32_t sci_test_byte_last_millis = 0;
-    bool ls_request_running = false; // low-speed request (SCI-bus only)
+    uint32_t actuator_test_byte_last_millis = 0;
+    bool ls_request_running = false; // low-speed ROM info request (SCI-bus only)
     uint8_t ls_request_byte = 0;
+    uint32_t ls_request_last_millis = 0;
     bool repeat = false;
     bool repeat_next = false;
     bool repeat_iterate = false;
@@ -5545,27 +5545,41 @@ void handle_sci_data(void)
         // Handle completed messages
         if (pcm.speed == LOBAUD) // handle low-speed mode first (7812.5 baud)
         {
-            if ((pcm.echo_received || pcm.response_received || pcm.actuator_test_running) && (pcm_rx_available() > 0))
+            if ((pcm.echo_received || pcm.response_received || pcm.actuator_test_running || pcm.ls_request_running) && (pcm_rx_available() > 0))
             {
                 pcm.echo_received = false;
                 pcm.response_received = false;
                 pcm.message_length = pcm_rx_available();
                 uint8_t usb_msg[32];
 
-                if ((pcm_rx_available() > 2) && (pcm_peek(0) == 0x13) && (pcm_peek(1) != 0x00) && (pcm_peek(2) != 0x00))
+                if (!pcm.actuator_test_running && (pcm_rx_available() > 2) && (pcm_peek(0) == 0x13) && (pcm_peek(1) != 0x00))
                 {
                     pcm.actuator_test_running = true;
+                    pcm_getc();
+                    pcm_getc();
                 }
                 else if ((pcm_rx_available() > 2) && (pcm_peek(0) == 0x13) && (pcm_peek(1) == 0x00) && (pcm_peek(2) == 0x00))
                 {
                     pcm.actuator_test_running = false;
                 }
 
+                if (!pcm.ls_request_running && (pcm_rx_available() > 3) && (pcm_peek(0) == 0x2A) && (pcm_peek(1) != 0x00) && (pcm_peek(2) != 0x00))
+                {
+                    pcm.ls_request_running = true;
+                    pcm.ls_request_byte = pcm_peek(1);
+                    pcm_getc();
+                    pcm_getc();
+                }
+                else if ((pcm_rx_available() > 2) && (pcm_peek(0) == 0x2A) && (pcm_peek(1) == 0x00) && (pcm_peek(2) == 0x00))
+                {
+                    pcm.ls_request_running = false;
+                }
+
                 if (pcm.actuator_test_running)
                 {
-                    if ((uint32_t)(millis() - pcm.sci_test_byte_last_millis) >= 200)
+                    if ((uint32_t)(millis() - pcm.actuator_test_byte_last_millis) >= 200)
                     {
-                        pcm.sci_test_byte_last_millis = millis();
+                        pcm.actuator_test_byte_last_millis = millis();
                         pcm.message_length = 2;
                         update_timestamp(current_timestamp); // get current time for the timestamp
 
@@ -5575,9 +5589,6 @@ void handle_sci_data(void)
                         }
 
                         usb_msg[TIMESTAMP_LENGTH + 0] = 0x13;
-
-                        while (pcm_peek(0) == 0x13) pcm_getc();
-
                         usb_msg[TIMESTAMP_LENGTH + 1] = pcm_getc() & 0xFF;
 
                         send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, TIMESTAMP_LENGTH + pcm.message_length); // send message to laptop
@@ -5588,7 +5599,32 @@ void handle_sci_data(void)
                         pcm_getc();
                     }
                 }
-                else
+                else if (pcm.ls_request_running)
+                {
+                    if ((uint32_t)(millis() - pcm.ls_request_last_millis) >= 200)
+                    {
+                        pcm.ls_request_last_millis = millis();
+                        pcm.message_length = 3;
+                        update_timestamp(current_timestamp); // get current time for the timestamp
+
+                        for (uint8_t i = 0; i < 4; i++) // put 4 timestamp bytes in the front
+                        {
+                            usb_msg[i] = current_timestamp[i];
+                        }
+
+                        usb_msg[TIMESTAMP_LENGTH + 0] = 0x2A;
+                        usb_msg[TIMESTAMP_LENGTH + 1] = pcm.ls_request_byte;
+                        usb_msg[TIMESTAMP_LENGTH + 2] = pcm_getc() & 0xFF;
+
+                        send_usb_packet(from_pcm, to_usb, msg_rx, sci_ls_bytes, usb_msg, TIMESTAMP_LENGTH + pcm.message_length); // send message to laptop
+                        handle_lcd(from_pcm, usb_msg, 4, TIMESTAMP_LENGTH + pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                    }
+                    else
+                    {
+                        pcm_getc();
+                    }
+                }
+                else // normal mode
                 {
                     update_timestamp(current_timestamp); // get current time for the timestamp
                     
@@ -6126,32 +6162,6 @@ void handle_sci_data(void)
                             timeout_reached = false;
                             pcm.response_received = true;
                         }
-
-//                        // Special information request.
-//                        // Note: some PCMs don't repeat this request message.
-//                        if ((pcm.msg_buffer_ptr > 1) && (pcm_rx_available() > 1) && (pcm_peek(0) == 0x2A) && (pcm_peek(1) != 0x00))
-//                        {
-//                            timeout_reached = false;
-//
-//                            while ((pcm_rx_available() <= 2) && !timeout_reached)
-//                            {
-//                                // wait here for response
-//                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= 100) timeout_reached = true;
-//                            }
-//
-//                            if (!timeout_reached)
-//                            {
-//                                pcm.ls_request_running = true;
-//                                pcm.ls_request_byte = pcm.msg_buffer[1];
-//                                pcm.response_received = true;
-//                                pcm_rx_flush(); // workaround for the first false received message
-//                            }
-//                            else
-//                            {
-//                                pcm_rx_flush();
-//                                send_usb_packet(from_usb, to_usb, ok_error, error_sci_ls_no_response, err, 1);
-//                            }
-//                        }
                     }
                 }
                 else if (pcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
