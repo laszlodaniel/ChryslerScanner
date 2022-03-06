@@ -36,6 +36,8 @@ namespace ChryslerCCDSCIScanner
         public string EmptyLine      = "│                         │                                                     │                         │             │";
         public string HeaderModified = string.Empty;
 
+        public string LastROMInfoText = string.Empty;
+
         public SCIPCM()
         {
             column = new DataColumn();
@@ -1893,6 +1895,11 @@ namespace ChryslerCCDSCIScanner
                                 switch (payload[0])
                                 {
                                     case 0x00:
+                                        if (payload.Length == 1)
+                                        {
+                                            descriptionToInsert = "ACTUATOR TEST | MODE NOT AVAILABLE";
+                                            valueToInsert = string.Empty;
+                                        }
                                         if (payload.Length > 1)
                                         {
                                             if (payload[1] == 0x00)
@@ -3474,6 +3481,10 @@ namespace ChryslerCCDSCIScanner
                             {
                                 switch (payload[0])
                                 {
+                                    case 0x00:
+                                        valueToInsert = LastROMInfoText;
+                                        unitToInsert = string.Empty;
+                                        break;
                                     case 0x01:
                                         descriptionToInsert = "INFORMATION REQUEST | PCM PART NUMBER 1-2";
                                         valueToInsert = Util.ByteToHexString(payload, 1, 1);
@@ -3720,20 +3731,13 @@ namespace ChryslerCCDSCIScanner
                                         unitToInsert = string.Empty;
                                         break;
                                     default:
-                                        if (payload[0] != 0x00)
-                                        {
-                                            descriptionToInsert = "INFORMATION REQUEST | " + "OFFSET: " + Util.ByteToHexString(payload, 0, 1);
-                                            valueToInsert = Util.ByteToHexString(payload, 1, 1);
-                                            unitToInsert = string.Empty;
-                                        }
-                                        else
-                                        {
-                                            descriptionToInsert = "INFORMATION REQUEST";
-                                            valueToInsert = "STOPPED";
-                                            unitToInsert = string.Empty;
-                                        }
+                                        descriptionToInsert = "INFORMATION REQUEST | " + "OFFSET: " + Util.ByteToHexString(payload, 0, 1);
+                                        valueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        unitToInsert = string.Empty;
                                         break;
                                 }
+
+                                LastROMInfoText = valueToInsert;
                             }
                             else // error
                             {
