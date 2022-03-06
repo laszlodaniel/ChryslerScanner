@@ -367,6 +367,36 @@ namespace ChryslerCCDSCIScanner
             MessageDatabase.Rows.Add(row);
 
             row = MessageDatabase.NewRow();
+            row["id"] = 0x46;
+            row["length"] = 7;
+            row["parameterCount"] = 2;
+            row["message"] = string.Empty;
+            row["description"] = "BOOTSTRAP FLASH DUMP";
+            row["value"] = string.Empty;
+            row["unit"] = string.Empty;
+            MessageDatabase.Rows.Add(row);
+
+            row = MessageDatabase.NewRow();
+            row["id"] = 0x47;
+            row["length"] = 4;
+            row["parameterCount"] = 1;
+            row["message"] = string.Empty;
+            row["description"] = "START BOOTLOADER";
+            row["value"] = string.Empty;
+            row["unit"] = string.Empty;
+            MessageDatabase.Rows.Add(row);
+
+            row = MessageDatabase.NewRow();
+            row["id"] = 0x4C;
+            row["length"] = 5;
+            row["parameterCount"] = 2;
+            row["message"] = string.Empty;
+            row["description"] = "UPLOAD BOOTLOADER";
+            row["value"] = string.Empty;
+            row["unit"] = string.Empty;
+            MessageDatabase.Rows.Add(row);
+
+            row = MessageDatabase.NewRow();
             row["id"] = 0xF0;
             row["length"] = 3;
             row["parameterCount"] = 1;
@@ -3826,6 +3856,64 @@ namespace ChryslerCCDSCIScanner
                 {
                     switch (ID)
                     {
+                        case 0x46: // bootstrap flash dump
+                            if (message.Length >= minLength)
+                            {
+                                List<byte> offset = new List<byte>();
+                                List<byte> length = new List<byte>();
+                                List<byte> values = new List<byte>();
+                                offset.Clear();
+                                length.Clear();
+                                values.Clear();
+                                offset.AddRange(payload.Take(3));
+                                length.AddRange(payload.Skip(3).Take(2));
+                                values.AddRange(payload.Skip(5));
+                                descriptionToInsert = "BOOTSTRAP FLASH DUMP | OFFSET: " + Util.ByteToHexStringSimple(offset.ToArray()) + " | L: " + Util.ByteToHexStringSimple(length.ToArray());
+                                valueToInsert = Util.ByteToHexStringSimple(values.ToArray());
+                            }
+                            else
+                            {
+                                descriptionToInsert = "BOOTSTRAP FLASH DUMP";
+                                valueToInsert = string.Empty;
+                            }
+                            unitToInsert = string.Empty;
+                            break;
+                        case 0x47: // start bootloader command
+                            if (message.Length >= minLength)
+                            {
+                                List<byte> offset = new List<byte>();
+                                offset.Clear();
+                                offset.AddRange(payload.Take(2));
+                                descriptionToInsert = "START BOOTLOADER | OFFSET: " + Util.ByteToHexStringSimple(offset.ToArray());
+
+                                if (payload[2] == 0x22) valueToInsert = "OK";
+                                else valueToInsert = "ERROR";
+                            }
+                            else
+                            {
+                                descriptionToInsert = "START BOOTLOADER";
+                                valueToInsert = string.Empty;
+                            }
+                            unitToInsert = string.Empty;
+                            break;
+                        case 0x4C: // upload bootloader command
+                            if (message.Length >= minLength)
+                            {
+                                List<byte> offsetStart = new List<byte>();
+                                List<byte> offsetEnd = new List<byte>();
+                                offsetStart.Clear();
+                                offsetEnd.Clear();
+                                offsetStart.AddRange(payload.Take(2));
+                                offsetEnd.AddRange(payload.Skip(2).Take(2));
+                                descriptionToInsert = "UPLOAD BOOTLOADER | START: " + Util.ByteToHexStringSimple(offsetStart.ToArray()) + " | END: " + Util.ByteToHexStringSimple(offsetEnd.ToArray());
+                            }
+                            else
+                            {
+                                descriptionToInsert = "UPLOAD BOOTLOADER";
+                            }
+                            valueToInsert = string.Empty;
+                            unitToInsert = string.Empty;
+                            break;
                         case 0xF0: // high-speed mode RAM table
                             if (payload.Length > 1)
                             {

@@ -1961,12 +1961,12 @@ namespace ChryslerCCDSCIScanner
                                 case (byte)Packet.DebugMode.initBootstrapMode:
                                     if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Init SCI-bus bootstrap mode:", Packet.rx.buffer);
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Init PCM bootstrap mode:", Packet.rx.buffer);
 
                                         switch (Packet.rx.payload[0])
                                         {
                                             case 0:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus bootstrap init success.");
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] PCM bootstrap init success.");
                                                 break;
                                             case 1:
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Error: no response to magic byte.");
@@ -4406,7 +4406,7 @@ namespace ChryslerCCDSCIScanner
             Packet.tx.mode = (byte)Packet.DebugMode.initBootstrapMode;
             Packet.tx.payload = new byte[1] { (byte)SCIBusPCMBootloaderComboBox.SelectedIndex };
             Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Init SCI-bus bootstrap mode:", Packet.tx.buffer);
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Init PCM bootstrap mode:", Packet.tx.buffer);
 
             switch ((byte)SCIBusPCMBootloaderComboBox.SelectedIndex)
             {
