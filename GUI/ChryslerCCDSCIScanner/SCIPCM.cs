@@ -373,7 +373,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 7;
             row["parameterCount"] = 2;
             row["message"] = string.Empty;
-            row["description"] = "BOOTSTRAP FLASH DUMP";
+            row["description"] = "BOOTSTRAP FLASH READ";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -394,6 +394,16 @@ namespace ChryslerCCDSCIScanner
             row["parameterCount"] = 2;
             row["message"] = string.Empty;
             row["description"] = "UPLOAD BOOTLOADER";
+            row["value"] = string.Empty;
+            row["unit"] = string.Empty;
+            MessageDatabase.Rows.Add(row);
+
+            row = MessageDatabase.NewRow();
+            row["id"] = 0x56;
+            row["length"] = 2;
+            row["parameterCount"] = 1;
+            row["message"] = string.Empty;
+            row["description"] = "EXIT BOOTSTRAP FLASH READ";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -3860,7 +3870,7 @@ namespace ChryslerCCDSCIScanner
                 {
                     switch (ID)
                     {
-                        case 0x46: // bootstrap flash dump
+                        case 0x46: // bootstrap flash read
                             if (message.Length >= minLength)
                             {
                                 List<byte> offset = new List<byte>();
@@ -3872,12 +3882,12 @@ namespace ChryslerCCDSCIScanner
                                 offset.AddRange(payload.Take(3));
                                 length.AddRange(payload.Skip(3).Take(2));
                                 values.AddRange(payload.Skip(5));
-                                descriptionToInsert = "BOOTSTRAP FLASH DUMP | OFFSET: " + Util.ByteToHexStringSimple(offset.ToArray()) + " | L: " + Util.ByteToHexStringSimple(length.ToArray());
+                                descriptionToInsert = "BOOTSTRAP FLASH READ | OFFSET: " + Util.ByteToHexStringSimple(offset.ToArray()) + " | L: " + Util.ByteToHexStringSimple(length.ToArray());
                                 valueToInsert = Util.ByteToHexStringSimple(values.ToArray());
                             }
                             else
                             {
-                                descriptionToInsert = "BOOTSTRAP FLASH DUMP";
+                                descriptionToInsert = "BOOTSTRAP FLASH READ";
                                 valueToInsert = string.Empty;
                             }
                             unitToInsert = string.Empty;
@@ -3916,6 +3926,21 @@ namespace ChryslerCCDSCIScanner
                                 descriptionToInsert = "UPLOAD BOOTLOADER";
                             }
                             valueToInsert = string.Empty;
+                            unitToInsert = string.Empty;
+                            break;
+                        case 0x56: // exit bootstrap flash read worker function
+                            if (message.Length >= minLength)
+                            {
+                                descriptionToInsert = "EXIT BOOTSTRAP FLASH READ";
+
+                                if (payload[0] == 0x22) valueToInsert = "OK";
+                                else valueToInsert = "ERROR";
+                            }
+                            else
+                            {
+                                descriptionToInsert = "EXIT BOOTSTRAP FLASH READ";
+                                valueToInsert = string.Empty;
+                            }
                             unitToInsert = string.Empty;
                             break;
                         case 0xF0: // high-speed mode RAM table

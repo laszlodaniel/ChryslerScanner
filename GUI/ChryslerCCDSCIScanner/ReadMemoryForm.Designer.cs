@@ -550,6 +550,7 @@ namespace ChryslerCCDSCIScanner
             this.Controls.Add(this.ReadMemoryTabControl);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Name = "ReadMemoryForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Read memory";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ReadMemoryForm_FormClosing);
             this.ReadMemoryTabControl.ResumeLayout(false);

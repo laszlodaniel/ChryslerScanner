@@ -56,6 +56,12 @@
     <Compile Include="AboutForm.Designer.cs">
       <DependentUpon>AboutForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="BootstrapToolsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="BootstrapToolsForm.Designer.cs">
+      <DependentUpon>BootstrapToolsForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="CCD.cs" />
     <Compile Include="DB\Converters\BinaryStateConverter.cs" />
     <Compile Include="DB\Converters\Converter.cs" />
@@ -121,6 +127,9 @@
     </Compile>
     <EmbeddedResource Include="AboutForm.resx">
       <DependentUpon>AboutForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="BootstrapToolsForm.resx">
+      <DependentUpon>BootstrapToolsForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>

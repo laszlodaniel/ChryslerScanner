@@ -68,6 +68,7 @@ namespace ChryslerCCDSCIScanner
         public ReadMemoryForm ReadMemory;
         public WriteMemoryForm WriteMemory;
         public SecuritySeedCalculatorForm SecuritySeedCalculator;
+        public BootstrapToolsForm BootstrapTools;
         public AboutForm About;
         public static Packet Packet = new Packet();
         public CCD CCD = new CCD();
@@ -155,7 +156,6 @@ namespace ChryslerCCDSCIScanner
             SCIBusSpeedComboBox.SelectedIndex = 2;
             LCDStateComboBox.SelectedIndex = 0;
             LCDDataSourceComboBox.SelectedIndex = 0;
-            SCIBusPCMBootloaderComboBox.SelectedIndex = 0;
 
             // Load saved settings.
             if (Properties.Settings.Default.Units == "metric")
@@ -1961,7 +1961,7 @@ namespace ChryslerCCDSCIScanner
                                 case (byte)Packet.DebugMode.initBootstrapMode:
                                     if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Init PCM bootstrap mode:", Packet.rx.buffer);
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Init PCM bootstrap mode result:", Packet.rx.buffer);
 
                                         switch (Packet.rx.payload[0])
                                         {
@@ -1993,7 +1993,35 @@ namespace ChryslerCCDSCIScanner
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Error: unexpected bootloader status byte.");
                                                 break;
                                             default:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: unknown status.");
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: unknown result.");
+                                                break;
+                                        }
+                                    }
+                                    break;
+                                case (byte)Packet.DebugMode.writeWorkerFunction:
+                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Upload worker function result:", Packet.rx.buffer);
+
+                                        switch (Packet.rx.payload[0])
+                                        {
+                                            case 0:
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Worker function started.");
+                                                break;
+                                            case 1:
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: upload finished status byte not received.");
+                                                break;
+                                            case 2:
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: unexpected upload finished status.");
+                                                break;
+                                            case 3:
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: function did not start.");
+                                                break;
+                                            case 4:
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: unexpected function start status.");
+                                                break;
+                                            default:
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: unknown result.");
                                                 break;
                                         }
                                     }
@@ -2271,6 +2299,17 @@ namespace ChryslerCCDSCIScanner
             await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
         }
 
+        public void UpdateUSBTextBox(string description)
+        {
+            Util.UpdateTextBox(USBTextBox, description);
+        }
+
+        public void SelectSCIBusPCMHSMode()
+        {
+            SCIBusSpeedComboBox.SelectedIndex = 3; // 62500 baud
+            SCIBusModuleConfigSpeedApplyButton_Click(this, EventArgs.Empty);
+        }
+
         #endregion
 
         #region USB communication
@@ -2408,6 +2447,7 @@ namespace ChryslerCCDSCIScanner
                                         DiagnosticsGroupBox.Enabled = true;
                                         ReadMemoryToolStripMenuItem.Enabled = true;
                                         WriteMemoryToolStripMenuItem.Enabled = true;
+                                        BootstrapToolsToolStripMenuItem.Enabled = true;
                                         Packet.PacketReceived += AnalyzePacket; // subscribe to the OnPacketReceived event
                                         CCD.Diagnostics.TableUpdated += UpdateCCDTable; // subscribe to the CCD-bus OnTableUpdated event
                                         PCM.Diagnostics.TableUpdated += UpdateSCIPCMTable; // subscribe to the SCI-bus (PCM) OnTableUpdated event
@@ -2466,6 +2506,7 @@ namespace ChryslerCCDSCIScanner
                         DiagnosticsGroupBox.Enabled = false;
                         ReadMemoryToolStripMenuItem.Enabled = false;
                         WriteMemoryToolStripMenuItem.Enabled = false;
+                        BootstrapToolsToolStripMenuItem.Enabled = false;
                         deviceFound = false;
                         timeout = false;
                         Util.UpdateTextBox(USBTextBox, "[INFO] Device disconnected (" + Packet.Serial.PortName + ").");
@@ -4398,41 +4439,6 @@ namespace ChryslerCCDSCIScanner
             await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
         }
 
-        private async void SCIBusPCMBootstrapButton_Click(object sender, EventArgs e)
-        {
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.device;
-            Packet.tx.command = (byte)Packet.Command.debug;
-            Packet.tx.mode = (byte)Packet.DebugMode.initBootstrapMode;
-            Packet.tx.payload = new byte[1] { (byte)SCIBusPCMBootloaderComboBox.SelectedIndex };
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Init PCM bootstrap mode:", Packet.tx.buffer);
-
-            switch ((byte)SCIBusPCMBootloaderComboBox.SelectedIndex)
-            {
-                case 0:
-                    Util.UpdateTextBox(USBTextBox, "[INFO] Bootloader: stock SBEC3.");
-                    break;
-                case 1:
-                    Util.UpdateTextBox(USBTextBox, "[INFO] Bootloader: custom SBEC3 #1.");
-                    break;
-                case 2:
-                    Util.UpdateTextBox(USBTextBox, "[INFO] Bootloader: custom SBEC3 #2.");
-                    break;
-                case 3:
-                    Util.UpdateTextBox(USBTextBox, "[INFO] Bootloader: custom SBEC3 #3.");
-                    break;
-                case 4:
-                    Util.UpdateTextBox(USBTextBox, "[INFO] Bootloader: custom SBEC3 #4.");
-                    break;
-                default:
-                    Util.UpdateTextBox(USBTextBox, "[INFO] Bootloader: stock SBEC3.");
-                    break;
-            }
-
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
-        }
-
         #endregion
 
         #region Diagnostics tab
@@ -4961,7 +4967,14 @@ namespace ChryslerCCDSCIScanner
                 };
 
                 ReadMemory.FormClosed += delegate { ReadMemory = null; };
-                ReadMemory.Show();
+                ReadMemory.Show(this);
+
+                if (ReadMemory.StartPosition == FormStartPosition.CenterParent)
+                {
+                    var x = Location.X + (Width - ReadMemory.Width) / 2;
+                    var y = Location.Y + (Height - ReadMemory.Height) / 2;
+                    ReadMemory.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
+                }
             }
             else
             {
@@ -4980,12 +4993,71 @@ namespace ChryslerCCDSCIScanner
                 };
 
                 WriteMemory.FormClosed += delegate { WriteMemory = null; };
-                WriteMemory.Show();
+                WriteMemory.Show(this);
+
+                if (WriteMemory.StartPosition == FormStartPosition.CenterParent)
+                {
+                    var x = Location.X + (Width - WriteMemory.Width) / 2;
+                    var y = Location.Y + (Height - WriteMemory.Height) / 2;
+                    WriteMemory.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
+                }
             }
             else
             {
                 WriteMemory.WindowState = FormWindowState.Normal;
                 WriteMemory.Focus();
+            }
+        }
+
+        private void SecuritySeedCalculatorToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (SecuritySeedCalculator == null)
+            {
+                SecuritySeedCalculator = new SecuritySeedCalculatorForm(this)
+                {
+                    StartPosition = FormStartPosition.CenterParent
+                };
+
+                SecuritySeedCalculator.FormClosed += delegate { SecuritySeedCalculator = null; };
+                SecuritySeedCalculator.Show(this);
+
+                if (SecuritySeedCalculator.StartPosition == FormStartPosition.CenterParent)
+                {
+                    var x = Location.X + (Width - SecuritySeedCalculator.Width) / 2;
+                    var y = Location.Y + (Height - SecuritySeedCalculator.Height) / 2;
+                    SecuritySeedCalculator.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
+                }
+            }
+            else
+            {
+                SecuritySeedCalculator.WindowState = FormWindowState.Normal;
+                SecuritySeedCalculator.Focus();
+            }
+        }
+
+        private void BootstrapToolsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (BootstrapTools == null)
+            {
+                BootstrapTools = new BootstrapToolsForm(this)
+                {
+                    StartPosition = FormStartPosition.CenterParent
+                };
+
+                BootstrapTools.FormClosed += delegate { BootstrapTools = null; };
+                BootstrapTools.Show(this);
+
+                if (BootstrapTools.StartPosition == FormStartPosition.CenterParent)
+                {
+                    var x = Location.X + (Width - BootstrapTools.Width) / 2;
+                    var y = Location.Y + (Height - BootstrapTools.Height) / 2;
+                    BootstrapTools.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
+                }
+            }
+            else
+            {
+                BootstrapTools.WindowState = FormWindowState.Normal;
+                BootstrapTools.Focus();
             }
         }
 
@@ -5049,29 +5121,10 @@ namespace ChryslerCCDSCIScanner
             };
 
             About.FormClosed += delegate { About = null; };
-            About.ShowDialog();
+            About.ShowDialog(this);
         }
 
         #endregion
-
-        private void SecuritySeedCalculatorToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (SecuritySeedCalculator == null)
-            {
-                SecuritySeedCalculator = new SecuritySeedCalculatorForm(this)
-                {
-                    StartPosition = FormStartPosition.CenterParent
-                };
-
-                SecuritySeedCalculator.FormClosed += delegate { SecuritySeedCalculator = null; };
-                SecuritySeedCalculator.Show();
-            }
-            else
-            {
-                SecuritySeedCalculator.WindowState = FormWindowState.Normal;
-                SecuritySeedCalculator.Focus();
-            }
-        }
     }
 
     public static class StringExt

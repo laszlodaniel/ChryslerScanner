@@ -35,6 +35,7 @@
             this.ReadMemoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.WriteMemoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.SecuritySeedCalculatorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.BootstrapToolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.SettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UnitsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.MetricUnitsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -162,13 +163,10 @@
             this.DiagnosticsResetViewButton = new System.Windows.Forms.Button();
             this.DiagnosticsTabControl = new System.Windows.Forms.TabControl();
             this.CCDBusDiagnosticsTabPage = new System.Windows.Forms.TabPage();
-            this.SCIBusPCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
-            this.SCIBusTCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
-            this.SCIBusPCMBootstrapButton = new System.Windows.Forms.Button();
-            this.SCIBusPCMBootloaderLabel = new System.Windows.Forms.Label();
-            this.SCIBusPCMBootloaderComboBox = new System.Windows.Forms.ComboBox();
             this.CCDBusDiagnosticsListBox = new ChryslerCCDSCIScanner.FlickerFreeListBox();
+            this.SCIBusPCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
             this.SCIBusPCMDiagnosticsListBox = new ChryslerCCDSCIScanner.FlickerFreeListBox();
+            this.SCIBusTCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
             this.SCIBusTCMDiagnosticsListBox = new ChryslerCCDSCIScanner.FlickerFreeListBox();
             this.MenuStrip.SuspendLayout();
             this.USBCommunicationGroupBox.SuspendLayout();
@@ -203,7 +201,8 @@
             this.UpdateToolStripMenuItem,
             this.ReadMemoryToolStripMenuItem,
             this.WriteMemoryToolStripMenuItem,
-            this.SecuritySeedCalculatorToolStripMenuItem});
+            this.SecuritySeedCalculatorToolStripMenuItem,
+            this.BootstrapToolsToolStripMenuItem});
             this.ToolsToolStripMenuItem.Name = "ToolsToolStripMenuItem";
             this.ToolsToolStripMenuItem.Size = new System.Drawing.Size(46, 20);
             this.ToolsToolStripMenuItem.Text = "Tools";
@@ -237,6 +236,14 @@
             this.SecuritySeedCalculatorToolStripMenuItem.Size = new System.Drawing.Size(198, 22);
             this.SecuritySeedCalculatorToolStripMenuItem.Text = "Security seed calculator";
             this.SecuritySeedCalculatorToolStripMenuItem.Click += new System.EventHandler(this.SecuritySeedCalculatorToolStripMenuItem_Click);
+            // 
+            // BootstrapToolsToolStripMenuItem
+            // 
+            this.BootstrapToolsToolStripMenuItem.Enabled = false;
+            this.BootstrapToolsToolStripMenuItem.Name = "BootstrapToolsToolStripMenuItem";
+            this.BootstrapToolsToolStripMenuItem.Size = new System.Drawing.Size(198, 22);
+            this.BootstrapToolsToolStripMenuItem.Text = "Bootstrap tools";
+            this.BootstrapToolsToolStripMenuItem.Click += new System.EventHandler(this.BootstrapToolsToolStripMenuItem_Click);
             // 
             // SettingsToolStripMenuItem
             // 
@@ -1569,9 +1576,6 @@
             // 
             // DiagnosticsGroupBox
             // 
-            this.DiagnosticsGroupBox.Controls.Add(this.SCIBusPCMBootloaderComboBox);
-            this.DiagnosticsGroupBox.Controls.Add(this.SCIBusPCMBootloaderLabel);
-            this.DiagnosticsGroupBox.Controls.Add(this.SCIBusPCMBootstrapButton);
             this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsSnapshotButton);
             this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsRefreshButton);
             this.DiagnosticsGroupBox.Controls.Add(this.DiagnosticsCopyToClipboardButton);
@@ -1647,62 +1651,6 @@
             this.CCDBusDiagnosticsTabPage.TabIndex = 0;
             this.CCDBusDiagnosticsTabPage.Text = "CCD-bus";
             // 
-            // SCIBusPCMDiagnosticsTabPage
-            // 
-            this.SCIBusPCMDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
-            this.SCIBusPCMDiagnosticsTabPage.Controls.Add(this.SCIBusPCMDiagnosticsListBox);
-            this.SCIBusPCMDiagnosticsTabPage.Location = new System.Drawing.Point(4, 22);
-            this.SCIBusPCMDiagnosticsTabPage.Name = "SCIBusPCMDiagnosticsTabPage";
-            this.SCIBusPCMDiagnosticsTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.SCIBusPCMDiagnosticsTabPage.Size = new System.Drawing.Size(877, 495);
-            this.SCIBusPCMDiagnosticsTabPage.TabIndex = 1;
-            this.SCIBusPCMDiagnosticsTabPage.Text = "SCI-bus (PCM)";
-            // 
-            // SCIBusTCMDiagnosticsTabPage
-            // 
-            this.SCIBusTCMDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
-            this.SCIBusTCMDiagnosticsTabPage.Controls.Add(this.SCIBusTCMDiagnosticsListBox);
-            this.SCIBusTCMDiagnosticsTabPage.Location = new System.Drawing.Point(4, 22);
-            this.SCIBusTCMDiagnosticsTabPage.Name = "SCIBusTCMDiagnosticsTabPage";
-            this.SCIBusTCMDiagnosticsTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.SCIBusTCMDiagnosticsTabPage.Size = new System.Drawing.Size(877, 495);
-            this.SCIBusTCMDiagnosticsTabPage.TabIndex = 2;
-            this.SCIBusTCMDiagnosticsTabPage.Text = "SCI-bus (TCM)";
-            // 
-            // SCIBusPCMBootstrapButton
-            // 
-            this.SCIBusPCMBootstrapButton.Location = new System.Drawing.Point(793, 542);
-            this.SCIBusPCMBootstrapButton.Name = "SCIBusPCMBootstrapButton";
-            this.SCIBusPCMBootstrapButton.Size = new System.Drawing.Size(90, 23);
-            this.SCIBusPCMBootstrapButton.TabIndex = 7;
-            this.SCIBusPCMBootstrapButton.Text = "Bootstrap PCM";
-            this.SCIBusPCMBootstrapButton.UseVisualStyleBackColor = true;
-            this.SCIBusPCMBootstrapButton.Click += new System.EventHandler(this.SCIBusPCMBootstrapButton_Click);
-            // 
-            // SCIBusPCMBootloaderLabel
-            // 
-            this.SCIBusPCMBootloaderLabel.AutoSize = true;
-            this.SCIBusPCMBootloaderLabel.Location = new System.Drawing.Point(606, 547);
-            this.SCIBusPCMBootloaderLabel.Name = "SCIBusPCMBootloaderLabel";
-            this.SCIBusPCMBootloaderLabel.Size = new System.Drawing.Size(61, 13);
-            this.SCIBusPCMBootloaderLabel.TabIndex = 0;
-            this.SCIBusPCMBootloaderLabel.Text = "Bootloader:";
-            // 
-            // SCIBusPCMBootloaderComboBox
-            // 
-            this.SCIBusPCMBootloaderComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.SCIBusPCMBootloaderComboBox.FormattingEnabled = true;
-            this.SCIBusPCMBootloaderComboBox.Items.AddRange(new object[] {
-            "Stock SBEC3",
-            "Custom SBEC3 #01",
-            "Custom SBEC3 #02",
-            "Custom SBEC3 #03",
-            "Custom SBEC3 #04"});
-            this.SCIBusPCMBootloaderComboBox.Location = new System.Drawing.Point(668, 543);
-            this.SCIBusPCMBootloaderComboBox.Name = "SCIBusPCMBootloaderComboBox";
-            this.SCIBusPCMBootloaderComboBox.Size = new System.Drawing.Size(120, 21);
-            this.SCIBusPCMBootloaderComboBox.TabIndex = 6;
-            // 
             // CCDBusDiagnosticsListBox
             // 
             this.CCDBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
@@ -1713,6 +1661,17 @@
             this.CCDBusDiagnosticsListBox.ScrollAlwaysVisible = true;
             this.CCDBusDiagnosticsListBox.Size = new System.Drawing.Size(873, 484);
             this.CCDBusDiagnosticsListBox.TabIndex = 0;
+            // 
+            // SCIBusPCMDiagnosticsTabPage
+            // 
+            this.SCIBusPCMDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
+            this.SCIBusPCMDiagnosticsTabPage.Controls.Add(this.SCIBusPCMDiagnosticsListBox);
+            this.SCIBusPCMDiagnosticsTabPage.Location = new System.Drawing.Point(4, 22);
+            this.SCIBusPCMDiagnosticsTabPage.Name = "SCIBusPCMDiagnosticsTabPage";
+            this.SCIBusPCMDiagnosticsTabPage.Padding = new System.Windows.Forms.Padding(3);
+            this.SCIBusPCMDiagnosticsTabPage.Size = new System.Drawing.Size(877, 495);
+            this.SCIBusPCMDiagnosticsTabPage.TabIndex = 1;
+            this.SCIBusPCMDiagnosticsTabPage.Text = "SCI-bus (PCM)";
             // 
             // SCIBusPCMDiagnosticsListBox
             // 
@@ -1725,6 +1684,17 @@
             this.SCIBusPCMDiagnosticsListBox.SelectionMode = System.Windows.Forms.SelectionMode.None;
             this.SCIBusPCMDiagnosticsListBox.Size = new System.Drawing.Size(873, 484);
             this.SCIBusPCMDiagnosticsListBox.TabIndex = 0;
+            // 
+            // SCIBusTCMDiagnosticsTabPage
+            // 
+            this.SCIBusTCMDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
+            this.SCIBusTCMDiagnosticsTabPage.Controls.Add(this.SCIBusTCMDiagnosticsListBox);
+            this.SCIBusTCMDiagnosticsTabPage.Location = new System.Drawing.Point(4, 22);
+            this.SCIBusTCMDiagnosticsTabPage.Name = "SCIBusTCMDiagnosticsTabPage";
+            this.SCIBusTCMDiagnosticsTabPage.Padding = new System.Windows.Forms.Padding(3);
+            this.SCIBusTCMDiagnosticsTabPage.Size = new System.Drawing.Size(877, 495);
+            this.SCIBusTCMDiagnosticsTabPage.TabIndex = 2;
+            this.SCIBusTCMDiagnosticsTabPage.Text = "SCI-bus (TCM)";
             // 
             // SCIBusTCMDiagnosticsListBox
             // 
@@ -1768,7 +1738,6 @@
             this.LCDControlTabPage.ResumeLayout(false);
             this.LCDControlTabPage.PerformLayout();
             this.DiagnosticsGroupBox.ResumeLayout(false);
-            this.DiagnosticsGroupBox.PerformLayout();
             this.DiagnosticsTabControl.ResumeLayout(false);
             this.CCDBusDiagnosticsTabPage.ResumeLayout(false);
             this.SCIBusPCMDiagnosticsTabPage.ResumeLayout(false);
@@ -1918,9 +1887,7 @@
         private System.Windows.Forms.ToolStripMenuItem SecuritySeedCalculatorToolStripMenuItem;
         private System.Windows.Forms.Button SCIBusLowSpeedSelectButton;
         private System.Windows.Forms.Button SCIBusHighSpeedSelectButton;
-        private System.Windows.Forms.ComboBox SCIBusPCMBootloaderComboBox;
-        private System.Windows.Forms.Label SCIBusPCMBootloaderLabel;
-        private System.Windows.Forms.Button SCIBusPCMBootstrapButton;
+        private System.Windows.Forms.ToolStripMenuItem BootstrapToolsToolStripMenuItem;
     }
 }
 

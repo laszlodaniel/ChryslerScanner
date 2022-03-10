@@ -208,7 +208,9 @@ namespace ChryslerCCDSCIScanner
             this.ClientSize = new System.Drawing.Size(550, 84);
             this.Controls.Add(this.BootstrapModeGroupBox);
             this.Controls.Add(this.NormalModeGroupBox);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Name = "SecuritySeedCalculatorForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Security seed calculator";
             this.NormalModeGroupBox.ResumeLayout(false);
             this.NormalModeGroupBox.PerformLayout();

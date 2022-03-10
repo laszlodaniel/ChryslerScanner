@@ -145,6 +145,8 @@ namespace ChryslerCCDSCIScanner
             SCIBusPCMReadMemoryWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(SCIBusPCMReadMemory_RunWorkerCompleted);
 
             SCIBusPCMReadMemoryPresetComboBox.SelectedIndex = 2;
+
+            ActiveControl = CCDBusReadMemoryInitializeSessionButton;
         }
 
         #region CCD-bus
@@ -871,8 +873,9 @@ namespace ChryslerCCDSCIScanner
                 SCIBusPCMTxRetryCount = 0;
 
                 if (SCIBusPCMMemoryOffsetWidth == 16) SCIBusPCMTxPayload = new byte[3] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1] };
-                if ((SCIBusPCMMemoryOffsetWidth == 24) && (SCIBusPCMReadMemoryCommand == 0x45)) SCIBusPCMTxPayload = new byte[6] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2], SCIBusPCMIncrementBytes[1], SCIBusPCMIncrementBytes[2] };
                 else SCIBusPCMTxPayload = new byte[4] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2] };
+
+                if ((SCIBusPCMMemoryOffsetWidth == 24) && (SCIBusPCMReadMemoryCommand == 0x45)) SCIBusPCMTxPayload = new byte[6] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2], SCIBusPCMIncrementBytes[1], SCIBusPCMIncrementBytes[2] };
             }
             else
             {
@@ -894,8 +897,9 @@ namespace ChryslerCCDSCIScanner
             SCIBusPCMReadMemoryCurrentOffsetTextBox.SelectionLength = 0;
 
             if (SCIBusPCMMemoryOffsetWidth == 16) SCIBusPCMTxPayload = new byte[3] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1] };
-            if ((SCIBusPCMMemoryOffsetWidth == 24) && (SCIBusPCMReadMemoryCommand == 0x45)) SCIBusPCMTxPayload = new byte[6] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2], SCIBusPCMIncrementBytes[1], SCIBusPCMIncrementBytes[2] };
             else SCIBusPCMTxPayload = new byte[4] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2] };
+
+            if ((SCIBusPCMMemoryOffsetWidth == 24) && (SCIBusPCMReadMemoryCommand == 0x45)) SCIBusPCMTxPayload = new byte[6] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2], SCIBusPCMIncrementBytes[1], SCIBusPCMIncrementBytes[2] };
 
             SCIBusPCMReadMemoryInitializeSessionButton.Enabled = false;
             SCIBusPCMReadMemoryStartButton.Enabled = false;
@@ -1114,7 +1118,7 @@ namespace ChryslerCCDSCIScanner
 
         #region Methods
 
-        public void PacketReceivedHandler(object sender, EventArgs e)
+        private void PacketReceivedHandler(object sender, EventArgs e)
         {
             if (MainForm.Packet.rx.payload.Length > 4)
             {

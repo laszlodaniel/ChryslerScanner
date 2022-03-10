@@ -766,6 +766,7 @@ namespace ChryslerCCDSCIScanner
             this.Controls.Add(this.WriteMemoryTabControl);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Name = "WriteMemoryForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Write memory";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.WriteMemoryForm_FormClosing);
             this.WriteMemoryTabControl.ResumeLayout(false);
