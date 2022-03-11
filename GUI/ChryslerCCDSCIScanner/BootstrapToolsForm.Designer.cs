@@ -34,11 +34,11 @@ namespace ChryslerCCDSCIScanner
             this.BootloaderLabel = new System.Windows.Forms.Label();
             this.BootstrapButton = new System.Windows.Forms.Button();
             this.UploadWorkerFunctionGroupBox = new System.Windows.Forms.GroupBox();
+            this.ExitButton = new System.Windows.Forms.Button();
+            this.StartButton = new System.Windows.Forms.Button();
             this.WorkerFunctionComboBox = new System.Windows.Forms.ComboBox();
             this.FunctionLabel = new System.Windows.Forms.Label();
             this.UploadButton = new System.Windows.Forms.Button();
-            this.StartButton = new System.Windows.Forms.Button();
-            this.ExitButton = new System.Windows.Forms.Button();
             this.InitializeBootstrapModeGroupBox.SuspendLayout();
             this.UploadWorkerFunctionGroupBox.SuspendLayout();
             this.SuspendLayout();
@@ -61,7 +61,8 @@ namespace ChryslerCCDSCIScanner
             this.BootloaderComboBox.FormattingEnabled = true;
             this.BootloaderComboBox.Items.AddRange(new object[] {
             "SBEC3 (128k)",
-            "SBEC3 (256k)"});
+            "SBEC3 (256k)",
+            "SBEC3 custom"});
             this.BootloaderComboBox.Location = new System.Drawing.Point(67, 17);
             this.BootloaderComboBox.Name = "BootloaderComboBox";
             this.BootloaderComboBox.Size = new System.Drawing.Size(96, 21);
@@ -100,6 +101,26 @@ namespace ChryslerCCDSCIScanner
             this.UploadWorkerFunctionGroupBox.TabStop = false;
             this.UploadWorkerFunctionGroupBox.Text = "Upload worker function";
             // 
+            // ExitButton
+            // 
+            this.ExitButton.Location = new System.Drawing.Point(94, 44);
+            this.ExitButton.Name = "ExitButton";
+            this.ExitButton.Size = new System.Drawing.Size(70, 23);
+            this.ExitButton.TabIndex = 12;
+            this.ExitButton.Text = "Exit";
+            this.ExitButton.UseVisualStyleBackColor = true;
+            this.ExitButton.Click += new System.EventHandler(this.ExitButton_Click);
+            // 
+            // StartButton
+            // 
+            this.StartButton.Location = new System.Drawing.Point(168, 44);
+            this.StartButton.Name = "StartButton";
+            this.StartButton.Size = new System.Drawing.Size(70, 23);
+            this.StartButton.TabIndex = 11;
+            this.StartButton.Text = "Start";
+            this.StartButton.UseVisualStyleBackColor = true;
+            this.StartButton.Click += new System.EventHandler(this.StartButton_Click);
+            // 
             // WorkerFunctionComboBox
             // 
             this.WorkerFunctionComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
@@ -130,26 +151,6 @@ namespace ChryslerCCDSCIScanner
             this.UploadButton.Text = "Upload";
             this.UploadButton.UseVisualStyleBackColor = true;
             this.UploadButton.Click += new System.EventHandler(this.UploadButton_Click);
-            // 
-            // StartButton
-            // 
-            this.StartButton.Location = new System.Drawing.Point(168, 44);
-            this.StartButton.Name = "StartButton";
-            this.StartButton.Size = new System.Drawing.Size(70, 23);
-            this.StartButton.TabIndex = 11;
-            this.StartButton.Text = "Start";
-            this.StartButton.UseVisualStyleBackColor = true;
-            this.StartButton.Click += new System.EventHandler(this.StartButton_Click);
-            // 
-            // ExitButton
-            // 
-            this.ExitButton.Location = new System.Drawing.Point(94, 44);
-            this.ExitButton.Name = "ExitButton";
-            this.ExitButton.Size = new System.Drawing.Size(70, 23);
-            this.ExitButton.TabIndex = 12;
-            this.ExitButton.Text = "Exit";
-            this.ExitButton.UseVisualStyleBackColor = true;
-            this.ExitButton.Click += new System.EventHandler(this.ExitButton_Click);
             // 
             // BootstrapToolsForm
             // 
