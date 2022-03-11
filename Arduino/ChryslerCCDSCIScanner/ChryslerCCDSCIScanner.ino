@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 07: minor
-// 05: patch
+// 06: patch
 // (00: revision)
-// = v0.7.5(.0)
-#define FW_VERSION 0x00070500
+// = v0.7.6(.0)
+#define FW_VERSION 0x00070600
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00070500622B251E
+#define FW_DATE 0x00070600622B5032
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -482,6 +482,12 @@ const uint8_t LdBoot_256k[516] PROGMEM =
     0xf5, 0xa5, 0x27, 0xf7
 };
 
+// SBEC3 custom
+const uint8_t LdBoot_custom[2] PROGMEM =
+{
+    0x27, 0xf7
+};
+
 // Worker functions:
 
 // Flash read.
@@ -684,7 +690,7 @@ void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
     // Upload bootloader.
     switch (bootloader_src)
     {
-        case 0:
+        case 0: // SBEC3 (128k)
         {
             uint8_t bl_header[5] = { 0x4C, 0x01, 0x00, (((0x0100 + ARRAY_SIZE(LdBoot_128k) - 1) >> 8) & 0xFF), ((0x0100 + ARRAY_SIZE(LdBoot_128k) - 1) & 0xFF) };
 
@@ -703,7 +709,7 @@ void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
             }
             break;
         }
-        case 1:
+        case 1: // SBEC3 (256k)
         {
             uint8_t bl_header[5] = { 0x4C, 0x01, 0x00, (((0x0100 + ARRAY_SIZE(LdBoot_256k) - 1) >> 8) & 0xFF), ((0x0100 + ARRAY_SIZE(LdBoot_256k) - 1) & 0xFF) };
 
@@ -717,6 +723,25 @@ void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
             for (uint16_t i = 0; i < ARRAY_SIZE(LdBoot_256k); i++)
             {
                 pcm_putc(pgm_read_byte(LdBoot_256k + i));
+                while (pcm_rx_available() == 0); // wait for echo
+                pcm_getc(); // read echo into oblivion
+            }
+            break;
+        }
+        case 2: // SBEC3 custom
+        {
+            uint8_t bl_header[5] = { 0x4C, 0x01, 0x00, (((0x0100 + ARRAY_SIZE(LdBoot_custom) - 1) >> 8) & 0xFF), ((0x0100 + ARRAY_SIZE(LdBoot_custom) - 1) & 0xFF) };
+
+            for (uint8_t i = 0; i < ARRAY_SIZE(bl_header); i++)
+            {
+                pcm_putc(bl_header[i]);
+                while (pcm_rx_available() == 0); // wait for echo
+                pcm_getc(); // read echo into oblivion
+            }
+
+            for (uint16_t i = 0; i < ARRAY_SIZE(LdBoot_custom); i++)
+            {
+                pcm_putc(pgm_read_byte(LdBoot_custom + i));
                 while (pcm_rx_available() == 0); // wait for echo
                 pcm_getc(); // read echo into oblivion
             }
