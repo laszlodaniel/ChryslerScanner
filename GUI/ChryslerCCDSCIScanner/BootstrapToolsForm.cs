@@ -63,10 +63,55 @@ namespace ChryslerCCDSCIScanner
                 case 0:
                     OriginalForm.UpdateUSBTextBox("[INFO] Worker function: flash read.");
                     break;
+                case 1:
+                    OriginalForm.UpdateUSBTextBox("[INFO] Worker function: flash ID.");
+                    MainForm.Packet.tx.source = (byte)Packet.Source.device;
+                    MainForm.Packet.tx.target = (byte)Packet.Target.pcm;
+                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                    MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+                    MainForm.Packet.tx.payload = new byte[1] { 0x55 };
+                    MainForm.Packet.GeneratePacket();
+                    OriginalForm.TransmitUSBPacket("[<-TX] Read flash memory info:");
+                    break;
                 default:
                     OriginalForm.UpdateUSBTextBox("[INFO] Worker function: flash read.");
                     break;
             }
+        }
+
+        private void StartButton_Click(object sender, EventArgs e)
+        {
+            MainForm.Packet.tx.source = (byte)Packet.Source.device;
+            MainForm.Packet.tx.target = (byte)Packet.Target.pcm;
+            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+            MainForm.Packet.tx.payload = new byte[1] { 0x20 };
+            MainForm.Packet.GeneratePacket();
+            OriginalForm.TransmitUSBPacket("[<-TX] Start worker function:");
+
+            switch (WorkerFunctionComboBox.SelectedIndex)
+            {
+                case 0: // flash read
+                    break;
+                case 1: // flash ID
+                    MainForm.Packet.tx.payload = new byte[1] { 0x55 };
+                    MainForm.Packet.GeneratePacket();
+                    OriginalForm.TransmitUSBPacket("[<-TX] Read flash memory info:");
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void ExitButton_Click(object sender, EventArgs e)
+        {
+            MainForm.Packet.tx.source = (byte)Packet.Source.device;
+            MainForm.Packet.tx.target = (byte)Packet.Target.pcm;
+            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+            MainForm.Packet.tx.payload = new byte[1] { 0xE0 };
+            MainForm.Packet.GeneratePacket();
+            OriginalForm.TransmitUSBPacket("[<-TX] Exit worker function:");
         }
 
         private void PacketReceivedHandler(object sender, EventArgs e)

@@ -373,7 +373,7 @@ namespace ChryslerCCDSCIScanner
             row["length"] = 7;
             row["parameterCount"] = 2;
             row["message"] = string.Empty;
-            row["description"] = "BOOTSTRAP FLASH READ";
+            row["description"] = "FLASH READ";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -400,10 +400,20 @@ namespace ChryslerCCDSCIScanner
 
             row = MessageDatabase.NewRow();
             row["id"] = 0x56;
+            row["length"] = 3;
+            row["parameterCount"] = 2;
+            row["message"] = string.Empty;
+            row["description"] = "FLASH MEMORY INFO";
+            row["value"] = string.Empty;
+            row["unit"] = string.Empty;
+            MessageDatabase.Rows.Add(row);
+
+            row = MessageDatabase.NewRow();
+            row["id"] = 0xE1;
             row["length"] = 2;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "EXIT BOOTSTRAP FLASH READ";
+            row["description"] = "EXIT WORKER FUNCTION";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -3870,7 +3880,33 @@ namespace ChryslerCCDSCIScanner
                 {
                     switch (ID)
                     {
-                        case 0x46: // bootstrap flash read
+                        case 0x11: // upload worker function result
+                            if (message.Length >= 3)
+                            {
+                                descriptionToInsert = "UPLOAD WORKER FUNCTION";
+
+                                if (payload[payload.Length - 1] == 0x14)
+                                {
+                                    valueToInsert = "OK";
+                                }
+                                else
+                                {
+                                    valueToInsert = "ERROR";
+                                }
+                            }
+                            else
+                            {
+                                descriptionToInsert = "UPLOAD WORKER FUNCTION";
+                                valueToInsert = "ERROR";
+                            }
+                            unitToInsert = string.Empty;
+                            break;
+                        case 0x21: // start worker function result
+                            descriptionToInsert = "START WORKER FUNCTION";
+                            valueToInsert = string.Empty;
+                            unitToInsert = string.Empty;
+                            break;
+                        case 0x46: // flash read
                             if (message.Length >= minLength)
                             {
                                 List<byte> offset = new List<byte>();
@@ -3882,12 +3918,12 @@ namespace ChryslerCCDSCIScanner
                                 offset.AddRange(payload.Take(3));
                                 length.AddRange(payload.Skip(3).Take(2));
                                 values.AddRange(payload.Skip(5));
-                                descriptionToInsert = "BOOTSTRAP FLASH READ | OFFSET: " + Util.ByteToHexStringSimple(offset.ToArray()) + " | L: " + Util.ByteToHexStringSimple(length.ToArray());
+                                descriptionToInsert = "FLASH READ | OFFSET: " + Util.ByteToHexStringSimple(offset.ToArray()) + " | LENGTH: " + Util.ByteToHexStringSimple(length.ToArray());
                                 valueToInsert = Util.ByteToHexStringSimple(values.ToArray());
                             }
                             else
                             {
-                                descriptionToInsert = "BOOTSTRAP FLASH READ";
+                                descriptionToInsert = "FLASH READ";
                                 valueToInsert = string.Empty;
                             }
                             unitToInsert = string.Empty;
@@ -3928,17 +3964,29 @@ namespace ChryslerCCDSCIScanner
                             valueToInsert = string.Empty;
                             unitToInsert = string.Empty;
                             break;
-                        case 0x56: // exit bootstrap flash read worker function
+                        case 0x56: // flash memory manufacturer and chip ID read
                             if (message.Length >= minLength)
                             {
-                                descriptionToInsert = "EXIT BOOTSTRAP FLASH READ";
+                                descriptionToInsert = "FLASH MEMORY INFO | MFG ID: " + Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | CHIP ID: " + Util.ByteToHexStringSimple(new byte[1] { payload[1] });
+                            }
+                            else
+                            {
+                                descriptionToInsert = "FLASH MEMORY INFO";
+                            }
+                            valueToInsert = string.Empty;
+                            unitToInsert = string.Empty;
+                            break;
+                        case 0xE1: // exit worker function
+                            if (message.Length >= minLength)
+                            {
+                                descriptionToInsert = "EXIT WORKER FUNCTION";
 
                                 if (payload[0] == 0x22) valueToInsert = "OK";
                                 else valueToInsert = "ERROR";
                             }
                             else
                             {
-                                descriptionToInsert = "EXIT BOOTSTRAP FLASH READ";
+                                descriptionToInsert = "EXIT WORKER FUNCTION";
                                 valueToInsert = string.Empty;
                             }
                             unitToInsert = string.Empty;

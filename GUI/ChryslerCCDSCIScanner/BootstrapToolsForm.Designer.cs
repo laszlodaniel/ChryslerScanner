@@ -37,6 +37,8 @@ namespace ChryslerCCDSCIScanner
             this.WorkerFunctionComboBox = new System.Windows.Forms.ComboBox();
             this.FunctionLabel = new System.Windows.Forms.Label();
             this.UploadButton = new System.Windows.Forms.Button();
+            this.StartButton = new System.Windows.Forms.Button();
+            this.ExitButton = new System.Windows.Forms.Button();
             this.InitializeBootstrapModeGroupBox.SuspendLayout();
             this.UploadWorkerFunctionGroupBox.SuspendLayout();
             this.SuspendLayout();
@@ -86,12 +88,14 @@ namespace ChryslerCCDSCIScanner
             // 
             // UploadWorkerFunctionGroupBox
             // 
+            this.UploadWorkerFunctionGroupBox.Controls.Add(this.ExitButton);
+            this.UploadWorkerFunctionGroupBox.Controls.Add(this.StartButton);
             this.UploadWorkerFunctionGroupBox.Controls.Add(this.WorkerFunctionComboBox);
             this.UploadWorkerFunctionGroupBox.Controls.Add(this.FunctionLabel);
             this.UploadWorkerFunctionGroupBox.Controls.Add(this.UploadButton);
             this.UploadWorkerFunctionGroupBox.Location = new System.Drawing.Point(9, 55);
             this.UploadWorkerFunctionGroupBox.Name = "UploadWorkerFunctionGroupBox";
-            this.UploadWorkerFunctionGroupBox.Size = new System.Drawing.Size(244, 46);
+            this.UploadWorkerFunctionGroupBox.Size = new System.Drawing.Size(244, 74);
             this.UploadWorkerFunctionGroupBox.TabIndex = 11;
             this.UploadWorkerFunctionGroupBox.TabStop = false;
             this.UploadWorkerFunctionGroupBox.Text = "Upload worker function";
@@ -101,7 +105,8 @@ namespace ChryslerCCDSCIScanner
             this.WorkerFunctionComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.WorkerFunctionComboBox.FormattingEnabled = true;
             this.WorkerFunctionComboBox.Items.AddRange(new object[] {
-            "Flash read"});
+            "Flash read",
+            "Flash ID"});
             this.WorkerFunctionComboBox.Location = new System.Drawing.Point(67, 17);
             this.WorkerFunctionComboBox.Name = "WorkerFunctionComboBox";
             this.WorkerFunctionComboBox.Size = new System.Drawing.Size(96, 21);
@@ -126,11 +131,31 @@ namespace ChryslerCCDSCIScanner
             this.UploadButton.UseVisualStyleBackColor = true;
             this.UploadButton.Click += new System.EventHandler(this.UploadButton_Click);
             // 
+            // StartButton
+            // 
+            this.StartButton.Location = new System.Drawing.Point(168, 44);
+            this.StartButton.Name = "StartButton";
+            this.StartButton.Size = new System.Drawing.Size(70, 23);
+            this.StartButton.TabIndex = 11;
+            this.StartButton.Text = "Start";
+            this.StartButton.UseVisualStyleBackColor = true;
+            this.StartButton.Click += new System.EventHandler(this.StartButton_Click);
+            // 
+            // ExitButton
+            // 
+            this.ExitButton.Location = new System.Drawing.Point(94, 44);
+            this.ExitButton.Name = "ExitButton";
+            this.ExitButton.Size = new System.Drawing.Size(70, 23);
+            this.ExitButton.TabIndex = 12;
+            this.ExitButton.Text = "Exit";
+            this.ExitButton.UseVisualStyleBackColor = true;
+            this.ExitButton.Click += new System.EventHandler(this.ExitButton_Click);
+            // 
             // BootstrapToolsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(262, 109);
+            this.ClientSize = new System.Drawing.Size(262, 137);
             this.Controls.Add(this.UploadWorkerFunctionGroupBox);
             this.Controls.Add(this.InitializeBootstrapModeGroupBox);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
@@ -156,5 +181,7 @@ namespace ChryslerCCDSCIScanner
         private System.Windows.Forms.ComboBox WorkerFunctionComboBox;
         private System.Windows.Forms.Label FunctionLabel;
         private System.Windows.Forms.Button UploadButton;
+        private System.Windows.Forms.Button ExitButton;
+        private System.Windows.Forms.Button StartButton;
     }
 }
