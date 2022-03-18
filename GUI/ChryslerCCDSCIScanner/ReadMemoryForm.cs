@@ -567,10 +567,10 @@ namespace ChryslerCCDSCIScanner
             if (e.ProgressPercentage == 0)
             {
                 // Fill Packet class fields with data.
-                MainForm.Packet.tx.source = 0x00; // device
-                MainForm.Packet.tx.target = 0x01; // ccd
-                MainForm.Packet.tx.command = 0x06; // msgTx
-                MainForm.Packet.tx.mode = 0x02; // msTxMode.single
+                MainForm.Packet.tx.source = (byte)Packet.Source.device;
+                MainForm.Packet.tx.target = (byte)Packet.Target.ccd;
+                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                 MainForm.Packet.tx.payload = CCDBusTxPayload;
                 MainForm.Packet.GeneratePacket();
 
@@ -1015,10 +1015,10 @@ namespace ChryslerCCDSCIScanner
                 UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "TX: " + Util.ByteToHexStringSimple(SCIBusPCMTxPayload));
 
                 // Fill Packet class fields with data.
-                MainForm.Packet.tx.source = 0x00; // device
-                MainForm.Packet.tx.target = 0x02; // pcm
-                MainForm.Packet.tx.command = 0x06; // msgTx
-                MainForm.Packet.tx.mode = 0x02; // msTxMode.single
+                MainForm.Packet.tx.source = (byte)Packet.Source.device;
+                MainForm.Packet.tx.target = (byte)Packet.Target.pcm;
+                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                 MainForm.Packet.tx.payload = SCIBusPCMTxPayload;
                 MainForm.Packet.GeneratePacket();
 
@@ -1128,7 +1128,7 @@ namespace ChryslerCCDSCIScanner
                 //UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "T: " + TimestampString);
             }
 
-            if (MainForm.Packet.rx.source == 0x00) // Scanner
+            if (MainForm.Packet.rx.source == (byte)Packet.Source.device)
             {
                 if ((MainForm.Packet.rx.command == (byte)Packet.Command.error) && (MainForm.Packet.rx.mode == (byte)Packet.ErrorMode.errorInternal))
                 {
@@ -1136,7 +1136,7 @@ namespace ChryslerCCDSCIScanner
                 }
             }
 
-            if (MainForm.Packet.rx.source == 0x01) // CCD-bus
+            if (MainForm.Packet.rx.source == (byte)Packet.Source.ccd)
             {
                 CCDBusAliveTimer.Stop();
                 CCDBusAliveTimer.Start();
@@ -1237,7 +1237,7 @@ namespace ChryslerCCDSCIScanner
                 }
             }
 
-            if (MainForm.Packet.rx.source == 0x02) // SCI-bus (PCM)
+            if (MainForm.Packet.rx.source == (byte)Packet.Source.pcm) 
             {
                 byte[] SCIBusPCMResponseBytes = MainForm.Packet.rx.payload.Skip(4).ToArray(); // skip 4 timestamp bytes
 

@@ -146,7 +146,8 @@ namespace ChryslerCCDSCIScanner
             writeExtEEPROMblock = 0x09,
             setArbitraryUARTSpeed = 0x0A,
             initBootstrapMode = 0x0B,
-            writeWorkerFunction = 0x0C
+            writeWorkerFunction = 0x0C,
+            restorePCMEEPROM = 0xF0
         }
 
         public enum ErrorMode : byte
@@ -303,15 +304,15 @@ namespace ChryslerCCDSCIScanner
         /// <returns>None.</returns>
         public void GeneratePacket()
         {
-            int packetLength;
+            ushort packetLength;
             byte checksum = 0;
 
             if (tx.payload == null) packetLength = 6;
-            else packetLength = tx.payload.Length + 6;
+            else packetLength = (ushort)(tx.payload.Length + 6);
 
             List<byte> packet = new List<byte>(packetLength);
 
-            byte lengthHB = (byte)(((packetLength - 4) << 8) & 0xFF);
+            byte lengthHB = (byte)(((packetLength - 4) >> 8) & 0xFF);
             byte lengthLB = (byte)((packetLength - 4) & 0xFF);
             byte datacode = (byte)(((tx.source << 6) & 0xC0) + ((tx.target << 4) & 0x30) + (tx.command & 0x0F));
             byte subdatacode = tx.mode;

@@ -329,7 +329,6 @@ namespace ChryslerCCDSCIScanner
             // 
             // SCIBusPCMWriteMemoryEEPROMRestoreButton
             // 
-            this.SCIBusPCMWriteMemoryEEPROMRestoreButton.Enabled = false;
             this.SCIBusPCMWriteMemoryEEPROMRestoreButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
             this.SCIBusPCMWriteMemoryEEPROMRestoreButton.Location = new System.Drawing.Point(214, 131);
             this.SCIBusPCMWriteMemoryEEPROMRestoreButton.Name = "SCIBusPCMWriteMemoryEEPROMRestoreButton";
@@ -337,7 +336,6 @@ namespace ChryslerCCDSCIScanner
             this.SCIBusPCMWriteMemoryEEPROMRestoreButton.TabIndex = 26;
             this.SCIBusPCMWriteMemoryEEPROMRestoreButton.Text = "RES";
             this.SCIBusPCMWriteMemoryEEPROMRestoreButton.UseVisualStyleBackColor = true;
-            this.SCIBusPCMWriteMemoryEEPROMRestoreButton.Visible = false;
             this.SCIBusPCMWriteMemoryEEPROMRestoreButton.Click += new System.EventHandler(this.SCIBusPCMWriteMemoryEEPROMRestoreButton_Click);
             // 
             // SCIBusPCMWriteMemoryEEPROMBackupButton

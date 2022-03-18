@@ -37,16 +37,16 @@
 
 // Firmware version (hexadecimal format):
 // 00: major
-// 07: minor
-// 06: patch
+// 08: minor
+// 00: patch
 // (00: revision)
-// = v0.7.6(.0)
-#define FW_VERSION 0x00070600
+// = v0.8.0(.0)
+#define FW_VERSION 0x00080000
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00070600622B5032
+#define FW_DATE 0x000800006234CE87
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -228,7 +228,7 @@
 #define set_arbitrary_uart_speed  0x0A
 #define init_bootstrap_mode       0x0B
 #define write_worker_function     0x0C
-// 0x0D-0xFF reserved
+#define restore_pcm_eeprom        0xF0
 
 // SUB-DATA CODE byte
 // Command 0x0F (ok_error)
@@ -638,7 +638,6 @@ void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
         }
         else
         {
-
             ret[0] = 4;
             send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
             pcm_rx_flush();
@@ -921,7 +920,228 @@ void upload_worker_function(uint8_t worker_function_src)
     wdt_reset(); // feed the watchdog
     pcm_rx_flush();
 
+    // Success.
     send_usb_packet(from_usb, to_usb, debug, write_worker_function, ret, 1);
+}
+
+/*************************************************************************
+Function: restore_pcm_eeprom_handler()
+Purpose:  read current PCM EEPROM value and replace with backup value if different
+**************************************************************************/
+void restore_pcm_eeprom_handler(uint8_t *input_data)
+{
+    uint8_t ret[1] = { 0 };
+    // 0 = ok
+    // 1 = no response to security seed request
+    // 2 = checksum error
+    // 3 = no response to solution
+    // 4 = solution not accepted
+    // 5 = read EEPROM command not returning a value
+    // 6 = write EEPROM command not returning a result
+    // 7 = write EEPROM command failed
+
+    uint8_t buff[16];
+    uint8_t checksum = 0;
+    bool solution_required = true;
+
+    wdt_reset(); // feed the watchdog
+    pcm_rx_flush();
+    pcm_tx_flush();
+    pcm.last_byte_millis = millis();
+
+    // Get security seed challenge.
+    pcm_putc(0x2B);
+
+    while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_LS_T3_DELAY); // wait for response
+
+    if (pcm_rx_available() < 4)
+    {
+        ret[0] = 1;
+        send_usb_packet(from_usb, to_usb, debug, restore_pcm_eeprom, ret, 1);
+        pcm_rx_flush();
+        return;
+    }
+
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        buff[i] = pcm_getc() & 0xFF;
+
+        if (i < 3) checksum += buff[i]; // calculate checksum
+    }
+
+    if (buff[3] != checksum)
+    {
+        ret[0] = 2;
+        send_usb_packet(from_usb, to_usb, debug, restore_pcm_eeprom, ret, 1);
+        pcm_rx_flush();
+        return;
+    }
+
+    if ((buff[1] == 0) && (buff[2] == 0))
+    {
+        solution_required = false;
+    }
+
+    if (solution_required)
+    {
+        uint16_t seed = to_uint16(buff[1], buff[2]);
+        uint16_t a = (seed << 2) + 0x9018;
+        uint8_t seed_solution[2] = { ((a >> 8) & 0xFF), (a & 0xFF) };
+
+        uint8_t send_seed_solution_cmd[4] = { 0x2C, seed_solution[0], seed_solution[1], 0 };
+        send_seed_solution_cmd[3] = calculate_checksum(send_seed_solution_cmd, 0, ARRAY_SIZE(send_seed_solution_cmd) - 1);
+
+        wdt_reset(); // feed the watchdog
+        pcm_rx_flush();
+
+        // Write security seed solution message.
+        for (uint8_t i = 0; i < 4; i++)
+        {
+            pcm_putc(send_seed_solution_cmd[i]);
+            while (pcm_rx_available() == 0); // wait for echo
+            pcm_getc(); // read echo into oblivion
+        }
+
+        while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_LS_T3_DELAY); // wait for response
+
+        if (pcm_rx_available() == 0)
+        {
+            ret[0] = 3;
+            send_usb_packet(from_usb, to_usb, debug, restore_pcm_eeprom, ret, 1);
+            pcm_rx_flush();
+            return;
+        }
+
+        // Read seed solution status.
+        uint8_t solution_status = pcm_getc() & 0xFF;
+
+        if (solution_status != 0)
+        {
+            ret[0] = 4;
+            send_usb_packet(from_usb, to_usb, debug, restore_pcm_eeprom, ret, 1);
+            pcm_rx_flush();
+            return;
+        }
+    }
+
+    wdt_reset(); // feed the watchdog
+    pcm_rx_flush();
+
+    uint8_t read_eeprom_cmd[3] = { 0x28, 0x00, 0x00 };
+    uint8_t write_eeprom_cmd[4] = { 0x27, 0x00, 0x00, 0x00 };
+    uint8_t offset[2] = { 0, 0 };
+    uint8_t attempts = 0;
+    bool valid_response = false;
+
+    for (uint16_t i = 0; i < 512; i++)
+    {
+        // Set current offset.
+        offset[0] = (i >> 8) & 0xFF;
+        offset[1] = i & 0xFF;
+        read_eeprom_cmd[1] = offset[0];
+        read_eeprom_cmd[2] = offset[1];
+
+        valid_response = false;
+        attempts = 0;
+
+        while (!valid_response)
+        {
+            wdt_reset(); // feed the watchdog
+            pcm_rx_flush();
+
+            // Read current EEPROM value.
+            for (uint8_t j = 0; j < 3; j++)
+            {
+                pcm_putc(read_eeprom_cmd[j]);
+                while (pcm_rx_available() == 0); // wait for echo
+                pcm_getc(); // read echo into oblivion
+            }
+
+            while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_LS_T3_DELAY); // wait for response
+
+            if (pcm_rx_available() == 0)
+            {
+                attempts++;
+
+                if (attempts >= 10)
+                {
+                    ret[0] = 5;
+                    send_usb_packet(from_usb, to_usb, debug, restore_pcm_eeprom, ret, 1);
+                    pcm_rx_flush();
+                    return;
+                }
+
+                delay(100);
+            }
+            else
+            {
+                valid_response = true;
+            }
+        }
+
+        buff[0] = pcm_getc() & 0xFF;
+
+        if (input_data[i] != buff[0])
+        {
+            write_eeprom_cmd[1] = offset[0];
+            write_eeprom_cmd[2] = offset[1];
+            write_eeprom_cmd[3] = input_data[i];
+
+            valid_response = false;
+            attempts = 0;
+
+            while (!valid_response)
+            {
+                wdt_reset(); // feed the watchdog
+                pcm_rx_flush();
+
+                // Write new EEPROM value.
+                for (uint8_t j = 0; j < 4; j++)
+                {
+                    pcm_putc(write_eeprom_cmd[j]);
+                    while (pcm_rx_available() == 0); // wait for echo
+                    pcm_getc(); // read echo into oblivion
+                }
+
+                while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_LS_T3_DELAY); // wait for response
+
+                if (pcm_rx_available() == 0)
+                {
+                    attempts++;
+
+                    if (attempts >= 10)
+                    {
+                        ret[0] = 6;
+                        send_usb_packet(from_usb, to_usb, debug, restore_pcm_eeprom, ret, 1);
+                        pcm_rx_flush();
+                        return;
+                    }
+
+                    delay(100);
+                }
+                else
+                {
+                    valid_response = true;
+                }
+            }
+
+            buff[0] = pcm_getc() & 0xFF;
+
+            if (buff[0] != 0xE2)
+            {
+                ret[0] = 7;
+                send_usb_packet(from_usb, to_usb, debug, restore_pcm_eeprom, ret, 1);
+                pcm_rx_flush();
+                return;
+            }
+        }
+    }
+
+    wdt_reset(); // feed the watchdog
+    pcm_rx_flush();
+
+    // Success.
+    send_usb_packet(from_usb, to_usb, debug, restore_pcm_eeprom, ret, 1);
 }
 
 /*************************************************************************
@@ -4676,6 +4896,17 @@ void handle_usb_data(void)
                                         }
 
                                         upload_worker_function(cmd_payload[0]);
+                                        break;
+                                    }
+                                    case restore_pcm_eeprom: // 0xF0
+                                    {
+                                        if (!payload_bytes || (payload_length != 512))
+                                        {
+                                            send_usb_packet(from_usb, to_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            break;
+                                        }
+
+                                        restore_pcm_eeprom_handler(cmd_payload);
                                         break;
                                     }
                                     default:

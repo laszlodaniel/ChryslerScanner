@@ -841,7 +841,40 @@ namespace ChryslerCCDSCIScanner
 
         private void SCIBusPCMWriteMemoryEEPROMRestoreButton_Click(object sender, EventArgs e)
         {
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.InitialDirectory = Path.Combine(Application.StartupPath, @"ROMs\PCM");
+                openFileDialog.Filter = "Binary files (*.bin)|*.bin|All files (*.*)|*.*";
+                openFileDialog.FilterIndex = 1;
+                openFileDialog.RestoreDirectory = true;
 
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    using (var stream = File.Open(openFileDialog.FileName, FileMode.Open))
+                    {
+                        using (var reader = new BinaryReader(stream, Encoding.UTF8, false))
+                        {
+                            if (stream.Length == 512)
+                            {
+                                MainForm.Packet.tx.source = (byte)Packet.Source.device;
+                                MainForm.Packet.tx.target = (byte)Packet.Target.device;
+                                MainForm.Packet.tx.command = (byte)Packet.Command.debug;
+                                MainForm.Packet.tx.mode = (byte)Packet.DebugMode.restorePCMEEPROM;
+                                MainForm.Packet.tx.payload = reader.ReadBytes(512);
+                                MainForm.Packet.GeneratePacket();
+
+                                OriginalForm.TransmitUSBPacket("[<-TX] Restore PCM EEPROM from backup:");
+                                UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Restore EEPROM. In progress.");
+                            }
+                            else
+                            {
+                                MessageBox.Show("Incorrect file size (" + stream.Length.ToString() + " bytes)!" + Environment.NewLine +
+                                                "EEPROM backup file size should be 512 bytes.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         private void SCIBusPCMWriteMemoryEEPROMOffsetTextBox_KeyPress(object sender, KeyPressEventArgs e)
@@ -1251,10 +1284,10 @@ namespace ChryslerCCDSCIScanner
         {
             if (e.ProgressPercentage == 0)
             {
-                MainForm.Packet.tx.source = 0x00; // device
-                MainForm.Packet.tx.target = 0x02; // pcm
-                MainForm.Packet.tx.command = 0x06; // msgTx
-                MainForm.Packet.tx.mode = 0x02; // msTxMode.single
+                MainForm.Packet.tx.source = (byte)Packet.Source.device;
+                MainForm.Packet.tx.target = (byte)Packet.Target.pcm;
+                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                 MainForm.Packet.tx.payload = SCIBusPCMTxPayload;
                 MainForm.Packet.GeneratePacket();
 
@@ -1531,18 +1564,18 @@ namespace ChryslerCCDSCIScanner
             {
                 if (!PCMUnlocked)
                 {
-                    MainForm.Packet.tx.source = 0x00; // device
-                    MainForm.Packet.tx.target = 0x02; // pcm
-                    MainForm.Packet.tx.command = 0x06; // msgTx
-                    MainForm.Packet.tx.mode = 0x02; // msTxMode.single
+                    MainForm.Packet.tx.source = (byte)Packet.Source.device;
+                    MainForm.Packet.tx.target = (byte)Packet.Target.pcm;
+                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                    MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                     MainForm.Packet.tx.payload = new byte[1] { (byte)SCI_ID.GetSecuritySeed };
                 }
                 else
                 {
-                    MainForm.Packet.tx.source = 0x00; // device
-                    MainForm.Packet.tx.target = 0x02; // pcm
-                    MainForm.Packet.tx.command = 0x06; // msgTx
-                    MainForm.Packet.tx.mode = 0x02; // msTxMode.single
+                    MainForm.Packet.tx.source = (byte)Packet.Source.device;
+                    MainForm.Packet.tx.target = (byte)Packet.Target.pcm;
+                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                    MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                     MainForm.Packet.tx.payload = SCIBusPCMTxPayload;
                 }
 
@@ -1674,6 +1707,34 @@ namespace ChryslerCCDSCIScanner
                 //Timestamp = DateTime.Today.Add(ElapsedMillis);
                 //TimestampString = Timestamp.ToString("HH:mm:ss.fff");
                 //UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "T: " + TimestampString);
+            }
+
+            if (MainForm.Packet.rx.source == (byte)Packet.Source.device)
+            {
+                switch (MainForm.Packet.rx.command)
+                {
+                    case (byte)Packet.Command.debug:
+                        switch (MainForm.Packet.rx.mode)
+                        {
+                            case (byte)Packet.DebugMode.restorePCMEEPROM:
+                                switch (MainForm.Packet.rx.payload[0])
+                                {
+                                    case 0:
+                                        UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Restore EEPROM. Done.");
+                                        break;
+                                    default:
+                                        UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Restore EEPROM. Error.");
+                                        break;
+                                }
+                                
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+                    default:
+                        break;
+                }
             }
 
             if (MainForm.Packet.rx.source == (byte)Packet.Source.ccd)
@@ -1918,10 +1979,10 @@ namespace ChryslerCCDSCIScanner
 
                                     UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + "Attempting to unlock PCM.");
 
-                                    MainForm.Packet.tx.source = 0x00; // device
-                                    MainForm.Packet.tx.target = 0x02; // sci pcm
-                                    MainForm.Packet.tx.command = 0x06; // msgTx
-                                    MainForm.Packet.tx.mode = 0x02; // msTxMode.single
+                                    MainForm.Packet.tx.source = (byte)Packet.Source.device;
+                                    MainForm.Packet.tx.target = (byte)Packet.Target.pcm;
+                                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                                    MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                                     MainForm.Packet.tx.payload = solutionArray;
                                     MainForm.Packet.GeneratePacket();
 
