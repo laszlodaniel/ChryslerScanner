@@ -2006,7 +2006,7 @@ namespace ChryslerCCDSCIScanner
                                         switch (Packet.rx.payload[0])
                                         {
                                             case 0:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Worker function started.");
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Worker function upload success.");
                                                 break;
                                             case 1:
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Error: upload finished status byte not received.");

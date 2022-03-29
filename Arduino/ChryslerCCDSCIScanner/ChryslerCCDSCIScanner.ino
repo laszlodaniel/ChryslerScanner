@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 08: minor
-// 00: patch
+// 01: patch
 // (00: revision)
-// = v0.8.0(.0)
-#define FW_VERSION 0x00080000
+// = v0.8.1(.0)
+#define FW_VERSION 0x00080100
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x000800006234CE87
+#define FW_DATE 0x0008010062434A9C
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -490,6 +490,32 @@ const uint8_t LdBoot_custom[2] PROGMEM =
 
 // Worker functions:
 
+const uint8_t LdPartNumberRead[338] PROGMEM =
+{
+    0x37, 0x35, 0x01, 0xe8, 0xfa, 0x00, 0x02, 0xe6, 0xb5, 0x0e, 0x76, 0x08, 0xb6, 0x02, 0xfa, 0x00, 
+    0x02, 0x54, 0xb0, 0x00, 0xfa, 0x00, 0x02, 0x1e, 0xfa, 0x00, 0x02, 0x66, 0x27, 0xf7, 0x37, 0xad, 
+    0x37, 0x07, 0x37, 0xac, 0x34, 0x05, 0xf5, 0x04, 0x37, 0x9d, 0x37, 0xbd, 0x02, 0x00, 0x55, 0x01, 
+    0x78, 0x04, 0xb2, 0x0e, 0x37, 0x0b, 0x37, 0x17, 0x37, 0x9c, 0xdc, 0x02, 0x37, 0x35, 0x00, 0x14, 
+    0xfa, 0x00, 0x03, 0x3a, 0xb0, 0x00, 0xfa, 0x00, 0x02, 0x54, 0x35, 0x50, 0x37, 0x9c, 0x37, 0x17, 
+    0x37, 0x9d, 0x27, 0xf7, 0x37, 0x35, 0x00, 0x14, 0xf5, 0xff, 0xfa, 0x00, 0x02, 0xc0, 0x37, 0x30, 
+    0x00, 0x01, 0xb6, 0xf0, 0x27, 0xf7, 0x37, 0x35, 0x01, 0xe2, 0xfa, 0x00, 0x02, 0xe6, 0x34, 0x01, 
+    0x37, 0x17, 0xfa, 0x00, 0x02, 0xc0, 0x35, 0x40, 0xfa, 0x00, 0x02, 0xc0, 0x7c, 0x02, 0x37, 0x38, 
+    0x01, 0xe6, 0xb6, 0xe2, 0x37, 0x35, 0x01, 0xe9, 0xfa, 0x00, 0x02, 0xe6, 0x34, 0x01, 0x37, 0x17, 
+    0xfa, 0x00, 0x02, 0xc0, 0x35, 0x40, 0xfa, 0x00, 0x02, 0xc0, 0x37, 0x35, 0x01, 0xe7, 0xfa, 0x00, 
+    0x02, 0xe6, 0x34, 0x01, 0x37, 0x17, 0xfa, 0x00, 0x02, 0xc0, 0x35, 0x40, 0xfa, 0x00, 0x02, 0xc0, 
+    0x37, 0x35, 0x01, 0xef, 0xfa, 0x00, 0x02, 0xe6, 0x37, 0x17, 0xfa, 0x00, 0x02, 0xc0, 0x27, 0xf7, 
+    0x17, 0x65, 0x7c, 0x0c, 0x76, 0x01, 0xb7, 0xf4, 0x17, 0xea, 0x7c, 0x0f, 0x37, 0xb5, 0x01, 0x90, 
+    0xfa, 0x00, 0x03, 0x4a, 0x27, 0xf7, 0x17, 0x65, 0x7c, 0x0d, 0x76, 0x42, 0x78, 0x40, 0xb6, 0xf2, 
+    0x17, 0xe5, 0x7c, 0x0f, 0x27, 0xf7, 0x27, 0xfb, 0x37, 0x04, 0x37, 0x04, 0x37, 0x04, 0x77, 0x03, 
+    0x37, 0xea, 0x7d, 0x30, 0x37, 0xb5, 0x09, 0x08, 0x37, 0xea, 0x7c, 0x1c, 0xfa, 0x00, 0x03, 0x14, 
+    0xb5, 0x0c, 0x37, 0xe5, 0x7d, 0x12, 0x37, 0x06, 0xb0, 0x04, 0x37, 0x3b, 0x01, 0x00, 0x37, 0xfc, 
+    0xf5, 0x5a, 0x27, 0xf7, 0x28, 0x80, 0x7c, 0x1f, 0x29, 0x80, 0x7c, 0x1a, 0x37, 0x05, 0x37, 0x01, 
+    0xb7, 0x0a, 0x2a, 0x80, 0x7c, 0x1f, 0xff, 0xf6, 0x28, 0x80, 0x7c, 0x1f, 0x37, 0x06, 0xb0, 0x04, 
+    0x37, 0x3b, 0x01, 0x00, 0x37, 0xfc, 0xf5, 0xa5, 0x27, 0xf7, 0xc5, 0x00, 0xfa, 0x00, 0x02, 0xc0, 
+    0x3c, 0x01, 0x37, 0x30, 0x00, 0x01, 0xb6, 0xee, 0x27, 0xf7, 0x37, 0xb0, 0x00, 0x01, 0xb6, 0xf6, 
+    0x27, 0xf7
+};
+
 // Flash read.
 const uint8_t LdFlashRead[174] PROGMEM =
 {
@@ -595,7 +621,7 @@ void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
     pcm.last_byte_millis = millis();
 
     // Write security seed request message.
-    for (uint8_t i = 0; i < 5; i++)
+    for (uint8_t i = 0; i < ARRAY_SIZE(req_seed_cmd); i++)
     {
         pcm_putc(req_seed_cmd[i]);
     }
@@ -652,7 +678,7 @@ void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
         pcm.last_byte_millis = millis();
 
         // Write security seed solution message.
-        for (uint8_t i = 0; i < 7; i++)
+        for (uint8_t i = 0; i < ARRAY_SIZE(send_seed_solution_cmd); i++)
         {
             pcm_putc(send_seed_solution_cmd[i]);
         }
@@ -773,7 +799,7 @@ void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
     uint8_t start_bootloader_cmd[3] = { 0x47, 0x01, 0x00 };
 
     // Write start bootloader message.
-    for (uint8_t i = 0; i < 3; i++)
+    for (uint8_t i = 0; i < ARRAY_SIZE(start_bootloader_cmd); i++)
     {
         pcm_putc(start_bootloader_cmd[i]);
         while (pcm_rx_available() == 0); // wait for echo
@@ -825,7 +851,26 @@ void upload_worker_function(uint8_t worker_function_src)
     
     switch (worker_function_src)
     {
-        case 0: // flash read
+        case 0: // part number read
+        {
+            uint8_t wf_header[3] = { 0x10, ((ARRAY_SIZE(LdPartNumberRead) >> 8) & 0xFF), (ARRAY_SIZE(LdPartNumberRead) & 0xFF) };
+
+            for (uint8_t i = 0; i < ARRAY_SIZE(wf_header); i++)
+            {
+                pcm_putc(wf_header[i]);
+                while (pcm_rx_available() == 0); // wait for echo
+                pcm_getc(); // read echo into oblivion
+            }
+
+            for (uint16_t i = 0; i < ARRAY_SIZE(LdPartNumberRead); i++)
+            {
+                pcm_putc(pgm_read_byte(LdPartNumberRead + i));
+                while (pcm_rx_available() == 0); // wait for echo
+                pcm_getc(); // read echo into oblivion
+            }
+            break;
+        }
+        case 1: // flash read
         {
             uint8_t wf_header[3] = { 0x10, ((ARRAY_SIZE(LdFlashRead) >> 8) & 0xFF), (ARRAY_SIZE(LdFlashRead) & 0xFF) };
 
@@ -836,7 +881,7 @@ void upload_worker_function(uint8_t worker_function_src)
                 pcm_getc(); // read echo into oblivion
             }
 
-            for (uint8_t i = 0; i < ARRAY_SIZE(LdFlashRead); i++)
+            for (uint16_t i = 0; i < ARRAY_SIZE(LdFlashRead); i++)
             {
                 pcm_putc(pgm_read_byte(LdFlashRead + i));
                 while (pcm_rx_available() == 0); // wait for echo
@@ -844,7 +889,7 @@ void upload_worker_function(uint8_t worker_function_src)
             }
             break;
         }
-        case 1: // flash manufacturer and chip ID read
+        case 2: // flash manufacturer and chip ID read
         {
             uint8_t wf_header[3] = { 0x10, ((ARRAY_SIZE(LdFlashID) >> 8) & 0xFF), (ARRAY_SIZE(LdFlashID) & 0xFF) };
 
@@ -855,7 +900,7 @@ void upload_worker_function(uint8_t worker_function_src)
                 pcm_getc(); // read echo into oblivion
             }
 
-            for (uint8_t i = 0; i < ARRAY_SIZE(LdFlashID); i++)
+            for (uint16_t i = 0; i < ARRAY_SIZE(LdFlashID); i++)
             {
                 pcm_putc(pgm_read_byte(LdFlashID + i));
                 while (pcm_rx_available() == 0); // wait for echo
@@ -890,32 +935,32 @@ void upload_worker_function(uint8_t worker_function_src)
         return;
     }
 
-    wdt_reset(); // feed the watchdog
-    pcm_rx_flush();
-    pcm.last_byte_millis = millis();
-
-    // Start worker function.
-    pcm_putc(0x20);
-
-    while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_BTSTRP_DLY); // wait for response
-
-    if (pcm_rx_available == 0)
-    {
-        ret[0] = 3;
-        send_usb_packet(from_usb, to_usb, debug, write_worker_function, ret, 1);
-        pcm_rx_flush();
-        return;
-    }
-
-    uint8_t start_status = pcm_getc() & 0xFF;
-
-    if (start_status != 0x21)
-    {
-        ret[0] = 4;
-        send_usb_packet(from_usb, to_usb, debug, write_worker_function, ret, 1);
-        pcm_rx_flush();
-        return;
-    }
+//    wdt_reset(); // feed the watchdog
+//    pcm_rx_flush();
+//    pcm.last_byte_millis = millis();
+//
+//    // Start worker function.
+//    pcm_putc(0x20);
+//
+//    while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_BTSTRP_DLY); // wait for response
+//
+//    if (pcm_rx_available == 0)
+//    {
+//        ret[0] = 3;
+//        send_usb_packet(from_usb, to_usb, debug, write_worker_function, ret, 1);
+//        pcm_rx_flush();
+//        return;
+//    }
+//
+//    uint8_t start_status = pcm_getc() & 0xFF;
+//
+//    if (start_status != 0x21)
+//    {
+//        ret[0] = 4;
+//        send_usb_packet(from_usb, to_usb, debug, write_worker_function, ret, 1);
+//        pcm_rx_flush();
+//        return;
+//    }
 
     wdt_reset(); // feed the watchdog
     pcm_rx_flush();
@@ -995,7 +1040,7 @@ void restore_pcm_eeprom_handler(uint8_t *input_data)
         pcm_rx_flush();
 
         // Write security seed solution message.
-        for (uint8_t i = 0; i < 4; i++)
+        for (uint8_t i = 0; i < ARRAY_SIZE(send_seed_solution_cmd); i++)
         {
             pcm_putc(send_seed_solution_cmd[i]);
             while (pcm_rx_available() == 0); // wait for echo
@@ -1050,7 +1095,7 @@ void restore_pcm_eeprom_handler(uint8_t *input_data)
             pcm_rx_flush();
 
             // Read current EEPROM value.
-            for (uint8_t j = 0; j < 3; j++)
+            for (uint8_t j = 0; j < ARRAY_SIZE(read_eeprom_cmd); j++)
             {
                 pcm_putc(read_eeprom_cmd[j]);
                 while (pcm_rx_available() == 0); // wait for echo
@@ -1096,7 +1141,7 @@ void restore_pcm_eeprom_handler(uint8_t *input_data)
                 pcm_rx_flush();
 
                 // Write new EEPROM value.
-                for (uint8_t j = 0; j < 4; j++)
+                for (uint8_t j = 0; j < ARRAY_SIZE(write_eeprom_cmd); j++)
                 {
                     pcm_putc(write_eeprom_cmd[j]);
                     while (pcm_rx_available() == 0); // wait for echo

@@ -61,9 +61,12 @@ namespace ChryslerCCDSCIScanner
             switch ((byte)WorkerFunctionComboBox.SelectedIndex)
             {
                 case 0:
-                    OriginalForm.UpdateUSBTextBox("[INFO] Worker function: flash read.");
+                    OriginalForm.UpdateUSBTextBox("[INFO] Worker function: part number read.");
                     break;
                 case 1:
+                    OriginalForm.UpdateUSBTextBox("[INFO] Worker function: flash read.");
+                    break;
+                case 2:
                     OriginalForm.UpdateUSBTextBox("[INFO] Worker function: flash ID.");
                     MainForm.Packet.tx.source = (byte)Packet.Source.device;
                     MainForm.Packet.tx.target = (byte)Packet.Target.pcm;
@@ -91,9 +94,11 @@ namespace ChryslerCCDSCIScanner
 
             switch (WorkerFunctionComboBox.SelectedIndex)
             {
-                case 0: // flash read
+                case 0: // part number read
                     break;
-                case 1: // flash ID
+                case 1: // flash read
+                    break;
+                case 2: // flash ID
                     MainForm.Packet.tx.payload = new byte[1] { 0x55 };
                     MainForm.Packet.GeneratePacket();
                     OriginalForm.TransmitUSBPacket("[<-TX] Read flash memory info:");

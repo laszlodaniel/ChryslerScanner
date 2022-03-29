@@ -126,6 +126,7 @@ namespace ChryslerCCDSCIScanner
             this.WorkerFunctionComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.WorkerFunctionComboBox.FormattingEnabled = true;
             this.WorkerFunctionComboBox.Items.AddRange(new object[] {
+            "P/N read",
             "Flash read",
             "Flash ID"});
             this.WorkerFunctionComboBox.Location = new System.Drawing.Point(67, 17);

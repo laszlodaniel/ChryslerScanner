@@ -3903,6 +3903,26 @@ namespace ChryslerCCDSCIScanner
                             break;
                         case 0x21: // start worker function result
                             descriptionToInsert = "START WORKER FUNCTION";
+
+                            if (message.Length == 1)
+                            {
+                                valueToInsert = string.Empty;
+                                
+                            }
+                            else if ((message.Length == 2) && (payload[0] == 0x22))
+                            {
+                                valueToInsert = "FINISHED";
+                            }
+                            else if (message.Length > 2)
+                            {
+                                descriptionToInsert += " | RESULT";
+                                valueToInsert = Util.ByteToHexStringSimple(payload.ToArray());
+                            }
+
+                            unitToInsert = string.Empty;
+                            break;
+                        case 0x22: // worker function finished
+                            descriptionToInsert = "WORKER FUNCTION FINISHED";
                             valueToInsert = string.Empty;
                             unitToInsert = string.Empty;
                             break;
