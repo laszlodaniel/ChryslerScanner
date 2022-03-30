@@ -103,6 +103,7 @@ namespace ChryslerCCDSCIScanner
             // 
             // ExitButton
             // 
+            this.ExitButton.Enabled = false;
             this.ExitButton.Location = new System.Drawing.Point(94, 44);
             this.ExitButton.Name = "ExitButton";
             this.ExitButton.Size = new System.Drawing.Size(70, 23);

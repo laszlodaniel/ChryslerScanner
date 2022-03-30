@@ -875,7 +875,7 @@ namespace ChryslerCCDSCIScanner
                 if (SCIBusPCMMemoryOffsetWidth == 16) SCIBusPCMTxPayload = new byte[3] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1] };
                 else SCIBusPCMTxPayload = new byte[4] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2] };
 
-                if ((SCIBusPCMMemoryOffsetWidth == 24) && (SCIBusPCMReadMemoryCommand == 0x45)) SCIBusPCMTxPayload = new byte[6] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2], SCIBusPCMIncrementBytes[1], SCIBusPCMIncrementBytes[2] };
+                if ((SCIBusPCMMemoryOffsetWidth == 24) && ((SCIBusPCMReadMemoryCommand == 0x20) || (SCIBusPCMReadMemoryCommand == 0x45))) SCIBusPCMTxPayload = new byte[6] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2], SCIBusPCMIncrementBytes[1], SCIBusPCMIncrementBytes[2] };
             }
             else
             {
@@ -885,7 +885,7 @@ namespace ChryslerCCDSCIScanner
                 UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Failed to initialize session.");
             }
 
-            if (SCIBusPCMReadMemoryCommand == 0x45) SCIBusPCMNextRequestTimer.Interval = 10; // ms
+            if ((SCIBusPCMReadMemoryCommand == 0x20) || (SCIBusPCMReadMemoryCommand == 0x45)) SCIBusPCMNextRequestTimer.Interval = 10; // ms
             else SCIBusPCMNextRequestTimer.Interval = 25; // ms
 
             SCIBusPCMReadMemoryHelpButton.Enabled = true;
@@ -899,7 +899,7 @@ namespace ChryslerCCDSCIScanner
             if (SCIBusPCMMemoryOffsetWidth == 16) SCIBusPCMTxPayload = new byte[3] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1] };
             else SCIBusPCMTxPayload = new byte[4] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2] };
 
-            if ((SCIBusPCMMemoryOffsetWidth == 24) && (SCIBusPCMReadMemoryCommand == 0x45)) SCIBusPCMTxPayload = new byte[6] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2], SCIBusPCMIncrementBytes[1], SCIBusPCMIncrementBytes[2] };
+            if ((SCIBusPCMMemoryOffsetWidth == 24) && ((SCIBusPCMReadMemoryCommand == 0x20) || (SCIBusPCMReadMemoryCommand == 0x45))) SCIBusPCMTxPayload = new byte[6] { SCIBusPCMReadMemoryCommand, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], SCIBusPCMCurrentMemoryOffsetBytes[2], SCIBusPCMIncrementBytes[1], SCIBusPCMIncrementBytes[2] };
 
             SCIBusPCMReadMemoryInitializeSessionButton.Enabled = false;
             SCIBusPCMReadMemoryStartButton.Enabled = false;
@@ -1241,7 +1241,7 @@ namespace ChryslerCCDSCIScanner
             {
                 byte[] SCIBusPCMResponseBytes = MainForm.Packet.rx.payload.Skip(4).ToArray(); // skip 4 timestamp bytes
 
-                if (SCIBusPCMReadMemoryCommand == 0x45) UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "RX: " + Environment.NewLine + Util.ByteToHexStringSimple(SCIBusPCMResponseBytes));
+                if ((SCIBusPCMReadMemoryCommand == 0x20) || (SCIBusPCMReadMemoryCommand == 0x45)) UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "RX: " + Environment.NewLine + Util.ByteToHexStringSimple(SCIBusPCMResponseBytes));
                 else UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "RX: " + Util.ByteToHexStringSimple(SCIBusPCMResponseBytes));
 
                 if (SCIBusPCMResponseBytes[0] == 0xFE)
@@ -1249,7 +1249,7 @@ namespace ChryslerCCDSCIScanner
                     SCIBusPCMRxTimeoutTimer.Stop();
                 }
 
-                if (SCIBusPCMResponseBytes[0] == 0x46)
+                if ((SCIBusPCMResponseBytes.Length > 6) && ((SCIBusPCMResponseBytes[0] == 0x21) || (SCIBusPCMResponseBytes[0] == 0x46)))
                 {
                     if ((SCIBusPCMResponseBytes[1] == SCIBusPCMCurrentMemoryOffsetBytes[0]) && (SCIBusPCMResponseBytes[2] == SCIBusPCMCurrentMemoryOffsetBytes[1]) && (SCIBusPCMResponseBytes[3] == SCIBusPCMCurrentMemoryOffsetBytes[2])) // check if response has the offset we are currently waiting for
                     {
