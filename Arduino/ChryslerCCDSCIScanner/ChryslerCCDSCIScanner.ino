@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 08: minor
-// 02: patch
+// 03: patch
 // (00: revision)
-// = v0.8.2(.0)
-#define FW_VERSION 0x00080200
+// = v0.8.3(.0)
+#define FW_VERSION 0x00080300
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x0008020062446E54
+#define FW_DATE 0x00080300624F433C
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -315,6 +315,7 @@ typedef struct {
     volatile uint32_t msg_rx_count = 0; // total received messages
     volatile uint32_t msg_tx_count = 0; // total transmitted messages
     uint8_t last_hs_memarea = 0xF4;
+    uint8_t auto_request = 0;
 } bus;
 
 bus ccd, pcm, tcm;
@@ -805,7 +806,7 @@ void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
 
     while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_BTSTRP_DLY); // wait for response
 
-    if (pcm_rx_available == 0)
+    if (pcm_rx_available() == 0)
     {
         ret[0] = 7;
         send_usb_packet(from_usb, to_usb, debug, init_bootstrap_mode, ret, 1);
@@ -914,7 +915,7 @@ void upload_worker_function(uint8_t worker_function_src)
     // Wait for upload finished status byte.
     while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_BTSTRP_DLY); // wait for response
 
-    if (pcm_rx_available == 0)
+    if (pcm_rx_available() == 0)
     {
         ret[0] = 1;
         send_usb_packet(from_usb, to_usb, debug, write_worker_function, ret, 1);
@@ -941,7 +942,7 @@ void upload_worker_function(uint8_t worker_function_src)
 //
 //    while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_BTSTRP_DLY); // wait for response
 //
-//    if (pcm_rx_available == 0)
+//    if (pcm_rx_available() == 0)
 //    {
 //        ret[0] = 3;
 //        send_usb_packet(from_usb, to_usb, debug, write_worker_function, ret, 1);
@@ -1230,16 +1231,19 @@ void write_default_settings(void)
     // $23:     CCD-bus settings
     // $24:     SCI-bus (PCM) settings
     // $25:     SCI-bus (TCM) settings
-    // $26-$FE: reserved for future data
+    // $26:     CCD-bus automatic request messages
+    // $27:     SCI-bus (PCM) automatic request messages
+    // $28:     SCI-bus (TCM) automatic request messages
+    // $29-$FE: reserved for future data
 
-    uint8_t default_settings[38] =
+    uint8_t default_settings[41] =
     { //  00    01    02    03    04    05    06    07    08    09    0A    0B    0C    0D    0E    0F
         0x00, 0x96, 0x00, 0x00, 0x00, 0x00, 0x61, 0xF9, 0x08, 0x37, 0x00, 0x00, 0x00, 0x00, 0x61, 0xF9, // 00
         0x08, 0x37, 0x01, 0xF4, 0x69, 0x78, 0x13, 0xEC, 0x00, 0x27, 0x14, 0x04, 0x14, 0x00, 0x01, 0x13, // 10
-        0x88, 0x00, 0x32, 0x41, 0x91, 0xC1                                                              // 20
+        0x88, 0x00, 0x32, 0x41, 0x91, 0xC1, 0x00, 0x00, 0x00                                            // 20
     };
 
-    for (uint16_t i = 0; i < 38; i++)
+    for (uint16_t i = 0; i < 41; i++)
     {
         EEPROM.update(i, default_settings[i]);
     }
@@ -1258,7 +1262,7 @@ void load_settings(void)
         {
             if (eep.read(0) != 0xFF) // settings are present in external EEPROM
             {
-                for (uint16_t i = 0; i < 38; i++) // copy first 38 bytes to internal EEPROM
+                for (uint16_t i = 0; i < 41; i++) // copy first 41 bytes to internal EEPROM
                 {
                     EEPROM.update(i, eep.read(i));
                 }
@@ -1367,6 +1371,30 @@ void load_settings(void)
 
     tcm.bus_settings = EEPROM.read(0x25);
     if (tcm.bus_settings == 0x00) tcm.bus_settings = 0xC1;
+
+    ccd.auto_request = EEPROM.read(0x26);
+
+    if (ccd.auto_request == 0xFF)
+    {
+        ccd.auto_request = 0;
+        EEPROM.update(0x26, ccd.auto_request);
+    }
+
+    pcm.auto_request = EEPROM.read(0x27);
+
+    if (pcm.auto_request == 0xFF)
+    {
+        pcm.auto_request = 0;
+        EEPROM.update(0x27, pcm.auto_request);
+    }
+    
+    tcm.auto_request = EEPROM.read(0x28);
+
+    if (tcm.auto_request == 0xFF)
+    {
+        tcm.auto_request = 0;
+        EEPROM.update(0x28, tcm.auto_request);
+    }
 }
 
 /*************************************************************************
@@ -1490,7 +1518,6 @@ void print_display_layout_1_imperial(void)
         lcd.setCursor(0, 0);
         lcd.print(F("    0rpm")); // 1st line
     }
-  
 }
 
 /*************************************************************************
@@ -6195,7 +6222,7 @@ void handle_sci_data(void)
         }
         else if (pcm.speed == HIBAUD) // handle high-speed mode (62500 baud), no need to wait for message completion here, it is already handled when the message was sent
         {
-            if ((pcm.echo_received || pcm.response_received) && (pcm_rx_available() > 0))
+            if ((pcm.echo_received || pcm.response_received || ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_BTSTRP_DLY)) && (pcm_rx_available() > 0))
             {
                 pcm.echo_received = false;
                 pcm.response_received = false;
