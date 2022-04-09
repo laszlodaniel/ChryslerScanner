@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 08: minor
-// 03: patch
+// 04: patch
 // (00: revision)
-// = v0.8.3(.0)
-#define FW_VERSION 0x00080300
+// = v0.8.4(.0)
+#define FW_VERSION 0x00080400
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00080300624F433C
+#define FW_DATE 0x0008040062518510
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -4137,7 +4137,7 @@ void send_usb_packet(uint8_t source, uint8_t target, uint8_t command, uint8_t su
     }
 
     // Calculate checksum
-    calculated_checksum = calculate_checksum(packet, 1, packet_length - 1);
+    calculated_checksum = calculate_checksum(packet, 0, packet_length - 1);
 
     // Place checksum byte
     packet[packet_length - 1] = calculated_checksum;
@@ -4249,7 +4249,7 @@ void handle_usb_data(void)
                 checksum = usb_getc() & 0xFF;
 
                 // Verify the received packet by calculating what the checksum byte should be.
-                calculated_checksum = length_hb + length_lb + datacode + subdatacode; // add the first few bytes together manually
+                calculated_checksum = PACKET_SYNC_BYTE + length_hb + length_lb + datacode + subdatacode; // add the first few bytes together manually
 
                 // Add payload bytes here together if present
                 if (payload_bytes)

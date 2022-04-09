@@ -267,7 +267,7 @@ namespace ChryslerCCDSCIScanner
                     byte checksum = 0;
                     int checksumLocation = length - 1;
 
-                    for (int i = 1; i < checksumLocation; i++) checksum += packet[i];
+                    for (int i = 0; i < checksumLocation; i++) checksum += packet[i];
 
                     if (checksum == packet[checksumLocation]) return true;
                     else return false;
@@ -320,7 +320,7 @@ namespace ChryslerCCDSCIScanner
             packet.AddRange(new byte[] { 0x3D, lengthHB, lengthLB, datacode, subdatacode});
             if (tx.payload != null)  packet.AddRange(tx.payload);
 
-            for (int i = 1; i < packet.Count; i++)
+            for (int i = 0; i < packet.Count; i++)
             {
                 checksum += packet[i];
             }
