@@ -1,14 +1,23 @@
 # ChryslerCCDSCIScanner
 Hardware and software for interfacing Chrysler's legacy CCD/SCI-bus.
 
-[Get one or two on Tindie!](https://www.tindie.com/products/17595/)
+[Get one or two on Tindie!][Tindie]
 
-![V1.50 box](https://chryslerccdsci.files.wordpress.com/2021/08/img_20210819_170230_02.jpg)
+![Preview]
+![Interface CCD]
+![Interface SCI]
 
-![GUI CCD](https://chryslerccdsci.files.wordpress.com/2021/08/gui_ccd-bus_table_01.png)
-
-![GUI SCI](https://chryslerccdsci.files.wordpress.com/2021/08/gui_sci-bus_pcm_table_01.png)
-
-Make sure to check out katemonster33's scanner too: https://github.com/katemonster33/CDJPScanMaster
+Make sure to check out [katemonster33's scanner][CDJPScanMaster] too!
 
 Her project covers more communication protocols like J1850 and ISO9141. 
+
+
+<!----------------------------------------------------------------------------->
+
+[Interface SCI]: https://chryslerccdsci.files.wordpress.com/2021/08/gui_sci-bus_pcm_table_01.png
+[Interface CCD]: https://chryslerccdsci.files.wordpress.com/2021/08/gui_ccd-bus_table_01.png
+[Preview]: https://chryslerccdsci.files.wordpress.com/2021/08/img_20210819_170230_02.jpg
+
+[Tindie]: https://www.tindie.com/products/17595/
+
+[CDJPScanMaster]: https://github.com/katemonster33/CDJPScanMaster
