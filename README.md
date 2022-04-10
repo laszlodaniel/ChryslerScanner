@@ -2,13 +2,21 @@
 
 *Hardware & Software For Chrysler's Legacy CCD / SCI-Bus.*
 
+<div align = center>
+
 ![Preview]
 ![Interface CCD]
 ![Interface SCI]
 
-Make sure to check out [katemonster33's scanner][CDJPScanMaster] too!
+</div>
 
-Her project covers more communication protocols like J1850 and ISO9141. 
+## Related
+
+<br>
+
+**[@katemonster33][Kate]** - [`CDJPScanMaster`][CDJPScanMaster]
+
+  *Similar project that covers protocols like `J1850` & `ISO9141`.*
 
 
 <!----------------------------------------------------------------------------->
@@ -25,3 +33,4 @@ Her project covers more communication protocols like J1850 and ISO9141.
 [License]: LICENSE
 
 [CDJPScanMaster]: https://github.com/katemonster33/CDJPScanMaster
+[Kate]: https://github.com/katemonster33/
