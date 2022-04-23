@@ -1,6 +1,6 @@
 # ChryslerCCDSCIScanner [![Badge License]][License] [![Badge Tindie]][Tindie]
 
-*Hardware & Software For Chrysler's Legacy CCD / SCI-Bus.*
+Hardware and software for interfacing Chrysler's legacy CCD/SCI-bus. 
 
 <br>
 
@@ -16,12 +16,9 @@
 
 ## Related
 
-<br>
-
 **[@katemonster33][Kate]** - [`CDJPScanMaster`][CDJPScanMaster]
 
-  *Similar project that covers protocols like `J1850` & `ISO9141`.*
-
+Similar project that covers protocols like `J1850` & `ISO9141`.
 
 <!----------------------------------------------------------------------------->
 
