@@ -192,8 +192,8 @@ namespace ChryslerCCDSCIScanner
             highSpeed = 0x02
         }
 
-        public byte[] expectedHandshake = new byte[] { 0x3D, 0x00, 0x17, 0x01, 0x00, 0x43, 0x48, 0x52, 0x59, 0x53, 0x4C, 0x45, 0x52, 0x43, 0x43, 0x44, 0x53, 0x43, 0x49, 0x53, 0x43, 0x41, 0x4E, 0x4E, 0x45, 0x52, 0x37 };
-        public byte[] expectedDevBoardHandshake = new byte[] { 0x3D, 0x00, 0x1B, 0x01, 0x00, 0x43, 0x43, 0x44, 0x42, 0x55, 0x53, 0x54, 0x52, 0x41, 0x4E, 0x53, 0x43, 0x45, 0x49, 0x56, 0x45, 0x52, 0x44, 0x45, 0x56, 0x42, 0x4F, 0x41, 0x52, 0x44, 0x5D };
+        public byte[] expectedHandshake = new byte[] { 0x3D, 0x00, 0x17, 0x01, 0x00, 0x43, 0x48, 0x52, 0x59, 0x53, 0x4C, 0x45, 0x52, 0x43, 0x43, 0x44, 0x53, 0x43, 0x49, 0x53, 0x43, 0x41, 0x4E, 0x4E, 0x45, 0x52, 0x74 };
+        public byte[] expectedDevBoardHandshake = new byte[] { 0x3D, 0x00, 0x1B, 0x01, 0x00, 0x43, 0x43, 0x44, 0x42, 0x55, 0x53, 0x54, 0x52, 0x41, 0x4E, 0x53, 0x43, 0x45, 0x49, 0x56, 0x45, 0x52, 0x44, 0x45, 0x56, 0x42, 0x4F, 0x41, 0x52, 0x44, 0x9A };
 
         public Packet()
         {
@@ -236,8 +236,18 @@ namespace ChryslerCCDSCIScanner
                 try
                 {
                     rx.buffer = await SerialPortExtension.ReadPacketAsync(Serial);
-                    ParsePacket();
-                    OnPacketReceived(EventArgs.Empty); // raise OnPacketReceived event and start analyzing the received packet in MainForm
+                    
+                    // Verify checksum.
+                    byte checksum = 0;
+                    int checksumLocation = rx.buffer.Length - 1;
+
+                    for (int i = 0; i < checksumLocation; i++) checksum += rx.buffer[i];
+
+                    if (checksum == rx.buffer[checksumLocation])
+                    {
+                        ParsePacket();
+                        OnPacketReceived(EventArgs.Empty); // raise OnPacketReceived event and start analyzing the received packet where subscribed
+                    }
                 }
                 catch (IOException)
                 {
@@ -251,27 +261,18 @@ namespace ChryslerCCDSCIScanner
         }
 
         /// <summary>
-        /// Validate communication packet.
+        /// Check if full communication packet is received.
         /// </summary>
         /// <param name="packet">Input byte array.</param>
-        /// <returns>True if input byte array is a valid communication packet, otherwise returns false.</returns>
-        public static bool IsValidPacket(byte[] packet)
+        /// <returns>True if input byte array seems to be a full communication packet, otherwise returns false.</returns>
+        public static bool IsPacketComplete(byte[] packet)
         {
             if ((packet.Length > 5) && (packet[0] == 0x3D))
             {
                 int length = (packet[1] << 8) + packet[2] + 4;
 
                 if (packet.Length < length) return false;
-                else
-                {
-                    byte checksum = 0;
-                    int checksumLocation = length - 1;
-
-                    for (int i = 0; i < checksumLocation; i++) checksum += packet[i];
-
-                    if (checksum == packet[checksumLocation]) return true;
-                    else return false;
-                }
+                else return true;
             }
             else return false;
         }

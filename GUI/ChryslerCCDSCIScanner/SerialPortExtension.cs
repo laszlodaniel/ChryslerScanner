@@ -23,8 +23,12 @@ namespace ChryslerCCDSCIScanner
             while (true)
             {
                 await serialPort.BaseStream.ReadAsync(buffer, 0, 1);
+                
                 packet.Add(buffer[0]);
-                if (Packet.IsValidPacket(packet.ToArray())) return packet.ToArray();
+
+                if (packet[0] != 0x3D) packet.Clear(); // make sure that the first byte is always the SYNC byte
+
+                if (Packet.IsPacketComplete(packet.ToArray())) return packet.ToArray();
             }
         }
 

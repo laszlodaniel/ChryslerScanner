@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 08: minor
-// 04: patch
+// 05: patch
 // (00: revision)
-// = v0.8.4(.0)
-#define FW_VERSION 0x00080400
+// = v0.8.5(.0)
+#define FW_VERSION 0x00080500
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x0008040062518510
+#define FW_DATE 0x000805006263A9F7
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -3000,7 +3000,7 @@ Input:    index number in the buffer (default = 0 = next available byte)
 Returns:  low byte:  next byte in the receive buffer
           high byte: error flags
 **************************************************************************/
-uint16_t pcm_peek(uint16_t index = 0)
+uint16_t pcm_peek(uint16_t index)
 {
     uint16_t tmptail;
     uint8_t data;
@@ -6750,7 +6750,7 @@ void handle_sci_data(void)
                     }
                     else // bootstrap mode
                     {
-                        if (pcm.msg_buffer[0] == 0x45) // custom bootloader by dino2gnt
+                        if (((pcm.msg_buffer[0] == 0x45) || (pcm.msg_buffer[0] == 0x20)) && (pcm.msg_buffer_ptr == 6)) // custom bootloader by dino2gnt
                         {
                             // TX: 45 AA BB CC DD EE
                             // RX: 46 AA BB CC DD EE XX YY ZZ

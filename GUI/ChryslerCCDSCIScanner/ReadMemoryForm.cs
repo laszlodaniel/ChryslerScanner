@@ -1249,7 +1249,7 @@ namespace ChryslerCCDSCIScanner
                     SCIBusPCMRxTimeoutTimer.Stop();
                 }
 
-                if ((SCIBusPCMResponseBytes.Length > 6) && ((SCIBusPCMResponseBytes[0] == 0x21) || (SCIBusPCMResponseBytes[0] == 0x46)))
+                if ((SCIBusPCMResponseBytes.Length >= (6 + SCIBusPCMIncrement)) && ((SCIBusPCMResponseBytes[0] == 0x21) || (SCIBusPCMResponseBytes[0] == 0x46)))
                 {
                     if ((SCIBusPCMResponseBytes[1] == SCIBusPCMCurrentMemoryOffsetBytes[0]) && (SCIBusPCMResponseBytes[2] == SCIBusPCMCurrentMemoryOffsetBytes[1]) && (SCIBusPCMResponseBytes[3] == SCIBusPCMCurrentMemoryOffsetBytes[2])) // check if response has the offset we are currently waiting for
                     {

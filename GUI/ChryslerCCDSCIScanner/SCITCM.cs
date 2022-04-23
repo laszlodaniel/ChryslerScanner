@@ -149,7 +149,7 @@ namespace ChryslerCCDSCIScanner
             if (logic != null) this.logic = logic;
             if (configuration != null) this.configuration = configuration;
 
-            if (this.state == "enabled")
+            if ((this.state == "enabled") && (state != null) && (speed != null) && (logic != null) && (configuration != null))
             {
                 HeaderModified = HeaderEnabled.Replace("@ BAUD", "@ " + this.speed.ToUpper()).Replace("LOGIC:", "LOGIC: " + this.logic.ToUpper()).Replace("CONFIGURATION: ", "CONFIGURATION: " + this.configuration);
                 HeaderModified = Util.TruncateString(HeaderModified, EmptyLine.Length);
