@@ -26,8 +26,7 @@ namespace ChryslerCCDSCIScanner
                 OriginalForm.SelectSCIBusPCMHSMode();
             }
             
-            MainForm.Packet.tx.source = (byte)Packet.Source.device;
-            MainForm.Packet.tx.target = (byte)Packet.Target.device;
+            MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
             MainForm.Packet.tx.command = (byte)Packet.Command.debug;
             MainForm.Packet.tx.mode = (byte)Packet.DebugMode.initBootstrapMode;
             MainForm.Packet.tx.payload = new byte[1] { (byte)BootloaderComboBox.SelectedIndex };
@@ -50,8 +49,7 @@ namespace ChryslerCCDSCIScanner
 
         private void UploadButton_Click(object sender, EventArgs e)
         {
-            MainForm.Packet.tx.source = (byte)Packet.Source.device;
-            MainForm.Packet.tx.target = (byte)Packet.Target.device;
+            MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
             MainForm.Packet.tx.command = (byte)Packet.Command.debug;
             MainForm.Packet.tx.mode = (byte)Packet.DebugMode.writeWorkerFunction;
             MainForm.Packet.tx.payload = new byte[1] { (byte)WorkerFunctionComboBox.SelectedIndex };
@@ -76,8 +74,7 @@ namespace ChryslerCCDSCIScanner
 
         private void StartButton_Click(object sender, EventArgs e)
         {
-            MainForm.Packet.tx.source = (byte)Packet.Source.device;
-            MainForm.Packet.tx.target = (byte)Packet.Target.pcm;
+            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
             MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
             MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
             MainForm.Packet.tx.payload = new byte[1] { 0x20 };

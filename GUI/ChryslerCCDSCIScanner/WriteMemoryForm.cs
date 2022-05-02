@@ -856,8 +856,7 @@ namespace ChryslerCCDSCIScanner
                         {
                             if (stream.Length == 512)
                             {
-                                MainForm.Packet.tx.source = (byte)Packet.Source.device;
-                                MainForm.Packet.tx.target = (byte)Packet.Target.device;
+                                MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
                                 MainForm.Packet.tx.command = (byte)Packet.Command.debug;
                                 MainForm.Packet.tx.mode = (byte)Packet.DebugMode.restorePCMEEPROM;
                                 MainForm.Packet.tx.payload = reader.ReadBytes(512);
@@ -1284,8 +1283,7 @@ namespace ChryslerCCDSCIScanner
         {
             if (e.ProgressPercentage == 0)
             {
-                MainForm.Packet.tx.source = (byte)Packet.Source.device;
-                MainForm.Packet.tx.target = (byte)Packet.Target.pcm;
+                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
                 MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
                 MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                 MainForm.Packet.tx.payload = SCIBusPCMTxPayload;
@@ -1564,16 +1562,14 @@ namespace ChryslerCCDSCIScanner
             {
                 if (!PCMUnlocked)
                 {
-                    MainForm.Packet.tx.source = (byte)Packet.Source.device;
-                    MainForm.Packet.tx.target = (byte)Packet.Target.pcm;
+                    MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
                     MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
                     MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                     MainForm.Packet.tx.payload = new byte[1] { (byte)SCI_ID.GetSecuritySeed };
                 }
                 else
                 {
-                    MainForm.Packet.tx.source = (byte)Packet.Source.device;
-                    MainForm.Packet.tx.target = (byte)Packet.Target.pcm;
+                    MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
                     MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
                     MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                     MainForm.Packet.tx.payload = SCIBusPCMTxPayload;
@@ -1709,7 +1705,7 @@ namespace ChryslerCCDSCIScanner
                 //UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "T: " + TimestampString);
             }
 
-            if (MainForm.Packet.rx.source == (byte)Packet.Source.device)
+            if (MainForm.Packet.rx.bus == (byte)Packet.Bus.usb)
             {
                 switch (MainForm.Packet.rx.command)
                 {
@@ -1737,7 +1733,7 @@ namespace ChryslerCCDSCIScanner
                 }
             }
 
-            if (MainForm.Packet.rx.source == (byte)Packet.Source.ccd)
+            if (MainForm.Packet.rx.bus == (byte)Packet.Bus.ccd)
             {
                 byte[] CCDBusResponseBytes = MainForm.Packet.rx.payload.Skip(4).ToArray(); // skip 4 timestamp bytes
 
@@ -1768,7 +1764,7 @@ namespace ChryslerCCDSCIScanner
                 }
             }
 
-            if (MainForm.Packet.rx.source == (byte)Packet.Source.pcm)
+            if (MainForm.Packet.rx.bus == (byte)Packet.Bus.pcm)
             {
                 byte[] SCIBusPCMResponseBytes = MainForm.Packet.rx.payload.Skip(4).ToArray(); // skip 4 timestamp bytes
 
@@ -1979,8 +1975,7 @@ namespace ChryslerCCDSCIScanner
 
                                     UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + "Attempting to unlock PCM.");
 
-                                    MainForm.Packet.tx.source = (byte)Packet.Source.device;
-                                    MainForm.Packet.tx.target = (byte)Packet.Target.pcm;
+                                    MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
                                     MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
                                     MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                                     MainForm.Packet.tx.payload = solutionArray;

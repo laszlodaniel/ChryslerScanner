@@ -341,7 +341,7 @@ namespace ChryslerCCDSCIScanner
             }
         }
 
-        private async void SetRepeatedMessageBehavior(Packet.Target bus)
+        private async void SetRepeatedMessageBehavior(Packet.Bus bus)
         {
             List<byte> payloadList = new List<byte>();
             bool success = false;
@@ -350,13 +350,13 @@ namespace ChryslerCCDSCIScanner
 
             switch (bus)
             {
-                case Packet.Target.ccd:
+                case Packet.Bus.ccd:
                     success = int.TryParse(CCDBusTxMessageRepeatIntervalTextBox.Text, out repeatInterval);
                     break;
-                case Packet.Target.pcm:
+                case Packet.Bus.pcm:
                     success = int.TryParse(SCIBusTxMessageRepeatIntervalTextBox.Text, out repeatInterval);
                     break;
-                case Packet.Target.tcm:
+                case Packet.Bus.tcm:
                     success = int.TryParse(SCIBusTxMessageRepeatIntervalTextBox.Text, out repeatInterval);
                     break;
                 default:
@@ -369,13 +369,13 @@ namespace ChryslerCCDSCIScanner
 
                 switch (bus)
                 {
-                    case Packet.Target.ccd:
+                    case Packet.Bus.ccd:
                         CCDBusTxMessageRepeatIntervalTextBox.Text = "100";
                         break;
-                    case Packet.Target.pcm:
+                    case Packet.Bus.pcm:
                         SCIBusTxMessageRepeatIntervalTextBox.Text = "100";
                         break;
-                    case Packet.Target.tcm:
+                    case Packet.Bus.tcm:
                         SCIBusTxMessageRepeatIntervalTextBox.Text = "100";
                         break;
                     default:
@@ -390,13 +390,13 @@ namespace ChryslerCCDSCIScanner
 
             switch (bus)
             {
-                case Packet.Target.ccd:
+                case Packet.Bus.ccd:
                     repeatIncrement = Util.HexStringToByte(CCDBusTxMessageRepeatIncrementTextBox.Text);
                     break;
-                case Packet.Target.pcm:
+                case Packet.Bus.pcm:
                     repeatIncrement = Util.HexStringToByte(SCIBusTxMessageRepeatIncrementTextBox.Text);
                     break;
-                case Packet.Target.tcm:
+                case Packet.Bus.tcm:
                     repeatIncrement = Util.HexStringToByte(SCIBusTxMessageRepeatIncrementTextBox.Text);
                     break;
                 default:
@@ -407,15 +407,15 @@ namespace ChryslerCCDSCIScanner
             {
                 switch (bus)
                 {
-                    case Packet.Target.ccd:
+                    case Packet.Bus.ccd:
                         repeatIncrement = new byte[] { 0x00, 0x02 };
                         CCDBusTxMessageRepeatIncrementTextBox.Text = "00 02";
                         break;
-                    case Packet.Target.pcm:
+                    case Packet.Bus.pcm:
                         repeatIncrement = new byte[] { 0x00, 0x01 };
                         SCIBusTxMessageRepeatIncrementTextBox.Text = "00 01";
                         break;
-                    case Packet.Target.tcm:
+                    case Packet.Bus.tcm:
                         SCIBusTxMessageRepeatIncrementTextBox.Text = "00 01";
                         break;
                     default:
@@ -433,8 +433,7 @@ namespace ChryslerCCDSCIScanner
             payloadList.AddRange(repeatIntervalArray);
             payloadList.AddRange(repeatIncrement);
 
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.device;
+            Packet.tx.bus = (byte)Packet.Bus.usb;
             Packet.tx.command = (byte)Packet.Command.settings;
             Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
             Packet.tx.payload = payloadList.ToArray();
@@ -442,13 +441,13 @@ namespace ChryslerCCDSCIScanner
 
             switch (bus)
             {
-                case Packet.Target.ccd:
+                case Packet.Bus.ccd:
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Set CCD-bus message repeat behavior:", Packet.tx.buffer);
                     break;
-                case Packet.Target.pcm:
+                case Packet.Bus.pcm:
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Set SCI-bus (PCM) message repeat behavior:", Packet.tx.buffer);
                     break;
-                case Packet.Target.tcm:
+                case Packet.Bus.tcm:
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Set SCI-bus (TCM) message repeat behavior:", Packet.tx.buffer);
                     break;
                 default:
@@ -460,9 +459,9 @@ namespace ChryslerCCDSCIScanner
 
         private void AnalyzePacket(object sender, EventArgs e)
         {
-            switch (Packet.rx.source)
+            switch (Packet.rx.bus)
             {
-                case (byte)Packet.Source.device:
+                case (byte)Packet.Bus.usb:
                     switch (Packet.rx.command)
                     {
                         case (byte)Packet.Command.reset:
@@ -493,7 +492,7 @@ namespace ChryslerCCDSCIScanner
                             {
                                 Util.UpdateTextBox(USBTextBox, "[RX->] Handshake response:", Packet.rx.buffer);
 
-                                if (Util.CompareArrays(Packet.rx.buffer, Packet.expectedHandshake, 0, Packet.expectedHandshake.Length))
+                                if (Util.CompareArrays(Packet.rx.buffer, Packet.expectedHandshake_V1, 0, Packet.expectedHandshake_V1.Length) || Util.CompareArrays(Packet.rx.buffer, Packet.expectedHandshake_V2, 0, Packet.expectedHandshake_V2.Length))
                                 {
                                     Util.UpdateTextBox(USBTextBox, "[INFO] Handshake OK: " + Encoding.ASCII.GetString(Packet.rx.payload, 0, Packet.rx.payload.Length));
                                 }
@@ -1118,13 +1117,13 @@ namespace ChryslerCCDSCIScanner
 
                                             switch (Packet.rx.payload[1])
                                             {
-                                                case (byte)Packet.Target.ccd:
+                                                case (byte)Packet.Bus.ccd:
                                                     bus = "CCD-bus";
                                                     break;
-                                                case (byte)Packet.Target.pcm:
+                                                case (byte)Packet.Bus.pcm:
                                                     bus = "SCI-bus (PCM)";
                                                     break;
-                                                case (byte)Packet.Target.tcm:
+                                                case (byte)Packet.Bus.tcm:
                                                     bus = "SCI-bus (TCM)";
                                                     break;
                                                 default:
@@ -1363,13 +1362,13 @@ namespace ChryslerCCDSCIScanner
                                         {
                                             switch (Packet.rx.payload[1])
                                             {
-                                                case (byte)Packet.Source.ccd:
+                                                case (byte)Packet.Bus.ccd:
                                                     Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus repeated message Tx stopped:", Packet.rx.buffer);
                                                     break;
-                                                case (byte)Packet.Source.pcm:
+                                                case (byte)Packet.Bus.pcm:
                                                     Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) repeated message Tx stopped:", Packet.rx.buffer);
                                                     break;
-                                                case (byte)Packet.Source.tcm:
+                                                case (byte)Packet.Bus.tcm:
                                                     Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) repeated message Tx stopped:", Packet.rx.buffer);
                                                     break;
                                                 default:
@@ -1394,13 +1393,13 @@ namespace ChryslerCCDSCIScanner
                                         {
                                             switch (Packet.rx.payload[1])
                                             {
-                                                case (byte)Packet.Source.ccd:
+                                                case (byte)Packet.Bus.ccd:
                                                     Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message prepared for Tx:", Packet.rx.buffer);
                                                     break;
-                                                case (byte)Packet.Source.pcm:
+                                                case (byte)Packet.Bus.pcm:
                                                     Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message prepared for Tx:", Packet.rx.buffer);
                                                     break;
-                                                case (byte)Packet.Source.tcm:
+                                                case (byte)Packet.Bus.tcm:
                                                     Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message prepared for Tx:", Packet.rx.buffer);
                                                     break;
                                                 default:
@@ -1425,13 +1424,13 @@ namespace ChryslerCCDSCIScanner
                                         {
                                             switch (Packet.rx.payload[1])
                                             {
-                                                case (byte)Packet.Source.ccd:
+                                                case (byte)Packet.Bus.ccd:
                                                     Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message list prepared for Tx:", Packet.rx.buffer);
                                                     break;
-                                                case (byte)Packet.Source.pcm:
+                                                case (byte)Packet.Bus.pcm:
                                                     Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) messages list prepared for Tx:", Packet.rx.buffer);
                                                     break;
-                                                case (byte)Packet.Source.tcm:
+                                                case (byte)Packet.Bus.tcm:
                                                     Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) messages list prepared for Tx:", Packet.rx.buffer);
                                                     break;
                                                 default:
@@ -1456,13 +1455,13 @@ namespace ChryslerCCDSCIScanner
                                         {
                                             switch (Packet.rx.payload[1])
                                             {
-                                                case (byte)Packet.Source.ccd:
+                                                case (byte)Packet.Bus.ccd:
                                                     Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus repeated message Tx started:", Packet.rx.buffer);
                                                     break;
-                                                case (byte)Packet.Source.pcm:
+                                                case (byte)Packet.Bus.pcm:
                                                     Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) repeated message Tx started:", Packet.rx.buffer);
                                                     break;
-                                                case (byte)Packet.Source.tcm:
+                                                case (byte)Packet.Bus.tcm:
                                                     Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) repeated message Tx started:", Packet.rx.buffer);
                                                     break;
                                                 default:
@@ -1487,13 +1486,13 @@ namespace ChryslerCCDSCIScanner
                                         {
                                             switch (Packet.rx.payload[1])
                                             {
-                                                case (byte)Packet.Source.ccd:
+                                                case (byte)Packet.Bus.ccd:
                                                     Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus repeated message list Tx started:", Packet.rx.buffer);
                                                     break;
-                                                case (byte)Packet.Source.pcm:
+                                                case (byte)Packet.Bus.pcm:
                                                     Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) repeated message list Tx started:", Packet.rx.buffer);
                                                     break;
-                                                case (byte)Packet.Source.tcm:
+                                                case (byte)Packet.Bus.tcm:
                                                     Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) repeated message list Tx started:", Packet.rx.buffer);
                                                     break;
                                                 default:
@@ -1876,7 +1875,7 @@ namespace ChryslerCCDSCIScanner
                                     {
                                         switch (Packet.rx.payload[0])
                                         {
-                                            case (byte)Packet.Source.ccd:
+                                            case (byte)Packet.Bus.ccd:
                                                 switch (Packet.rx.payload[1])
                                                 {
                                                     case (byte)Packet.BaudMode.extraLowBaud:
@@ -1900,7 +1899,7 @@ namespace ChryslerCCDSCIScanner
                                                         break;
                                                 }
                                                 break;
-                                            case (byte)Packet.Source.pcm:
+                                            case (byte)Packet.Bus.pcm:
                                                 switch (Packet.rx.payload[1])
                                                 {
                                                     case (byte)Packet.BaudMode.extraLowBaud:
@@ -1924,7 +1923,7 @@ namespace ChryslerCCDSCIScanner
                                                         break;
                                                 }
                                                 break;
-                                            case (byte)Packet.Source.tcm:
+                                            case (byte)Packet.Bus.tcm:
                                                 switch (Packet.rx.payload[1])
                                                 {
                                                     case (byte)Packet.BaudMode.extraLowBaud:
@@ -2058,6 +2057,9 @@ namespace ChryslerCCDSCIScanner
                                 case (byte)Packet.ErrorMode.errorBufferOverflow:
                                     Util.UpdateTextBox(USBTextBox, "[RX->] Error, buffer overflow:", Packet.rx.buffer);
                                     break;
+                                case (byte)Packet.ErrorMode.errorDatacodeInvalidBus:
+                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error, invalid bus:", Packet.rx.buffer);
+                                    break;
                                 case (byte)Packet.ErrorMode.errorSCILsNoResponse:
                                     Util.UpdateTextBox(USBTextBox, "[RX->] Error, no response from SCI-bus:", Packet.rx.buffer);
                                     break;
@@ -2119,106 +2121,109 @@ namespace ChryslerCCDSCIScanner
                             break;
                     }
                     break;
-                case (byte)Packet.Source.ccd:
+                case (byte)Packet.Bus.ccd:
                     if (CCDBusOnDemandToolStripMenuItem.Checked && (DeviceCCDSCILCDTabControl.SelectedTab.Name == "CCDBusControlTabPage") || !CCDBusOnDemandToolStripMenuItem.Checked)
                     {
                         Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message:", Packet.rx.buffer);
                         CCD.AddMessage(Packet.rx.payload.ToArray());
                     }
                     break;
-                case (byte)Packet.Source.pcm:
-                    switch (Packet.rx.mode)
+                case (byte)Packet.Bus.pcm:
+                    if (Packet.rx.payload.Length > 4)
                     {
-                        case (byte)Packet.SCISpeedMode.lowSpeed:
-                            switch (Packet.rx.payload[4]) // ID byte
-                            {
-                                case 0x10: // fault code list request
-                                    if (Packet.rx.payload.Length > 6)
-                                    {
-                                        byte checksum = 0;
-                                        int checksumLocation = Packet.rx.payload.Length - 1;
-
-                                        for (int i = 4; i < checksumLocation; i++)
+                        switch (Packet.rx.mode)
+                        {
+                            case (byte)Packet.SCISpeedMode.lowSpeed:
+                                switch (Packet.rx.payload[4]) // ID byte
+                                {
+                                    case 0x10: // fault code list request
+                                        if (Packet.rx.payload.Length > 6)
                                         {
-                                            checksum += Packet.rx.payload[i];
-                                        }
+                                            byte checksum = 0;
+                                            int checksumLocation = Packet.rx.payload.Length - 1;
 
-                                        if (checksum == Packet.rx.payload[checksumLocation])
-                                        {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) fault code list:", Packet.rx.buffer);
-
-                                            List<byte> faultCodeList = new List<byte>();
-                                            faultCodeList.AddRange(Packet.rx.payload.Skip(4).Take(Packet.rx.payload.Length - 5)); // skip first 4 bytes (timestamp)
-                                            faultCodeList.Remove(0x10); // message ID byte is not part of the fault code list
-                                            faultCodeList.Remove(0xFD); // not fault code related
-                                            faultCodeList.Remove(0xFE); // end of fault code list signifier
-
-                                            if (faultCodeList.Count > 0)
+                                            for (int i = 4; i < checksumLocation; i++)
                                             {
-                                                StringBuilder sb = new StringBuilder();
+                                                checksum += Packet.rx.payload[i];
+                                            }
 
-                                                foreach (byte code in faultCodeList)
+                                            if (checksum == Packet.rx.payload[checksumLocation])
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) fault code list:", Packet.rx.buffer);
+
+                                                List<byte> faultCodeList = new List<byte>();
+                                                faultCodeList.AddRange(Packet.rx.payload.Skip(4).Take(Packet.rx.payload.Length - 5)); // skip first 4 bytes (timestamp)
+                                                faultCodeList.Remove(0x10); // message ID byte is not part of the fault code list
+                                                faultCodeList.Remove(0xFD); // not fault code related
+                                                faultCodeList.Remove(0xFE); // end of fault code list signifier
+
+                                                if (faultCodeList.Count > 0)
                                                 {
-                                                    int index = PCM.EngineDTC.Rows.IndexOf(PCM.EngineDTC.Rows.Find(code));
-                                                    byte[] temp = new byte[1] { code };
+                                                    StringBuilder sb = new StringBuilder();
 
-                                                    if (index > -1) // DTC description found
+                                                    foreach (byte code in faultCodeList)
                                                     {
-                                                        sb.Append(Util.ByteToHexStringSimple(temp) + ": " + PCM.EngineDTC.Rows[index]["description"] + Environment.NewLine);
+                                                        int index = PCM.EngineDTC.Rows.IndexOf(PCM.EngineDTC.Rows.Find(code));
+                                                        byte[] temp = new byte[1] { code };
+
+                                                        if (index > -1) // DTC description found
+                                                        {
+                                                            sb.Append(Util.ByteToHexStringSimple(temp) + ": " + PCM.EngineDTC.Rows[index]["description"] + Environment.NewLine);
+                                                        }
+                                                        else // no DTC description found
+                                                        {
+                                                            sb.Append(Util.ByteToHexStringSimple(temp) + ": -" + Environment.NewLine);
+                                                        }
                                                     }
-                                                    else // no DTC description found
-                                                    {
-                                                        sb.Append(Util.ByteToHexStringSimple(temp) + ": -" + Environment.NewLine);
-                                                    }
+
+                                                    sb.Remove(sb.Length - 2, 2); // remove last newline character
+
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] PCM fault code(s) found:" + Environment.NewLine + sb.ToString());
                                                 }
-
-                                                sb.Remove(sb.Length - 2, 2); // remove last newline character
-
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] PCM fault code(s) found:" + Environment.NewLine + sb.ToString());
+                                                else
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] No PCM fault code found.");
+                                                }
                                             }
                                             else
                                             {
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] No PCM fault code found.");
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) fault code checksum error:", Packet.rx.buffer);
                                             }
                                         }
-                                        else
+                                        else // error
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) fault code checksum error:", Packet.rx.buffer);
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) fault code list:", Packet.rx.buffer);
                                         }
-                                    }
-                                    else // error
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) fault code list:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case 0x17: // erase fault codes
-                                    if (Packet.rx.payload.Length > 5)
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) erase fault code list:", Packet.rx.buffer);
+                                        break;
+                                    case 0x17: // erase fault codes
+                                        if (Packet.rx.payload.Length > 5)
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) erase fault code list:", Packet.rx.buffer);
 
-                                        if (Packet.rx.payload[5] == 0xE0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) erase fault code list success.");
-                                        else Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) erase fault code list error.");
-                                    }
-                                    else // error
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) erase fault code list response:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                default:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) low-speed message:", Packet.rx.buffer);
-                                    break;
-                            }
-                            break;
-                        case (byte)Packet.SCISpeedMode.highSpeed:
-                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) high-speed message:", Packet.rx.buffer);
-                            break;
-                        default:
-                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message:", Packet.rx.buffer);
-                            break;
+                                            if (Packet.rx.payload[5] == 0xE0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) erase fault code list success.");
+                                            else Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) erase fault code list error.");
+                                        }
+                                        else // error
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) erase fault code list response:", Packet.rx.buffer);
+                                        }
+                                        break;
+                                    default:
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) low-speed message:", Packet.rx.buffer);
+                                        break;
+                                }
+                                break;
+                            case (byte)Packet.SCISpeedMode.highSpeed:
+                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) high-speed message:", Packet.rx.buffer);
+                                break;
+                            default:
+                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message:", Packet.rx.buffer);
+                                break;
+                        }
                     }
                     PCM.AddMessage(Packet.rx.payload.ToArray());
                     break;
-                case (byte)Packet.Source.tcm:
+                case (byte)Packet.Bus.tcm:
                     Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message:", Packet.rx.buffer);
                     TCM.AddMessage(Packet.rx.payload.ToArray());
                     break;
@@ -2367,7 +2372,6 @@ namespace ChryslerCCDSCIScanner
             {
                 if (ConnectButton.Text == "Connect")
                 {
-                    byte[] buffer = new byte[Packet.expectedHandshake.Length];
                     byte ConnectionCounter = 0;
 
                     ConnectButton.Enabled = false; // no double-click
@@ -2541,8 +2545,7 @@ namespace ChryslerCCDSCIScanner
 
         private async void ResetButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.device;
+            Packet.tx.bus = (byte)Packet.Bus.usb;
             Packet.tx.command = (byte)Packet.Command.reset;
             Packet.tx.mode = (byte)Packet.ResetMode.resetInit;
             Packet.tx.payload = null;
@@ -2553,8 +2556,7 @@ namespace ChryslerCCDSCIScanner
 
         private async void HandshakeButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.device;
+            Packet.tx.bus = (byte)Packet.Bus.usb;
             Packet.tx.command = (byte)Packet.Command.handshake;
             Packet.tx.mode = (byte)Packet.HandshakeMode.handshakeOnly;
             Packet.tx.payload = null;
@@ -2565,8 +2567,7 @@ namespace ChryslerCCDSCIScanner
 
         private async void StatusButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.device;
+            Packet.tx.bus = (byte)Packet.Bus.usb;
             Packet.tx.command = (byte)Packet.Command.status;
             Packet.tx.mode = (byte)Packet.StatusMode.none;
             Packet.tx.payload = null;
@@ -2577,8 +2578,7 @@ namespace ChryslerCCDSCIScanner
 
         private async void VersionInfoButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.device;
+            Packet.tx.bus = (byte)Packet.Bus.usb;
             Packet.tx.command = (byte)Packet.Command.request;
             Packet.tx.mode = (byte)Packet.RequestMode.hardwareFirmwareInfo;
             Packet.tx.payload = null;
@@ -2589,8 +2589,7 @@ namespace ChryslerCCDSCIScanner
 
         private async void TimestampButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.device;
+            Packet.tx.bus = (byte)Packet.Bus.usb;
             Packet.tx.command = (byte)Packet.Command.request;
             Packet.tx.mode = (byte)Packet.RequestMode.timestamp;
             Packet.tx.payload = null;
@@ -2601,8 +2600,7 @@ namespace ChryslerCCDSCIScanner
 
         private async void BatteryVoltageButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.device;
+            Packet.tx.bus = (byte)Packet.Bus.usb;
             Packet.tx.command = (byte)Packet.Command.request;
             Packet.tx.mode = (byte)Packet.RequestMode.batteryVoltage;
             Packet.tx.payload = null;
@@ -2615,8 +2613,7 @@ namespace ChryslerCCDSCIScanner
         {
             if (ExternalEEPROMRadioButton.Checked)
             {
-                Packet.tx.source = (byte)Packet.Source.device;
-                Packet.tx.target = (byte)Packet.Target.device;
+                Packet.tx.bus = (byte)Packet.Bus.usb;
                 Packet.tx.command = (byte)Packet.Command.request;
                 Packet.tx.mode = (byte)Packet.RequestMode.extEEPROMChecksum;
                 Packet.tx.payload = null;
@@ -2657,8 +2654,7 @@ namespace ChryslerCCDSCIScanner
             {
                 if (readCount == 1)
                 {
-                    Packet.tx.source = (byte)Packet.Source.device;
-                    Packet.tx.target = (byte)Packet.Target.device;
+                    Packet.tx.bus = (byte)Packet.Bus.usb;
                     Packet.tx.command = (byte)Packet.Command.debug;
                     Packet.tx.mode = (byte)Packet.DebugMode.readIntEEPROMbyte;
                     Packet.tx.payload = address;
@@ -2677,8 +2673,7 @@ namespace ChryslerCCDSCIScanner
                     payloadList.AddRange(address);
                     payloadList.AddRange(readCountBytes);
 
-                    Packet.tx.source = (byte)Packet.Source.device;
-                    Packet.tx.target = (byte)Packet.Target.device;
+                    Packet.tx.bus = (byte)Packet.Bus.usb;
                     Packet.tx.command = (byte)Packet.Command.debug;
                     Packet.tx.mode = (byte)Packet.DebugMode.readIntEEPROMblock;
                     Packet.tx.payload = payloadList.ToArray();
@@ -2700,8 +2695,7 @@ namespace ChryslerCCDSCIScanner
             {
                 if (readCount == 1)
                 {
-                    Packet.tx.source = (byte)Packet.Source.device;
-                    Packet.tx.target = (byte)Packet.Target.device;
+                    Packet.tx.bus = (byte)Packet.Bus.usb;
                     Packet.tx.command = (byte)Packet.Command.debug;
                     Packet.tx.mode = (byte)Packet.DebugMode.readExtEEPROMbyte;
                     Packet.tx.payload = address;
@@ -2720,8 +2714,7 @@ namespace ChryslerCCDSCIScanner
                     payloadList.AddRange(address);
                     payloadList.AddRange(readCountBytes);
 
-                    Packet.tx.source = (byte)Packet.Source.device;
-                    Packet.tx.target = (byte)Packet.Target.device;
+                    Packet.tx.bus = (byte)Packet.Bus.usb;
                     Packet.tx.command = (byte)Packet.Command.debug;
                     Packet.tx.mode = (byte)Packet.DebugMode.readExtEEPROMblock;
                     Packet.tx.payload = payloadList.ToArray();
@@ -2766,8 +2759,7 @@ namespace ChryslerCCDSCIScanner
                     payloadList.AddRange(address);
                     payloadList.Add(values[0]);
 
-                    Packet.tx.source = (byte)Packet.Source.device;
-                    Packet.tx.target = (byte)Packet.Target.device;
+                    Packet.tx.bus = (byte)Packet.Bus.usb;
                     Packet.tx.command = (byte)Packet.Command.debug;
                     Packet.tx.mode = (byte)Packet.DebugMode.writeIntEEPROMbyte;
                     Packet.tx.payload = payloadList.ToArray();
@@ -2786,8 +2778,7 @@ namespace ChryslerCCDSCIScanner
                     payloadList.AddRange(address);
                     payloadList.AddRange(values);
 
-                    Packet.tx.source = (byte)Packet.Source.device;
-                    Packet.tx.target = (byte)Packet.Target.device;
+                    Packet.tx.bus = (byte)Packet.Bus.usb;
                     Packet.tx.command = (byte)Packet.Command.debug;
                     Packet.tx.mode = (byte)Packet.DebugMode.writeIntEEPROMblock;
                     Packet.tx.payload = payloadList.ToArray();
@@ -2813,8 +2804,7 @@ namespace ChryslerCCDSCIScanner
                     payloadList.AddRange(address);
                     payloadList.Add(values[0]);
 
-                    Packet.tx.source = (byte)Packet.Source.device;
-                    Packet.tx.target = (byte)Packet.Target.device;
+                    Packet.tx.bus = (byte)Packet.Bus.usb;
                     Packet.tx.command = (byte)Packet.Command.debug;
                     Packet.tx.mode = (byte)Packet.DebugMode.writeExtEEPROMbyte;
                     Packet.tx.payload = payloadList.ToArray();
@@ -2833,8 +2823,7 @@ namespace ChryslerCCDSCIScanner
                     payloadList.AddRange(address);
                     payloadList.AddRange(values);
 
-                    Packet.tx.source = (byte)Packet.Source.device;
-                    Packet.tx.target = (byte)Packet.Target.device;
+                    Packet.tx.bus = (byte)Packet.Bus.usb;
                     Packet.tx.command = (byte)Packet.Command.debug;
                     Packet.tx.mode = (byte)Packet.DebugMode.writeExtEEPROMblock;
                     Packet.tx.payload = payloadList.ToArray();
@@ -2881,8 +2870,7 @@ namespace ChryslerCCDSCIScanner
 
             payloadList.AddRange(new byte[] { heartbeatInterval_HB, heartbeatInterval_LB, LEDBlinkDuration_HB, LEDBlinkDuration_LB });
 
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.device;
+            Packet.tx.bus = (byte)Packet.Bus.usb;
             Packet.tx.command = (byte)Packet.Command.settings;
             Packet.tx.mode = (byte)Packet.SettingsMode.leds;
             Packet.tx.payload = payloadList.ToArray();
@@ -3113,8 +3101,7 @@ namespace ChryslerCCDSCIScanner
                 {
                     byte[] message = Util.HexStringToByte(CCDBusTxMessagesListBox.Items[0].ToString());
 
-                    Packet.tx.source = (byte)Packet.Source.device;
-                    Packet.tx.target = (byte)Packet.Target.ccd;
+                    Packet.tx.bus = (byte)Packet.Bus.ccd;
                     Packet.tx.command = (byte)Packet.Command.msgTx;
                     Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                     Packet.tx.payload = message;
@@ -3144,8 +3131,7 @@ namespace ChryslerCCDSCIScanner
                         payloadList.AddRange(messages[i]); // message
                     }
 
-                    Packet.tx.source = (byte)Packet.Source.device;
-                    Packet.tx.target = (byte)Packet.Target.ccd;
+                    Packet.tx.bus = (byte)Packet.Bus.ccd;
                     Packet.tx.command = (byte)Packet.Command.msgTx;
                     Packet.tx.mode = (byte)Packet.MsgTxMode.list;
                     Packet.tx.payload = payloadList.ToArray();
@@ -3180,7 +3166,7 @@ namespace ChryslerCCDSCIScanner
                     }
 
                     // First send a settings packet to configure repeat behavior
-                    SetRepeatedMessageBehavior(Packet.Target.ccd);
+                    SetRepeatedMessageBehavior(Packet.Bus.ccd);
 
                     byte[] message = Util.HexStringToByte(CCDBusTxMessagesListBox.Items[0].ToString());
                     List<byte> payloadList = new List<byte>();
@@ -3190,8 +3176,7 @@ namespace ChryslerCCDSCIScanner
                     payloadList.Add((byte)message.Length); // message length
                     payloadList.AddRange(message);
 
-                    Packet.tx.source = (byte)Packet.Source.device;
-                    Packet.tx.target = (byte)Packet.Target.ccd;
+                    Packet.tx.bus = (byte)Packet.Bus.ccd;
                     Packet.tx.command = (byte)Packet.Command.msgTx;
                     Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
                     Packet.tx.payload = payloadList.ToArray();
@@ -3207,7 +3192,7 @@ namespace ChryslerCCDSCIScanner
                     if (!CCDBusTxMessageRepeatIncrementCheckBox.Checked) // no message iteration with parameter incrementing
                     {
                         // First send a settings packet to configure repeat behavior
-                        SetRepeatedMessageBehavior(Packet.Target.ccd);
+                        SetRepeatedMessageBehavior(Packet.Bus.ccd);
 
                         List<byte[]> messages = new List<byte[]>();
                         List<byte> payloadList = new List<byte>();
@@ -3227,8 +3212,7 @@ namespace ChryslerCCDSCIScanner
                             payloadList.AddRange(messages[i]); // message
                         }
 
-                        Packet.tx.source = (byte)Packet.Source.device;
-                        Packet.tx.target = (byte)Packet.Target.ccd;
+                        Packet.tx.bus = (byte)Packet.Bus.ccd;
                         Packet.tx.command = (byte)Packet.Command.msgTx;
                         Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedList;
                         Packet.tx.payload = payloadList.ToArray();
@@ -3277,7 +3261,7 @@ namespace ChryslerCCDSCIScanner
                         }
 
                         // First send a settings packet to configure repeat behavior
-                        SetRepeatedMessageBehavior(Packet.Target.ccd);
+                        SetRepeatedMessageBehavior(Packet.Bus.ccd);
 
                         payloadList.Add(0x01); // message iteration with parameter incrementing
                         payloadList.Add(0x01); // 1 message only, although there's two in the listbox: 1 for start message that is being incremented until the second message is reached
@@ -3285,8 +3269,7 @@ namespace ChryslerCCDSCIScanner
                         payloadList.AddRange(messageStart);
                         payloadList.AddRange(messageEnd);
 
-                        Packet.tx.source = (byte)Packet.Source.device;
-                        Packet.tx.target = (byte)Packet.Target.ccd;
+                        Packet.tx.bus = (byte)Packet.Bus.ccd;
                         Packet.tx.command = (byte)Packet.Command.msgTx;
                         Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
                         Packet.tx.payload = payloadList.ToArray();
@@ -3304,8 +3287,7 @@ namespace ChryslerCCDSCIScanner
 
         private async void CCDBusStopRepeatedMessagesButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.ccd;
+            Packet.tx.bus = (byte)Packet.Bus.ccd;
             Packet.tx.command = (byte)Packet.Command.msgTx;
             Packet.tx.mode = (byte)Packet.MsgTxMode.stop;
             Packet.tx.payload = null;
@@ -3342,8 +3324,7 @@ namespace ChryslerCCDSCIScanner
                     maxIntervalHB = (byte)((maxInterval >> 8) & 0xFF);
                     maxIntervalLB = (byte)(maxInterval & 0xFF);
 
-                    Packet.tx.source = (byte)Packet.Source.device;
-                    Packet.tx.target = (byte)Packet.Target.device;
+                    Packet.tx.bus = (byte)Packet.Bus.usb;
                     Packet.tx.command = (byte)Packet.Command.debug;
                     Packet.tx.mode = (byte)Packet.DebugMode.randomCCDBusMessages;
                     Packet.tx.payload = new byte[5] { 0x01, minIntervalHB, minIntervalLB, maxIntervalHB, maxIntervalLB };
@@ -3355,8 +3336,7 @@ namespace ChryslerCCDSCIScanner
             }
             else if (DebugRandomCCDBusMessagesButton.Text == "Stop random messages")
             {
-                Packet.tx.source = (byte)Packet.Source.device;
-                Packet.tx.target = (byte)Packet.Target.device;
+                Packet.tx.bus = (byte)Packet.Bus.usb;
                 Packet.tx.command = (byte)Packet.Command.debug;
                 Packet.tx.mode = (byte)Packet.DebugMode.randomCCDBusMessages;
                 Packet.tx.payload = new byte[5] { 0x00, 0x00, 0x00, 0x00, 0x00 };
@@ -3369,8 +3349,7 @@ namespace ChryslerCCDSCIScanner
 
         private async void MeasureCCDBusVoltagesButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.device;
+            Packet.tx.bus = (byte)Packet.Bus.usb;
             Packet.tx.command = (byte)Packet.Command.request;
             Packet.tx.mode = (byte)Packet.RequestMode.CCDBusVoltages;
             Packet.tx.payload = null;
@@ -3454,8 +3433,7 @@ namespace ChryslerCCDSCIScanner
                 CCDBusTerminationBiasOnOffCheckBox.Text = "CCD-bus termination / bias OFF";
             }
 
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.device;
+            Packet.tx.bus = (byte)Packet.Bus.usb;
             Packet.tx.command = (byte)Packet.Command.settings;
             Packet.tx.mode = (byte)Packet.SettingsMode.setCCDBus;
             Packet.tx.payload = new byte[2] { CCDBusState, CCDBusTerminationBiasOnOff };
@@ -3469,7 +3447,7 @@ namespace ChryslerCCDSCIScanner
             if (e.KeyChar == (char)Keys.Return)
             {
                 e.Handled = true;
-                SetRepeatedMessageBehavior(Packet.Target.ccd);
+                SetRepeatedMessageBehavior(Packet.Bus.ccd);
             }
         }
 
@@ -3478,7 +3456,7 @@ namespace ChryslerCCDSCIScanner
             if (e.KeyChar == (char)Keys.Return)
             {
                 e.Handled = true;
-                SetRepeatedMessageBehavior(Packet.Target.ccd);
+                SetRepeatedMessageBehavior(Packet.Bus.ccd);
             }
         }
 
@@ -3542,8 +3520,7 @@ namespace ChryslerCCDSCIScanner
                         CCDBusTxMessageComboBox.SelectionLength = 0;
                     }
 
-                    Packet.tx.source = (byte)Packet.Source.device;
-                    Packet.tx.target = (byte)Packet.Target.ccd;
+                    Packet.tx.bus = (byte)Packet.Bus.ccd;
                     Packet.tx.command = (byte)Packet.Command.msgTx;
                     Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                     Packet.tx.payload = message;
@@ -3716,8 +3693,7 @@ namespace ChryslerCCDSCIScanner
                     switch (SCIBusModuleComboBox.SelectedIndex)
                     {
                         case 0: // engine
-                            Packet.tx.source = (byte)Packet.Source.device;
-                            Packet.tx.target = (byte)Packet.Target.pcm;
+                            Packet.tx.bus = (byte)Packet.Bus.pcm;
                             Packet.tx.command = (byte)Packet.Command.msgTx;
                             Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                             Packet.tx.payload = message;
@@ -3728,8 +3704,7 @@ namespace ChryslerCCDSCIScanner
                             await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
                             break;
                         case 1: // transmission
-                            Packet.tx.source = (byte)Packet.Source.device;
-                            Packet.tx.target = (byte)Packet.Target.tcm;
+                            Packet.tx.bus = (byte)Packet.Bus.tcm;
                             Packet.tx.command = (byte)Packet.Command.msgTx;
                             Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                             Packet.tx.payload = message;
@@ -3767,8 +3742,7 @@ namespace ChryslerCCDSCIScanner
                     switch (SCIBusModuleComboBox.SelectedIndex)
                     {
                         case 0: // engine
-                            Packet.tx.source = (byte)Packet.Source.device;
-                            Packet.tx.target = (byte)Packet.Target.pcm;
+                            Packet.tx.bus = (byte)Packet.Bus.pcm;
                             Packet.tx.command = (byte)Packet.Command.msgTx;
                             Packet.tx.mode = (byte)Packet.MsgTxMode.list;
                             Packet.tx.payload = payloadList.ToArray();
@@ -3786,8 +3760,7 @@ namespace ChryslerCCDSCIScanner
                             await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
                             break;
                         case 1: // transmission
-                            Packet.tx.source = (byte)Packet.Source.device;
-                            Packet.tx.target = (byte)Packet.Target.tcm;
+                            Packet.tx.bus = (byte)Packet.Bus.tcm;
                             Packet.tx.command = (byte)Packet.Command.msgTx;
                             Packet.tx.mode = (byte)Packet.MsgTxMode.list;
                             Packet.tx.payload = payloadList.ToArray();
@@ -3832,10 +3805,9 @@ namespace ChryslerCCDSCIScanner
                     switch (SCIBusModuleComboBox.SelectedIndex)
                     {
                         case 0: // engine 
-                            SetRepeatedMessageBehavior(Packet.Target.pcm); // first send a settings packet to configure repeat behavior
+                            SetRepeatedMessageBehavior(Packet.Bus.pcm); // first send a settings packet to configure repeat behavior
 
-                            Packet.tx.source = (byte)Packet.Source.device;
-                            Packet.tx.target = (byte)Packet.Target.pcm;
+                            Packet.tx.bus = (byte)Packet.Bus.pcm;
                             Packet.tx.command = (byte)Packet.Command.msgTx;
                             Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
                             Packet.tx.payload = payloadList.ToArray();
@@ -3846,10 +3818,9 @@ namespace ChryslerCCDSCIScanner
                             await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
                             break;
                         case 1: // transmission
-                            SetRepeatedMessageBehavior(Packet.Target.tcm); // first send a settings packet to configure repeat behavior
+                            SetRepeatedMessageBehavior(Packet.Bus.tcm); // first send a settings packet to configure repeat behavior
 
-                            Packet.tx.source = (byte)Packet.Source.device;
-                            Packet.tx.target = (byte)Packet.Target.tcm;
+                            Packet.tx.bus = (byte)Packet.Bus.tcm;
                             Packet.tx.command = (byte)Packet.Command.msgTx;
                             Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
                             Packet.tx.payload = payloadList.ToArray();
@@ -3888,10 +3859,9 @@ namespace ChryslerCCDSCIScanner
                         switch (SCIBusModuleComboBox.SelectedIndex)
                         {
                             case 0: // engine
-                                SetRepeatedMessageBehavior(Packet.Target.pcm); // first send a settings packet to configure repeat behavior
+                                SetRepeatedMessageBehavior(Packet.Bus.pcm); // first send a settings packet to configure repeat behavior
 
-                                Packet.tx.source = (byte)Packet.Source.device;
-                                Packet.tx.target = (byte)Packet.Target.pcm;
+                                Packet.tx.bus = (byte)Packet.Bus.pcm;
                                 Packet.tx.command = (byte)Packet.Command.msgTx;
                                 Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedList;
                                 Packet.tx.payload = payloadList.ToArray();
@@ -3909,10 +3879,9 @@ namespace ChryslerCCDSCIScanner
                                 await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
                                 break;
                             case 1: // transmission
-                                SetRepeatedMessageBehavior(Packet.Target.tcm); // first send a settings packet to configure repeat behavior
+                                SetRepeatedMessageBehavior(Packet.Bus.tcm); // first send a settings packet to configure repeat behavior
 
-                                Packet.tx.source = (byte)Packet.Source.device;
-                                Packet.tx.target = (byte)Packet.Target.tcm;
+                                Packet.tx.bus = (byte)Packet.Bus.tcm;
                                 Packet.tx.command = (byte)Packet.Command.msgTx;
                                 Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedList;
                                 Packet.tx.payload = payloadList.ToArray();
@@ -3966,7 +3935,7 @@ namespace ChryslerCCDSCIScanner
                         switch (SCIBusModuleComboBox.SelectedIndex)
                         {
                             case 0: // engine
-                                SetRepeatedMessageBehavior(Packet.Target.pcm); // first send a settings packet to configure repeat behavior
+                                SetRepeatedMessageBehavior(Packet.Bus.pcm); // first send a settings packet to configure repeat behavior
 
                                 payloadList.Add(0x01); // message iteration with parameter incrementing
                                 payloadList.Add(0x01); // 1 message only, although there's two in the listbox: 1 for start message that is being incremented until the second message is reached
@@ -3974,8 +3943,7 @@ namespace ChryslerCCDSCIScanner
                                 payloadList.AddRange(messageStart);
                                 payloadList.AddRange(messageEnd);
 
-                                Packet.tx.source = (byte)Packet.Source.device;
-                                Packet.tx.target = (byte)Packet.Target.pcm;
+                                Packet.tx.bus = (byte)Packet.Bus.pcm;
                                 Packet.tx.command = (byte)Packet.Command.msgTx;
                                 Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
                                 Packet.tx.payload = payloadList.ToArray();
@@ -3988,7 +3956,7 @@ namespace ChryslerCCDSCIScanner
                                 await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
                                 break;
                             case 1: // tranmission
-                                SetRepeatedMessageBehavior(Packet.Target.tcm); // first send a settings packet to configure repeat behavior
+                                SetRepeatedMessageBehavior(Packet.Bus.tcm); // first send a settings packet to configure repeat behavior
 
                                 payloadList.Add(0x01); // message iteration with parameter incrementing
                                 payloadList.Add(0x01); // 1 message only, although there's two in the listbox: 1 for start message that is being incremented until the second message is reached
@@ -3996,8 +3964,7 @@ namespace ChryslerCCDSCIScanner
                                 payloadList.AddRange(messageStart);
                                 payloadList.AddRange(messageEnd);
 
-                                Packet.tx.source = (byte)Packet.Source.device;
-                                Packet.tx.target = (byte)Packet.Target.tcm;
+                                Packet.tx.bus = (byte)Packet.Bus.tcm;
                                 Packet.tx.command = (byte)Packet.Command.msgTx;
                                 Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
                                 Packet.tx.payload = payloadList.ToArray();
@@ -4017,8 +3984,7 @@ namespace ChryslerCCDSCIScanner
 
         private async void SCIBusStopRepeatedMessagesButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.pcm;
+            Packet.tx.bus = (byte)Packet.Bus.pcm;
             Packet.tx.command = (byte)Packet.Command.msgTx;
             Packet.tx.mode = (byte)Packet.MsgTxMode.stop;
             Packet.tx.payload = null;
@@ -4143,8 +4109,7 @@ namespace ChryslerCCDSCIScanner
                     break;
             }
 
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.device;
+            Packet.tx.bus = (byte)Packet.Bus.usb;
             Packet.tx.command = (byte)Packet.Command.settings;
             Packet.tx.mode = (byte)Packet.SettingsMode.setSCIBus;
             Packet.tx.payload = new byte[1] { config };
@@ -4155,8 +4120,7 @@ namespace ChryslerCCDSCIScanner
 
         private async void SCIBusReadFaultCodesButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.pcm;
+            Packet.tx.bus = (byte)Packet.Bus.pcm;
             Packet.tx.command = (byte)Packet.Command.msgTx;
             Packet.tx.mode = (byte)Packet.MsgTxMode.single;
             Packet.tx.payload = new byte[1] { 0x10 };
@@ -4167,8 +4131,7 @@ namespace ChryslerCCDSCIScanner
 
         private async void SCIBusEraseFaultCodesButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.pcm;
+            Packet.tx.bus = (byte)Packet.Bus.pcm;
             Packet.tx.command = (byte)Packet.Command.msgTx;
             Packet.tx.mode = (byte)Packet.MsgTxMode.single;
             Packet.tx.payload = new byte[1] { 0x17 };
@@ -4290,10 +4253,10 @@ namespace ChryslerCCDSCIScanner
                 switch (SCIBusModuleComboBox.SelectedIndex)
                 {
                     case 0: // engine
-                        SetRepeatedMessageBehavior(Packet.Target.pcm);
+                        SetRepeatedMessageBehavior(Packet.Bus.pcm);
                         break;
                     case 1: // transmission
-                        SetRepeatedMessageBehavior(Packet.Target.tcm);
+                        SetRepeatedMessageBehavior(Packet.Bus.tcm);
                         break;
                 }
             }
@@ -4307,10 +4270,10 @@ namespace ChryslerCCDSCIScanner
                 switch (SCIBusModuleComboBox.SelectedIndex)
                 {
                     case 0: // engine
-                        SetRepeatedMessageBehavior(Packet.Target.pcm);
+                        SetRepeatedMessageBehavior(Packet.Bus.pcm);
                         break;
                     case 1: // transmission
-                        SetRepeatedMessageBehavior(Packet.Target.tcm);
+                        SetRepeatedMessageBehavior(Packet.Bus.tcm);
                         break;
                 }
             }
@@ -4361,8 +4324,7 @@ namespace ChryslerCCDSCIScanner
                     switch (SCIBusModuleComboBox.SelectedIndex)
                     {
                         case 0: // engine
-                            Packet.tx.source = (byte)Packet.Source.device;
-                            Packet.tx.target = (byte)Packet.Target.pcm;
+                            Packet.tx.bus = (byte)Packet.Bus.pcm;
                             Packet.tx.command = (byte)Packet.Command.msgTx;
                             Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                             Packet.tx.payload = message;
@@ -4373,8 +4335,7 @@ namespace ChryslerCCDSCIScanner
                             await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
                             break;
                         case 1: // transmission
-                            Packet.tx.source = (byte)Packet.Source.device;
-                            Packet.tx.target = (byte)Packet.Target.tcm;
+                            Packet.tx.bus = (byte)Packet.Bus.tcm;
                             Packet.tx.command = (byte)Packet.Command.msgTx;
                             Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                             Packet.tx.payload = message;
@@ -4417,8 +4378,7 @@ namespace ChryslerCCDSCIScanner
 
         private async void SCIBusLowSpeedSelectButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.pcm;
+            Packet.tx.bus = (byte)Packet.Bus.pcm;
             Packet.tx.command = (byte)Packet.Command.msgTx;
             Packet.tx.mode = (byte)Packet.MsgTxMode.single;
             Packet.tx.payload = new byte[1] { 0xFE };
@@ -4429,8 +4389,7 @@ namespace ChryslerCCDSCIScanner
 
         private async void SCIBusHighSpeedSelectButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.pcm;
+            Packet.tx.bus = (byte)Packet.Bus.pcm;
             Packet.tx.command = (byte)Packet.Command.msgTx;
             Packet.tx.mode = (byte)Packet.MsgTxMode.single;
             Packet.tx.payload = new byte[1] { 0x12 };
@@ -4639,8 +4598,7 @@ namespace ChryslerCCDSCIScanner
 
             byte LCDDataSource = (byte)(LCDDataSourceComboBox.SelectedIndex + 1);
 
-            Packet.tx.source = (byte)Packet.Source.device;
-            Packet.tx.target = (byte)Packet.Target.device;
+            Packet.tx.bus = (byte)Packet.Bus.usb;
             Packet.tx.command = (byte)Packet.Command.settings;
             Packet.tx.mode = (byte)Packet.SettingsMode.setLCD;
             Packet.tx.payload = new byte[7] { LCDState, LCDI2CAddress, LCDWidth, LCDHeight, LCDRefreshRate, LCDUnits, LCDDataSource };

@@ -18,8 +18,7 @@ namespace ChryslerCCDSCIScanner
         {
             public byte[] buffer;
             public int length;
-            public byte source;
-            public byte target;
+            public byte bus;
             public byte command;
             public byte mode;
             public byte[] payload;
@@ -30,8 +29,7 @@ namespace ChryslerCCDSCIScanner
         {
             public byte[] buffer;
             public int length;
-            public byte source;
-            public byte target;
+            public byte bus;
             public byte command;
             public byte mode;
             public byte[] payload;
@@ -41,20 +39,13 @@ namespace ChryslerCCDSCIScanner
         public PacketRx rx = new PacketRx();
         public PacketTx tx = new PacketTx();
 
-        public enum Source : byte
+        public enum Bus : byte
         {
-            device = 0x00,
+            usb = 0x00,
             ccd = 0x01,
             pcm = 0x02,
-            tcm = 0x03
-        }
-
-        public enum Target : byte
-        {
-            device = 0x00,
-            ccd = 0x01,
-            pcm = 0x02,
-            tcm = 0x03
+            tcm = 0x03,
+            pci = 0x04
         }
 
         public enum Command : byte
@@ -160,6 +151,7 @@ namespace ChryslerCCDSCIScanner
             errorPacketChecksumInvalidValue = 0x05,
             errorPacketTimeoutOccured = 0x06,
             errorBufferOverflow = 0x07,
+            errorDatacodeInvalidBus = 0x08,
             errorSCILsNoResponse = 0xF6,
             errorNotEnoughMCURAM = 0xF7,
             errorSCIHsMemoryPtrNoResponse = 0xF8,
@@ -192,8 +184,8 @@ namespace ChryslerCCDSCIScanner
             highSpeed = 0x02
         }
 
-        public byte[] expectedHandshake = new byte[] { 0x3D, 0x00, 0x17, 0x01, 0x00, 0x43, 0x48, 0x52, 0x59, 0x53, 0x4C, 0x45, 0x52, 0x43, 0x43, 0x44, 0x53, 0x43, 0x49, 0x53, 0x43, 0x41, 0x4E, 0x4E, 0x45, 0x52, 0x74 };
-        public byte[] expectedDevBoardHandshake = new byte[] { 0x3D, 0x00, 0x1B, 0x01, 0x00, 0x43, 0x43, 0x44, 0x42, 0x55, 0x53, 0x54, 0x52, 0x41, 0x4E, 0x53, 0x43, 0x45, 0x49, 0x56, 0x45, 0x52, 0x44, 0x45, 0x56, 0x42, 0x4F, 0x41, 0x52, 0x44, 0x9A };
+        public byte[] expectedHandshake_V1 = new byte[] { 0x3D, 0x00, 0x17, 0x81, 0x00, 0x43, 0x48, 0x52, 0x59, 0x53, 0x4C, 0x45, 0x52, 0x43, 0x43, 0x44, 0x53, 0x43, 0x49, 0x53, 0x43, 0x41, 0x4E, 0x4E, 0x45, 0x52, 0xF4 };
+        public byte[] expectedHandshake_V2 = new byte[] { 0x3D, 0x00, 0x11, 0x81, 0x00, 0x43, 0x48, 0x52, 0x59, 0x53, 0x4C, 0x45, 0x52, 0x53, 0x43, 0x41, 0x4E, 0x4E, 0x45, 0x52, 0x45 };
 
         public Packet()
         {
@@ -285,8 +277,7 @@ namespace ChryslerCCDSCIScanner
         {
             rx.length = (rx.buffer[1] << 8) + rx.buffer[2];
             Array.Resize(ref rx.buffer, rx.length + 4);
-            rx.source = (byte)((rx.buffer[3] >> 6) & 0x03);
-            rx.target = (byte)((rx.buffer[3] >> 4) & 0x03);
+            rx.bus = (byte)((rx.buffer[3] >> 4) & 0x07);
             rx.command = (byte)(rx.buffer[3] & 0x0F);
             rx.mode = rx.buffer[4];
             if (rx.length > 2)
@@ -315,7 +306,7 @@ namespace ChryslerCCDSCIScanner
 
             byte lengthHB = (byte)(((packetLength - 4) >> 8) & 0xFF);
             byte lengthLB = (byte)((packetLength - 4) & 0xFF);
-            byte datacode = (byte)(((tx.source << 6) & 0xC0) + ((tx.target << 4) & 0x30) + (tx.command & 0x0F));
+            byte datacode = (byte)(((tx.bus << 4) & 0x70) + (tx.command & 0x0F));
             byte subdatacode = tx.mode;
 
             packet.AddRange(new byte[] { 0x3D, lengthHB, lengthLB, datacode, subdatacode});
