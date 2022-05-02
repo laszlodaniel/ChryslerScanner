@@ -488,7 +488,7 @@ namespace ChryslerCCDSCIScanner
                             }
                             break;
                         case (byte)Packet.Command.handshake:
-                            if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 20))
+                            if (Packet.rx.payload != null)
                             {
                                 Util.UpdateTextBox(USBTextBox, "[RX->] Handshake response:", Packet.rx.buffer);
 
