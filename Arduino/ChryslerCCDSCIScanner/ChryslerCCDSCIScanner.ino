@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 09: minor
-// 00: patch
+// 01: patch
 // (00: revision)
-// = v0.9.0(.0)
-#define FW_VERSION 0x00090000
+// = v0.9.1(.0)
+#define FW_VERSION 0x00090100
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00090000626FE14C
+#define FW_DATE 0x000901006273FF5A
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -6204,7 +6204,7 @@ void handle_sci_data(void)
 
                 uint16_t packet_length = 0;
 
-                if (array_contains(sci_hi_speed_memarea, 16, pcm.msg_buffer[0])) // normal mode
+                if (((pcm.msg_to_transmit_count == 1) && array_contains(sci_hi_speed_memarea, 16, pcm.msg_buffer[0])) || ((pcm.msg_to_transmit_count > 1) && array_contains(sci_hi_speed_memarea, 16, pcm.msg_buffer[1]))) // normal mode
                 {
                     packet_length = (2 * pcm.message_length) - 1;
                 }
@@ -6218,8 +6218,7 @@ void handle_sci_data(void)
                 pcm.message_length = packet_length;
 
                 // Request and response bytes are mixed together in a single message:
-                // 00 00 00 00 F4 0A 00 0B 00 0C 00 0D 00...
-                // 00 00 00 00: timestamp
+                // F4 0A 00 0B 00 0C 00 0D 00...
                 // F4: RAM table
                 // 0A: RAM address
                 // 00: RAM value at 0A
@@ -6260,7 +6259,7 @@ void handle_sci_data(void)
                         }
                     }
 
-                    send_usb_packet(bus_pcm, msg_rx, sci_hs_bytes, usb_msg, pcm.message_length);
+                    send_usb_packet(bus_pcm, msg_rx, sci_hs_bytes, usb_msg, packet_length);
                 }
                 else if (pcm.msg_to_transmit_count > 1)
                 {
@@ -6273,7 +6272,7 @@ void handle_sci_data(void)
                         usb_msg[1 + (i * 2) + 1] = pcm_getc() & 0xFF; // put response byte after the request byte
                     }
 
-                    send_usb_packet(bus_pcm, msg_rx, sci_hs_bytes, usb_msg, pcm.message_length);
+                    send_usb_packet(bus_pcm, msg_rx, sci_hs_bytes, usb_msg, packet_length);
                 }
 
                 if (usb_msg[0] == 0xFE) // pay attention to special bytes (speed change)
@@ -6295,12 +6294,12 @@ void handle_sci_data(void)
                     {
                         pcm.repeat_next = true; // accept echo without verification...
 
-                        // Increase the current message counter and set the buffer pointer to the next message length
+                        // Increase the current message counter and set the buffer pointer to the next message length byte.
                         pcm.msg_to_transmit_count_ptr++;
                         pcm.msg_buffer_ptr += pcm.repeated_msg_length + 1;
                         pcm.repeated_msg_length = pcm.msg_buffer[pcm.msg_buffer_ptr]; // re-calculate new message length
 
-                        // After the last message reset everything to zero to start at the beginning
+                        // After the last message reset everything to zero to start at the beginning.
                         if (pcm.msg_to_transmit_count_ptr == pcm.msg_to_transmit_count)
                         {
                             pcm.msg_to_transmit_count_ptr = 0;
@@ -6331,7 +6330,7 @@ void handle_sci_data(void)
                     {
                         pcm.msg_tx_pending = true; // send the same message again
                     }
-                    
+
                     if (pcm.repeat_stop)
                     {
                         pcm.msg_buffer_ptr = 0;
@@ -6343,7 +6342,7 @@ void handle_sci_data(void)
                     }
                 }
 
-                handle_lcd(bus_pcm, pcm.message, 0, pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
+                handle_lcd(bus_pcm, pcm.message, 0, pcm.message_length); // pass message to LCD handling function
                 pcm_rx_flush();
                 pcm.msg_rx_count++;
             }
@@ -6806,15 +6805,13 @@ void handle_sci_data(void)
                 else if (pcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
                 {
                     // Navigate in the main buffer after the message length byte and start sending those bytes.
-                    uint8_t j = 0;
-
                     for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++) // repeat for the length of the message
                     {
                         timeout_reached = false;
                         timeout_start = millis(); // save current time
                         pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
 
-                        while ((pcm_rx_available() <= j) && !timeout_reached)
+                        while ((pcm_rx_available() <= (i - pcm.msg_buffer_ptr - 1)) && !timeout_reached)
                         {
                             // wait here for response (echo in case of F0...FF)
                             if ((uint32_t)(millis() - timeout_start) >= SCI_HS_T3_DELAY) timeout_reached = true;
@@ -6822,13 +6819,11 @@ void handle_sci_data(void)
 
                         if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                         {
-                            uint8_t ret[2] = { pcm.msg_buffer[pcm.msg_buffer_ptr + 1], pcm.msg_buffer[pcm.msg_buffer_ptr + 1 + j] };
+                            uint8_t ret[2] = { pcm.msg_buffer[pcm.msg_buffer_ptr + 1], pcm.msg_buffer[i] };
                             send_usb_packet(bus_usb, ok_error, error_sci_hs_no_response, ret, 2); // return two bytes to determine which table and which address is unresponsive
                             pcm_rx_flush();
                             break;
                         }
-
-                        j++;
                     }
 
                     if (!timeout_reached)
@@ -7080,8 +7075,7 @@ void handle_sci_data(void)
                 uint16_t packet_length = (2 * tcm.message_length) - 1;
 
                 // Request and response bytes are mixed together in a single message:
-                // 00 00 00 00 F4 0A 00 0B 00 0C 00 0D 00...
-                // 00 00 00 00: timestamp
+                // F4 0A 00 0B 00 0C 00 0D 00...
                 // F4: RAM table
                 // 0A: RAM address
                 // 00: RAM value at 0A
