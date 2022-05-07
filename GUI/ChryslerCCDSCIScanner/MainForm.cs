@@ -540,7 +540,7 @@ namespace ChryslerCCDSCIScanner
                                 string CCDBusMsgRxCountString = string.Empty;
                                 string CCDBusMsgTxCountString = string.Empty;
 
-                                if (Util.IsBitClear(Packet.rx.payload[15], 4))
+                                if (Util.IsBitClear(Packet.rx.payload[15], 7))
                                 {
                                     CCDBusTransceiverOnOffCheckBox.CheckedChanged -= new EventHandler(CCDBusSettingsCheckBox_CheckedChanged);
                                     CCDBusTransceiverOnOffCheckBox.Checked = false;
@@ -560,7 +560,7 @@ namespace ChryslerCCDSCIScanner
                                 if (Util.IsBitClear(Packet.rx.payload[15], 3)) CCDBusLogicString = "non-inverted";
                                 else CCDBusLogicString = "inverted";
 
-                                if (Util.IsBitClear(Packet.rx.payload[15], 2))
+                                if (Util.IsBitClear(Packet.rx.payload[15], 6))
                                 {
                                     CCDBusTerminationBiasOnOffCheckBox.CheckedChanged -= new EventHandler(this.CCDBusSettingsCheckBox_CheckedChanged);
                                     CCDBusTerminationBiasOnOffCheckBox.Checked = false;
@@ -608,19 +608,28 @@ namespace ChryslerCCDSCIScanner
                                 string SCIBusPCMMsgRxCountString = string.Empty;
                                 string SCIBusPCMMsgTxCountString = string.Empty;
 
-                                if (Util.IsBitSet(Packet.rx.payload[24], 4))
+                                if (Util.IsBitSet(Packet.rx.payload[24], 7))
                                 {
                                     SCIBusPCMStateString = "enabled";
+
+                                    if (Util.IsBitClear(Packet.rx.payload[24], 4))
+                                    {
+                                        // TODO: NGC mode disabled
+                                    }
+                                    else
+                                    {
+                                        // TODO: NGC mode enabled
+                                    }
 
                                     if (Util.IsBitClear(Packet.rx.payload[24], 3))
                                     {
                                         SCIBusPCMLogicString += "non-inverted";
-                                        SCIBusOBD1EngineCableCheckBox.Checked = false;
+                                        SCIBusInvertedLogicCheckBox.Checked = false;
                                     }
                                     else
                                     {
                                         SCIBusPCMLogicString += "inverted";
-                                        SCIBusOBD1EngineCableCheckBox.Checked = true;
+                                        SCIBusInvertedLogicCheckBox.Checked = true;
                                     }
 
                                     if (Util.IsBitClear(Packet.rx.payload[24], 2))
@@ -689,9 +698,18 @@ namespace ChryslerCCDSCIScanner
                                 string SCIBusTCMMsgRxCountString = string.Empty;
                                 string SCIBusTCMMsgTxCountString = string.Empty;
 
-                                if (Util.IsBitSet(Packet.rx.payload[33], 4))
+                                if (Util.IsBitSet(Packet.rx.payload[33], 7))
                                 {
                                     SCIBusTCMStateString = "enabled";
+
+                                    if (Util.IsBitClear(Packet.rx.payload[33], 4))
+                                    {
+                                        // TODO: NGC mode disabled
+                                    }
+                                    else
+                                    {
+                                        // TODO: NGC mode enabled
+                                    }
 
                                     if (Util.IsBitClear(Packet.rx.payload[33], 3))
                                     {
@@ -896,50 +914,35 @@ namespace ChryslerCCDSCIScanner
                                     }
                                     break;
                                 case (byte)Packet.SettingsMode.setCCDBus:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 2))
+                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
                                     {
-                                        if (Packet.rx.payload[0] == 0x00) // OK
+                                        string CCDBusStateString = string.Empty;
+                                        string CCDBusTerminationBiasString = string.Empty;
+
+                                        if (Util.IsBitClear(Packet.rx.payload[0], 7))
                                         {
-                                            string CCDBusStateString = string.Empty;
-                                            string CCDBusTerminationBiasString = string.Empty;
-
-                                            switch (Packet.rx.payload[1])
-                                            {
-                                                case (byte)Packet.OnOffMode.off:
-                                                    CCDBusStateString = "disabled";
-                                                    break;
-                                                case (byte)Packet.OnOffMode.on:
-                                                    CCDBusStateString = "enabled";
-                                                    break;
-                                                default:
-                                                    CCDBusStateString = "unknown";
-                                                    break;
-                                            }
-
-                                            switch (Packet.rx.payload[2])
-                                            {
-                                                case (byte)Packet.OnOffMode.off:
-                                                    CCDBusTerminationBiasString = "disabled";
-                                                    break;
-                                                case (byte)Packet.OnOffMode.on:
-                                                    CCDBusTerminationBiasString = "enabled";
-                                                    break;
-                                                default:
-                                                    CCDBusTerminationBiasString = "unknown";
-                                                    break;
-                                            }
-
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus settings changed:", Packet.rx.buffer);
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus settings: " + Environment.NewLine +
-                                                                           "       - state: " + CCDBusStateString + Environment.NewLine +
-                                                                           "       - termination and bias: " + CCDBusTerminationBiasString);
-
-                                            CCD.UpdateHeader(CCDBusStateString, null, null);
+                                            CCDBusStateString = "disabled";
                                         }
-                                        else // error
+                                        else
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus settings error:", Packet.rx.buffer);
+                                            CCDBusStateString = "enabled";
                                         }
+
+                                        if (Util.IsBitClear(Packet.rx.payload[0], 6))
+                                        {
+                                            CCDBusTerminationBiasString = "disabled";
+                                        }
+                                        else
+                                        {
+                                            CCDBusTerminationBiasString = "enabled";
+                                        }
+
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus settings changed:", Packet.rx.buffer);
+                                        Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus settings: " + Environment.NewLine +
+                                                                        "       - state: " + CCDBusStateString + Environment.NewLine +
+                                                                        "       - termination and bias: " + CCDBusTerminationBiasString);
+
+                                        CCD.UpdateHeader(CCDBusStateString, null, null);
                                     }
                                     else
                                     {
@@ -947,161 +950,169 @@ namespace ChryslerCCDSCIScanner
                                     }
                                     break;
                                 case (byte)Packet.SettingsMode.setSCIBus:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 1))
+                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
                                     {
-                                        if (Packet.rx.payload[0] == 0x00) // OK
+                                        string SCIBusPCMStateString = string.Empty;
+                                        string SCIBusPCMLogicString = string.Empty;
+                                        string SCIBusPCMOBDConfigurationString = string.Empty;
+                                        string SCIBusPCMSpeedString = string.Empty;
+                                        string SCIBusTCMStateString = string.Empty;
+                                        string SCIBusTCMLogicString = string.Empty;
+                                        string SCIBusTCMOBDConfigurationString = string.Empty;
+                                        string SCIBusTCMSpeedString = string.Empty;
+
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus settings changed:", Packet.rx.buffer);
+
+                                        if (Util.IsBitSet(Packet.rx.payload[0], 5)) // TCM settings received
                                         {
-                                            string SCIBusPCMStateString = string.Empty;
-                                            string SCIBusPCMLogicString = string.Empty;
-                                            string SCIBusPCMOBDConfigurationString = string.Empty;
-                                            string SCIBusPCMSpeedString = string.Empty;
-                                            string SCIBusTCMStateString = string.Empty;
-                                            string SCIBusTCMLogicString = string.Empty;
-                                            string SCIBusTCMOBDConfigurationString = string.Empty;
-                                            string SCIBusTCMSpeedString = string.Empty;
-
-                                            if (((Packet.rx.payload[1] >> 6) & 0x03) == 0x02) // PCM settings received
+                                            if (Util.IsBitClear(Packet.rx.payload[0], 7))
                                             {
-                                                if (Util.IsBitClear(Packet.rx.payload[1], 4))
+                                                SCIBusTCMStateString = "disabled";
+                                            }
+                                            else
+                                            {
+                                                SCIBusTCMStateString = "enabled";
+                                                SCIBusPCMStateString = "disabled";
+
+                                                if (Util.IsBitSet(Packet.rx.payload[0], 4))
                                                 {
-                                                    SCIBusPCMStateString = "disabled";
+                                                    // TODO: NGC mode enabled
                                                 }
                                                 else
                                                 {
-                                                    SCIBusPCMStateString = "enabled";
-
-                                                    if (Util.IsBitClear(Packet.rx.payload[1], 3))
-                                                    {
-                                                        SCIBusPCMLogicString = "non-inverted";
-                                                    }
-                                                    else
-                                                    {
-                                                        SCIBusPCMLogicString = "inverted";
-                                                    }
-
-                                                    if (Util.IsBitClear(Packet.rx.payload[1], 2))
-                                                    {
-                                                        SCIBusPCMOBDConfigurationString = "A";
-                                                    }
-                                                    else
-                                                    {
-                                                        SCIBusPCMOBDConfigurationString = "B";
-                                                    }
-
-                                                    switch (Packet.rx.payload[1] & 0x03)
-                                                    {
-                                                        case 0x00:
-                                                            SCIBusPCMSpeedString = "976.5 baud";
-                                                            break;
-                                                        case 0x01:
-                                                            SCIBusPCMSpeedString = "7812.5 baud";
-                                                            break;
-                                                        case 0x02:
-                                                            SCIBusPCMSpeedString = "62500 baud";
-                                                            break;
-                                                        case 0x03:
-                                                            SCIBusPCMSpeedString = "125000 baud";
-                                                            break;
-                                                        default:
-                                                            SCIBusPCMSpeedString = "unknown";
-                                                            break;
-                                                    }
+                                                    // TODO: NGC mode disabled
                                                 }
-                                            }
-                                            else if (((Packet.rx.payload[1] >> 6) & 0x03) == 0x03) // TCM settings received
-                                            {
-                                                if (Util.IsBitClear(Packet.rx.payload[1], 4))
+
+                                                if (Util.IsBitClear(Packet.rx.payload[0], 3))
                                                 {
-                                                    SCIBusTCMStateString = "disabled";
+                                                    SCIBusTCMLogicString = "non-inverted";
                                                 }
                                                 else
                                                 {
-                                                    SCIBusTCMStateString = "enabled";
-
-                                                    if (Util.IsBitClear(Packet.rx.payload[1], 3))
-                                                    {
-                                                        SCIBusTCMLogicString = "non-inverted";
-                                                    }
-                                                    else
-                                                    {
-                                                        SCIBusTCMLogicString = "inverted";
-                                                    }
-
-                                                    if (Util.IsBitClear(Packet.rx.payload[1], 2))
-                                                    {
-                                                        SCIBusTCMOBDConfigurationString = "A";
-                                                    }
-                                                    else
-                                                    {
-                                                        SCIBusTCMOBDConfigurationString = "B";
-                                                    }
-
-                                                    switch (Packet.rx.payload[1] & 0x03)
-                                                    {
-                                                        case 0x00:
-                                                            SCIBusTCMSpeedString = "976.5 baud";
-                                                            break;
-                                                        case 0x01:
-                                                            SCIBusTCMSpeedString = "7812.5 baud";
-                                                            break;
-                                                        case 0x02:
-                                                            SCIBusTCMSpeedString = "62500 baud";
-                                                            break;
-                                                        case 0x03:
-                                                            SCIBusTCMSpeedString = "125000 baud";
-                                                            break;
-                                                        default:
-                                                            SCIBusTCMSpeedString = "unknown";
-                                                            break;
-                                                    }
+                                                    SCIBusTCMLogicString = "inverted";
                                                 }
-                                            }
 
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus settings changed:", Packet.rx.buffer);
-
-                                            if (((Packet.rx.payload[1] >> 6) & 0x03) == 0x02) // PCM settings received
-                                            {
-                                                if (SCIBusPCMStateString == "enabled")
+                                                if (Util.IsBitClear(Packet.rx.payload[0], 2))
                                                 {
-                                                    Util.UpdateTextBox(USBTextBox, "[INFO] PCM settings: " + Environment.NewLine +
-                                                                                   "       - state: " + SCIBusPCMStateString + Environment.NewLine +
-                                                                                   "       - logic: " + SCIBusPCMLogicString + Environment.NewLine +
-                                                                                   "       - obd config.: " + SCIBusPCMOBDConfigurationString + Environment.NewLine +
-                                                                                   "       - speed: " + SCIBusPCMSpeedString);
+                                                    SCIBusTCMOBDConfigurationString = "A";
                                                 }
                                                 else
                                                 {
-                                                    Util.UpdateTextBox(USBTextBox, "[INFO] PCM settings: " + Environment.NewLine +
-                                                                                   "       - state: " + SCIBusPCMStateString);
+                                                    SCIBusTCMOBDConfigurationString = "B";
                                                 }
 
-                                                PCM.UpdateHeader(SCIBusPCMStateString, SCIBusPCMSpeedString, SCIBusPCMLogicString, SCIBusPCMOBDConfigurationString);
+                                                switch (Packet.rx.payload[0] & 0x03)
+                                                {
+                                                    case 0x00:
+                                                        SCIBusTCMSpeedString = "976.5 baud";
+                                                        break;
+                                                    case 0x01:
+                                                        SCIBusTCMSpeedString = "7812.5 baud";
+                                                        break;
+                                                    case 0x02:
+                                                        SCIBusTCMSpeedString = "62500 baud";
+                                                        break;
+                                                    case 0x03:
+                                                        SCIBusTCMSpeedString = "125000 baud";
+                                                        break;
+                                                }
                                             }
-                                            else if (((Packet.rx.payload[1] >> 6) & 0x03) == 0x03) // TCM settings received
+
+                                            if (SCIBusTCMStateString == "enabled")
                                             {
-                                                if (SCIBusTCMStateString == "enabled")
-                                                {
-                                                    Util.UpdateTextBox(USBTextBox, "[INFO] TCM settings: " + Environment.NewLine +
-                                                                                   "       - state: " + SCIBusTCMStateString + Environment.NewLine +
-                                                                                   "       - logic: " + SCIBusTCMLogicString + Environment.NewLine +
-                                                                                   "       - obd config.: " + SCIBusTCMOBDConfigurationString + Environment.NewLine +
-                                                                                   "       - speed: " + SCIBusTCMSpeedString);
-                                                }
-                                                else
-                                                {
-                                                    Util.UpdateTextBox(USBTextBox, "[INFO] TCM settings: " + Environment.NewLine +
-                                                                                   "       - state: " + SCIBusTCMStateString);
-                                                }
-
-                                                TCM.UpdateHeader(SCIBusTCMStateString, SCIBusTCMSpeedString, SCIBusTCMLogicString, SCIBusTCMOBDConfigurationString);
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] TCM settings: " + Environment.NewLine +
+                                                                                "       - state: " + SCIBusTCMStateString + Environment.NewLine +
+                                                                                "       - logic: " + SCIBusTCMLogicString + Environment.NewLine +
+                                                                                "       - obd config.: " + SCIBusTCMOBDConfigurationString + Environment.NewLine +
+                                                                                "       - speed: " + SCIBusTCMSpeedString + Environment.NewLine +
+                                                                                "       PCM settings: " + Environment.NewLine +
+                                                                                "       - state: disabled");
+                                            }
+                                            else
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] TCM settings: " + Environment.NewLine +
+                                                                                "       - state: " + SCIBusTCMStateString);
                                             }
 
-                                            SCIBusModuleComboBox_SelectedIndexChanged(this, EventArgs.Empty);
+                                            TCM.UpdateHeader(SCIBusTCMStateString, SCIBusTCMSpeedString, SCIBusTCMLogicString, SCIBusTCMOBDConfigurationString);
+                                            PCM.UpdateHeader(SCIBusPCMStateString, SCIBusPCMSpeedString, SCIBusPCMLogicString, SCIBusPCMOBDConfigurationString);
                                         }
-                                        else // error
+                                        else // PCM settings received
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus settings error:", Packet.rx.buffer);
+                                            if (Util.IsBitClear(Packet.rx.payload[0], 7))
+                                            {
+                                                SCIBusPCMStateString = "disabled";
+                                            }
+                                            else
+                                            {
+                                                SCIBusPCMStateString = "enabled";
+                                                SCIBusTCMStateString = "disabled";
+
+                                                if (Util.IsBitSet(Packet.rx.payload[0], 4))
+                                                {
+                                                    // TODO: NGC mode enabled
+                                                }
+                                                else
+                                                {
+                                                    // TODO: NGC mode disabled
+                                                }
+
+                                                if (Util.IsBitClear(Packet.rx.payload[0], 3))
+                                                {
+                                                    SCIBusPCMLogicString = "non-inverted";
+                                                }
+                                                else
+                                                {
+                                                    SCIBusPCMLogicString = "inverted";
+                                                }
+
+                                                if (Util.IsBitClear(Packet.rx.payload[0], 2))
+                                                {
+                                                    SCIBusPCMOBDConfigurationString = "A";
+                                                }
+                                                else
+                                                {
+                                                    SCIBusPCMOBDConfigurationString = "B";
+                                                }
+
+                                                switch (Packet.rx.payload[0] & 0x03)
+                                                {
+                                                    case 0x00:
+                                                        SCIBusPCMSpeedString = "976.5 baud";
+                                                        break;
+                                                    case 0x01:
+                                                        SCIBusPCMSpeedString = "7812.5 baud";
+                                                        break;
+                                                    case 0x02:
+                                                        SCIBusPCMSpeedString = "62500 baud";
+                                                        break;
+                                                    case 0x03:
+                                                        SCIBusPCMSpeedString = "125000 baud";
+                                                        break;
+                                                }
+                                            }
+
+                                            if (SCIBusPCMStateString == "enabled")
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] PCM settings: " + Environment.NewLine +
+                                                                                "       - state: " + SCIBusPCMStateString + Environment.NewLine +
+                                                                                "       - logic: " + SCIBusPCMLogicString + Environment.NewLine +
+                                                                                "       - obd config.: " + SCIBusPCMOBDConfigurationString + Environment.NewLine +
+                                                                                "       - speed: " + SCIBusPCMSpeedString + Environment.NewLine +
+                                                                                "       TCM settings: " + Environment.NewLine +
+                                                                                "       - state: disabled");
+                                            }
+                                            else
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] PCM settings: " + Environment.NewLine +
+                                                                                "       - state: " + SCIBusPCMStateString);
+                                            }
+
+                                            PCM.UpdateHeader(SCIBusPCMStateString, SCIBusPCMSpeedString, SCIBusPCMLogicString, SCIBusPCMOBDConfigurationString);
+                                            TCM.UpdateHeader(SCIBusTCMStateString, SCIBusTCMSpeedString, SCIBusTCMLogicString, SCIBusTCMOBDConfigurationString);
                                         }
+
+                                        SCIBusModuleComboBox_SelectedIndexChanged(this, EventArgs.Empty);
                                     }
                                     else
                                     {
@@ -3406,37 +3417,36 @@ namespace ChryslerCCDSCIScanner
 
         private async void CCDBusSettingsCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            byte CCDBusState;
-            byte CCDBusTerminationBiasOnOff;
+            byte config = 0x01; // set lowest bit to indicate 7812.5 baud speed
 
             if (CCDBusTransceiverOnOffCheckBox.Checked)
             {
-                CCDBusState = 0x01;
+                config = Util.SetBit(config, 7);
                 CCDBusTransceiverOnOffCheckBox.Text = "CCD-bus transceiver ON";
                 CCD.UpdateHeader("enabled", null, null);
             }
             else
             {
-                CCDBusState = 0x00;
+                config = Util.ClearBit(config, 7);
                 CCDBusTransceiverOnOffCheckBox.Text = "CCD-bus transceiver OFF";
                 CCD.UpdateHeader("disabled", null, null);
             }
 
             if (CCDBusTerminationBiasOnOffCheckBox.Checked)
             {
-                CCDBusTerminationBiasOnOff = 0x01;
+                config = Util.SetBit(config, 6);
                 CCDBusTerminationBiasOnOffCheckBox.Text = "CCD-bus termination / bias ON";
             }
             else
             {
-                CCDBusTerminationBiasOnOff = 0x00;
+                config = Util.ClearBit(config, 6);
                 CCDBusTerminationBiasOnOffCheckBox.Text = "CCD-bus termination / bias OFF";
             }
 
             Packet.tx.bus = (byte)Packet.Bus.usb;
             Packet.tx.command = (byte)Packet.Command.settings;
             Packet.tx.mode = (byte)Packet.SettingsMode.setCCDBus;
-            Packet.tx.payload = new byte[2] { CCDBusState, CCDBusTerminationBiasOnOff };
+            Packet.tx.payload = new byte[1] { config };
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Change CCD-bus settings:", Packet.tx.buffer);
             await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
@@ -4000,11 +4010,12 @@ namespace ChryslerCCDSCIScanner
             switch (SCIBusModuleComboBox.SelectedIndex)
             {
                 case 0: // engine
-                    config = Util.SetBit(config, 7); // PCM
-                    config = Util.ClearBit(config, 6); // PCM
-                    config = Util.SetBit(config, 5); // set change bit
+                    config = Util.ClearBit(config, 6); // unused bit, always clear
+                    config = Util.ClearBit(config, 5); // PCM
 
-                    if (SCIBusOBD1EngineCableCheckBox.Checked)
+                    // TODO: NGC bit
+
+                    if (SCIBusInvertedLogicCheckBox.Checked)
                     {
                         config = Util.SetBit(config, 3);
                     }
@@ -4025,42 +4036,51 @@ namespace ChryslerCCDSCIScanner
                     switch (SCIBusSpeedComboBox.SelectedIndex)
                     {
                         case 0: // off
-                            config = Util.ClearBit(config, 4); // clear state bit (disabled)
-                            config = Util.ClearBit(config, 1); // clear speed bit (dummy 976.5 baud)
-                            config = Util.ClearBit(config, 0); // clear speed bit (dummy 976.5 baud)
+                            config = Util.ClearBit(config, 7); // clear state bit (disabled)
+                            config = Util.ClearBit(config, 1);
+                            config = Util.SetBit(config, 0);
                             break;
                         case 1: // 976.5 baud
-                            config = Util.SetBit(config, 4); // set state bit (enabled)
+                            config = Util.SetBit(config, 7); // set state bit (enabled)
                             config = Util.ClearBit(config, 1);
                             config = Util.ClearBit(config, 0);
                             break;
                         case 2: // 7812.5 baud
-                            config = Util.SetBit(config, 4); // set state bit (enabled)
+                            config = Util.SetBit(config, 7); // set state bit (enabled)
                             config = Util.ClearBit(config, 1);
                             config = Util.SetBit(config, 0);
                             break;
                         case 3: // 62500 baud
-                            config = Util.SetBit(config, 4); // set state bit (enabled)
+                            config = Util.SetBit(config, 7); // set state bit (enabled)
                             config = Util.SetBit(config, 1);
                             config = Util.ClearBit(config, 0);
                             break;
                         case 4: // 125000 baud
-                            config = Util.SetBit(config, 4); // set state bit (enabled)
+                            config = Util.SetBit(config, 7); // set state bit (enabled)
                             config = Util.SetBit(config, 1);
                             config = Util.SetBit(config, 0);
                             break;
                         default: // 7812.5 baud
-                            config = Util.SetBit(config, 4); // set state bit (enabled)
+                            config = Util.SetBit(config, 7); // set state bit (enabled)
                             config = Util.ClearBit(config, 1);
                             config = Util.SetBit(config, 0);
                             break;
                     }
                     break;
                 case 1: // transmission
-                    config = Util.SetBit(config, 7); // TCM
-                    config = Util.SetBit(config, 6); // TCM
-                    config = Util.SetBit(config, 5); // set change bit
-                    config = Util.ClearBit(config, 3); // OBD1 engine cable not applicable here
+                    config = Util.ClearBit(config, 6); // unused bit, always clear
+                    config = Util.SetBit(config, 5); // TCM
+
+                    // TODO: NGC bit
+
+                    if (SCIBusInvertedLogicCheckBox.Checked)
+                    {
+                        config = Util.SetBit(config, 3);
+                    }
+                    else
+                    {
+                        config = Util.ClearBit(config, 3);
+                    }
 
                     if (SCIBusOBDConfigurationComboBox.SelectedIndex == 0)
                     {
@@ -4074,32 +4094,32 @@ namespace ChryslerCCDSCIScanner
                     switch (SCIBusSpeedComboBox.SelectedIndex)
                     {
                         case 0: // off
-                            config = Util.ClearBit(config, 4); // clear state bit (disabled)
-                            config = Util.ClearBit(config, 1); // clear speed bit (dummy 976.5 baud)
-                            config = Util.ClearBit(config, 0); // clear speed bit (dummy 976.5 baud)
+                            config = Util.ClearBit(config, 7); // clear state bit (disabled)
+                            config = Util.ClearBit(config, 1);
+                            config = Util.SetBit(config, 0);
                             break;
                         case 1: // 976.5 baud
-                            config = Util.SetBit(config, 4); // set state bit (enabled)
+                            config = Util.SetBit(config, 7); // set state bit (enabled)
                             config = Util.ClearBit(config, 1);
                             config = Util.ClearBit(config, 0);
                             break;
                         case 2: // 7812.5 baud
-                            config = Util.SetBit(config, 4); // set state bit (enabled)
+                            config = Util.SetBit(config, 7); // set state bit (enabled)
                             config = Util.ClearBit(config, 1);
                             config = Util.SetBit(config, 0);
                             break;
                         case 3: // 62500 baud
-                            config = Util.SetBit(config, 4); // set state bit (enabled)
+                            config = Util.SetBit(config, 7); // set state bit (enabled)
                             config = Util.SetBit(config, 1);
                             config = Util.ClearBit(config, 0);
                             break;
                         case 4: // 125000 baud
-                            config = Util.SetBit(config, 4); // set state bit (enabled)
+                            config = Util.SetBit(config, 7); // set state bit (enabled)
                             config = Util.SetBit(config, 1);
                             config = Util.SetBit(config, 0);
                             break;
                         default: // 7812.5 baud
-                            config = Util.SetBit(config, 4); // set state bit (enabled)
+                            config = Util.SetBit(config, 7); // set state bit (enabled)
                             config = Util.ClearBit(config, 1);
                             config = Util.SetBit(config, 0);
                             break;
@@ -4194,7 +4214,7 @@ namespace ChryslerCCDSCIScanner
                     SCIBusFaultCodesLabel.Enabled = true;
                     SCIBusReadFaultCodesButton.Enabled = true;
                     SCIBusEraseFaultCodesButton.Enabled = true;
-                    SCIBusOBD1EngineCableCheckBox.Enabled = true;
+                    SCIBusInvertedLogicCheckBox.Enabled = true;
 
                     if (PCM.state == "enabled")
                     {
@@ -4208,8 +4228,8 @@ namespace ChryslerCCDSCIScanner
                         SCIBusSpeedComboBox.SelectedIndex = 0; // off
                     }
 
-                    if (PCM.logic == "non-inverted") SCIBusOBD1EngineCableCheckBox.Checked = false;
-                    else if (PCM.logic == "inverted") SCIBusOBD1EngineCableCheckBox.Checked = true;
+                    if (PCM.logic == "non-inverted") SCIBusInvertedLogicCheckBox.Checked = false;
+                    else if (PCM.logic == "inverted") SCIBusInvertedLogicCheckBox.Checked = true;
 
                     if (PCM.configuration == "A") SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
                     else if (PCM.configuration == "B") SCIBusOBDConfigurationComboBox.SelectedIndex = 1;
@@ -4219,7 +4239,7 @@ namespace ChryslerCCDSCIScanner
                     SCIBusFaultCodesLabel.Enabled = false;
                     SCIBusReadFaultCodesButton.Enabled = false;
                     SCIBusEraseFaultCodesButton.Enabled = false;
-                    SCIBusOBD1EngineCableCheckBox.Enabled = false;
+                    SCIBusInvertedLogicCheckBox.Enabled = false;
 
                     if (TCM.state == "enabled")
                     {
@@ -4233,8 +4253,8 @@ namespace ChryslerCCDSCIScanner
                         SCIBusSpeedComboBox.SelectedIndex = 0; // off
                     }
 
-                    if (TCM.logic == "non-inverted") SCIBusOBD1EngineCableCheckBox.Checked = false;
-                    else if (TCM.logic == "inverted") SCIBusOBD1EngineCableCheckBox.Checked = true;
+                    if (TCM.logic == "non-inverted") SCIBusInvertedLogicCheckBox.Checked = false;
+                    else if (TCM.logic == "inverted") SCIBusInvertedLogicCheckBox.Checked = true;
 
                     if (TCM.configuration == "A") SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
                     else if (TCM.configuration == "B") SCIBusOBDConfigurationComboBox.SelectedIndex = 1;

@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 09: minor
-// 01: patch
+// 02: patch
 // (00: revision)
-// = v0.9.1(.0)
-#define FW_VERSION 0x00090100
+// = v0.9.2(.0)
+#define FW_VERSION 0x00090200
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x000901006273FF5A
+#define FW_DATE 0x0009020062763A12
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -124,17 +124,33 @@
 #define SCI_HS_T5_DELAY 0
 #define SCI_BTSTRP_DLY  20
 
+// SCI-bus setting bits
+#define SCI_STATE_BIT         7
+#define SCI_MODULE_BIT        5
+#define SCI_NGC_BIT           4
+#define SCI_LOGIC_BIT         3
+#define SCI_CONFIG_BIT        2
+#define SCI_SPEED_BITS        3
+#define SCI_SPEED_BAUD_976    0
+#define SCI_SPEED_BAUD_7812   1
+#define SCI_SPEED_BAUD_62500  2
+#define SCI_SPEED_BAUD_125000 3
+
+// CCD-bus setting bits
+#define CCD_STATE_BIT         7
+#define CCD_TBEN_BIT          6
+
 //#define UART_FRAME_ERROR        0x1000  /**< Framing Error by UART          00010000 00000000 - FIXED BIT */ 
 //#define UART_OVERRUN_ERROR      0x0800  /**< Overrun condition by UART      00001000 00000000 - FIXED BIT */
 //#define UART_BUFFER_OVERFLOW    0x0400  /**< Receive ringbuffer overflow    00000100 00000000 - ARBITRARY */
 #define UART_RX_NO_DATA         0x0200  /**< Receive buffer is empty        00000010 00000000 - ARBITRARY */
 
 // Baudrate prescaler calculation: UBRR = (F_CPU / (16 * BAUDRATE)) - 1
-#define ELBAUD  1023 // prescaler for  976.5 baud speed (SCI-bus extra-low speed)
-#define LOBAUD  127  // prescaler for 7812.5 baud speed (CCD/SCI-bus default low-speed diagnostic mode)
-#define HIBAUD  15   // prescaler for  62500 baud speed (SCI-bus high-speed parameter mode)
-#define EHBAUD  7    // prescaler for 125000 baud speed (SCI-bus extra-high speed)
-#define USBBAUD 3    // prescaler for 250000 baud speed (USB communication)
+#define BAUD_976    1023 // prescaler for  976.5 baud speed (SCI-bus extra-low speed)
+#define BAUD_7812   127  // prescaler for 7812.5 baud speed (CCD/SCI-bus default low-speed diagnostic mode)
+#define BAUD_62500  15   // prescaler for  62500 baud speed (SCI-bus high-speed parameter mode)
+#define BAUD_125000 7    // prescaler for 125000 baud speed (SCI-bus extra-high speed)
+#define BAUD_250000 3    // prescaler for 250000 baud speed (USB communication)
 
 #define PACKET_SYNC_BYTE   0x3D // "=" symbol
 #define ASCII_SYNC_BYTE    0x3E // ">" symbol
@@ -268,9 +284,10 @@ uint16_t command_purge_timeout = 200; // milliseconds, if a command isn't comple
 typedef struct {
     bool enabled = false; // bus state (enabled or disabled)
     bool termination_bias_enabled = false;
-    bool invert_logic = false; // OBD1 SCI engine adapter cable needs special message handling
+    bool inverted_logic = false; // OBD1 SCI engine adapter cable needs special message handling
+    bool ngc_mode = false; // NGC computers use full-duplex SCI-bus communication
     uint8_t bus_settings = 0;
-    uint16_t speed = LOBAUD; // baudrate prescaler - 1023: 976.5625 baud; 127: 7812.5 baud; 15: 62500 baud; 7: 125000 baud; 3: 250000 baud
+    uint16_t speed = BAUD_7812; // baudrate prescaler - 1023: 976.5625 baud; 127: 7812.5 baud; 15: 62500 baud; 7: 125000 baud; 3: 250000 baud
     volatile bool idle = true; // bus idling (CCD-bus only, IDLE-pin)
     volatile bool busy = false; // there's a byte being transmitted on the bus (CCD-bus only, CTRL-pin)
     bool echo_received = false; // low-speed mode (7812.5 baud)
@@ -1342,31 +1359,14 @@ void load_settings(void)
     led_blink_duration = to_uint16(data[0], data[1]);
 
     ccd.bus_settings = EEPROM.read(0x23);
-
-    if (ccd.bus_settings == 0x00)
-    {
-        ccd.bus_settings = 0x41;
-        EEPROM.update(0x23, ccd.bus_settings);
-    }
-
-    (ccd.bus_settings & 0x10) ? (ccd.enabled = true) : (ccd.enabled = false);
-
-    if (ccd.bus_settings & 0x04)
-    {
-        ccd.termination_bias_enabled = true;
-        digitalWrite(TBEN, LOW);
-    }
-    else
-    {
-        ccd.termination_bias_enabled = false;
-        digitalWrite(TBEN, HIGH);
-    }
+    if (ccd.bus_settings == 0x00) ccd.bus_settings = 0xC1;
+    configure_ccd_bus(ccd.bus_settings);
 
     pcm.bus_settings = EEPROM.read(0x24);
-    if (pcm.bus_settings == 0x00) pcm.bus_settings = 0x91;
+    if (pcm.bus_settings == 0x00) pcm.bus_settings = 0x81;
 
     tcm.bus_settings = EEPROM.read(0x25);
-    if (tcm.bus_settings == 0x00) tcm.bus_settings = 0xC1;
+    if (tcm.bus_settings == 0x00) tcm.bus_settings = 0x21;
 
     ccd.auto_request = EEPROM.read(0x26);
 
@@ -2897,7 +2897,7 @@ ISR(PCM_RECEIVE_INTERRUPT)
         /* store new index */
         PCM_RxHead = tmphead;
         /* store received data in buffer */
-        if (!pcm.invert_logic) PCM_RxBuf[tmphead] = data;
+        if (!pcm.inverted_logic) PCM_RxBuf[tmphead] = data;
         else PCM_RxBuf[tmphead] = ((data << 4) & 0xF0) | ((data >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
     }
     PCM_LastRxError = lastRxError;
@@ -2919,7 +2919,7 @@ ISR(PCM_TRANSMIT_INTERRUPT)
         tmptail = (PCM_TxTail + 1) & PCM_TX_BUFFER_MASK;
         PCM_TxTail = tmptail;
         /* get one byte from buffer and write it to UART */
-        if (!pcm.invert_logic) PCM_DATA = PCM_TxBuf[tmptail]; /* start transmission */
+        if (!pcm.inverted_logic) PCM_DATA = PCM_TxBuf[tmptail]; /* start transmission */
         else PCM_DATA = ((PCM_TxBuf[tmptail] << 4) & 0xF0) | ((PCM_TxBuf[tmptail] >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
     }
     else
@@ -3169,7 +3169,7 @@ ISR(TCM_RECEIVE_INTERRUPT)
         /* store new index */
         TCM_RxHead = tmphead;
         /* store received data in buffer */
-        if (!tcm.invert_logic) TCM_RxBuf[tmphead] = data;
+        if (!tcm.inverted_logic) TCM_RxBuf[tmphead] = data;
         else TCM_RxBuf[tmphead] = ((data << 4) & 0xF0) | ((data >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
     }
     TCM_LastRxError = lastRxError;
@@ -3191,7 +3191,7 @@ ISR(TCM_TRANSMIT_INTERRUPT)
         tmptail = (TCM_TxTail + 1) & TCM_TX_BUFFER_MASK;
         TCM_TxTail = tmptail;
         /* get one byte from buffer and write it to UART */
-        if (!tcm.invert_logic) TCM_DATA = TCM_TxBuf[tmptail]; /* start transmission */
+        if (!tcm.inverted_logic) TCM_DATA = TCM_TxBuf[tmptail]; /* start transmission */
         else TCM_DATA = ((TCM_TxBuf[tmptail] << 4) & 0xF0) | ((TCM_TxBuf[tmptail] >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
     }
     else
@@ -3411,408 +3411,290 @@ void tcm_tx_flush(void)
 }
 
 /*************************************************************************
+Function: configure_ccd_bus()
+Purpose:  as the name says
+Input:    setting bits
+Note:     setting bits description:
+          B7: state bit:     0: disabled
+                             1: enabled
+          B6: tben bit:      0: disabled
+                             1: enabled
+          B5: not used:      0: always clear
+          B4: not used:      0: always clear
+          B3: not used:      0: always clear
+          B2: not used:      0: always clear
+          B1: not used:      0: always clear
+          B0: not used:      1: always set
+**************************************************************************/
+void configure_ccd_bus(uint8_t ccd_settings)
+{
+    cbi(ccd_settings, 5);
+    cbi(ccd_settings, 4);
+    cbi(ccd_settings, 3);
+    cbi(ccd_settings, 2);
+    cbi(ccd_settings, 1);
+    sbi(ccd_settings, 0);
+
+    if (ccd_settings & (1 << CCD_STATE_BIT))
+    {
+        ccd.enabled = true;
+    }
+    else
+    {
+        ccd.enabled = false;
+    }
+
+    if (ccd.enabled)
+    {
+        if (ccd_settings & (1 << CCD_TBEN_BIT))
+        {
+            ccd.termination_bias_enabled = true;
+            digitalWrite(TBEN, LOW);
+        }
+        else
+        {
+            ccd.termination_bias_enabled = false;
+            digitalWrite(TBEN, HIGH);
+        }
+    }
+
+    ccd.bus_settings = ccd_settings;
+    EEPROM.update(0x23, ccd.bus_settings); // write CCD-bus settings
+    uint8_t ret[1] = { ccd.bus_settings };
+    send_usb_packet(bus_usb, settings, set_ccd_bus, ret, sizeof(ret)); // acknowledge
+}
+
+/*************************************************************************
 Function: configure_sci_bus()
 Purpose:  as the name says
-Input:    data: SCI-bus channel, configuration and speed settings
-Note:     data bits description:
-          B7:6: module bits: 00: USB (not used here)
-                             01: CCD (not used here)
-                             10: PCM
-                             11: TCM
-          B5: change bit:     0: leave settings
-                              1: change settings
-          B4: state bit:      0: disabled
-                              1: enabled
-          B3: logic bit:      0: non-inverted
-                              1: inverted (OBD1 SCI engine cable used)
-          B2: config bits:    0: "A" configuration
-                              1: "B" configuration
-          B1:0 speed bits:   00: 976.5 baud
-                             01: 7812.5 baud
-                             10: 62500 baud
-                             11: 125000 baud
+Input:    setting bits
+Note:     setting bits description:
+          B7: state bit:     0: disabled
+                             1: enabled
+          B6: not used:      0: always clear
+          B5: module bit:    0: PCM (engine)
+                             1: TCM (transmission)
+          B4: ngc bit:       0: NGC mode off
+                             1: NGC mode on
+          B3: logic bit:     0: non-inverted
+                             1: inverted
+          B2: config bit:    0: A-configuration
+                             1: B-configuration
+          B1:0: speed bits: 00: 976.5 baud
+                            01: 7812.5 baud
+                            10: 62500 baud
+                            11: 125000 baud
 **************************************************************************/
-void configure_sci_bus(uint8_t data = 0x00)
+void configure_sci_bus(uint8_t sci_settings)
 {
-    if (data == 0x00) // apply current settings for both PCM and TCM
+    cbi(sci_settings, 6);
+
+    if (sci_settings & (1 << SCI_MODULE_BIT)) // TCM
     {
-        if ((pcm.bus_settings >> 4) & 0x01) // enable PCM
+        if (sci_settings & (1 << SCI_STATE_BIT))
         {
-            pcm.enabled = true;
-            
-            if ((pcm.bus_settings >> 3) & 0x01) // inverted logic signal
+            tcm.enabled = true;
+            pcm.enabled = false;
+        }
+        else
+        {
+            tcm.enabled = false;
+
+            // Disable all TCM switches.
+            digitalWrite(A_TCM_RX_EN, LOW); // SCI-BUS_A_TCM_RX disabled
+            digitalWrite(A_TCM_TX_EN, LOW); // SCI-BUS_A_TCM_TX disabled
+            digitalWrite(B_TCM_RX_EN, LOW); // SCI-BUS_B_TCM_RX disabled
+            digitalWrite(B_TCM_TX_EN, LOW); // SCI-BUS_B_TCM_TX disabled
+        }
+
+        if (tcm.enabled)
+        {
+            if (sci_settings & (1 << SCI_NGC_BIT))
             {
-                pcm.invert_logic = true;
+                tcm.ngc_mode = true;
             }
-            else // non-inverted logic signal
+            else
             {
-                pcm.invert_logic = false;
+                tcm.ngc_mode = false;
             }
 
-            if ((pcm.bus_settings >> 2) & 0x01) // configuration "B"
+            // Disable all PCM switches.
+            digitalWrite(A_PCM_RX_EN, LOW);  // SCI-BUS_A_PCM_RX disabled
+            digitalWrite(A_PCM_TX_EN, LOW);  // SCI-BUS_A_PCM_TX disabled
+            digitalWrite(B_PCM_RX_EN, LOW);  // SCI-BUS_B_PCM_RX disabled
+            digitalWrite(B_PCM_TX_EN, LOW);  // SCI-BUS_B_PCM_TX disabled
+
+            if (sci_settings & (1 << SCI_CONFIG_BIT)) // B-configuration
             {
-                // Disable all A-configuration pins first
-                digitalWrite(A_PCM_RX_EN, LOW);  // SCI-BUS_A_PCM_RX disabled
-                digitalWrite(A_PCM_TX_EN, LOW);  // SCI-BUS_A_PCM_TX disabled
                 digitalWrite(A_TCM_RX_EN, LOW);  // SCI-BUS_A_TCM_RX disabled
                 digitalWrite(A_TCM_TX_EN, LOW);  // SCI-BUS_A_TCM_TX disabled
-                // Enable B-configuration pins for PCM (TCM pins don't interfere here)
-                digitalWrite(B_PCM_RX_EN, HIGH); // SCI-BUS_B_PCM_RX enabled
-                digitalWrite(B_PCM_TX_EN, HIGH); // SCI-BUS_B_PCM_TX enabled
+                digitalWrite(B_TCM_RX_EN, HIGH); // SCI-BUS_B_TCM_RX enabled
+                digitalWrite(B_TCM_TX_EN, HIGH); // SCI-BUS_B_TCM_TX enabled
             }
-            else // configuration "A"
+            else // A-configuration
             {
-                tcm.enabled = false; // TCM pins interfere with PCM pins in configuration "A"
-                cbi(tcm.bus_settings, 4); // clear 4th enable bit
-
-                // Disable all B-configuration pins first
-                digitalWrite(B_PCM_RX_EN, LOW);  // SCI-BUS_B_PCM_RX disabled
-                digitalWrite(B_PCM_TX_EN, LOW);  // SCI-BUS_B_PCM_TX disabled
                 digitalWrite(B_TCM_RX_EN, LOW);  // SCI-BUS_B_TCM_RX disabled
                 digitalWrite(B_TCM_TX_EN, LOW);  // SCI-BUS_B_TCM_TX disabled
-                // Disable A-configuration pins for TCM first, they interfere
-                digitalWrite(A_TCM_RX_EN, LOW);  // SCI-BUS_A_TCM_RX disabled
-                digitalWrite(A_TCM_TX_EN, LOW);  // SCI-BUS_A_TCM_TX disabled
-                // Enable A-configuration pins for PCM
-                digitalWrite(A_PCM_RX_EN, HIGH); // SCI-BUS_A_PCM_RX enabled
-                digitalWrite(A_PCM_TX_EN, HIGH); // SCI-BUS_A_PCM_TX enabled
+                digitalWrite(A_TCM_RX_EN, HIGH); // SCI-BUS_A_TCM_RX enabled
+                digitalWrite(A_TCM_TX_EN, HIGH); // SCI-BUS_A_TCM_TX enabled
             }
 
-            if ((pcm.bus_settings & 0x03) == 0x00) // 976.5 baud
+            if (sci_settings & (1 << SCI_LOGIC_BIT)) // inverted logic
             {
-                pcm_init(ELBAUD);
-                //pcm_rx_flush();
-                //pcm_tx_flush();
-                pcm.speed = ELBAUD;
+                tcm.inverted_logic = true;
             }
-            else if ((pcm.bus_settings & 0x03) == 0x01) // 7812.5 baud
+            else // non-inverted logic
             {
-                pcm_init(LOBAUD);
-                //pcm_rx_flush();
-                //pcm_tx_flush();
-                pcm.speed = LOBAUD;
+                tcm.inverted_logic = false;
             }
-            else if ((pcm.bus_settings & 0x03) == 0x02) // 62500 baud
+
+            switch (sci_settings & SCI_SPEED_BITS)
             {
-                pcm_init(HIBAUD);
-                //pcm_rx_flush();
-                //pcm_tx_flush();
-                pcm.speed = HIBAUD;
-            }
-            else if ((pcm.bus_settings & 0x03) == 0x03) // 125000 baud
-            {
-                pcm_init(EHBAUD);
-                //pcm_rx_flush();
-                //pcm_tx_flush();
-                pcm.speed = EHBAUD;
-            }
-            else // 7812.5 baud
-            {
-                pcm_init(LOBAUD);
-                //pcm_rx_flush();
-                //pcm_tx_flush();
-                pcm.speed = LOBAUD;
+                case SCI_SPEED_BAUD_976:
+                {
+                    tcm_init(BAUD_976);
+                    //tcm_rx_flush();
+                    //tcm_tx_flush();
+                    tcm.speed = BAUD_976;
+                    break;
+                }
+                case SCI_SPEED_BAUD_7812:
+                {
+                    tcm_init(BAUD_7812);
+                    //tcm_rx_flush();
+                    //tcm_tx_flush();
+                    tcm.speed = BAUD_7812;
+                    break;
+                }
+                case SCI_SPEED_BAUD_62500:
+                {
+                    tcm_init(BAUD_62500);
+                    //tcm_rx_flush();
+                    //tcm_tx_flush();
+                    tcm.speed = BAUD_62500;
+                    break;
+                }
+                case SCI_SPEED_BAUD_125000:
+                {
+                    tcm_init(BAUD_125000);
+                    //tcm_rx_flush();
+                    //tcm_tx_flush();
+                    tcm.speed = BAUD_125000;
+                    break;
+                }
             }
         }
-        else // disable PCM
+
+        tcm.bus_settings = sci_settings;
+        EEPROM.update(0x25, tcm.bus_settings);
+        cbi(pcm.bus_settings, SCI_STATE_BIT);
+        EEPROM.update(0x24, pcm.bus_settings);
+        uint8_t ret[1] = { tcm.bus_settings };
+        send_usb_packet(bus_usb, settings, set_sci_bus, ret, sizeof(ret));
+    }
+    else // PCM
+    {
+        if (sci_settings & (1 << SCI_STATE_BIT))
+        {
+            pcm.enabled = true;
+            tcm.enabled = false;
+        }
+        else
         {
             pcm.enabled = false;
-            
+
+            // Disable all PCM switches.
             digitalWrite(A_PCM_RX_EN, LOW); // SCI-BUS_A_PCM_RX disabled
             digitalWrite(A_PCM_TX_EN, LOW); // SCI-BUS_A_PCM_TX disabled
             digitalWrite(B_PCM_RX_EN, LOW); // SCI-BUS_B_PCM_RX disabled
             digitalWrite(B_PCM_TX_EN, LOW); // SCI-BUS_B_PCM_TX disabled
         }
 
-        if ((tcm.bus_settings >> 4) & 0x01) // enable TCM
+        if (pcm.enabled)
         {
-            tcm.enabled = true;
-            
-            if ((tcm.bus_settings >> 3) & 0x01) // inverted logic signal
+            if (sci_settings & (1 << SCI_NGC_BIT))
             {
-                tcm.invert_logic = true;
+                pcm.ngc_mode = true;
             }
-            else // non-inverted logic signal
+            else
             {
-                tcm.invert_logic = false;
+                pcm.ngc_mode = false;
             }
 
-            if ((tcm.bus_settings >> 2) & 0x01) // configuration "B"
+            // Disable all TCM switches.
+            digitalWrite(A_TCM_RX_EN, LOW);  // SCI-BUS_A_TCM_RX disabled
+            digitalWrite(A_TCM_TX_EN, LOW);  // SCI-BUS_A_TCM_TX disabled
+            digitalWrite(B_TCM_RX_EN, LOW);  // SCI-BUS_B_TCM_RX disabled
+            digitalWrite(B_TCM_TX_EN, LOW);  // SCI-BUS_B_TCM_TX disabled
+
+            if (sci_settings & (1 << SCI_CONFIG_BIT)) // B-configuration
             {
-                // Disable all A-configuration pins first
                 digitalWrite(A_PCM_RX_EN, LOW);  // SCI-BUS_A_PCM_RX disabled
                 digitalWrite(A_PCM_TX_EN, LOW);  // SCI-BUS_A_PCM_TX disabled
-                digitalWrite(A_TCM_RX_EN, LOW);  // SCI-BUS_A_TCM_RX disabled
-                digitalWrite(A_TCM_TX_EN, LOW);  // SCI-BUS_A_TCM_TX disabled
-                // Enable B-configuration pins for TCM (PCM pins don't interfere here)
-                digitalWrite(B_TCM_RX_EN, HIGH); // SCI-BUS_B_TCM_RX enabled
-                digitalWrite(B_TCM_TX_EN, HIGH); // SCI-BUS_B_TCM_TX enabled
+                digitalWrite(B_PCM_RX_EN, HIGH); // SCI-BUS_B_PCM_RX enabled
+                digitalWrite(B_PCM_TX_EN, HIGH); // SCI-BUS_B_PCM_TX enabled
             }
-            else // configuration "A"
+            else // A-configuration
             {
-                pcm.enabled = false; // PCM pins interfere with TCM pins in configuration "A"
-                cbi(pcm.bus_settings, 4); // clear 4th enable bit
-                
-                // Disable all B-configuration pins first
                 digitalWrite(B_PCM_RX_EN, LOW);  // SCI-BUS_B_PCM_RX disabled
                 digitalWrite(B_PCM_TX_EN, LOW);  // SCI-BUS_B_PCM_TX disabled
-                digitalWrite(B_TCM_RX_EN, LOW);  // SCI-BUS_B_TCM_RX disabled
-                digitalWrite(B_TCM_TX_EN, LOW);  // SCI-BUS_B_TCM_TX disabled
-                // Disable A-configuration pins for PCM first, they interfere
-                digitalWrite(A_PCM_RX_EN, LOW);  // SCI-BUS_A_PCM_RX disabled
-                digitalWrite(A_PCM_TX_EN, LOW);  // SCI-BUS_A_PCM_TX disabled
-                // Enable A-configuration pins for TCM
-                digitalWrite(A_TCM_RX_EN, HIGH); // SCI-BUS_A_TCM_RX enabled
-                digitalWrite(A_TCM_TX_EN, HIGH); // SCI-BUS_A_TCM_TX enabled
+                digitalWrite(A_PCM_RX_EN, HIGH); // SCI-BUS_A_PCM_RX enabled
+                digitalWrite(A_PCM_TX_EN, HIGH); // SCI-BUS_A_PCM_TX enabled
             }
 
-            if ((tcm.bus_settings & 0x03) == 0x00) // 976.5 baud
+            if (sci_settings & (1 << SCI_LOGIC_BIT)) // inverted logic
             {
-                tcm_init(ELBAUD);
-                //tcm_rx_flush();
-                //tcm_tx_flush();
-                tcm.speed = ELBAUD;
+                pcm.inverted_logic = true;
             }
-            else if ((tcm.bus_settings & 0x03) == 0x01) // 7812.5 baud
+            else // non-inverted logic
             {
-                tcm_init(LOBAUD);
-                //tcm_rx_flush();
-                //tcm_tx_flush();
-                tcm.speed = LOBAUD;
+                pcm.inverted_logic = false;
             }
-            else if ((tcm.bus_settings & 0x03) == 0x02) // 62500 baud
+
+            switch (sci_settings & SCI_SPEED_BITS)
             {
-                tcm_init(HIBAUD);
-                //tcm_rx_flush();
-                //tcm_tx_flush();
-                tcm.speed = HIBAUD;
-            }
-            else if ((tcm.bus_settings & 0x03) == 0x03) // 125000 baud
-            {
-                tcm_init(EHBAUD);
-                //tcm_rx_flush();
-                //tcm_tx_flush();
-                tcm.speed = EHBAUD;
-            }
-            else // 7812.5 baud
-            {
-                tcm_init(LOBAUD);
-                //tcm_rx_flush();
-                //tcm_tx_flush();
-                tcm.speed = LOBAUD;
+                case SCI_SPEED_BAUD_976:
+                {
+                    pcm_init(BAUD_976);
+                    //pcm_rx_flush();
+                    //pcm_tx_flush();
+                    pcm.speed = BAUD_976;
+                    break;
+                }
+                case SCI_SPEED_BAUD_7812:
+                {
+                    pcm_init(BAUD_7812);
+                    //pcm_rx_flush();
+                    //pcm_tx_flush();
+                    pcm.speed = BAUD_7812;
+                    break;
+                }
+                case SCI_SPEED_BAUD_62500:
+                {
+                    pcm_init(BAUD_62500);
+                    //pcm_rx_flush();
+                    //pcm_tx_flush();
+                    pcm.speed = BAUD_62500;
+                    break;
+                }
+                case SCI_SPEED_BAUD_125000:
+                {
+                    pcm_init(BAUD_125000);
+                    //pcm_rx_flush();
+                    //pcm_tx_flush();
+                    pcm.speed = BAUD_125000;
+                    break;
+                }
             }
         }
-        else // disable TCM
-        {
-            tcm.enabled = false;
-            
-            digitalWrite(A_TCM_RX_EN, LOW); // SCI-BUS_A_TCM_RX disabled
-            digitalWrite(A_TCM_TX_EN, LOW); // SCI-BUS_A_TCM_TX disabled
-            digitalWrite(B_TCM_RX_EN, LOW); // SCI-BUS_B_TCM_RX disabled
-            digitalWrite(B_TCM_TX_EN, LOW); // SCI-BUS_B_TCM_TX disabled
-        }
+
+        pcm.bus_settings = sci_settings;
+        EEPROM.update(0x24, pcm.bus_settings);
+        cbi(tcm.bus_settings, SCI_STATE_BIT);
+        EEPROM.update(0x25, tcm.bus_settings);
+        uint8_t ret[1] = { pcm.bus_settings };
+        send_usb_packet(bus_usb, settings, set_sci_bus, ret, sizeof(ret));
     }
-    else
-    {
-        if ((((data >> 6) & 0x03) == 0x02) && ((data >> 5) & 0x01)) // PCM && change settings
-        {
-            if ((data >> 4) & 0x01) // enable PCM
-            {
-                pcm.enabled = true;
-                
-                if ((data >> 3) & 0x01) // inverted logic signal
-                {
-                    pcm.invert_logic = true;
-                }
-                else // non-inverted logic signal
-                {
-                    pcm.invert_logic = false;
-                }
-    
-                if ((data >> 2) & 0x01) // configuration "B"
-                {
-                    // Disable all A-configuration pins first
-                    digitalWrite(A_PCM_RX_EN, LOW);  // SCI-BUS_A_PCM_RX disabled
-                    digitalWrite(A_PCM_TX_EN, LOW);  // SCI-BUS_A_PCM_TX disabled
-                    digitalWrite(A_TCM_RX_EN, LOW);  // SCI-BUS_A_TCM_RX disabled
-                    digitalWrite(A_TCM_TX_EN, LOW);  // SCI-BUS_A_TCM_TX disabled
-                    // Enable B-configuration pins for PCM (TCM pins don't interfere here)
-                    digitalWrite(B_PCM_RX_EN, HIGH); // SCI-BUS_B_PCM_RX enabled
-                    digitalWrite(B_PCM_TX_EN, HIGH); // SCI-BUS_B_PCM_TX enabled
-                }
-                else // configuration "A"
-                {
-                    tcm.enabled = false; // TCM pins interfere with PCM pins in configuration "A"
-                    cbi(tcm.bus_settings, 4); // clear 4th enable bit
-    
-                    // Disable all B-configuration pins first
-                    digitalWrite(B_PCM_RX_EN, LOW);  // SCI-BUS_B_PCM_RX disabled
-                    digitalWrite(B_PCM_TX_EN, LOW);  // SCI-BUS_B_PCM_TX disabled
-                    digitalWrite(B_TCM_RX_EN, LOW);  // SCI-BUS_B_TCM_RX disabled
-                    digitalWrite(B_TCM_TX_EN, LOW);  // SCI-BUS_B_TCM_TX disabled
-                    // Disable A-configuration pins for TCM first, they interfere
-                    digitalWrite(A_TCM_RX_EN, LOW);  // SCI-BUS_A_TCM_RX disabled
-                    digitalWrite(A_TCM_TX_EN, LOW);  // SCI-BUS_A_TCM_TX disabled
-                    // Enable A-configuration pins for PCM
-                    digitalWrite(A_PCM_RX_EN, HIGH); // SCI-BUS_A_PCM_RX enabled
-                    digitalWrite(A_PCM_TX_EN, HIGH); // SCI-BUS_A_PCM_TX enabled
-                }
-    
-                if ((data & 0x03) == 0x00) // 976.5 baud
-                {
-                    pcm_init(ELBAUD);
-                    //pcm_rx_flush();
-                    //pcm_tx_flush();
-                    pcm.speed = ELBAUD;
-                }
-                else if ((data & 0x03) == 0x01) // 7812.5 baud
-                {
-                    pcm_init(LOBAUD);
-                    //pcm_rx_flush();
-                    //pcm_tx_flush();
-                    pcm.speed = LOBAUD;
-                }
-                else if ((data & 0x03) == 0x02) // 62500 baud
-                {
-                    pcm_init(HIBAUD);
-                    //pcm_rx_flush();
-                    //pcm_tx_flush();
-                    pcm.speed = HIBAUD;
-                }
-                else if ((data & 0x03) == 0x03) // 125000 baud
-                {
-                    pcm_init(EHBAUD);
-                    //pcm_rx_flush();
-                    //pcm_tx_flush();
-                    pcm.speed = EHBAUD;
-                }
-                else // 7812.5 baud
-                {
-                    pcm_init(LOBAUD);
-                    //pcm_rx_flush();
-                    //pcm_tx_flush();
-                    pcm.speed = LOBAUD;
-                }
-            }
-            else // disable PCM
-            {
-                pcm.enabled = false;
-                
-                digitalWrite(A_PCM_RX_EN, LOW); // SCI-BUS_A_PCM_RX disabled
-                digitalWrite(A_PCM_TX_EN, LOW); // SCI-BUS_A_PCM_TX disabled
-                digitalWrite(B_PCM_RX_EN, LOW); // SCI-BUS_B_PCM_RX disabled
-                digitalWrite(B_PCM_TX_EN, LOW); // SCI-BUS_B_PCM_TX disabled
-            }
-    
-            pcm.bus_settings = data; // copy settings to the PCM bus settings variable
-            cbi(pcm.bus_settings, 5); // clear 5th change bit, it's only applicable for this function
-        }
-    
-        else if ((((data >> 6) & 0x03) == 0x03) && ((data >> 5) & 0x01)) // TCM && change settings
-        {
-            if ((data >> 4) & 0x01) // enable TCM
-            {
-                tcm.enabled = true;
-                
-                if ((data >> 3) & 0x01) // inverted logic signal
-                {
-                    tcm.invert_logic = true;
-                }
-                else // non-inverted logic signal
-                {
-                    tcm.invert_logic = false;
-                }
-    
-                if ((data >> 2) & 0x01) // configuration "B"
-                {
-                    // Disable all A-configuration pins first
-                    digitalWrite(A_PCM_RX_EN, LOW);  // SCI-BUS_A_PCM_RX disabled
-                    digitalWrite(A_PCM_TX_EN, LOW);  // SCI-BUS_A_PCM_TX disabled
-                    digitalWrite(A_TCM_RX_EN, LOW);  // SCI-BUS_A_TCM_RX disabled
-                    digitalWrite(A_TCM_TX_EN, LOW);  // SCI-BUS_A_TCM_TX disabled
-                    // Enable B-configuration pins for TCM (PCM pins don't interfere here)
-                    digitalWrite(B_TCM_RX_EN, HIGH); // SCI-BUS_B_TCM_RX enabled
-                    digitalWrite(B_TCM_TX_EN, HIGH); // SCI-BUS_B_TCM_TX enabled
-                }
-                else // configuration "A"
-                {
-                    pcm.enabled = false; // PCM pins interfere with TCM pins in configuration "A"
-                    cbi(pcm.bus_settings, 4); // clear 4th enable bit
-                    
-                    // Disable all B-configuration pins first
-                    digitalWrite(B_PCM_RX_EN, LOW);  // SCI-BUS_B_PCM_RX disabled
-                    digitalWrite(B_PCM_TX_EN, LOW);  // SCI-BUS_B_PCM_TX disabled
-                    digitalWrite(B_TCM_RX_EN, LOW);  // SCI-BUS_B_TCM_RX disabled
-                    digitalWrite(B_TCM_TX_EN, LOW);  // SCI-BUS_B_TCM_TX disabled
-                    // Disable A-configuration pins for PCM first, they interfere
-                    digitalWrite(A_PCM_RX_EN, LOW);  // SCI-BUS_A_PCM_RX disabled
-                    digitalWrite(A_PCM_TX_EN, LOW);  // SCI-BUS_A_PCM_TX disabled
-                    // Enable A-configuration pins for TCM
-                    digitalWrite(A_TCM_RX_EN, HIGH); // SCI-BUS_A_TCM_RX enabled
-                    digitalWrite(A_TCM_TX_EN, HIGH); // SCI-BUS_A_TCM_TX enabled
-                }
-    
-                if ((data & 0x03) == 0x00) // 976.5 baud
-                {
-                    tcm_init(ELBAUD);
-                    //tcm_rx_flush();
-                    //tcm_tx_flush();
-                    tcm.speed = ELBAUD;
-                }
-                else if ((data & 0x03) == 0x01) // 7812.5 baud
-                {
-                    tcm_init(LOBAUD);
-                    //tcm_rx_flush();
-                    //tcm_tx_flush();
-                    tcm.speed = LOBAUD;
-                }
-                else if ((data & 0x03) == 0x02) // 62500 baud
-                {
-                    tcm_init(HIBAUD);
-                    //tcm_rx_flush();
-                    //tcm_tx_flush();
-                    tcm.speed = HIBAUD;
-                }
-                else if ((data & 0x03) == 0x03) // 125000 baud
-                {
-                    tcm_init(EHBAUD);
-                    //tcm_rx_flush();
-                    //tcm_tx_flush();
-                    tcm.speed = EHBAUD;
-                }
-                else // 7812.5 baud
-                {
-                    tcm_init(LOBAUD);
-                    //tcm_rx_flush();
-                    //tcm_tx_flush();
-                    tcm.speed = LOBAUD;
-                }
-            }
-            else // disable TCM
-            {
-                tcm.enabled = false;
-                
-                digitalWrite(A_TCM_RX_EN, LOW); // SCI-BUS_A_TCM_RX disabled
-                digitalWrite(A_TCM_TX_EN, LOW); // SCI-BUS_A_TCM_TX disabled
-                digitalWrite(B_TCM_RX_EN, LOW); // SCI-BUS_B_TCM_RX disabled
-                digitalWrite(B_TCM_TX_EN, LOW); // SCI-BUS_B_TCM_TX disabled
-            }
-    
-            tcm.bus_settings = data; // copy settings to the TCM bus settings variable
-            cbi(tcm.bus_settings, 5); // clear 5th change bit, it's only applicable for this function
-        }
-    }
-
-    EEPROM.update(0x24, pcm.bus_settings);
-    EEPROM.update(0x25, tcm.bus_settings);
-
-    uint8_t ret[2];
-    ret[0] = 0x00;
-    ret[1] = pcm.bus_settings;
-    send_usb_packet(bus_usb, settings, set_sci_bus, ret, 2); // acknowledge
-    ret[0] = 0x00;
-    ret[1] = tcm.bus_settings;
-    send_usb_packet(bus_usb, settings, set_sci_bus, ret, 2); // acknowledge
 }
 
 /*************************************************************************
@@ -4356,71 +4238,13 @@ void handle_usb_data(void)
                                     }
                                     case set_ccd_bus: // 0x02 - bus state and termination/bias setting
                                     {
-                                        if (!payload_bytes || (payload_length < 2))
+                                        if (!payload_bytes) // at least 1 byte is necessary to change this setting
                                         {
                                             send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
                                             break;
                                         }
-                                        switch (cmd_payload[0])
-                                        {
-                                            case 0x00: // disable ccd-bus transceiver
-                                            {
-                                                ccd.enabled = false;
-                                                cbi(ccd.bus_settings, 4); // clear enabled bit
-                                                //ccd_clock_generator(STOP);
-                                                //ccd_rx_flush();
-                                                //ccd_tx_flush();
-                                                break;
-                                            }
-                                            case 0x01: // enable ccd-bus transceiver
-                                            {
-                                                ccd.enabled = true;
-                                                sbi(ccd.bus_settings, 4); // set enabled bit
-                                                //ccd_clock_generator(START);
-                                                break;
-                                            }
-                                            default: // other values are not valid
-                                            {
-                                                send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // error
-                                                break;
-                                            }
-                                        }
 
-                                        switch (cmd_payload[1])
-                                        {
-                                            case 0x00:
-                                            {
-                                                ccd.termination_bias_enabled = false;
-                                                cbi(ccd.bus_settings, 2); // clear TB bit
-                                                digitalWrite(TBEN, HIGH);
-                                                break;
-                                            }
-                                            case 0x01:
-                                            {
-                                                ccd.termination_bias_enabled = true;
-                                                sbi(ccd.bus_settings, 2); // set TB bit
-                                                digitalWrite(TBEN, LOW);
-                                                break;
-                                            }
-                                            default:
-                                            {
-                                                send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // error
-                                                break;
-                                            }
-                                        }
-
-                                        // Set CCD-bus label bits.
-                                        cbi(ccd.bus_settings, 7); // clear id bit
-                                        sbi(ccd.bus_settings, 6); // set id bit
-
-                                        // Speed is always 7812.5 baud.
-                                        cbi(ccd.bus_settings, 1); // clear speed bit
-                                        sbi(ccd.bus_settings, 0); // set speed bit
-
-                                        EEPROM.update(0x23, ccd.bus_settings); // write CCD-bus settings
-
-                                        uint8_t ret[3] = { 0x00, cmd_payload[0], cmd_payload[1] };
-                                        send_usb_packet(bus_usb, settings, set_ccd_bus, ret, 3); // acknowledge
+                                        configure_ccd_bus(cmd_payload[0]); // pass settings to the configuration function
                                         break;
                                     }
                                     case set_sci_bus: // 0x03 - ON-OFF state, A/B configuration and speed are stored in payload
@@ -4431,7 +4255,7 @@ void handle_usb_data(void)
                                             break;
                                         }
                                         
-                                        configure_sci_bus(cmd_payload[0]); // pass settings to this function, it handles both PCM and TCM but only one at a time!
+                                        configure_sci_bus(cmd_payload[0]); // pass settings to the configuration function
                                         break;
                                     }
                                     case set_repeat_behavior: // 0x04
@@ -6013,7 +5837,7 @@ void handle_sci_data(void)
     if (pcm.enabled)
     {
         // Handle completed messages
-        if (pcm.speed == LOBAUD) // handle low-speed mode first (7812.5 baud)
+        if (pcm.speed == BAUD_7812) // handle low-speed mode first (7812.5 baud)
         {
             if ((pcm.echo_received || pcm.response_received || pcm.actuator_test_running || pcm.ls_request_running) && (pcm_rx_available() > 0))
             {
@@ -6094,8 +5918,7 @@ void handle_sci_data(void)
 
                 if (pcm.message[0] == 0x12) // pay attention to special bytes (speed change)
                 {
-                    sbi(pcm.bus_settings, 5); // set change settings bit
-                    sbi(pcm.bus_settings, 4); // set enable bit
+                    sbi(pcm.bus_settings, 7); // set enable bit
                     sbi(pcm.bus_settings, 1); // set/clear speed bits (62500 baud)
                     cbi(pcm.bus_settings, 0); // set/clear speed bits (62500 baud)
                     configure_sci_bus(pcm.bus_settings);
@@ -6194,7 +6017,7 @@ void handle_sci_data(void)
                 pcm.msg_rx_count++;
             }
         }
-        else if (pcm.speed == HIBAUD) // handle high-speed mode (62500 baud), no need to wait for message completion here, it is already handled when the message was sent
+        else if (pcm.speed == BAUD_62500) // handle high-speed mode (62500 baud), no need to wait for message completion here, it is already handled when the message was sent
         {
             if ((pcm.echo_received || pcm.response_received || ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_BTSTRP_DLY)) && (pcm_rx_available() > 0))
             {
@@ -6277,8 +6100,7 @@ void handle_sci_data(void)
 
                 if (usb_msg[0] == 0xFE) // pay attention to special bytes (speed change)
                 {
-                    sbi(pcm.bus_settings, 5); // set change settings bit
-                    sbi(pcm.bus_settings, 4); // set enable bit
+                    sbi(pcm.bus_settings, 7); // set enable bit
                     cbi(pcm.bus_settings, 1); // set/clear speed bits (7812.5 baud)
                     sbi(pcm.bus_settings, 0); // set/clear speed bits (7812.5 baud)
                     configure_sci_bus(pcm.bus_settings);
@@ -6537,7 +6359,7 @@ void handle_sci_data(void)
         // Send message
         if (pcm.msg_tx_pending && (pcm_rx_available() == 0))
         {
-            if (pcm.speed == LOBAUD) // low speed mode (7812.5 baud), half-duplex mode approach
+            if (pcm.speed == BAUD_7812) // low speed mode (7812.5 baud), half-duplex mode approach
             {
                 if (pcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                 {
@@ -6667,7 +6489,7 @@ void handle_sci_data(void)
                     }
                 }
             }
-            else if (pcm.speed == HIBAUD) // high speed mode (62500 baud), full-duplex mode approach
+            else if (pcm.speed == BAUD_62500) // high speed mode (62500 baud), full-duplex mode approach
             {
                 if (pcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                 {
@@ -6946,7 +6768,7 @@ void handle_sci_data(void)
     if (tcm.enabled)
     {
         // Handle completed messages
-        if (tcm.speed == LOBAUD) // handle low-speed mode first (7812.5 baud)
+        if (tcm.speed == BAUD_7812) // handle low-speed mode first (7812.5 baud)
         {
             if ((tcm.echo_received || tcm.response_received) && (tcm_rx_available() > 0))
             {
@@ -7064,7 +6886,7 @@ void handle_sci_data(void)
                 tcm.msg_rx_count++;
             }
         }
-        else if (tcm.speed == HIBAUD) // handle high-speed mode (62500 baud), no need to wait for message completion here, it is already handled when the message was sent
+        else if (tcm.speed == BAUD_62500) // handle high-speed mode (62500 baud), no need to wait for message completion here, it is already handled when the message was sent
         {
             if ((tcm.echo_received || tcm.response_received) && (tcm_rx_available() > 0))
             {
@@ -7373,7 +7195,7 @@ void handle_sci_data(void)
         // Send message
         if (tcm.msg_tx_pending && (tcm_rx_available() == 0))
         {
-            if (tcm.speed == LOBAUD) // low speed mode (7812.5 baud), half-duplex mode approach
+            if (tcm.speed == BAUD_7812) // low speed mode (7812.5 baud), half-duplex mode approach
             {
                 if (tcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                 {
@@ -7503,7 +7325,7 @@ void handle_sci_data(void)
                     }
                 }
             }
-            else if (tcm.speed == HIBAUD) // high speed mode (7812.5 baud), full-duplex mode approach
+            else if (tcm.speed == BAUD_62500) // high speed mode (7812.5 baud), full-duplex mode approach
             {
                 uint8_t echo_retry_counter = 0;
                 
@@ -7830,12 +7652,12 @@ void setup()
     pinMode(B_TCM_RX_EN, OUTPUT);
     pinMode(B_TCM_TX_EN, OUTPUT);
 
-    usb_init(USBBAUD);// 250000 baud, an external serial monitor should have the same speed
+    usb_init(BAUD_250000);// an external serial monitor should have the same speed
     eep_init(); // initialize external EEPROM chip
     load_settings(); // load settings
     ccd_init(); // 7812.5 baud
-    pcm_init(LOBAUD); // 7812.5 baud
-    tcm_init(LOBAUD); // 7812.5 baud
+    pcm_init(BAUD_7812); // 7812.5 baud
+    tcm_init(BAUD_7812); // 7812.5 baud
     lcd_init(); // initialize external LCD
 
     if (lcd_enabled)
@@ -7881,7 +7703,8 @@ void setup()
     tcm_tx_flush();
 
     send_usb_packet(bus_usb, reset, reset_done, ack, 1); // scanner ready
-    configure_sci_bus(); // apply last saved sci-bus settings for PCM and TCM
+    
+    configure_sci_bus(pcm.bus_settings); // apply last saved sci-bus settings for PCM
     send_hwfw_info(); // send hardware/firmware information to laptop
     send_status(); // send status
     wdt_enable(WDTO_2S); // enable watchdog timer that resets program if its timer reaches 2 seconds (useful if the code hangs for some reason and needs auto-reset)

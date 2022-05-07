@@ -113,7 +113,7 @@
             this.SCIBusEraseFaultCodesButton = new System.Windows.Forms.Button();
             this.SCIBusOBDConfigurationComboBox = new System.Windows.Forms.ComboBox();
             this.SCIBusOBDConfigurationLabel = new System.Windows.Forms.Label();
-            this.SCIBusOBD1EngineCableCheckBox = new System.Windows.Forms.CheckBox();
+            this.SCIBusInvertedLogicCheckBox = new System.Windows.Forms.CheckBox();
             this.SCIBusModuleConfigSpeedApplyButton = new System.Windows.Forms.Button();
             this.SCIBusSpeedComboBox = new System.Windows.Forms.ComboBox();
             this.SCIBusSpeedLabel = new System.Windows.Forms.Label();
@@ -1020,7 +1020,7 @@
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusEraseFaultCodesButton);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusOBDConfigurationComboBox);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusOBDConfigurationLabel);
-            this.SCIBusControlTabPage.Controls.Add(this.SCIBusOBD1EngineCableCheckBox);
+            this.SCIBusControlTabPage.Controls.Add(this.SCIBusInvertedLogicCheckBox);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusModuleConfigSpeedApplyButton);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusSpeedComboBox);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusSpeedLabel);
@@ -1108,15 +1108,15 @@
             this.SCIBusOBDConfigurationLabel.TabIndex = 0;
             this.SCIBusOBDConfigurationLabel.Text = "OBD config.:";
             // 
-            // SCIBusOBD1EngineCableCheckBox
+            // SCIBusInvertedLogicCheckBox
             // 
-            this.SCIBusOBD1EngineCableCheckBox.AutoSize = true;
-            this.SCIBusOBD1EngineCableCheckBox.Location = new System.Drawing.Point(161, 195);
-            this.SCIBusOBD1EngineCableCheckBox.Name = "SCIBusOBD1EngineCableCheckBox";
-            this.SCIBusOBD1EngineCableCheckBox.Size = new System.Drawing.Size(119, 17);
-            this.SCIBusOBD1EngineCableCheckBox.TabIndex = 18;
-            this.SCIBusOBD1EngineCableCheckBox.Text = "OBD1 engine cable";
-            this.SCIBusOBD1EngineCableCheckBox.UseVisualStyleBackColor = true;
+            this.SCIBusInvertedLogicCheckBox.AutoSize = true;
+            this.SCIBusInvertedLogicCheckBox.Location = new System.Drawing.Point(161, 195);
+            this.SCIBusInvertedLogicCheckBox.Name = "SCIBusInvertedLogicCheckBox";
+            this.SCIBusInvertedLogicCheckBox.Size = new System.Drawing.Size(90, 17);
+            this.SCIBusInvertedLogicCheckBox.TabIndex = 18;
+            this.SCIBusInvertedLogicCheckBox.Text = "Inverted logic";
+            this.SCIBusInvertedLogicCheckBox.UseVisualStyleBackColor = true;
             // 
             // SCIBusModuleConfigSpeedApplyButton
             // 
@@ -1846,7 +1846,7 @@
         private System.Windows.Forms.ComboBox SCIBusSpeedComboBox;
         private System.Windows.Forms.Label SCIBusSpeedLabel;
         private System.Windows.Forms.Button SCIBusModuleConfigSpeedApplyButton;
-        private System.Windows.Forms.CheckBox SCIBusOBD1EngineCableCheckBox;
+        private System.Windows.Forms.CheckBox SCIBusInvertedLogicCheckBox;
         private System.Windows.Forms.ComboBox SCIBusOBDConfigurationComboBox;
         private System.Windows.Forms.Label SCIBusOBDConfigurationLabel;
         private System.Windows.Forms.TabPage LCDControlTabPage;
