@@ -1,7 +1,7 @@
 /*
  * ChryslerCCDSCIScanner (https://github.com/laszlodaniel/ChryslerCCDSCIScanner)
  * Copyright (C) 2018-2022, Daniel Laszlo
- *
+ *i
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 09: minor
-// 02: patch
+// 03: patch
 // (00: revision)
-// = v0.9.2(.0)
-#define FW_VERSION 0x00090200
+// = v0.9.3(.0)
+#define FW_VERSION 0x00090300
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x0009020062763A12
+#define FW_DATE 0x0009030062906347
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -309,8 +309,6 @@ typedef struct {
     uint32_t ls_request_last_millis = 0;
     bool repeat = false;
     bool repeat_next = false;
-    bool repeat_iterate = false;
-    bool repeat_iterate_continue = false;
     bool repeat_list_once = false;
     bool repeat_stop = true;
     uint16_t repeated_msg_length = 0;
@@ -588,14 +586,14 @@ void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
     // 2 = unexpected response to magic byte
     // 3 = security seed response timeout
     // 4 = security seed response checksum error
-    // 5 = security seed solution status timeout
-    // 6 = security seed solution not accepted
+    // 5 = security key status timeout
+    // 6 = security key not accepted
     // 7 = start bootloader timeout
     // 8 = unexpected bootloader status byte
 
     uint8_t buff[16];
     uint8_t checksum = 0;
-    bool seed_required = true;
+    bool key_required = true;
 
     wdt_reset(); // feed the watchdog
     pcm_rx_flush();
@@ -643,7 +641,7 @@ void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
     {
         if ((pcm_rx_available() == 5) && (pcm_peek(0) == 0xDB) && (pcm_peek(1) == 0x2F) && (pcm_peek(2) == 0xD8) && (pcm_peek(3) == 0x3E) && (pcm_peek(4) == 0x23))
         {
-            seed_required = false;
+            key_required = false;
         }
         else
         {
@@ -654,7 +652,7 @@ void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
         }
     }
 
-    if (seed_required)
+    if (key_required)
     {
         // Read security seed response.
         for (uint8_t i = 0; i < 7; i++)
@@ -664,14 +662,14 @@ void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
             if (i < 6) checksum += buff[i]; // calculate checksum
         }
 
-        uint8_t seed_solution[2];
+        uint8_t key[2];
 
         // Evaluate seed response message and solve the puzzle.
         if ((buff[0] == 0x26) && (buff[1] == 0xD0) && (buff[2] == 0x67) && (buff[3] == 0xC1) && (buff[6] == checksum))
         {
             uint16_t data = solve_sbec3_bootstrap_seed(to_uint16(buff[4], buff[5]));
-            seed_solution[0] = (data >> 8) & 0xFF;
-            seed_solution[1] = data & 0xFF;
+            key[0] = (data >> 8) & 0xFF;
+            key[1] = data & 0xFF;
         }
         else
         {
@@ -681,17 +679,17 @@ void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
             return;
         }
 
-        uint8_t send_seed_solution_cmd[7] = { 0x24, 0xD0, 0x27, 0xC2, seed_solution[0], seed_solution[1], 0 };
-        send_seed_solution_cmd[6] = calculate_checksum(send_seed_solution_cmd, 0, ARRAY_SIZE(send_seed_solution_cmd) - 1);
+        uint8_t send_key_cmd[7] = { 0x24, 0xD0, 0x27, 0xC2, key[0], key[1], 0 };
+        send_key_cmd[6] = calculate_checksum(send_key_cmd, 0, ARRAY_SIZE(send_key_cmd) - 1);
 
         wdt_reset(); // feed the watchdog
         pcm_rx_flush();
         pcm.last_byte_millis = millis();
 
-        // Write security seed solution message.
-        for (uint8_t i = 0; i < ARRAY_SIZE(send_seed_solution_cmd); i++)
+        // Write security key message.
+        for (uint8_t i = 0; i < ARRAY_SIZE(send_key_cmd); i++)
         {
-            pcm_putc(send_seed_solution_cmd[i]);
+            pcm_putc(send_key_cmd[i]);
         }
 
         while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_BTSTRP_DLY); // wait for response
@@ -704,13 +702,13 @@ void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
             return;
         }
 
-        // Read seed solution status.
+        // Read security key status.
         for (uint8_t i = 0; i < 5; i++)
         {
             buff[i] = pcm_getc() & 0xFF;
         }
 
-        // Seed solution not accepted.
+        // Key not accepted.
         if (!((buff[0] == 0x26) && (buff[1] == 0xD0) && (buff[2] == 0x67) && (buff[3] == 0xC2) && (buff[4] == 0x1F)))
         {
             ret[0] = 6;
@@ -3783,10 +3781,12 @@ Purpose:  gather hardware version/date, assembly date and firmware date
 **************************************************************************/
 void send_hwfw_info(void)
 {
-    uint8_t ret[30];
+    uint8_t ret[32];
                                     
     ret[0] = hw_version[0];
     ret[1] = hw_version[1];
+    ret[2] = hw_version[2];
+    ret[3] = hw_version[3];
     
     ret[2] = hw_date[0];
     ret[3] = hw_date[1];
@@ -3820,7 +3820,7 @@ void send_hwfw_info(void)
     ret[28] = (FW_VERSION >> 8) & 0xFF;
     ret[29] = FW_VERSION & 0xFF;
 
-    send_usb_packet(bus_usb, response, hwfw_info, ret, 30);
+    send_usb_packet(bus_usb, response, hwfw_info, ret, 32);
 }
 
 /*************************************************************************
@@ -3940,9 +3940,9 @@ void check_battery_volts(void)
     }
     
     battery_adc /= 128; // divide the sum by 128 to get average value
-    battery_volts = (uint16_t)(battery_adc*(adc_supply_voltage/100.0)/adc_max_value*((double)rd_high_value+(double)rd_low_value)/(double)rd_low_value*100.0); // resistor divider equation
+    battery_volts = (uint16_t)(battery_adc*(adc_supply_voltage/100.0)/adc_max_value*((double)rd_high_value+(double)rd_low_value)/(double)rd_low_value*1000.0); // resistor divider equation
     
-    if (battery_volts < 600) // battery_volts < 6V
+    if (battery_volts < 6000) // battery_volts < 6V
     {
         battery_volts_array[0] = 0; // workaround if scanner's power switch is at OFF position and analog pin is floating
         battery_volts_array[1] = 0;
@@ -4232,8 +4232,8 @@ void handle_usb_data(void)
                                         EEPROM.update(0x21, cmd_payload[2]); // write LED blink duration high byte
                                         EEPROM.update(0x22, cmd_payload[3]); // write LED blink duration low byte
 
-                                        uint8_t ret[5] = { 0x00, cmd_payload[0], cmd_payload[1], cmd_payload[2], cmd_payload[3] };
-                                        send_usb_packet(bus_usb, settings, heartbeat, ret, 5); // acknowledge
+                                        uint8_t ret[4] = { cmd_payload[0], cmd_payload[1], cmd_payload[2], cmd_payload[3] };
+                                        send_usb_packet(bus_usb, settings, heartbeat, ret, 4); // acknowledge
                                         break;
                                     }
                                     case set_ccd_bus: // 0x02 - bus state and termination/bias setting
@@ -4260,7 +4260,7 @@ void handle_usb_data(void)
                                     }
                                     case set_repeat_behavior: // 0x04
                                     {
-                                        if (!payload_bytes || (payload_length < 5))
+                                        if (!payload_bytes || (payload_length < 3))
                                         {
                                             send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
                                             break;
@@ -4271,19 +4271,16 @@ void handle_usb_data(void)
                                             case 0x01: // CCD-bus
                                             {
                                                 ccd.repeated_msg_interval = to_uint16(cmd_payload[1], cmd_payload[2]); // 0-65535 milliseconds
-                                                ccd.repeated_msg_increment = to_uint16(cmd_payload[3], cmd_payload[4]); // 0-65535
                                                 break;
                                             }
                                             case 0x02: // SCI-bus (PCM)
                                             {
                                                 pcm.repeated_msg_interval = to_uint16(cmd_payload[1], cmd_payload[2]); // 0-65535 milliseconds
-                                                pcm.repeated_msg_increment = to_uint16(cmd_payload[3], cmd_payload[4]); // 0-65535
                                                 break;
                                             }
                                             case 0x03: // SCI-bus (TCM)
                                             {
                                                 tcm.repeated_msg_interval = to_uint16(cmd_payload[1], cmd_payload[2]); // 0-65535 milliseconds
-                                                tcm.repeated_msg_increment = to_uint16(cmd_payload[3], cmd_payload[4]); // 0-65535
                                                 break;
                                             }
                                             default:
@@ -4293,8 +4290,8 @@ void handle_usb_data(void)
                                             }
                                         }
 
-                                        uint8_t ret[6] = { 0x00, cmd_payload[0], cmd_payload[1], cmd_payload[2], cmd_payload[3], cmd_payload[4] };
-                                        send_usb_packet(bus_usb, settings, set_repeat_behavior, ret, 6); // acknowledge
+                                        uint8_t ret[3] = { cmd_payload[0], cmd_payload[1], cmd_payload[2] };
+                                        send_usb_packet(bus_usb, settings, set_repeat_behavior, ret, 3); // acknowledge
                                         break;
                                     }
                                     case set_lcd: // 0x05 - LCD settings
@@ -4361,8 +4358,8 @@ void handle_usb_data(void)
                                             lcd_splash_screen_on = false;
                                         }
                                         
-                                        uint8_t ret[8] = { 0x00, cmd_payload[0], lcd_i2c_address, lcd_char_width, lcd_char_height, lcd_refresh_rate, lcd_units, lcd_data_source };
-                                        send_usb_packet(bus_usb, settings, set_lcd, ret, 8); // acknowledge
+                                        uint8_t ret[7] = { cmd_payload[0], lcd_i2c_address, lcd_char_width, lcd_char_height, lcd_refresh_rate, lcd_units, lcd_data_source };
+                                        send_usb_packet(bus_usb, settings, set_lcd, ret, 7); // acknowledge
                                         break;
                                     }
                                     default: // other values are not used
@@ -4430,8 +4427,8 @@ void handle_usb_data(void)
                                                 ccd.random_msg_interval_max = 0;
                                                 ccd.random_msg_interval = 0;
 
-                                                uint8_t ret[2] = { 0x00, cmd_payload[0] };
-                                                send_usb_packet(bus_usb, debug, random_ccd_msg, ret, 2); // acknowledge
+                                                uint8_t ret[1] = { cmd_payload[0] };
+                                                send_usb_packet(bus_usb, debug, random_ccd_msg, ret, 1); // acknowledge
                                                 break;
                                             }
                                             case 0x01:
@@ -4442,8 +4439,8 @@ void handle_usb_data(void)
                                                 ccd.random_msg_interval_max = to_uint16(cmd_payload[3], cmd_payload[4]);
                                                 ccd.random_msg_interval = random(ccd.random_msg_interval_min, ccd.random_msg_interval_max);
 
-                                                uint8_t ret[2] = { 0x00, cmd_payload[0] };
-                                                send_usb_packet(bus_usb, debug, random_ccd_msg, ret, 2); // acknowledge
+                                                uint8_t ret[1] = { cmd_payload[0] };
+                                                send_usb_packet(bus_usb, debug, random_ccd_msg, ret, 1); // acknowledge
                                                 break;
                                             }
                                             default:
@@ -4839,7 +4836,6 @@ void handle_usb_data(void)
                                     {
                                         ccd.repeat = false;
                                         ccd.repeat_next = false;
-                                        ccd.repeat_iterate = false;
                                         ccd.repeat_list_once = false;
                                         ccd.repeat_stop = true;
                                         ccd.msg_to_transmit_count = 0;
@@ -4848,11 +4844,12 @@ void handle_usb_data(void)
                                         ccd.repeated_msg_last_millis = 0;
                                         ccd.msg_buffer_ptr = 0;
 
-                                        uint8_t ret[2] = { 0x00, bus_ccd }; // improvised payload array with only 1 element which is the target bus
-                                        send_usb_packet(bus_usb, msg_tx, stop_msg_flow, ret, 2);
+                                        uint8_t ret[1] = { bus_ccd }; // improvised payload array with only 1 element which is the target bus
+                                        send_usb_packet(bus_usb, msg_tx, stop_msg_flow, ret, 1);
                                         break;
                                     }
                                     case single_msg: // 0x02 - send message to the CCD-bus once
+                                    case repeated_single_msg: // 0x04 - send a message to the CCD-bus repeatedly forever
                                     {
                                         if (!payload_bytes || (payload_length > 16))
                                         {
@@ -4868,135 +4865,43 @@ void handle_usb_data(void)
 
                                         ccd.msg_buffer_ptr = payload_length;
                                         
-                                        // Checksum is only applicable if message is at least 2 bytes long
+                                        // Checksum is only applicable if message is at least 2 bytes long.
                                         if (ccd.msg_buffer_ptr > 1)
                                         {
                                             uint8_t checksum_position = ccd.msg_buffer_ptr - 1;
                                             ccd.msg_buffer[checksum_position] = calculate_checksum(ccd.msg_buffer, 0, checksum_position); // overwrite last checksum byte with the correct one
                                         }
 
-                                        ccd.msg_buffer_ptr = payload_length;
                                         ccd.msg_to_transmit_count = 1;
-                                        ccd.msg_tx_pending  = true; // set flag so the main loop knows there's something to do
 
-                                        //uint8_t ret[2] = { 0x00, bus_ccd }; // improvised payload array with only 1 element which is the target bus
-                                        //send_usb_packet(bus_usb, msg_tx, single_msg, ret, 2);
-                                        break;
-                                    }
-                                    case repeated_single_msg: // 0x04 - send a message to the CCD-bus repeatedly forever
-                                    {
-                                        if ((payload_length < 4) || (payload_length > 16))
+                                        if (subdatacode == repeated_single_msg)
                                         {
-                                            send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // error
-                                            break;
+                                            ccd.repeat = true;
+                                            ccd.repeat_next = true;
+                                        }
+                                        else
+                                        {
+                                            ccd.repeat = false;
+                                            ccd.repeat_next = false;
                                         }
 
-                                        switch (cmd_payload[0]) // first payload byte tells us if a message has variables that need to increase every iteration
-                                        {
-                                            case 0x00: // no iteration needed, send the same message(s) again and again
-                                            {
-                                                // Payload structure example:
-                                                // 00 01 04 E4 00 00 E4
-                                                // -----------------------------------
-                                                // 00: no message iteration needed, send the same message(s) again ang again
-                                                // 01: number of messages
-                                                // 04: message length
-                                                // E4 25 00 09: message
-
-                                                for (uint8_t i = 3; i < payload_length; i++)
-                                                {
-                                                    ccd.msg_buffer[i-3] = cmd_payload[i]; // copy and save all the message bytes for this session
-                                                }
-
-                                                ccd.msg_to_transmit_count = cmd_payload[1]; // message count
-                                                ccd.repeated_msg_length = cmd_payload[2]; // message length
-                                                ccd.msg_buffer_ptr = ccd.repeated_msg_length;
-
-                                                // Checksum is only applicable if message is at least 2 bytes long
-                                                if (ccd.repeated_msg_length > 1)
-                                                {
-                                                    uint8_t checksum_position = ccd.repeated_msg_length - 1;
-                                                    ccd.msg_buffer[checksum_position] = calculate_checksum(ccd.msg_buffer, 0, checksum_position); // overwrite last checksum byte with the correct one
-                                                }
-                                                
-                                                ccd.repeat = true; // set flag
-                                                ccd.repeat_next = true; // set flag
-                                                ccd.repeat_iterate = false; // set flag
-                                                ccd.repeat_list_once = false;
-                                                ccd.repeat_stop = false;
-
-                                                //uint8_t ret[2] = { 0x00, bus_ccd };
-                                                //send_usb_packet(bus_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
-                                                break;
-                                            }
-                                            case 0x01: // message iteration needed, 1 message only (with B2 ID-byte)!
-                                            {
-                                                // Payload structure example:
-                                                // 01 01 06 B2 20 22 00 00 F4 B2 20 22 FF FE XX
-                                                // Note: iteration only works for B2/F2 messages and assumes a 16-bit address space at the 4th and 5th byte
-                                                // -----------------------------------
-                                                // 01: message iteration needed
-                                                // 01: number of messages
-                                                // 06: message length
-                                                // B2 20 22 00 00 F4: first message
-                                                // B2 20 22 FF FE XX: last message
-                                                
-                                                if (payload_length > 14)
-                                                {
-                                                    ccd.repeated_msg_length = cmd_payload[2]; // message length, fixed to 6 bytes
-                                                    ccd.msg_buffer_ptr = 0;
-
-                                                    // Skip the first ID-byte and the last checksum byte
-                                                    if (ccd.repeated_msg_length == 0x06)
-                                                    {
-                                                        ccd.repeated_msg_raw_start =  to_uint32(cmd_payload[4], cmd_payload[5], cmd_payload[6], cmd_payload[7]);
-                                                        ccd.repeated_msg_raw_end = to_uint32(cmd_payload[10], cmd_payload[11], cmd_payload[12], cmd_payload[13]);
-                                                    }
-                                                    else
-                                                    {
-                                                        send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // error, too long message
-                                                        break;
-                                                    }
-
-                                                    // Checksum is calculated during preparation in the CCD-bus handler function!
-
-                                                    ccd.repeat = true; // set flag
-                                                    ccd.repeat_next = true; // set flag
-                                                    ccd.repeat_iterate = true; // set flag
-                                                    ccd.repeat_list_once = false;
-                                                    ccd.repeat_stop = false;
-                                                    ccd.msg_to_transmit_count = 1;
-
-                                                    //uint8_t ret[2] = { 0x00, bus_ccd };
-                                                    //send_usb_packet(bus_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
-                                                }
-                                                else
-                                                {
-                                                    send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // error, too long message
-                                                }
-                                                break;
-                                            }
-                                            default:
-                                            {
-                                                send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // error, no message included
-                                                break;
-                                            }
-                                        }
+                                        ccd.repeat_list_once = false;
+                                        ccd.repeat_stop = false;
+                                        ccd.msg_tx_pending = true; // set flag so the main loop knows there's something to do
                                         break;
                                     }
                                     case list_msg: // 0x03 - send a set of messages to the CCD-bus once
                                     case repeated_list_msg: // 0x05 - send a set of messages to the CCD-bus repeatedly forever
                                     {
-                                        if (payload_length < 4)
+                                        if (payload_length < 3)
                                         {
                                             send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // error
                                             break;
                                         }
 
                                         // Payload structure example:
-                                        // 00 02 04 E4 00 00 E4 04 24 00 00 24
-                                        // -----------------------------------
-                                        // 00: message iteration not supported, reads always zero
+                                        // 02 04 E4 00 00 E4 04 24 00 00 24
+                                        // --------------------------------
                                         // 02: number of messages
                                         // 04: 1st message length
                                         // E4 00 00 E4: message #1
@@ -5005,15 +4910,15 @@ void handle_usb_data(void)
                                         // XX: n-th message length
                                         // XX XX...: message #n
 
-                                        for (uint8_t i = 2; i < payload_length; i++)
+                                        for (uint8_t i = 1; i < payload_length; i++)
                                         {
-                                            ccd.msg_buffer[i-2] = cmd_payload[i]; // copy and save all the message bytes for this session
+                                            ccd.msg_buffer[i - 1] = cmd_payload[i]; // copy and save all the message bytes for this session
                                         }
 
-                                        ccd.msg_to_transmit_count = cmd_payload[1]; // save number of messages
+                                        ccd.msg_to_transmit_count = cmd_payload[0]; // save number of messages
                                         ccd.msg_to_transmit_count_ptr = 0; // current message to transmit
-                                        ccd.repeated_msg_length = cmd_payload[2]; // first message length is saved
-                                        ccd.msg_buffer_ptr = 0;
+                                        ccd.repeated_msg_length = cmd_payload[1]; // first message length is saved
+                                        ccd.msg_buffer_ptr = 0; // set the pointer in the main buffer at the beginning
 
                                         for (uint8_t i = 0; i < ccd.msg_to_transmit_count; i++)
                                         {
@@ -5025,20 +4930,15 @@ void handle_usb_data(void)
                                             }
                                             ccd.msg_buffer_ptr += current_msg_length + 1;
                                         }
-                                        
+
                                         ccd.msg_buffer_ptr = 0; // set the pointer in the main buffer at the beginning
                                         ccd.repeat = true; // set flag
                                         ccd.repeat_next = true; // set flag
-                                        ccd.repeat_iterate = false;
                                         
                                         if (subdatacode == list_msg) ccd.repeat_list_once = true;
                                         else if (subdatacode == repeated_list_msg) ccd.repeat_list_once = false;
                                         
                                         ccd.repeat_stop = false;
-
-                                        //uint8_t ret[2] = { 0x00, bus_ccd };
-                                        //if (subdatacode == list_msg) send_usb_packet(bus_usb, msg_tx, list_msg, ret, 2); // acknowledge
-                                        //else if (subdatacode == repeated_list_msg) send_usb_packet(bus_usb, msg_tx, repeated_list_msg, ret, 2); // acknowledge
                                         break;
                                     }
                                     default:
@@ -5070,7 +4970,6 @@ void handle_usb_data(void)
                                     {
                                         pcm.repeat = false;
                                         pcm.repeat_next = false;
-                                        pcm.repeat_iterate = false;
                                         pcm.repeat_list_once = false;
                                         pcm.repeat_stop = true;
                                         pcm.msg_to_transmit_count = 0;
@@ -5079,11 +4978,12 @@ void handle_usb_data(void)
                                         pcm.repeated_msg_last_millis = 0;
                                         pcm.msg_buffer_ptr = 0;
                                         
-                                        uint8_t ret[2] = { 0x00, bus_pcm };
-                                        send_usb_packet(bus_usb, msg_tx, stop_msg_flow, ret, 2);
+                                        uint8_t ret[1] = { bus_pcm };
+                                        send_usb_packet(bus_usb, msg_tx, stop_msg_flow, ret, 1);
                                         break;
                                     }
                                     case single_msg: // 0x02 - send message to the SCI-bus once
+                                    case repeated_single_msg: // 0x04 - send repeated message(s) to the SCI-bus (PCM)
                                     {
                                         if (!payload_bytes || (payload_length > PCM_RX_BUFFER_SIZE))
                                         {
@@ -5099,109 +4999,21 @@ void handle_usb_data(void)
 
                                         pcm.msg_buffer_ptr = payload_length;
                                         pcm.msg_to_transmit_count = 1;
+
+                                        if (subdatacode == repeated_single_msg)
+                                        {
+                                            pcm.repeat = true;
+                                            pcm.repeat_next = true;
+                                        }
+                                        else
+                                        {
+                                            pcm.repeat = false;
+                                            pcm.repeat_next = false;
+                                        }
+
+                                        pcm.repeat_list_once = false;
+                                        pcm.repeat_stop = false;
                                         pcm.msg_tx_pending = true; // set flag so the main loop knows there's something to do
-
-                                        //uint8_t ret[2] = { 0x00, bus_pcm };
-                                        //send_usb_packet(bus_usb, msg_tx, single_msg, ret, 2);
-                                        break;
-                                    }
-                                    case repeated_single_msg: // 0x04 - send repeated message(s) to the SCI-bus (PCM)
-                                    {
-                                        if ((payload_length < 4) || (payload_length > PCM_RX_BUFFER_SIZE))
-                                        {
-                                            send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // error
-                                            break;
-                                        }
-                                        
-                                        switch (cmd_payload[0]) // first payload byte tells us if a message has variables that need to increase every iteration
-                                        {
-                                            case 0x00: // no iteration needed, send the same message(s) again and again
-                                            {
-                                                // Payload structure example:
-                                                // 00 01 06 F4 0A 0B 0C 0D 11
-                                                // -----------------------------------
-                                                // 00: no message iteration needed, send the same message(s) again ang again
-                                                // 01: number of messages
-                                                // 06: message length
-                                                // F4 0A 0B 0C 0D 11: message
-
-                                                for (uint16_t i = 3; i < payload_length; i++)
-                                                {
-                                                    pcm.msg_buffer[i-3] = cmd_payload[i]; // copy and save all the message bytes for this session
-                                                }
-
-                                                pcm.msg_to_transmit_count = cmd_payload[1]; // message count
-                                                pcm.repeated_msg_length = cmd_payload[2]; // message length
-                                                pcm.msg_buffer_ptr = pcm.repeated_msg_length;
-                                                pcm.repeat = true; // set flag
-                                                pcm.repeat_next = true; // set flag
-                                                pcm.repeat_iterate = false; // set flag
-                                                pcm.repeat_list_once = false;
-                                                pcm.repeat_stop = false;
-
-                                                //uint8_t ret[2] = { 0x00, bus_pcm };
-                                                //send_usb_packet(bus_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
-                                                break;
-                                            }
-                                            case 0x01: // message iteration needed, 1 message only!
-                                            {
-                                                // Payload structure example:
-                                                // 01 01 04 26 00 00 00 26 01 FF FF 
-                                                // Note: iteration only works for messages of maximum 4 bytes length and it assumes one ID-byte and 1-2-3 address bytes
-                                                // -----------------------------------
-                                                // 01: message iteration needed, 1 message only!
-                                                // 01: number of messages
-                                                // 04: message length
-                                                // 26 00 00 00: first message in the sequence
-                                                // 26 01 FF FF: last message in the sequence
-
-                                                if ((payload_length > 4) && (payload_length < 12)) // at least 5 bytes are necessary (min: 3 flag bytes + 1 start byte + 1 end byte = 5, max: 3 flag bytes + 4 start byte + 4 end byte = 11)
-                                                {
-                                                    pcm.msg_to_transmit_count = 1;
-                                                    pcm.repeated_msg_length = cmd_payload[2]; // message length
-                                                    pcm.msg_buffer_ptr = 0;
-                                                    pcm.repeat = true; // set flag
-                                                    pcm.repeat_next = true; // set flag
-                                                    pcm.repeat_iterate = true; // set flag
-                                                    pcm.repeat_list_once = false;
-                                                    pcm.repeat_stop = false;
-
-                                                    if (pcm.repeated_msg_length == 0x04) // 4-bytes length
-                                                    {
-                                                        pcm.repeated_msg_raw_start =  to_uint32(cmd_payload[3], cmd_payload[4], cmd_payload[5], cmd_payload[6]);
-                                                        pcm.repeated_msg_raw_end = to_uint32(cmd_payload[7], cmd_payload[8], cmd_payload[9], cmd_payload[10]);
-                                                    }
-                                                    else if (pcm.repeated_msg_length == 0x03) // 3-bytes length
-                                                    {
-                                                        pcm.repeated_msg_raw_start = to_uint32(0, cmd_payload[3], cmd_payload[4], cmd_payload[5]);
-                                                        pcm.repeated_msg_raw_end = to_uint32(0, cmd_payload[6], cmd_payload[7], cmd_payload[8]);
-                                                    }
-                                                    else if (pcm.repeated_msg_length == 0x02) // 2-bytes length
-                                                    {
-                                                        pcm.repeated_msg_raw_start = to_uint16(cmd_payload[3], cmd_payload[4]);
-                                                        pcm.repeated_msg_raw_end = to_uint16(cmd_payload[5], cmd_payload[6]);
-                                                    }
-                                                    else if (pcm.repeated_msg_length == 0x01) // 1-byte length
-                                                    {
-                                                        pcm.repeated_msg_raw_start = cmd_payload[3];
-                                                        pcm.repeated_msg_raw_end = cmd_payload[4];
-                                                    }
-
-                                                    //uint8_t ret[2] = { 0x00, bus_pcm };
-                                                    //send_usb_packet(bus_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
-                                                }
-                                                else
-                                                {
-                                                    send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // error, too long message
-                                                }
-                                                break;
-                                            }
-                                            default:
-                                            {
-                                                send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // error, no message included
-                                                break;
-                                            }
-                                        }
                                         break;
                                     }
                                     case list_msg: // 0x03 - send a set of messages to the SCI-bus (PCM) once
@@ -5214,9 +5026,8 @@ void handle_usb_data(void)
                                         }
 
                                         // Payload structure example:
-                                        // 00 02 02 14 07 02 14 08
-                                        // --------------------------------
-                                        // 00: message iteration not supported, reads always zero
+                                        // 02 02 14 07 02 14 08
+                                        // --------------------------
                                         // 02: number of messages
                                         // 02: 1st message length
                                         // 14 07: message #1
@@ -5225,27 +5036,22 @@ void handle_usb_data(void)
                                         // XX: n-th message length
                                         // XX XX...: message #n
 
-                                        for (uint8_t i = 2; i < payload_length; i++)
+                                        for (uint8_t i = 1; i < payload_length; i++)
                                         {
-                                            pcm.msg_buffer[i-2] = cmd_payload[i]; // copy and save all the message bytes for this session
+                                            pcm.msg_buffer[i - 1] = cmd_payload[i]; // copy and save all the message bytes for this session
                                         }
 
-                                        pcm.msg_to_transmit_count = cmd_payload[1]; // save number of messages
+                                        pcm.msg_to_transmit_count = cmd_payload[0]; // save number of messages
                                         pcm.msg_to_transmit_count_ptr = 0; // current message to transmit
-                                        pcm.repeated_msg_length = cmd_payload[2]; // first message length is saved
+                                        pcm.repeated_msg_length = cmd_payload[1]; // first message length is saved
                                         pcm.msg_buffer_ptr = 0; // set the pointer in the main buffer at the beginning
-                                        pcm.repeat = true; // set flag
-                                        pcm.repeat_next = true; // set flag
-                                        pcm.repeat_iterate = false;
+                                        pcm.repeat = true;
+                                        pcm.repeat_next = true;
 
                                         if (subdatacode == list_msg) pcm.repeat_list_once = true;
                                         else if (subdatacode == repeated_list_msg) pcm.repeat_list_once = false;
                                         
                                         pcm.repeat_stop = false;
-
-                                        //uint8_t ret[2] = { 0x00, bus_pcm };
-                                        //if (subdatacode == list_msg) send_usb_packet(bus_usb, msg_tx, list_msg, ret, 2); // acknowledge
-                                        //else if (subdatacode == repeated_list_msg) send_usb_packet(bus_usb, msg_tx, repeated_list_msg, ret, 2); // acknowledge
                                         break;
                                     }
                                     default:
@@ -5276,7 +5082,6 @@ void handle_usb_data(void)
                                     {
                                         tcm.repeat = false;
                                         tcm.repeat_next = false;
-                                        tcm.repeat_iterate = false;
                                         tcm.repeat_list_once = false;
                                         tcm.repeat_stop = true;
                                         tcm.msg_to_transmit_count = 0;
@@ -5285,11 +5090,12 @@ void handle_usb_data(void)
                                         tcm.repeated_msg_last_millis = 0;
                                         tcm.msg_buffer_ptr = 0;
                                         
-                                        uint8_t ret[2] = { 0x00, bus_tcm };
-                                        send_usb_packet(bus_usb, msg_tx, stop_msg_flow, ret, 2);
+                                        uint8_t ret[1] = { bus_tcm };
+                                        send_usb_packet(bus_usb, msg_tx, stop_msg_flow, ret, 1);
                                         break;
                                     }
                                     case single_msg: // 0x02 - send message to the SCI-bus once
+                                    case repeated_single_msg: // 0x04 - send repeated message(s) to the SCI-bus (TCM)
                                     {
                                         if (!payload_bytes || (payload_length > TCM_RX_BUFFER_SIZE))
                                         {
@@ -5305,109 +5111,21 @@ void handle_usb_data(void)
 
                                         tcm.msg_buffer_ptr = payload_length;
                                         tcm.msg_to_transmit_count = 1;
+
+                                        if (subdatacode == repeated_single_msg)
+                                        {
+                                            tcm.repeat = true;
+                                            tcm.repeat_next = true;
+                                        }
+                                        else
+                                        {
+                                            tcm.repeat = false;
+                                            tcm.repeat_next = false;
+                                        }
+
+                                        tcm.repeat_list_once = false;
+                                        tcm.repeat_stop = false;
                                         tcm.msg_tx_pending = true; // set flag so the main loop knows there's something to do
-
-                                        //uint8_t ret[2] = { 0x00, bus_tcm };
-                                        //send_usb_packet(bus_usb, msg_tx, single_msg, ret, 2);
-                                        break;
-                                    }
-                                    case repeated_single_msg: // 0x04 - send repeated message(s) to the SCI-bus (TCM)
-                                    {
-                                        if ((payload_length < 4) || (payload_length > TCM_RX_BUFFER_SIZE))
-                                        {
-                                            send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // error
-                                            break;
-                                        }
-                                        
-                                        switch (cmd_payload[0]) // first payload byte tells us if a message has variables that need to increase every iteration
-                                        {
-                                            case 0x00: // no iteration needed, send the same message(s) again and again
-                                            {
-                                                // Payload structure example:
-                                                // 00 01 06 F4 0A 0B 0C 0D 11
-                                                // -----------------------------------
-                                                // 00: no message iteration needed, send the same message(s) again ang again
-                                                // 01: number of messages
-                                                // 06: message length
-                                                // F4 0A 0B 0C 0D 11: message
-
-                                                for (uint16_t i = 3; i < payload_length; i++)
-                                                {
-                                                    tcm.msg_buffer[i-3] = cmd_payload[i]; // copy and save all the message bytes for this session
-                                                }
-
-                                                tcm.msg_to_transmit_count = cmd_payload[1]; // message count
-                                                tcm.repeated_msg_length = cmd_payload[2]; // message length
-                                                tcm.msg_buffer_ptr = tcm.repeated_msg_length;
-                                                tcm.repeat = true; // set flag
-                                                tcm.repeat_next = true; // set flag
-                                                tcm.repeat_iterate = false; // set flag
-                                                tcm.repeat_list_once = false;
-                                                tcm.repeat_stop = false;
-
-                                                //uint8_t ret[2] = { 0x00, bus_tcm };
-                                                //send_usb_packet(bus_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
-                                                break;
-                                            }
-                                            case 0x01: // message iteration needed, 1 message only!
-                                            {
-                                                // Payload structure example:
-                                                // 01 01 04 26 00 00 00 26 01 FF FF 
-                                                // Note: iteration only works for messages of maximum 4 bytes length and it assumes one ID-byte and 1-2-3 address bytes
-                                                // -----------------------------------
-                                                // 01: message iteration needed, 1 message only!
-                                                // 01: number of messages
-                                                // 04: message length
-                                                // 26 00 00 00: first message in the sequence
-                                                // 26 01 FF FF: last message in the sequence
-
-                                                if ((payload_length > 4) && (payload_length < 12)) // at least 5 bytes are necessary (min: 3 flag bytes + 1 start byte + 1 end byte = 5, max: 3 flag bytes + 4 start byte + 4 end byte = 11)
-                                                {
-                                                    tcm.msg_to_transmit_count = 1;
-                                                    tcm.repeated_msg_length = cmd_payload[2]; // message length
-                                                    tcm.msg_buffer_ptr = 0;
-                                                    tcm.repeat = true; // set flag
-                                                    tcm.repeat_next = true; // set flag
-                                                    tcm.repeat_iterate = true; // set flag
-                                                    tcm.repeat_list_once = false;
-                                                    tcm.repeat_stop = false;
-
-                                                    if (tcm.repeated_msg_length == 0x04) // 4-bytes length
-                                                    {
-                                                        tcm.repeated_msg_raw_start =  to_uint32(cmd_payload[3], cmd_payload[4], cmd_payload[5], cmd_payload[6]);
-                                                        tcm.repeated_msg_raw_end = to_uint32(cmd_payload[7], cmd_payload[8], cmd_payload[9], cmd_payload[10]);
-                                                    }
-                                                    else if (tcm.repeated_msg_length == 0x03) // 3-bytes length
-                                                    {
-                                                        tcm.repeated_msg_raw_start = to_uint32(0, cmd_payload[3], cmd_payload[4], cmd_payload[5]);
-                                                        tcm.repeated_msg_raw_end = to_uint32(0, cmd_payload[6], cmd_payload[7], cmd_payload[8]);
-                                                    }
-                                                    else if (tcm.repeated_msg_length == 0x02) // 2-bytes length
-                                                    {
-                                                        tcm.repeated_msg_raw_start = to_uint16(cmd_payload[3], cmd_payload[4]);
-                                                        tcm.repeated_msg_raw_end = to_uint16(cmd_payload[5], cmd_payload[6]);
-                                                    }
-                                                    else if (tcm.repeated_msg_length == 0x01) // 1-byte length
-                                                    {
-                                                        tcm.repeated_msg_raw_start = cmd_payload[3];
-                                                        tcm.repeated_msg_raw_end = cmd_payload[4];
-                                                    }
-
-                                                    //uint8_t ret[2] = { 0x00, bus_tcm };
-                                                    //send_usb_packet(bus_usb, msg_tx, repeated_single_msg, ret, 2); // acknowledge
-                                                }
-                                                else
-                                                {
-                                                    send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // error, too long message
-                                                }
-                                                break;
-                                            }
-                                            default:
-                                            {
-                                                send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // error, no message included
-                                                break;
-                                            }
-                                        }
                                         break;
                                     }
                                     case list_msg: // 0x03 - send a set of messages to the SCI-bus (TCM) once
@@ -5420,9 +5138,8 @@ void handle_usb_data(void)
                                         }
 
                                         // Payload structure example:
-                                        // 00 02 02 14 07 02 14 08
+                                        // 02 02 14 07 02 14 08
                                         // --------------------------------
-                                        // 00: message iteration not supported, reads always zero
                                         // 02: number of messages
                                         // 02: 1st message length
                                         // 14 07: message #1
@@ -5431,27 +5148,22 @@ void handle_usb_data(void)
                                         // XX: n-th message length
                                         // XX XX...: message #n
 
-                                        for (uint8_t i = 2; i < payload_length; i++)
+                                        for (uint8_t i = 1; i < payload_length; i++)
                                         {
-                                            tcm.msg_buffer[i-2] = cmd_payload[i]; // copy and save all the message bytes for this session
+                                            tcm.msg_buffer[i - 1] = cmd_payload[i]; // copy and save all the message bytes for this session
                                         }
 
-                                        tcm.msg_to_transmit_count = cmd_payload[1]; // save number of messages
+                                        tcm.msg_to_transmit_count = cmd_payload[0]; // save number of messages
                                         tcm.msg_to_transmit_count_ptr = 0; // current message to transmit
-                                        tcm.repeated_msg_length = cmd_payload[2]; // first message length is saved
+                                        tcm.repeated_msg_length = cmd_payload[1]; // first message length is saved
                                         tcm.msg_buffer_ptr = 0; // set the pointer in the main buffer at the beginning
-                                        tcm.repeat = true; // set flag
-                                        tcm.repeat_next = true; // set flag
-                                        tcm.repeat_iterate = false;
+                                        tcm.repeat = true;
+                                        tcm.repeat_next = true;
 
                                         if (subdatacode == list_msg) tcm.repeat_list_once = true;
                                         else if (subdatacode == repeated_list_msg) tcm.repeat_list_once = false;
                                         
                                         tcm.repeat_stop = false;
-
-                                        //uint8_t ret[2] = { 0x00, bus_tcm };
-                                        //if (subdatacode == list_msg) send_usb_packet(bus_usb, msg_tx, list_msg, ret, 2); // acknowledge
-                                        //else if (subdatacode == repeated_list_msg) send_usb_packet(bus_usb, msg_tx, repeated_list_msg, ret, 2); // acknowledge
                                         break;
                                     }
                                     default:
@@ -5472,7 +5184,7 @@ void handle_usb_data(void)
                     } // case bus_tcm:
                     default:
                     {
-                        send_usb_packet(bus_usb, ok_error, error_datacode_invalid_command, err, 1);
+                        send_usb_packet(bus_usb, ok_error, error_datacode_invalid_bus, err, 1);
                         break;
                     }
                 } // switch (target)   
@@ -5514,8 +5226,8 @@ void check_ccd_volts(void)
     
     ccd_positive_adc /= 128; // divide the sum by 128 to get average value
     ccd_negative_adc /= 128; // divide the sum by 128 to get average value
-    ccd_positive_volts = (uint16_t)(ccd_positive_adc*(adc_supply_voltage/100.0)/adc_max_value*100.0);
-    ccd_negative_volts = (uint16_t)(ccd_negative_adc*(adc_supply_voltage/100.0)/adc_max_value*100.0);
+    ccd_positive_volts = (uint16_t)(ccd_positive_adc*(adc_supply_voltage/100.0)/adc_max_value*1000.0);
+    ccd_negative_volts = (uint16_t)(ccd_negative_adc*(adc_supply_voltage/100.0)/adc_max_value*1000.0);
     
     ccd_volts_array[0] = (ccd_positive_volts >> 8) & 0xFF;
     ccd_volts_array[1] = ccd_positive_volts & 0xFF;
@@ -5597,7 +5309,7 @@ void handle_ccd_data()
 
             if (!lcd_splash_screen_on) handle_lcd(bus_ccd, ccd.message, 0, ccd.message_length); // pass message to LCD handling function
 
-            if (ccd.repeat && !ccd.repeat_iterate)
+            if (ccd.repeat)
             {
                 if (ccd.msg_to_transmit_count == 1) // if there's only one message in the buffer
                 {
@@ -5645,25 +5357,7 @@ void handle_ccd_data()
                     ccd.msg_buffer_ptr = 0;
                     ccd.repeat = false;
                     ccd.repeat_next = false;
-                    ccd.repeat_iterate = false;
                     ccd.repeat_list_once = false;
-                }
-            }
-            else if (ccd.repeat && ccd.repeat_iterate)
-            {
-                if (ccd.message[0] == 0xF2) ccd.repeat_next = true; // response received, prepare next request
-                //if (ccd.message[0] == 0xB2) ccd.repeat_next = true; // DEBUG
-    
-                if (ccd.repeat_stop) // don't request more data if the list ends
-                {
-                    ccd.msg_buffer_ptr = 0;
-                    ccd.repeat = false;
-                    ccd.repeat_next = false;
-                    ccd.repeat_iterate = false;
-                    ccd.repeat_list_once = false;
-    
-                    uint8_t ret[2] = { 0x00, bus_ccd }; // improvised payload array with only 1 element which is the target bus
-                    send_usb_packet(bus_usb, msg_tx, stop_msg_flow, ret, 2);
                 }
             }
     
@@ -5700,40 +5394,9 @@ void handle_ccd_data()
             {
                 ccd.repeated_msg_last_millis = current_millis;
 
-                if (ccd.repeat_next && !ccd.repeat_iterate) // no iteration, same message over and over again
+                if (ccd.repeat_next)
                 {
                     // The message is already in the ccd.msg_buffer array, just set flags
-                    ccd.msg_tx_pending = true; // set flag
-                    ccd.repeat_next = false;
-                }
-                else if (ccd.repeat_next && ccd.repeat_iterate) // iteration, message is incremented for every repeat according to settings
-                {
-                    if (ccd.msg_buffer_ptr == 0) // no existing message in the buffer yet, lets load the first one
-                    {
-                        ccd.msg_buffer_ptr = 6;
-                        ccd.msg_buffer[0] = 0xB2; // this byte is fixed and not included in the "raw" variable
-                        ccd.msg_buffer[1] = (ccd.repeated_msg_raw_start >> 24) & 0xFF; // decompose raw message from its integer form to byte components
-                        ccd.msg_buffer[2] = (ccd.repeated_msg_raw_start >> 16) & 0xFF;
-                        ccd.msg_buffer[3] = (ccd.repeated_msg_raw_start >> 8) & 0xFF;
-                        ccd.msg_buffer[4] = ccd.repeated_msg_raw_start & 0xFF;
-                        ccd.msg_buffer[5] = calculate_checksum(ccd.msg_buffer, 0, ccd.msg_buffer_ptr - 1); // last checksum byte automatically calculated
-                    }
-                    else // increment existing message
-                    {
-                        // First combine bytes into a single integer
-                        ccd.msg_buffer_ptr = 6;
-                        uint32_t message = to_uint32(ccd.msg_buffer[1], ccd.msg_buffer[2], ccd.msg_buffer[3], ccd.msg_buffer[4]);
-                        message += ccd.repeated_msg_increment; // add increment
-                        ccd.msg_buffer[0] = 0xB2; // this byte is fixed and not included in the "raw" variable
-                        ccd.msg_buffer[1] = (message >> 24) & 0xFF; // decompose raw message from its integer form to byte components
-                        ccd.msg_buffer[2] = (message >> 16) & 0xFF;
-                        ccd.msg_buffer[3] = (message >> 8) & 0xFF;
-                        ccd.msg_buffer[4] = message & 0xFF;
-                        ccd.msg_buffer[5] = calculate_checksum(ccd.msg_buffer, 0, ccd.msg_buffer_ptr - 1); // last checksum byte automatically calculated
-                        
-                        if ((message + ccd.repeated_msg_increment) > ccd.repeated_msg_raw_end) ccd.repeat_stop = true; // don't prepare another message, it's the end
-                    }
-
                     ccd.msg_tx_pending = true; // set flag
                     ccd.repeat_next = false;
                 }
@@ -5924,7 +5587,7 @@ void handle_sci_data(void)
                     configure_sci_bus(pcm.bus_settings);
                 }
 
-                if (pcm.repeat && !pcm.repeat_iterate) // prepare next repeated message
+                if (pcm.repeat) // prepare next repeated message
                 {
                     if (pcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                     {
@@ -5972,47 +5635,10 @@ void handle_sci_data(void)
                         pcm.msg_buffer_ptr = 0;
                         pcm.repeat = false;
                         pcm.repeat_next = false;
-                        pcm.repeat_iterate = false;
                         pcm.repeat_list_once = false;
                     }
                 }
-                else if (pcm.repeat && pcm.repeat_iterate)
-                {
-                    if (pcm.message_length == (pcm.repeated_msg_length + 1)) // received message has to be 1 byte bigger than what was sent
-                    {
-                        pcm.repeat_next = true;
-                        pcm.repeat_retry_counter = 0;
-                    }
-                    else
-                    {
-                        pcm.msg_tx_pending = true; // send the same message again if no answer is received
-                        pcm.repeat_retry_counter++;
 
-                        if (pcm.repeat_retry_counter > 10)
-                        {
-                            //pcm.repeat = false; // don't repeat after 10 failed attempts
-                            //pcm.repeat_stop = true;
-                            pcm.repeat_next = true; // give up this parameter and jump to the next one
-                            pcm.repeat_retry_counter = 0;
-                        }
-
-                        delay(200);
-                    }
-
-                    if (pcm.repeat_stop)
-                    {
-                        pcm.msg_buffer_ptr = 0;
-                        pcm.repeated_msg_length = 0;
-                        pcm.repeat = false;
-                        pcm.repeat_next = false;
-                        pcm.repeat_iterate = false;
-                        pcm.repeat_list_once = false;
-
-                        uint8_t ret[2] = { 0x00, bus_pcm }; // improvised payload array with only 1 element which is the target bus
-                        send_usb_packet(bus_usb, msg_tx, stop_msg_flow, ret, 2);
-                    }
-                }
-                
                 pcm_rx_flush();
                 pcm.msg_rx_count++;
             }
@@ -6106,7 +5732,7 @@ void handle_sci_data(void)
                     configure_sci_bus(pcm.bus_settings);
                 }
 
-                if (pcm.repeat && !pcm.repeat_iterate)
+                if (pcm.repeat)
                 {
                     if (pcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                     {
@@ -6137,29 +5763,6 @@ void handle_sci_data(void)
                         pcm.msg_buffer_ptr = 0;
                         pcm.repeat = false;
                         pcm.repeat_next = false;
-                        pcm.repeat_iterate = false;
-                        pcm.repeat_list_once = false;
-                    }
-                }
-                else if (pcm.repeat && pcm.repeat_iterate)
-                {
-                    // TODO
-                    if (true) // check proper echo
-                    {
-                        pcm.repeat_next = true; // accept echo without verification...
-                    }
-                    else
-                    {
-                        pcm.msg_tx_pending = true; // send the same message again
-                    }
-
-                    if (pcm.repeat_stop)
-                    {
-                        pcm.msg_buffer_ptr = 0;
-                        pcm.repeated_msg_length = 0;
-                        pcm.repeat = false;
-                        pcm.repeat_next = false;
-                        pcm.repeat_iterate = false;
                         pcm.repeat_list_once = false;
                     }
                 }
@@ -6186,7 +5789,7 @@ void handle_sci_data(void)
 
                 // No automatic speed change for 976.5 and 125000 baud!
 
-                if (pcm.repeat && !pcm.repeat_iterate)
+                if (pcm.repeat)
                 {
                     if (pcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                     {
@@ -6217,33 +5820,10 @@ void handle_sci_data(void)
                         pcm.msg_buffer_ptr = 0;
                         pcm.repeat = false;
                         pcm.repeat_next = false;
-                        pcm.repeat_iterate = false;
                         pcm.repeat_list_once = false;
                     }
                 }
-                else if (pcm.repeat && pcm.repeat_iterate)
-                {
-                    // TODO
-                    if (true) // check proper echo
-                    {
-                        pcm.repeat_next = true; // accept echo without verification...
-                    }
-                    else
-                    {
-                        pcm.msg_tx_pending = true; // send the same message again
-                    }
-                    
-                    if (pcm.repeat_stop)
-                    {
-                        pcm.msg_buffer_ptr = 0;
-                        pcm.repeated_msg_length = 0;
-                        pcm.repeat = false;
-                        pcm.repeat_next = false;
-                        pcm.repeat_iterate = false;
-                        pcm.repeat_list_once = false;
-                    }
-                }
-                
+
                 handle_lcd(bus_pcm, pcm.message, 0, pcm.message_length); // pass message to LCD handling function, start at the 4th byte (skip timestamp)
                 pcm_rx_flush();
                 pcm.msg_rx_count++;
@@ -6259,97 +5839,9 @@ void handle_sci_data(void)
             {
                 pcm.repeated_msg_last_millis = current_millis;
                 
-                if (pcm.repeat_next && !pcm.repeat_iterate) // no iteration, same message over and over again
+                if (pcm.repeat_next)
                 {
                     // The message is already in the pcm.msg_buffer array, just set flags
-                    pcm.msg_tx_pending = true; // set flag
-                    pcm.repeat_next = false;
-                }
-                else if (pcm.repeat_next && pcm.repeat_iterate) // iteration, message is incremented for every repeat according to settings
-                {
-                    if (pcm.repeated_msg_length == 0x04) // 4-bytes length
-                    {
-                        if (pcm.msg_buffer_ptr == 0) // no existing message in the buffer yet, lets load the first one
-                        {
-                            pcm.msg_buffer[0] = (pcm.repeated_msg_raw_start >> 24) & 0xFF; // decompose raw message from its integer form to byte components
-                            pcm.msg_buffer[1] = (pcm.repeated_msg_raw_start >> 16) & 0xFF;
-                            pcm.msg_buffer[2] = (pcm.repeated_msg_raw_start >> 8) & 0xFF;
-                            pcm.msg_buffer[3] = pcm.repeated_msg_raw_start & 0xFF;
-                            pcm.msg_buffer_ptr = 4;
-                        }
-                        else // increment existing message
-                        {
-                            // First combine bytes into a single integer
-                            uint32_t message = to_uint32(pcm.msg_buffer[0], pcm.msg_buffer[1], pcm.msg_buffer[2], pcm.msg_buffer[3]);
-                            message += pcm.repeated_msg_increment; // add increment
-                            pcm.msg_buffer[0] = (message >> 24) & 0xFF; // decompose integer into byte compontents again
-                            pcm.msg_buffer[1] = (message >> 16) & 0xFF;
-                            pcm.msg_buffer[2] = (message >> 8) & 0xFF;
-                            pcm.msg_buffer[3] = message & 0xFF;
-                            pcm.msg_buffer_ptr = 4;
-                            
-                            if ((message + pcm.repeated_msg_increment) > pcm.repeated_msg_raw_end) pcm.repeat_stop = true; // don't prepare another message, it's the end
-                        }
-                    }
-                    else if (pcm.repeated_msg_length == 0x03) // 3-bytes length
-                    {
-                        if (pcm.msg_buffer_ptr == 0) // no existing message in the buffer yet, lets load the first one
-                        {
-                            pcm.msg_buffer[0] = (pcm.repeated_msg_raw_start >> 16) & 0xFF; // decompose raw message from its integer form to byte components
-                            pcm.msg_buffer[1] = (pcm.repeated_msg_raw_start >> 8) & 0xFF;
-                            pcm.msg_buffer[2] = pcm.repeated_msg_raw_start & 0xFF;
-                            pcm.msg_buffer_ptr = 3;
-                        }
-                        else // increment existing message
-                        {
-                            // First combine bytes into a single integer
-                            uint32_t message = to_uint32(0, pcm.msg_buffer[0], pcm.msg_buffer[1], pcm.msg_buffer[2]);
-                            message += pcm.repeated_msg_increment; // add increment
-                            pcm.msg_buffer[0] = (message >> 16) & 0xFF; // decompose integer into byte compontents again
-                            pcm.msg_buffer[1] = (message >> 8) & 0xFF;
-                            pcm.msg_buffer[2] = message & 0xFF;
-                            pcm.msg_buffer_ptr = 3;
-                            
-                            if ((message + pcm.repeated_msg_increment) > pcm.repeated_msg_raw_end) pcm.repeat_stop = true; // don't prepare another message, it's the end
-                        }
-                    }
-                    else if (pcm.repeated_msg_length == 0x02) // 2-bytes length
-                    {
-                        if (pcm.msg_buffer_ptr == 0) // no existing message in the buffer yet, lets load the first one
-                        {
-                            pcm.msg_buffer[0] = (pcm.repeated_msg_raw_start >> 8) & 0xFF; // decompose raw message from its integer form to byte components
-                            pcm.msg_buffer[1] = pcm.repeated_msg_raw_start & 0xFF;
-                            pcm.msg_buffer_ptr = 2;
-                        }
-                        else // increment existing message
-                        {
-                            // First combine bytes into a single integer
-                            uint16_t message = to_uint16(pcm.msg_buffer[0], pcm.msg_buffer[1]);
-                            message += pcm.repeated_msg_increment; // add increment
-                            pcm.msg_buffer[0] = (message >> 8) & 0xFF; // decompose integer into byte compontents again
-                            pcm.msg_buffer[1] = message & 0xFF;
-                            pcm.msg_buffer_ptr = 2;
-                            
-                            if ((message + pcm.repeated_msg_increment) > pcm.repeated_msg_raw_end) pcm.repeat_stop = true; // don't prepare another message, it's the end
-                        }
-                    }
-                    else if (pcm.repeated_msg_length == 0x01) // 1-byte length
-                    {
-                        if (pcm.msg_buffer_ptr == 0) // no existing message in the buffer yet, lets load the first one
-                        {
-                            pcm.msg_buffer[0] = pcm.repeated_msg_raw_start & 0xFF; // decompose raw message from its integer form to byte components
-                            pcm.msg_buffer_ptr = 1;
-                        }
-                        else // increment existing message
-                        {
-                            // First combine bytes into a single integer
-                            pcm.msg_buffer[0] += pcm.repeated_msg_increment; // add increment
-                            pcm.msg_buffer_ptr = 1;
-                            
-                            if ((pcm.msg_buffer[0] + pcm.repeated_msg_increment) > pcm.repeated_msg_raw_end) pcm.repeat_stop = true; // don't prepare another message, it's the end
-                        }
-                    }
-
                     pcm.msg_tx_pending = true; // set flag
                     pcm.repeat_next = false;
                 }
@@ -6793,7 +6285,7 @@ void handle_sci_data(void)
                     configure_sci_bus(tcm.bus_settings);
                 }
 
-                if (tcm.repeat && !tcm.repeat_iterate) // prepare next repeated message
+                if (tcm.repeat) // prepare next repeated message
                 {
                     if (tcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                     {
@@ -6841,47 +6333,10 @@ void handle_sci_data(void)
                         tcm.msg_buffer_ptr = 0;
                         tcm.repeat = false;
                         tcm.repeat_next = false;
-                        tcm.repeat_iterate = false;
                         tcm.repeat_list_once = false;
                     }
                 }
-                else if (tcm.repeat && tcm.repeat_iterate)
-                {
-                    if (tcm.message_length == (tcm.repeated_msg_length + 1)) // received message has to be 1 byte bigger than what was sent
-                    {
-                        tcm.repeat_next = true;
-                        tcm.repeat_retry_counter = 0;
-                    }
-                    else
-                    {
-                        tcm.msg_tx_pending = true; // send the same message again if no answer is received
-                        tcm.repeat_retry_counter++;
 
-                        if (tcm.repeat_retry_counter > 10)
-                        {
-                            //tcm.repeat = false; // don't repeat after 10 failed attempts
-                            //tcm.repeat_stop = true;
-                            tcm.repeat_next = true; // give up this parameter and jump to the next one
-                            tcm.repeat_retry_counter = 0;
-                        }
-
-                        delay(200);
-                    }
-
-                    if (tcm.repeat_stop)
-                    {
-                        tcm.msg_buffer_ptr = 0;
-                        tcm.repeated_msg_length = 0;
-                        tcm.repeat = false;
-                        tcm.repeat_next = false;
-                        tcm.repeat_iterate = false;
-                        tcm.repeat_list_once = false;
-
-                        uint8_t ret[2] = { 0x00, bus_tcm }; // improvised payload array with only 1 element which is the target bus
-                        send_usb_packet(bus_usb, msg_tx, stop_msg_flow, ret, 2);
-                    }
-                }
-                
                 tcm_rx_flush();
                 tcm.msg_rx_count++;
             }
@@ -6942,7 +6397,7 @@ void handle_sci_data(void)
                     configure_sci_bus(tcm.bus_settings);
                 }
 
-                if (tcm.repeat && !tcm.repeat_iterate)
+                if (tcm.repeat)
                 {
                     if (tcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                     {
@@ -6973,29 +6428,6 @@ void handle_sci_data(void)
                         tcm.msg_buffer_ptr = 0;
                         tcm.repeat = false;
                         tcm.repeat_next = false;
-                        tcm.repeat_iterate = false;
-                        tcm.repeat_list_once = false;
-                    }
-                }
-                else if (tcm.repeat && tcm.repeat_iterate)
-                {
-                    // TODO
-                    if (true) // check proper echo
-                    {
-                        tcm.repeat_next = true; // accept echo without verification...
-                    }
-                    else
-                    {
-                        tcm.msg_tx_pending = true; // send the same message again
-                    }
-                    
-                    if (tcm.repeat_stop)
-                    {
-                        tcm.msg_buffer_ptr = 0;
-                        tcm.repeated_msg_length = 0;
-                        tcm.repeat = false;
-                        tcm.repeat_next = false;
-                        tcm.repeat_iterate = false;
                         tcm.repeat_list_once = false;
                     }
                 }
@@ -7022,7 +6454,7 @@ void handle_sci_data(void)
 
                 // No automatic speed change for 976.5 and 125000 baud!
 
-                if (tcm.repeat && !tcm.repeat_iterate)
+                if (tcm.repeat)
                 {
                     if (tcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                     {
@@ -7053,33 +6485,10 @@ void handle_sci_data(void)
                         tcm.msg_buffer_ptr = 0;
                         tcm.repeat = false;
                         tcm.repeat_next = false;
-                        tcm.repeat_iterate = false;
                         tcm.repeat_list_once = false;
                     }
                 }
-                else if (tcm.repeat && tcm.repeat_iterate)
-                {
-                    // TODO
-                    if (true) // check proper echo
-                    {
-                        tcm.repeat_next = true; // accept echo without verification...
-                    }
-                    else
-                    {
-                        tcm.msg_tx_pending = true; // send the same message again
-                    }
-                    
-                    if (tcm.repeat_stop)
-                    {
-                        tcm.msg_buffer_ptr = 0;
-                        tcm.repeated_msg_length = 0;
-                        tcm.repeat = false;
-                        tcm.repeat_next = false;
-                        tcm.repeat_iterate = false;
-                        tcm.repeat_list_once = false;
-                    }
-                }
-                
+
                 //handle_lcd(bus_tcm, tcm.message, 0, tcm.message_length); // pass message to LCD handling function
                 tcm_rx_flush();
                 tcm.msg_rx_count++;
@@ -7095,97 +6504,9 @@ void handle_sci_data(void)
             {
                 tcm.repeated_msg_last_millis = current_millis;
 
-                if (tcm.repeat_next && !tcm.repeat_iterate) // no iteration, same message over and over again
+                if (tcm.repeat_next)
                 {
                     // The message is already in the tcm.msg_buffer array, just set flags
-                    tcm.msg_tx_pending = true; // set flag
-                    tcm.repeat_next = false;
-                }
-                else if (tcm.repeat_next && tcm.repeat_iterate) // iteration, message is incremented for every repeat according to settings
-                {
-                    if (tcm.repeated_msg_length == 0x04) // 4-bytes length
-                    {
-                        if (tcm.msg_buffer_ptr == 0) // no existing message in the buffer yet, lets load the first one
-                        {
-                            tcm.msg_buffer[0] = (tcm.repeated_msg_raw_start >> 24) & 0xFF; // decompose raw message from its integer form to byte components
-                            tcm.msg_buffer[1] = (tcm.repeated_msg_raw_start >> 16) & 0xFF;
-                            tcm.msg_buffer[2] = (tcm.repeated_msg_raw_start >> 8) & 0xFF;
-                            tcm.msg_buffer[3] = tcm.repeated_msg_raw_start & 0xFF;
-                            tcm.msg_buffer_ptr = 4;
-                        }
-                        else // increment existing message
-                        {
-                            // First combine bytes into a single integer
-                            uint32_t message = to_uint32(tcm.msg_buffer[0], tcm.msg_buffer[1], tcm.msg_buffer[2], tcm.msg_buffer[3]);
-                            message += tcm.repeated_msg_increment; // add increment
-                            tcm.msg_buffer[0] = (message >> 24) & 0xFF; // decompose integer into byte compontents again
-                            tcm.msg_buffer[1] = (message >> 16) & 0xFF;
-                            tcm.msg_buffer[2] = (message >> 8) & 0xFF;
-                            tcm.msg_buffer[3] = message & 0xFF;
-                            tcm.msg_buffer_ptr = 4;
-                            
-                            if ((message + tcm.repeated_msg_increment) > tcm.repeated_msg_raw_end) tcm.repeat_stop = true; // don't prepare another message, it's the end
-                        }
-                    }
-                    else if (tcm.repeated_msg_length == 0x03) // 3-bytes length
-                    {
-                        if (tcm.msg_buffer_ptr == 0) // no existing message in the buffer yet, lets load the first one
-                        {
-                            tcm.msg_buffer[0] = (tcm.repeated_msg_raw_start >> 16) & 0xFF; // decompose raw message from its integer form to byte components
-                            tcm.msg_buffer[1] = (tcm.repeated_msg_raw_start >> 8) & 0xFF;
-                            tcm.msg_buffer[2] = tcm.repeated_msg_raw_start & 0xFF;
-                            tcm.msg_buffer_ptr = 3;
-                        }
-                        else // increment existing message
-                        {
-                            // First combine bytes into a single integer
-                            uint32_t message = to_uint32(0, tcm.msg_buffer[0], tcm.msg_buffer[1], tcm.msg_buffer[2]);
-                            message += tcm.repeated_msg_increment; // add increment
-                            tcm.msg_buffer[0] = (message >> 16) & 0xFF; // decompose integer into byte compontents again
-                            tcm.msg_buffer[1] = (message >> 8) & 0xFF;
-                            tcm.msg_buffer[2] = message & 0xFF;
-                            tcm.msg_buffer_ptr = 3;
-                            
-                            if ((message + tcm.repeated_msg_increment) > tcm.repeated_msg_raw_end) tcm.repeat_stop = true; // don't prepare another message, it's the end
-                        }
-                    }
-                    else if (tcm.repeated_msg_length == 0x02) // 2-bytes length
-                    {
-                        if (tcm.msg_buffer_ptr == 0) // no existing message in the buffer yet, lets load the first one
-                        {
-                            tcm.msg_buffer[0] = (tcm.repeated_msg_raw_start >> 8) & 0xFF; // decompose raw message from its integer form to byte components
-                            tcm.msg_buffer[1] = tcm.repeated_msg_raw_start & 0xFF;
-                            tcm.msg_buffer_ptr = 2;
-                        }
-                        else // increment existing message
-                        {
-                            // First combine bytes into a single integer
-                            uint16_t message = to_uint16(tcm.msg_buffer[0], tcm.msg_buffer[1]);
-                            message += tcm.repeated_msg_increment; // add increment
-                            tcm.msg_buffer[0] = (message >> 8) & 0xFF; // decompose integer into byte compontents again
-                            tcm.msg_buffer[1] = message & 0xFF;
-                            tcm.msg_buffer_ptr = 2;
-                            
-                            if ((message + tcm.repeated_msg_increment) > tcm.repeated_msg_raw_end) tcm.repeat_stop = true; // don't prepare another message, it's the end
-                        }
-                    }
-                    else if (tcm.repeated_msg_length == 0x01) // 1-byte length
-                    {
-                        if (tcm.msg_buffer_ptr == 0) // no existing message in the buffer yet, lets load the first one
-                        {
-                            tcm.msg_buffer[0] = tcm.repeated_msg_raw_start & 0xFF; // decompose raw message from its integer form to byte components
-                            tcm.msg_buffer_ptr = 1;
-                        }
-                        else // increment existing message
-                        {
-                            // First combine bytes into a single integer
-                            tcm.msg_buffer[0] += tcm.repeated_msg_increment; // add increment
-                            tcm.msg_buffer_ptr = 1;
-                            
-                            if ((tcm.msg_buffer[0] + tcm.repeated_msg_increment) > tcm.repeated_msg_raw_end) tcm.repeat_stop = true; // don't prepare another message, it's the end
-                        }
-                    }
-
                     tcm.msg_tx_pending = true; // set flag
                     tcm.repeat_next = false;
                 }
