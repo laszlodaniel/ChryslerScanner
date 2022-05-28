@@ -5350,8 +5350,8 @@ namespace ChryslerScanner
 
         private void UpdateToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Uri GUIAssemblyInfoFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/GUI/ChryslerCCDSCIScanner/Properties/AssemblyInfo.cs");
-            Uri GUIZIPDownload = new Uri("https://github.com/laszlodaniel/ChryslerCCDSCIScanner/raw/master/GUI/ChryslerCCDSCIScanner/bin/Debug/ChryslerCCDSCIScanner_GUI.zip");
+            Uri GUIAssemblyInfoFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/GUI/ChryslerScanner/Properties/AssemblyInfo.cs");
+            Uri GUIZIPDownload = new Uri("https://github.com/laszlodaniel/ChryslerCCDSCIScanner/raw/master/GUI/ChryslerScanner/bin/Debug/ChryslerScanner_GUI.zip");
             Uri FWSourceFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/Arduino/ChryslerCCDSCIScanner/ChryslerCCDSCIScanner.ino");
             Uri FWFlashFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/Arduino/ChryslerCCDSCIScanner/ChryslerCCDSCIScanner.ino.mega.hex");
 

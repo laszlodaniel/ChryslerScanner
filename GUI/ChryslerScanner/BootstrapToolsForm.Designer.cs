@@ -130,7 +130,8 @@ namespace ChryslerScanner
             "P/N read",
             "Flash read",
             "Flash ID",
-            "Flash erase (M28F102)"});
+            "Flash erase (M28F102)",
+            "Flash program (M28F102)"});
             this.WorkerFunctionComboBox.Location = new System.Drawing.Point(67, 17);
             this.WorkerFunctionComboBox.Name = "WorkerFunctionComboBox";
             this.WorkerFunctionComboBox.Size = new System.Drawing.Size(96, 21);
