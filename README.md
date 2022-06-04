@@ -1,6 +1,8 @@
 # ChryslerScanner [![Badge License]][License] [![Badge Tindie]][Tindie]
 
-Hardware and software for interfacing Chrysler's legacy CCD/SCI-bus. 
+Hardware and software for interfacing Chrysler's legacy CCD/PCI/SCI-bus.  
+v1.x.x hardware supports CCD/SCI-bus only.  
+v2.x.x hardware supports CCD/PCI/SCI-bus.
 
 <br>
 
