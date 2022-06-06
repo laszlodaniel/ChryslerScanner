@@ -46,7 +46,7 @@
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00090400629E575C
+#define FW_DATE 0x00090400629E5A72
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -6123,7 +6123,7 @@ void handle_sci_data(void)
                     }
                     else // bootstrap mode
                     {
-                        if (((pcm.msg_buffer[0] == 0x45) || (pcm.msg_buffer[0] == 0x20)) && (pcm.msg_buffer_ptr == 6)) // custom bootloader by dino2gnt
+                        if (((pcm.msg_buffer[0] == 0x45) || (pcm.msg_buffer[0] == 0x33)) && (pcm.msg_buffer_ptr == 6)) // custom bootloader by dino2gnt
                         {
                             // TX: 45 AA BB CC DD EE
                             // RX: 46 AA BB CC DD EE XX YY ZZ
