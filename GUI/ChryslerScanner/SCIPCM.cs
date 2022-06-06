@@ -379,6 +379,16 @@ namespace ChryslerScanner
             MessageDatabase.Rows.Add(row);
 
             row = MessageDatabase.NewRow();
+            row["id"] = 0x31;
+            row["length"] = 6;
+            row["parameterCount"] = 1;
+            row["message"] = string.Empty;
+            row["description"] = "WRITE FLASH BLOCK";
+            row["value"] = string.Empty;
+            row["unit"] = string.Empty;
+            MessageDatabase.Rows.Add(row);
+
+            row = MessageDatabase.NewRow();
             row["id"] = 0x32;
             row["length"] = 2;
             row["parameterCount"] = 1;
@@ -389,11 +399,21 @@ namespace ChryslerScanner
             MessageDatabase.Rows.Add(row);
 
             row = MessageDatabase.NewRow();
+            row["id"] = 0x34;
+            row["length"] = 6;
+            row["parameterCount"] = 1;
+            row["message"] = string.Empty;
+            row["description"] = "READ FLASH BLOCK";
+            row["value"] = string.Empty;
+            row["unit"] = string.Empty;
+            MessageDatabase.Rows.Add(row);
+
+            row = MessageDatabase.NewRow();
             row["id"] = 0x46;
             row["length"] = 7;
             row["parameterCount"] = 2;
             row["message"] = string.Empty;
-            row["description"] = "FLASH READ";
+            row["description"] = "READ FLASH BLOCK";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -3796,7 +3816,7 @@ namespace ChryslerScanner
                             {
                                 byte checksum = (byte)(0x2B + payload[0] + payload[1]);
 
-                                if (checksum == payload[2])
+                                if (payload[2] == checksum)
                                 {
                                     ushort seed = (ushort)((payload[0] << 8) | payload[1]);
 
@@ -3923,7 +3943,7 @@ namespace ChryslerScanner
                         case 0x11: // upload worker function result
                             if (message.Length >= 3)
                             {
-                                descriptionToInsert = "UPLOAD WORKER FUNCTION | LENGTH: " + ((payload[0] << 8) + payload[1]).ToString() + " BYTES";
+                                descriptionToInsert = "UPLOAD WORKER FUNCTION | SIZE: " + ((payload[0] << 8) + payload[1]).ToString() + " BYTES";
 
                                 if (payload[payload.Length - 1] == 0x14)
                                 {
@@ -3963,12 +3983,174 @@ namespace ChryslerScanner
 
                             unitToInsert = string.Empty;
                             break;
-                        case 0x22: // worker function finished
-                            descriptionToInsert = "WORKER FUNCTION FINISHED";
+                        case 0x22: // exit worker function
+                            descriptionToInsert = "EXIT WORKER FUNCTION";
                             valueToInsert = string.Empty;
                             unitToInsert = string.Empty;
                             break;
-                        case 0x46: // flash read
+                        case 0x24: // request bootstrap security seed / send bootstrap security key
+                            if (message.Length >= 5)
+                            {
+                                if (message.Length == 5)
+                                {
+                                    byte checksum = (byte)(message[0] + message[1] + message[2] + message[3]);
+
+                                    descriptionToInsert = "REQUEST BOOTSTRAP SECURITY SEED";
+
+                                    if (message[4] == checksum)
+                                    {
+                                        if ((message[2] == 0x27) && (message[3] == 0xC1))
+                                        {
+                                            valueToInsert = "OK";
+                                        }
+                                        else
+                                        {
+                                            valueToInsert = "ERROR";
+                                        }
+                                    }
+                                    else
+                                    {
+                                        valueToInsert = "CHECKSUM ERROR";
+                                    }
+                                }
+                                else if (message.Length == 7)
+                                {
+                                    byte checksum = (byte)(message[0] + message[1] + message[2] + message[3] + message[4] + message[5]);
+
+                                    descriptionToInsert = "SEND BOOTSTRAP SECURITY KEY";
+
+                                    if (message[6] == checksum)
+                                    {
+                                        if ((message[2] == 0x27) && (message[3] == 0xC2))
+                                        {
+                                            valueToInsert = Util.ByteToHexString(message, 4, 2);
+                                        }
+                                        else
+                                        {
+                                            valueToInsert = "ERROR";
+                                        }
+                                    }
+                                    else
+                                    {
+                                        valueToInsert = "CHECKSUM ERROR";
+                                    }
+                                }
+                                else
+                                {
+                                    descriptionToInsert = "REQUEST BOOTSTRAP SECURITY SEED";
+                                    valueToInsert = string.Empty;
+                                }
+                            }
+                            else
+                            {
+                                descriptionToInsert = "REQUEST BOOTSTRAP SECURITY SEED";
+                                valueToInsert = string.Empty;
+                            }
+                            
+                            unitToInsert = string.Empty;
+                            break;
+                        case 0x26: // bootstrap security seed received
+                            if (message.Length >= 5)
+                            {
+                                if (message.Length == 5)
+                                {
+                                    byte checksum = (byte)(message[0] + message[1] + message[2] + message[3]);
+
+                                    descriptionToInsert = "BOOTSTRAP SECURITY KEY STATUS";
+
+                                    if (message[4] == checksum)
+                                    {
+                                        if ((message[2] == 0x67) && (message[3] == 0xC2))
+                                        {
+                                            valueToInsert = "OK";
+                                        }
+                                        else
+                                        {
+                                            valueToInsert = "INVALID";
+                                        }
+                                    }
+                                    else
+                                    {
+                                        valueToInsert = "CHECKSUM ERROR";
+                                    }
+                                }
+                                else if (message.Length == 7)
+                                {
+                                    byte checksum = (byte)(message[0] + message[1] + message[2] + message[3] + message[4] + message[5]);
+
+                                    descriptionToInsert = "BOOTSTRAP SECURITY SEED RECEIVED";
+
+                                    if (message[6] == checksum)
+                                    {
+                                        if ((message[2] == 0x67) && (message[3] == 0xC1))
+                                        {
+                                            valueToInsert = Util.ByteToHexString(payload, 3, 2);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        valueToInsert = "CHECKSUM ERROR";
+                                    }
+                                    
+                                }
+                                else
+                                {
+                                    descriptionToInsert = "BOOTSTRAP SECURITY KEY STATUS";
+                                    valueToInsert = string.Empty;
+                                }
+                            }
+
+                            unitToInsert = string.Empty;
+                            break;
+                        case 0x31: // write flash block
+                            if (message.Length >= 6)
+                            {
+                                List<byte> offset = new List<byte>();
+                                List<byte> length = new List<byte>();
+                                List<byte> values = new List<byte>();
+                                offset.Clear();
+                                length.Clear();
+                                values.Clear();
+                                offset.AddRange(payload.Take(3));
+                                length.AddRange(payload.Skip(3).Take(2));
+                                values.AddRange(payload.Skip(5));
+
+                                ushort blockSize = (ushort)((payload[3] << 8) + payload[4]);
+                                ushort echoCount = (ushort)(payload.Length - 5);
+
+                                descriptionToInsert = "WRITE FLASH BLOCK | OFFSET: " + Util.ByteToHexStringSimple(offset.ToArray()) + " | SIZE: " + Util.ByteToHexStringSimple(length.ToArray());
+
+                                if (echoCount == blockSize)
+                                {
+                                    valueToInsert = Util.ByteToHexStringSimple(values.ToArray());
+                                    unitToInsert = "OK";
+                                }
+                                else
+                                {
+                                    switch (message[message.Length - 1]) // last payload byte stores error status
+                                    {
+                                        case 0x01:
+                                            valueToInsert = "WRITE ERROR";
+                                            break;
+                                        case 0x80:
+                                            valueToInsert = "INVALID BLOCK SIZE";
+                                            break;
+                                        default:
+                                            valueToInsert = "UNKNOWN ERROR";
+                                            break;
+                                    }
+
+                                    unitToInsert = string.Empty;
+                                }
+                            }
+                            else
+                            {
+                                descriptionToInsert = "WRITE FLASH BLOCK";
+                                valueToInsert = string.Empty;
+                                unitToInsert = string.Empty;
+                            }
+                            break;
+                        case 0x34: // read flash block
                             if (message.Length >= minLength)
                             {
                                 List<byte> offset = new List<byte>();
@@ -3980,15 +4162,64 @@ namespace ChryslerScanner
                                 offset.AddRange(payload.Take(3));
                                 length.AddRange(payload.Skip(3).Take(2));
                                 values.AddRange(payload.Skip(5));
-                                descriptionToInsert = "FLASH READ | OFFSET: " + Util.ByteToHexStringSimple(offset.ToArray()) + " | LENGTH: " + Util.ByteToHexStringSimple(length.ToArray());
-                                valueToInsert = Util.ByteToHexStringSimple(values.ToArray());
+
+                                ushort blockSize = (ushort)((payload[3] << 8) + payload[4]);
+                                ushort echoCount = (ushort)(payload.Length - 5);
+
+                                descriptionToInsert = "READ FLASH BLOCK | OFFSET: " + Util.ByteToHexStringSimple(offset.ToArray()) + " | SIZE: " + Util.ByteToHexStringSimple(length.ToArray());
+
+                                if (echoCount == blockSize)
+                                {
+                                    valueToInsert = Util.ByteToHexStringSimple(values.ToArray());
+                                    unitToInsert = "OK";
+                                }
+                                else
+                                {
+                                    valueToInsert = "READ ERROR";
+                                    unitToInsert = string.Empty;
+                                }
                             }
                             else
                             {
-                                descriptionToInsert = "FLASH READ";
+                                descriptionToInsert = "READ FLASH BLOCK";
                                 valueToInsert = string.Empty;
+                                unitToInsert = string.Empty;
+                            }                         
+                            break;
+                        case 0x46: // read flash block
+                            if (message.Length >= minLength)
+                            {
+                                List<byte> offset = new List<byte>();
+                                List<byte> length = new List<byte>();
+                                List<byte> values = new List<byte>();
+                                offset.Clear();
+                                length.Clear();
+                                values.Clear();
+                                offset.AddRange(payload.Take(3));
+                                length.AddRange(payload.Skip(3).Take(2));
+                                values.AddRange(payload.Skip(5));
+                                descriptionToInsert = "READ FLASH BLOCK | OFFSET: " + Util.ByteToHexStringSimple(offset.ToArray()) + " | SIZE: " + Util.ByteToHexStringSimple(length.ToArray());
+
+                                ushort blockSize = (ushort)((payload[3] << 8) + payload[4]);
+                                ushort echoCount = (ushort)(payload.Length - 5);
+
+                                if (echoCount == blockSize)
+                                {
+                                    valueToInsert = Util.ByteToHexStringSimple(values.ToArray());
+                                    unitToInsert = "OK";
+                                }
+                                else
+                                {
+                                    valueToInsert = "READ ERROR";
+                                    unitToInsert = string.Empty;
+                                }
                             }
-                            unitToInsert = string.Empty;
+                            else
+                            {
+                                descriptionToInsert = "READ FLASH BLOCK";
+                                valueToInsert = string.Empty;
+                                unitToInsert = string.Empty;
+                            }
                             break;
                         case 0x47: // start bootloader command
                             if (message.Length >= minLength)

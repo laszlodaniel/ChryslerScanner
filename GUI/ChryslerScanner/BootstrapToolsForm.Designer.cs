@@ -34,11 +34,13 @@ namespace ChryslerScanner
             this.BootloaderLabel = new System.Windows.Forms.Label();
             this.BootstrapButton = new System.Windows.Forms.Button();
             this.UploadWorkerFunctionGroupBox = new System.Windows.Forms.GroupBox();
-            this.ExitButton = new System.Windows.Forms.Button();
-            this.StartButton = new System.Windows.Forms.Button();
+            this.FlashChipDetectButton = new System.Windows.Forms.Button();
+            this.FlashChipComboBox = new System.Windows.Forms.ComboBox();
+            this.FlashChipLabel = new System.Windows.Forms.Label();
             this.WorkerFunctionComboBox = new System.Windows.Forms.ComboBox();
             this.FunctionLabel = new System.Windows.Forms.Label();
-            this.UploadButton = new System.Windows.Forms.Button();
+            this.ExecuteButton = new System.Windows.Forms.Button();
+            this.SCIBusBootstrapInfoTextBox = new System.Windows.Forms.TextBox();
             this.InitializeBootstrapModeGroupBox.SuspendLayout();
             this.UploadWorkerFunctionGroupBox.SuspendLayout();
             this.SuspendLayout();
@@ -50,7 +52,7 @@ namespace ChryslerScanner
             this.InitializeBootstrapModeGroupBox.Controls.Add(this.BootstrapButton);
             this.InitializeBootstrapModeGroupBox.Location = new System.Drawing.Point(9, 7);
             this.InitializeBootstrapModeGroupBox.Name = "InitializeBootstrapModeGroupBox";
-            this.InitializeBootstrapModeGroupBox.Size = new System.Drawing.Size(244, 46);
+            this.InitializeBootstrapModeGroupBox.Size = new System.Drawing.Size(300, 46);
             this.InitializeBootstrapModeGroupBox.TabIndex = 0;
             this.InitializeBootstrapModeGroupBox.TabStop = false;
             this.InitializeBootstrapModeGroupBox.Text = "Initialize bootstrap mode";
@@ -60,12 +62,13 @@ namespace ChryslerScanner
             this.BootloaderComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.BootloaderComboBox.FormattingEnabled = true;
             this.BootloaderComboBox.Items.AddRange(new object[] {
+            "Empty",
             "SBEC3 (128k)",
             "SBEC3 (256k)",
             "SBEC3 custom"});
             this.BootloaderComboBox.Location = new System.Drawing.Point(67, 17);
             this.BootloaderComboBox.Name = "BootloaderComboBox";
-            this.BootloaderComboBox.Size = new System.Drawing.Size(96, 21);
+            this.BootloaderComboBox.Size = new System.Drawing.Size(152, 21);
             this.BootloaderComboBox.TabIndex = 9;
             // 
             // BootloaderLabel
@@ -79,62 +82,79 @@ namespace ChryslerScanner
             // 
             // BootstrapButton
             // 
-            this.BootstrapButton.Location = new System.Drawing.Point(168, 16);
+            this.BootstrapButton.Location = new System.Drawing.Point(224, 16);
             this.BootstrapButton.Name = "BootstrapButton";
             this.BootstrapButton.Size = new System.Drawing.Size(70, 23);
             this.BootstrapButton.TabIndex = 10;
             this.BootstrapButton.Text = "Bootstrap";
             this.BootstrapButton.UseVisualStyleBackColor = true;
-            this.BootstrapButton.Click += new System.EventHandler(this.SCIBusPCMBootstrapButton_Click);
+            this.BootstrapButton.Click += new System.EventHandler(this.BootstrapButton_Click);
             // 
             // UploadWorkerFunctionGroupBox
             // 
-            this.UploadWorkerFunctionGroupBox.Controls.Add(this.ExitButton);
-            this.UploadWorkerFunctionGroupBox.Controls.Add(this.StartButton);
+            this.UploadWorkerFunctionGroupBox.Controls.Add(this.FlashChipDetectButton);
+            this.UploadWorkerFunctionGroupBox.Controls.Add(this.FlashChipComboBox);
+            this.UploadWorkerFunctionGroupBox.Controls.Add(this.FlashChipLabel);
             this.UploadWorkerFunctionGroupBox.Controls.Add(this.WorkerFunctionComboBox);
             this.UploadWorkerFunctionGroupBox.Controls.Add(this.FunctionLabel);
-            this.UploadWorkerFunctionGroupBox.Controls.Add(this.UploadButton);
+            this.UploadWorkerFunctionGroupBox.Controls.Add(this.ExecuteButton);
             this.UploadWorkerFunctionGroupBox.Location = new System.Drawing.Point(9, 55);
             this.UploadWorkerFunctionGroupBox.Name = "UploadWorkerFunctionGroupBox";
-            this.UploadWorkerFunctionGroupBox.Size = new System.Drawing.Size(244, 74);
+            this.UploadWorkerFunctionGroupBox.Size = new System.Drawing.Size(300, 74);
             this.UploadWorkerFunctionGroupBox.TabIndex = 11;
             this.UploadWorkerFunctionGroupBox.TabStop = false;
             this.UploadWorkerFunctionGroupBox.Text = "Upload worker function";
             // 
-            // ExitButton
+            // FlashChipDetectButton
             // 
-            this.ExitButton.Enabled = false;
-            this.ExitButton.Location = new System.Drawing.Point(94, 44);
-            this.ExitButton.Name = "ExitButton";
-            this.ExitButton.Size = new System.Drawing.Size(70, 23);
-            this.ExitButton.TabIndex = 12;
-            this.ExitButton.Text = "Exit";
-            this.ExitButton.UseVisualStyleBackColor = true;
-            this.ExitButton.Click += new System.EventHandler(this.ExitButton_Click);
+            this.FlashChipDetectButton.Location = new System.Drawing.Point(224, 44);
+            this.FlashChipDetectButton.Name = "FlashChipDetectButton";
+            this.FlashChipDetectButton.Size = new System.Drawing.Size(70, 23);
+            this.FlashChipDetectButton.TabIndex = 15;
+            this.FlashChipDetectButton.Text = "Detect";
+            this.FlashChipDetectButton.UseVisualStyleBackColor = true;
+            this.FlashChipDetectButton.Click += new System.EventHandler(this.FlashChipDetectButton_Click);
             // 
-            // StartButton
+            // FlashChipComboBox
             // 
-            this.StartButton.Location = new System.Drawing.Point(168, 44);
-            this.StartButton.Name = "StartButton";
-            this.StartButton.Size = new System.Drawing.Size(70, 23);
-            this.StartButton.TabIndex = 11;
-            this.StartButton.Text = "Start";
-            this.StartButton.UseVisualStyleBackColor = true;
-            this.StartButton.Click += new System.EventHandler(this.StartButton_Click);
+            this.FlashChipComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.FlashChipComboBox.FormattingEnabled = true;
+            this.FlashChipComboBox.Items.AddRange(new object[] {
+            "Unknown",
+            "ST M28F102 (128 kB)",
+            "CAT CAT28F102 (128 kB)",
+            "Intel N28F010 (128k)",
+            "Intel N28F020 (256k)",
+            "ST M28F210 (256 kB)",
+            "ST M28F220 (256 kB)"});
+            this.FlashChipComboBox.Location = new System.Drawing.Point(67, 45);
+            this.FlashChipComboBox.Name = "FlashChipComboBox";
+            this.FlashChipComboBox.Size = new System.Drawing.Size(152, 21);
+            this.FlashChipComboBox.TabIndex = 14;
+            // 
+            // FlashChipLabel
+            // 
+            this.FlashChipLabel.AutoSize = true;
+            this.FlashChipLabel.Location = new System.Drawing.Point(8, 49);
+            this.FlashChipLabel.Name = "FlashChipLabel";
+            this.FlashChipLabel.Size = new System.Drawing.Size(58, 13);
+            this.FlashChipLabel.TabIndex = 13;
+            this.FlashChipLabel.Text = "Flash chip:";
             // 
             // WorkerFunctionComboBox
             // 
             this.WorkerFunctionComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.WorkerFunctionComboBox.FormattingEnabled = true;
             this.WorkerFunctionComboBox.Items.AddRange(new object[] {
-            "P/N read",
+            "Empty",
+            "Part number read",
             "Flash read",
             "Flash ID",
-            "Flash erase (M28F102)",
-            "Flash program (M28F102)"});
+            "Flash erase",
+            "Flash program"});
             this.WorkerFunctionComboBox.Location = new System.Drawing.Point(67, 17);
             this.WorkerFunctionComboBox.Name = "WorkerFunctionComboBox";
-            this.WorkerFunctionComboBox.Size = new System.Drawing.Size(96, 21);
+            this.WorkerFunctionComboBox.Size = new System.Drawing.Size(152, 21);
             this.WorkerFunctionComboBox.TabIndex = 9;
             // 
             // FunctionLabel
@@ -146,21 +166,34 @@ namespace ChryslerScanner
             this.FunctionLabel.TabIndex = 8;
             this.FunctionLabel.Text = "Function:";
             // 
-            // UploadButton
+            // ExecuteButton
             // 
-            this.UploadButton.Location = new System.Drawing.Point(168, 16);
-            this.UploadButton.Name = "UploadButton";
-            this.UploadButton.Size = new System.Drawing.Size(70, 23);
-            this.UploadButton.TabIndex = 10;
-            this.UploadButton.Text = "Upload";
-            this.UploadButton.UseVisualStyleBackColor = true;
-            this.UploadButton.Click += new System.EventHandler(this.UploadButton_Click);
+            this.ExecuteButton.Location = new System.Drawing.Point(224, 16);
+            this.ExecuteButton.Name = "ExecuteButton";
+            this.ExecuteButton.Size = new System.Drawing.Size(70, 23);
+            this.ExecuteButton.TabIndex = 10;
+            this.ExecuteButton.Text = "Execute";
+            this.ExecuteButton.UseVisualStyleBackColor = true;
+            this.ExecuteButton.Click += new System.EventHandler(this.ExecuteButton_Click);
+            // 
+            // SCIBusBootstrapInfoTextBox
+            // 
+            this.SCIBusBootstrapInfoTextBox.BackColor = System.Drawing.SystemColors.Window;
+            this.SCIBusBootstrapInfoTextBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.SCIBusBootstrapInfoTextBox.Location = new System.Drawing.Point(318, 13);
+            this.SCIBusBootstrapInfoTextBox.Multiline = true;
+            this.SCIBusBootstrapInfoTextBox.Name = "SCIBusBootstrapInfoTextBox";
+            this.SCIBusBootstrapInfoTextBox.ReadOnly = true;
+            this.SCIBusBootstrapInfoTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.SCIBusBootstrapInfoTextBox.Size = new System.Drawing.Size(400, 224);
+            this.SCIBusBootstrapInfoTextBox.TabIndex = 37;
             // 
             // BootstrapToolsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(262, 137);
+            this.ClientSize = new System.Drawing.Size(731, 257);
+            this.Controls.Add(this.SCIBusBootstrapInfoTextBox);
             this.Controls.Add(this.UploadWorkerFunctionGroupBox);
             this.Controls.Add(this.InitializeBootstrapModeGroupBox);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
@@ -173,6 +206,7 @@ namespace ChryslerScanner
             this.UploadWorkerFunctionGroupBox.ResumeLayout(false);
             this.UploadWorkerFunctionGroupBox.PerformLayout();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -185,8 +219,10 @@ namespace ChryslerScanner
         private System.Windows.Forms.GroupBox UploadWorkerFunctionGroupBox;
         private System.Windows.Forms.ComboBox WorkerFunctionComboBox;
         private System.Windows.Forms.Label FunctionLabel;
-        private System.Windows.Forms.Button UploadButton;
-        private System.Windows.Forms.Button ExitButton;
-        private System.Windows.Forms.Button StartButton;
+        private System.Windows.Forms.Button ExecuteButton;
+        private System.Windows.Forms.ComboBox FlashChipComboBox;
+        private System.Windows.Forms.Label FlashChipLabel;
+        private System.Windows.Forms.Button FlashChipDetectButton;
+        private System.Windows.Forms.TextBox SCIBusBootstrapInfoTextBox;
     }
 }

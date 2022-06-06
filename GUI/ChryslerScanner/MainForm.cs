@@ -106,6 +106,7 @@ namespace ChryslerScanner
             if (!Directory.Exists("LOG")) Directory.CreateDirectory("LOG");
             if (!Directory.Exists("LOG/CCD")) Directory.CreateDirectory("LOG/CCD");
             if (!Directory.Exists("LOG/PCI")) Directory.CreateDirectory("LOG/PCI");
+            if (!Directory.Exists("LOG/SCI")) Directory.CreateDirectory("LOG/SCI");
             if (!Directory.Exists("LOG/PCM")) Directory.CreateDirectory("LOG/PCM");
             if (!Directory.Exists("LOG/TCM")) Directory.CreateDirectory("LOG/TCM");
             if (!Directory.Exists("LOG/USB")) Directory.CreateDirectory("LOG/USB");
@@ -407,7 +408,7 @@ namespace ChryslerScanner
                     success = int.TryParse(CCDBusTxMessageRepeatIntervalTextBox.Text, out repeatInterval);
                     break;
                 case Packet.Bus.pci:
-                    //success = int.TryParse(PCIBusTxMessageRepeatIntervalTextBox.Text, out repeatInterval);
+                    success = int.TryParse(PCIBusTxMessageRepeatIntervalTextBox.Text, out repeatInterval);
                     break;
                 case Packet.Bus.pcm:
                     success = int.TryParse(SCIBusTxMessageRepeatIntervalTextBox.Text, out repeatInterval);
@@ -429,7 +430,7 @@ namespace ChryslerScanner
                         CCDBusTxMessageRepeatIntervalTextBox.Text = "100";
                         break;
                     case Packet.Bus.pci:
-                        //PCIBusTxMessageRepeatIntervalTextBox.Text = "100";
+                        PCIBusTxMessageRepeatIntervalTextBox.Text = "100";
                         break;
                     case Packet.Bus.pcm:
                         SCIBusTxMessageRepeatIntervalTextBox.Text = "100";
@@ -663,6 +664,7 @@ namespace ChryslerScanner
 
                                     string SCIBusPCMStateString = string.Empty;
                                     string SCIBusPCMLogicString = string.Empty;
+                                    string SCIBusPCMNGCModeString = string.Empty;
                                     string SCIBusPCMOBDConfigurationString = string.Empty;
                                     string SCIBusPCMSpeedString = string.Empty;
                                     string SCIBusPCMMsgRxCountString = string.Empty;
@@ -674,11 +676,11 @@ namespace ChryslerScanner
 
                                         if (Util.IsBitClear(Packet.rx.payload[24], 4))
                                         {
-                                            // TODO: NGC mode disabled
+                                            SCIBusPCMNGCModeString = "disabled";
                                         }
                                         else
                                         {
-                                            // TODO: NGC mode enabled
+                                            SCIBusPCMNGCModeString = "enabled";
                                         }
 
                                         if (Util.IsBitClear(Packet.rx.payload[24], 3))
@@ -743,6 +745,7 @@ namespace ChryslerScanner
 
                                     string SCIBusTCMStateString = string.Empty;
                                     string SCIBusTCMLogicString = string.Empty;
+                                    string SCIBusTCMNGCModeString = string.Empty;
                                     string SCIBusTCMOBDConfigurationString = string.Empty;
                                     string SCIBusTCMSpeedString = string.Empty;
                                     string SCIBusTCMMsgRxCountString = string.Empty;
@@ -754,11 +757,11 @@ namespace ChryslerScanner
 
                                         if (Util.IsBitClear(Packet.rx.payload[33], 4))
                                         {
-                                            // TODO: NGC mode disabled
+                                            SCIBusTCMNGCModeString = "disabled";
                                         }
                                         else
                                         {
-                                            // TODO: NGC mode enabled
+                                            SCIBusTCMNGCModeString = "enabled";
                                         }
 
                                         if (Util.IsBitClear(Packet.rx.payload[33], 3))
@@ -908,6 +911,7 @@ namespace ChryslerScanner
                                                                    "       ----------SCI-bus (PCM) status----------" + Environment.NewLine +
                                                                    "       State: " + SCIBusPCMStateString + Environment.NewLine +
                                                                    "       Logic: " + SCIBusPCMLogicString + Environment.NewLine +
+                                                                   "       NGC mode: " + SCIBusPCMNGCModeString + Environment.NewLine +
                                                                    "       OBD config.: " + SCIBusPCMOBDConfigurationString + Environment.NewLine +
                                                                    "       Speed: " + SCIBusPCMSpeedString + Environment.NewLine +
                                                                    "       Messages received: " + SCIBusPCMMsgRxCountString + Environment.NewLine +
@@ -915,6 +919,7 @@ namespace ChryslerScanner
                                                                    "       ----------SCI-bus (TCM) status----------" + Environment.NewLine +
                                                                    "       State: " + SCIBusTCMStateString + Environment.NewLine +
                                                                    "       Logic: " + SCIBusTCMLogicString + Environment.NewLine +
+                                                                   "       NGC mode: " + SCIBusTCMNGCModeString + Environment.NewLine +
                                                                    "       OBD config.: " + SCIBusTCMOBDConfigurationString + Environment.NewLine +
                                                                    "       Speed: " + SCIBusTCMSpeedString + Environment.NewLine +
                                                                    "       Messages received: " + SCIBusTCMMsgRxCountString + Environment.NewLine +
@@ -1049,6 +1054,7 @@ namespace ChryslerScanner
                                     string SCIBusStateString = string.Empty;
                                     string SCIBusModuleString = string.Empty;
                                     string SCIBusLogicString = string.Empty;
+                                    string SCIBusNGCModeString = string.Empty;
                                     string SCIBusOBDConfigurationString = string.Empty;
                                     string SCIBusSpeedString = string.Empty;
                                     string SCIBusMsgRxCountString = string.Empty;
@@ -1060,11 +1066,11 @@ namespace ChryslerScanner
 
                                         if (Util.IsBitClear(Packet.rx.payload[32], 4))
                                         {
-                                            // TODO: NGC mode disabled
+                                            SCIBusNGCModeString = "disabled";
                                         }
                                         else
                                         {
-                                            // TODO: NGC mode enabled
+                                            SCIBusNGCModeString = "enabled";
                                         }
 
                                         if (Util.IsBitClear(Packet.rx.payload[32], 3))
@@ -1186,6 +1192,7 @@ namespace ChryslerScanner
                                                                    "       Module: " + SCIBusModuleString + Environment.NewLine +
                                                                    "       State: " + SCIBusStateString + Environment.NewLine +
                                                                    "       Logic: " + SCIBusLogicString + Environment.NewLine +
+                                                                   "       NGC mode: " + SCIBusNGCModeString + Environment.NewLine +
                                                                    "       OBD config.: " + SCIBusOBDConfigurationString + Environment.NewLine +
                                                                    "       Speed: " + SCIBusSpeedString + Environment.NewLine +
                                                                    "       Messages received: " + SCIBusMsgRxCountString + Environment.NewLine +
@@ -5067,6 +5074,10 @@ namespace ChryslerScanner
                     CCDBusDiagnosticsListBox.Items.Clear();
                     CCDBusDiagnosticsListBox.Items.AddRange(CCD.Diagnostics.Table.ToArray());
                     break;
+                case "PCIBusDiagnosticsTabPage":
+                    PCIBusDiagnosticsListBox.Items.Clear();
+                    PCIBusDiagnosticsListBox.Items.AddRange(PCI.Diagnostics.Table.ToArray());
+                    break;
                 case "SCIBusPCMDiagnosticsTabPage":
                     SCIBusPCMDiagnosticsListBox.Items.Clear();
                     SCIBusPCMDiagnosticsListBox.Items.AddRange(PCM.Diagnostics.Table.ToArray());
@@ -5095,6 +5106,18 @@ namespace ChryslerScanner
                     CCD.Diagnostics.InitCCDTable();
                     CCDBusDiagnosticsListBox.Items.Clear();
                     CCDBusDiagnosticsListBox.Items.AddRange(CCD.Diagnostics.Table.ToArray());
+                    break;
+                case "PCIBusDiagnosticsTabPage":
+                    PCI.Diagnostics.IDByteList.Clear();
+                    PCI.Diagnostics.UniqueIDByteList.Clear();
+                    PCI.Diagnostics._2426IDByteList.Clear();
+                    PCITableBuffer.Clear();
+                    PCITableBufferLocation.Clear();
+                    PCITableRowCountHistory.Clear();
+                    PCI.Diagnostics.lastUpdatedLine = 1;
+                    PCI.Diagnostics.InitPCITable();
+                    PCIBusDiagnosticsListBox.Items.Clear();
+                    PCIBusDiagnosticsListBox.Items.AddRange(PCI.Diagnostics.Table.ToArray());
                     break;
                 case "SCIBusPCMDiagnosticsTabPage":
                     PCM.Diagnostics.IDByteList.Clear();
@@ -5138,6 +5161,9 @@ namespace ChryslerScanner
                 case "CCDBusDiagnosticsTabPage":
                     Clipboard.SetText(string.Join(Environment.NewLine, CCD.Diagnostics.Table.ToArray()) + Environment.NewLine);
                     break;
+                case "PCIBusDiagnosticsTabPage":
+                    Clipboard.SetText(string.Join(Environment.NewLine, PCI.Diagnostics.Table.ToArray()) + Environment.NewLine);
+                    break;
                 case "SCIBusPCMDiagnosticsTabPage":
                     Clipboard.SetText(string.Join(Environment.NewLine, PCM.Diagnostics.Table.ToArray()) + Environment.NewLine);
                     break;
@@ -5172,6 +5198,23 @@ namespace ChryslerScanner
 
                     CCDDiagnosticsSnapshotFilename += ".txt";
                     File.AppendAllText(CCDDiagnosticsSnapshotFilename, string.Join(Environment.NewLine, CCD.Diagnostics.Table.ToArray()) + Environment.NewLine);
+                    break;
+                case "PCIBusDiagnosticsTabPage":
+                    DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss"); // new time for each snapshot
+                    string PCIDiagnosticsSnapshotFilename = @"LOG/PCI/pcisnapshot_" + DateTimeNow;
+                    counter = 1;
+
+                    while (File.Exists(PCIDiagnosticsSnapshotFilename + ".txt"))
+                    {
+                        if (PCIDiagnosticsSnapshotFilename.Length > 35) PCIDiagnosticsSnapshotFilename = PCIDiagnosticsSnapshotFilename.Remove(PCIDiagnosticsSnapshotFilename.Length - 3, 3); // remove last 3 characters
+                        PCIDiagnosticsSnapshotFilename += "_";
+                        if (counter < 10) PCIDiagnosticsSnapshotFilename += "0";
+                        PCIDiagnosticsSnapshotFilename += counter.ToString();
+                        counter++;
+                    }
+
+                    PCIDiagnosticsSnapshotFilename += ".txt";
+                    File.AppendAllText(PCIDiagnosticsSnapshotFilename, string.Join(Environment.NewLine, PCI.Diagnostics.Table.ToArray()) + Environment.NewLine);
                     break;
                 case "SCIBusPCMDiagnosticsTabPage":
                     DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss"); // new time for each snapshot
@@ -5352,8 +5395,6 @@ namespace ChryslerScanner
         {
             Uri GUIAssemblyInfoFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/GUI/ChryslerScanner/Properties/AssemblyInfo.cs");
             Uri GUIZIPDownload = new Uri("https://github.com/laszlodaniel/ChryslerCCDSCIScanner/raw/master/GUI/ChryslerScanner/bin/Debug/ChryslerScanner_GUI.zip");
-            Uri FWSourceFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/Arduino/ChryslerCCDSCIScanner/ChryslerCCDSCIScanner.ino");
-            Uri FWFlashFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/Arduino/ChryslerCCDSCIScanner/ChryslerCCDSCIScanner.ino.mega.hex");
 
             // First check if GUI update is available.
             // Download the latest AssemblyInfo.cs file from GitHub and compare version numbers.
@@ -5443,120 +5484,259 @@ namespace ChryslerScanner
                 File.Delete(@"Update/AssemblyInfo.cs");
             }
 
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            try
+            // Proceed by selecting the correct update tools.
+            if (HWVersion.Contains("v1."))
             {
-                Downloader.DownloadFile(FWSourceFile, @"Update/ChryslerCCDSCIScanner.ino");
-            }
-            catch
-            {
-                MessageBox.Show("Firmware update availability cannot be checked.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
+                Uri FWSourceFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerScanner/master/Arduino/ChryslerCCDSCIScanner/ChryslerCCDSCIScanner.ino");
+                Uri FWFlashFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerScanner/master/Arduino/ChryslerCCDSCIScanner/ChryslerCCDSCIScanner.ino.mega.hex");
 
-            if (File.Exists(@"Update/ChryslerCCDSCIScanner.ino") && deviceFound)
-            {
-                // Get new version/UNIX time value from the downloaded file
-                string line = string.Empty;
-                bool done = false;
-                using (Stream stream = File.Open(@"Update/ChryslerCCDSCIScanner.ino", FileMode.Open))
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                try
                 {
-                    using (StreamReader reader = new StreamReader(stream))
-                    {
-                        while (!done)
-                        {
-                            Thread.Sleep(1);
-                            
-                            line = reader.ReadLine();
+                    Downloader.DownloadFile(FWSourceFile, @"Update/ChryslerCCDSCIScanner.ino");
+                }
+                catch
+                {
+                    MessageBox.Show("Firmware update availability cannot be checked.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
 
-                            if (line != null)
+                if (File.Exists(@"Update/ChryslerCCDSCIScanner.ino") && deviceFound)
+                {
+                    // Get new version/UNIX time value from the downloaded file
+                    string line = string.Empty;
+                    bool done = false;
+                    using (Stream stream = File.Open(@"Update/ChryslerCCDSCIScanner.ino", FileMode.Open))
+                    {
+                        using (StreamReader reader = new StreamReader(stream))
+                        {
+                            while (!done)
                             {
-                                if (line.Contains("#define FW_VERSION") || line.Contains("#define FW_DATE"))
+                                Thread.Sleep(1);
+
+                                line = reader.ReadLine();
+
+                                if (line != null)
                                 {
-                                    done = true;
+                                    if (line.Contains("#define FW_VERSION") || line.Contains("#define FW_DATE"))
+                                    {
+                                        done = true;
+                                    }
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (line != null)
+                    {
+                        UInt32 ver = 0;
+
+                        if (line.StartsWith("#define FW_DATE"))
+                        {
+                            string hexline = line.Substring(16, 10);
+                            ver = Convert.ToUInt32(hexline, 16);
+                        }
+                        else if (line.StartsWith("#define FW_VERSION"))
+                        {
+                            string hexline = line.Substring(19, 10);
+                            ver = Convert.ToUInt32(hexline, 16);
+                        }
+
+                        byte major = (byte)(ver >> 24);
+                        byte minor = (byte)(ver >> 16);
+                        byte patch = (byte)(ver >> 8);
+                        string latestFWVersionString = "v" + major.ToString("0") + "." + minor.ToString("0") + "." + patch.ToString("0");
+
+                        if (latestFWVersionString == FWVersion)
+                        {
+                            MessageBox.Show("The diagnostic scanner uses the latest firmware version.", "No firmware update available", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                        else
+                        {
+                            if (File.Exists(@"Tools/avrdude.exe") && File.Exists(@"Tools/avrdude.conf") && File.Exists(@"Tools/libusb0.dll"))
+                            {
+                                if (MessageBox.Show("Latest firmware version: " + latestFWVersionString + Environment.NewLine +
+                                                    "Current firmware version: " + FWVersion + Environment.NewLine +
+                                                    "There is a new device firmware version available." + Environment.NewLine +
+                                                    "Do you want to update the device?", "Device firmware update available", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
+                                {
+                                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                                    try
+                                    {
+                                        Downloader.DownloadFile(FWFlashFile, @"Tools/ChryslerCCDSCIScanner.ino.mega.hex");
+                                    }
+                                    catch
+                                    {
+                                        MessageBox.Show("Firmware download error.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                    }
+
+                                    if (File.Exists(@"Tools/ChryslerCCDSCIScanner.ino.mega.hex"))
+                                    {
+                                        ConnectButton.PerformClick(); // disconnect
+                                        Thread.Sleep(500); // wait until UI updates its controls
+                                        this.Refresh();
+                                        Process process = new Process();
+                                        process.StartInfo.WorkingDirectory = "Tools";
+                                        process.StartInfo.FileName = "avrdude.exe";
+                                        process.StartInfo.Arguments = "-C avrdude.conf -p m2560 -c wiring -P " + selectedPort + " -b 115200 -D -U flash:w:ChryslerCCDSCIScanner.ino.mega.hex:i";
+                                        process.Start();
+                                        process.WaitForExit();
+                                        this.Refresh();
+                                        File.Delete(@"Tools/ChryslerCCDSCIScanner.ino.mega.hex");
+                                        MessageBox.Show("Device firmware update finished." + Environment.NewLine +
+                                                        "Connect again manually.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                        FWVersion = latestFWVersionString;
+                                    }
+                                    else
+                                    {
+                                        MessageBox.Show("Flash file is missing.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                    }
+                                }
+                                else
+                                {
+                                    MessageBox.Show("Device firmware update cancelled.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                                 }
                             }
                             else
                             {
-                                break;
+                                MessageBox.Show("V1 update tools are missing.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                             }
                         }
-                    }
-                }
-
-                if (line != null)
-                {
-                    UInt32 ver = 0;
-
-                    if (line.StartsWith("#define FW_DATE"))
-                    {
-                        string hexline = line.Substring(16, 10);
-                        ver = Convert.ToUInt32(hexline, 16);
-                    }
-                    else if (line.StartsWith("#define FW_VERSION"))
-                    {
-                        string hexline = line.Substring(19, 10);
-                        ver = Convert.ToUInt32(hexline, 16);
-                    }
-
-                    byte major = (byte)(ver >> 24);
-                    byte minor = (byte)(ver >> 16);
-                    byte patch = (byte)(ver >> 8);
-                    string latestFWVersionString = "v" + major.ToString("0") + "." + minor.ToString("0") + "." + patch.ToString("0");
-
-                    if (latestFWVersionString == FWVersion)
-                    {
-                        MessageBox.Show("The diagnostic scanner uses the latest firmware version.", "No firmware update available", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     else
                     {
-                        if (MessageBox.Show("Latest firmware version: " + latestFWVersionString + Environment.NewLine +
-                                            "Current firmware version: " + FWVersion + Environment.NewLine +
-                                            "There is a new device firmware version available." + Environment.NewLine +
-                                            "Do you want to update the device?", "Device firmware update available", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
-                        {
-                            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-                            try
-                            {
-                                Downloader.DownloadFile(FWFlashFile, @"Tools/ChryslerCCDSCIScanner.ino.mega.hex");
-                            }
-                            catch
-                            {
-                                MessageBox.Show("Firmware download error.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                            }
+                        MessageBox.Show("Firmware download error." + Environment.NewLine + "Please download the latest .hex flash file from GitHub and perform a manual update." + Environment.NewLine + "For more information see \"Tools\\readme.txt\".", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
 
-                            ConnectButton.PerformClick(); // disconnect
-                            Thread.Sleep(500); // wait until UI updates its controls
-                            this.Refresh();
-                            Process process = new Process();
-                            process.StartInfo.WorkingDirectory = "Tools";
-                            process.StartInfo.FileName = "avrdude.exe";
-                            process.StartInfo.Arguments = "-C avrdude.conf -p m2560 -c wiring -P " + selectedPort + " -b 115200 -D -U flash:w:ChryslerCCDSCIScanner.ino.mega.hex:i";
-                            process.Start();
-                            process.WaitForExit();
-                            this.Refresh();
-                            File.Delete(@"Tools/ChryslerCCDSCIScanner.ino.mega.hex");
-                            MessageBox.Show("Device firmware update finished." + Environment.NewLine +
-                                            "Connect again manually.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            FWVersion = latestFWVersionString;
+                    File.Delete(@"Update/ChryslerCCDSCIScanner.ino");
+                }
+                else if (!deviceFound)
+                {
+                    File.Delete(@"Update/ChryslerCCDSCIScanner.ino");
+                    MessageBox.Show("Device firmware update cannot be checked." + Environment.NewLine +
+                                    "Connect to the device and try again!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            else if (HWVersion.Contains("v2."))
+            {
+                Uri FWSourceFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerScanner/master/PlatformIO/ChryslerScanner/CMakeLists.txt");
+                Uri FWFlashFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerScanner/master/PlatformIO/ChryslerScanner/src/ChryslerScanner.bin");
+
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                try
+                {
+                    Downloader.DownloadFile(FWSourceFile, @"Update/CMakeLists.txt");
+                }
+                catch
+                {
+                    MessageBox.Show("Firmware update availability cannot be checked.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+
+                if (File.Exists(@"Update/CMakeLists.txt") && deviceFound)
+                {
+                    string line = string.Empty;
+                    bool done = false;
+                    using (Stream stream = File.Open(@"Update/CMakeLists.txt", FileMode.Open))
+                    {
+                        using (StreamReader reader = new StreamReader(stream))
+                        {
+                            while (!done)
+                            {
+                                Thread.Sleep(1);
+
+                                line = reader.ReadLine();
+
+                                if (line != null)
+                                {
+                                    if (line.Contains("set(PROJECT_VER"))
+                                    {
+                                        done = true;
+                                    }
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (line != null)
+                    {
+                        string latestFWVersionString = "v" + line.Substring(17, 5);
+
+                        if (latestFWVersionString == FWVersion)
+                        {
+                            MessageBox.Show("The diagnostic scanner uses the latest firmware version.", "No firmware update available", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         }
                         else
                         {
-                            MessageBox.Show("Device firmware update cancelled.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            if (File.Exists(@"Tools/esptool.exe") && File.Exists(@"Tools/bootloader.bin") && File.Exists(@"Tools/partitions.bin") && File.Exists(@"Tools/ota_data_initial.bin"))
+                            {
+                                if (MessageBox.Show("Latest firmware version: " + latestFWVersionString + Environment.NewLine +
+                                                    "Current firmware version: " + FWVersion + Environment.NewLine +
+                                                    "There is a new device firmware version available." + Environment.NewLine +
+                                                    "Do you want to update the device?", "Device firmware update available", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
+                                {
+                                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                                    try
+                                    {
+                                        Downloader.DownloadFile(FWFlashFile, @"Tools/ChryslerScanner.bin");
+                                    }
+                                    catch
+                                    {
+                                        MessageBox.Show("Firmware download error.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                    }
+
+                                    if (File.Exists(@"Tools/ChryslerScanner.bin"))
+                                    {
+                                        ConnectButton.PerformClick(); // disconnect
+                                        Thread.Sleep(500); // wait until UI updates its controls
+                                        this.Refresh();
+                                        Process process = new Process();
+                                        process.StartInfo.WorkingDirectory = "Tools";
+                                        process.StartInfo.FileName = "esptool.exe";
+                                        process.StartInfo.Arguments = "--chip esp32 --port " + selectedPort + " --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader.bin 0x8000 partitions.bin 0xe000 ota_data_initial.bin 0x10000 ChryslerScanner.bin";
+                                        process.Start();
+                                        process.WaitForExit();
+                                        this.Refresh();
+                                        File.Delete(@"Tools/ChryslerScanner.bin");
+                                        MessageBox.Show("Device firmware update finished." + Environment.NewLine +
+                                                        "Connect again manually.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                        FWVersion = latestFWVersionString;
+                                    }
+                                    else
+                                    {
+                                        MessageBox.Show("Flash file is missing.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                    }
+                                }
+                                else
+                                {
+                                    MessageBox.Show("Device firmware update cancelled.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                }
+                            }
+                            else
+                            {
+                                MessageBox.Show("V2 update tools are missing.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
                         }
                     }
-                }
-                else
-                {
-                    MessageBox.Show("Firmware download error." + Environment.NewLine + "Please download the latest .hex flash file from GitHub and perform a manual update." + Environment.NewLine + "For more information check the \"Tools\\update.txt\" file.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
+                    else
+                    {
+                        MessageBox.Show("Firmware download error." + Environment.NewLine + "Please download the latest .bin flash file from GitHub and perform a manual update." + Environment.NewLine + "For more information see \"Tools\\readme.txt\".", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
 
-                File.Delete(@"Update/ChryslerCCDSCIScanner.ino");
-            }
-            else if (!deviceFound)
-            {
-                File.Delete(@"Update/ChryslerCCDSCIScanner.ino");
-                MessageBox.Show("Device firmware update cannot be checked." + Environment.NewLine +
-                                "Connect to the device and try again!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    File.Delete(@"Update/CMakeLists.txt");
+                }
+                else if (!deviceFound)
+                {
+                    File.Delete(@"Update/CMakeLists.txt");
+                    MessageBox.Show("Device firmware update cannot be checked." + Environment.NewLine +
+                                    "Connect to the device and try again!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
             }
         }
 
