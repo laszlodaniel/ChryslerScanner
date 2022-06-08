@@ -52,7 +52,6 @@ namespace ChryslerScanner
         public int lastPCMScrollBarPosition = 0;
         public int lastTCMScrollBarPosition = 0;
 
-        public static bool includeTimestampInLogFiles = false;
         public static ushort tableRefreshRate = 0;
 
         public List<string> CCDTableBuffer = new List<string>();
@@ -190,12 +189,10 @@ namespace ChryslerScanner
             if (Properties.Settings.Default.Timestamp == true)
             {
                 IncludeTimestampInLogFilesToolStripMenuItem.Checked = true;
-                includeTimestampInLogFiles = true;
             }
             else
             {
                 IncludeTimestampInLogFilesToolStripMenuItem.Checked = false;
-                includeTimestampInLogFiles = false;
             }
 
             if (Properties.Settings.Default.CCDBusOnDemand == true)
@@ -5884,13 +5881,11 @@ namespace ChryslerScanner
             {
                 Properties.Settings.Default.Timestamp = true;
                 Properties.Settings.Default.Save(); // save setting in application configuration file
-                includeTimestampInLogFiles = true;
             }
             else
             {
                 Properties.Settings.Default.Timestamp = false;
                 Properties.Settings.Default.Save(); // save setting in application configuration file
-                includeTimestampInLogFiles = false;
             }
         }
 

@@ -148,10 +148,12 @@ namespace ChryslerScanner
             this.WorkerFunctionComboBox.Items.AddRange(new object[] {
             "Empty",
             "Part number read",
-            "Flash read",
             "Flash ID",
+            "Flash read",
             "Flash erase",
-            "Flash program"});
+            "Flash write",
+            "EEPROM read",
+            "EEPROM write"});
             this.WorkerFunctionComboBox.Location = new System.Drawing.Point(67, 17);
             this.WorkerFunctionComboBox.Name = "WorkerFunctionComboBox";
             this.WorkerFunctionComboBox.Size = new System.Drawing.Size(152, 21);

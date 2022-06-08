@@ -2502,7 +2502,7 @@ namespace ChryslerScanner
                             unitToInsert = string.Empty;
                         }
 
-                        if (MainForm.includeTimestampInLogFiles)
+                        if (Properties.Settings.Default.Timestamp == true)
                         {
                             TimeSpan ElapsedTime = TimeSpan.FromMilliseconds(timestamp[0] << 24 | timestamp[1] << 16 | timestamp[2] << 8 | timestamp[3]);
                             DateTime Timestamp = DateTime.Today.Add(ElapsedTime);
@@ -3645,7 +3645,7 @@ namespace ChryslerScanner
                             unitToInsert = string.Empty;
                         }
 
-                        if (MainForm.includeTimestampInLogFiles)
+                        if (Properties.Settings.Default.Timestamp == true)
                         {
                             TimeSpan ElapsedTime = TimeSpan.FromMilliseconds(timestamp[0] << 24 | timestamp[1] << 16 | timestamp[2] << 8 | timestamp[3]);
                             DateTime Timestamp = DateTime.Today.Add(ElapsedTime);
@@ -3728,7 +3728,7 @@ namespace ChryslerScanner
 
             UpdateHeader();
 
-            if (MainForm.includeTimestampInLogFiles)
+            if (Properties.Settings.Default.Timestamp == true)
             {
                 TimeSpan ElapsedTime = TimeSpan.FromMilliseconds(timestamp[0] << 24 | timestamp[1] << 16 | timestamp[2] << 8 | timestamp[3]);
                 DateTime Timestamp = DateTime.Today.Add(ElapsedTime);

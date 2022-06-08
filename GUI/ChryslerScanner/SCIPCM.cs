@@ -3943,9 +3943,12 @@ namespace ChryslerScanner
                         case 0x11: // upload worker function result
                             if (message.Length >= 3)
                             {
-                                descriptionToInsert = "UPLOAD WORKER FUNCTION | SIZE: " + ((payload[0] << 8) + payload[1]).ToString() + " BYTES";
+                                ushort size = (ushort)((payload[0] << 8) + payload[1]);
+                                ushort echoCount = (ushort)(payload.Length - 3);
 
-                                if (payload[payload.Length - 1] == 0x14)
+                                descriptionToInsert = "UPLOAD WORKER FUNCTION | SIZE: " + size.ToString() + " BYTES";
+
+                                if ((echoCount == size) && (payload[payload.Length - 1] == 0x14))
                                 {
                                     valueToInsert = Util.ByteToHexString(payload, 2, payload.Length - 3);
                                     unitToInsert = "OK";
@@ -5168,8 +5171,7 @@ namespace ChryslerScanner
 
             UpdateHeader();
 
-            // Save message in the log file.
-            if (MainForm.includeTimestampInLogFiles)
+            if (Properties.Settings.Default.Timestamp == true)
             {
                 TimeSpan ElapsedTime = TimeSpan.FromMilliseconds(timestamp[0] << 24 | timestamp[1] << 16 | timestamp[2] << 8 | timestamp[3]);
                 DateTime Timestamp = DateTime.Today.Add(ElapsedTime);

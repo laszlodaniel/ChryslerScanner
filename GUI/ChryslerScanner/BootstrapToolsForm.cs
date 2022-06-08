@@ -32,10 +32,12 @@ namespace ChryslerScanner
         {
             Empty = 0x00,
             PartNumberRead = 0x01,
-            FlashRead = 0x02,
-            FlashID = 0x03,
+            FlashID = 0x02,
+            FlashRead = 0x03,
             FlashErase = 0x04,
-            FlashProgram = 0x05
+            FlashWrite = 0x05,
+            EEPROMRead = 0x06,
+            EEPROMWrite = 0x07
         }
 
         private enum FlashMemoryManufacturer
@@ -180,8 +182,14 @@ namespace ChryslerScanner
                 case (byte)WorkerFunction.FlashErase:
                     OriginalForm.UpdateUSBTextBox("[INFO] Worker function: flash erase.");
                     break;
-                case (byte)WorkerFunction.FlashProgram:
-                    OriginalForm.UpdateUSBTextBox("[INFO] Worker function: flash program.");
+                case (byte)WorkerFunction.FlashWrite:
+                    OriginalForm.UpdateUSBTextBox("[INFO] Worker function: flash write.");
+                    break;
+                case (byte)WorkerFunction.EEPROMRead:
+                    OriginalForm.UpdateUSBTextBox("[INFO] Worker function: EEPROM read.");
+                    break;
+                case (byte)WorkerFunction.EEPROMWrite:
+                    OriginalForm.UpdateUSBTextBox("[INFO] Worker function: EEPROM write.");
                     break;
                 default:
                     OriginalForm.UpdateUSBTextBox("[INFO] Worker function: unknown.");
