@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 09: minor
-// 05: patch
+// 06: patch
 // (00: revision)
-// = v0.9.5(.0)
-#define FW_VERSION 0x00090500
+// = v0.9.6(.0)
+#define FW_VERSION 0x00090600
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x0009050062A06AD2
+#define FW_DATE 0x0009060062A2ED0B
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -238,7 +238,9 @@
 #define write_exteeprom_block     0x09
 #define set_arbitrary_uart_speed  0x0A
 #define init_bootstrap_mode       0x0B
-#define write_worker_function     0x0C
+#define upload_worker_function    0x0C
+#define start_worker_function     0x0D
+#define exit_worker_function      0x0E
 #define restore_pcm_eeprom        0xF0
 
 // SUB-DATA CODE byte
@@ -926,12 +928,12 @@ void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
 Function: upload_worker_function()
 Purpose:  upload worker function in bootstrap mode
 **************************************************************************/
-void upload_worker_function(uint8_t worker_function_src)
+void write_worker_function(uint8_t worker_function_src)
 {
     uint8_t ret[1] = { 0 };
     // 0 = ok
-    // 1 = upload finished status byte not received
-    // 2 = unexpected upload finished status
+    // 1 = upload interrupted
+    // 2 = unexpected upload result
     // 3 = function did not start
     // 4 = unexpected function start status
 
@@ -1026,7 +1028,7 @@ void upload_worker_function(uint8_t worker_function_src)
     if (pcm_rx_available() == 0)
     {
         ret[0] = 1;
-        send_usb_packet(bus_usb, debug, write_worker_function, ret, 1);
+        send_usb_packet(bus_usb, debug, upload_worker_function, ret, 1);
         pcm_rx_flush();
         return;
     }
@@ -1036,7 +1038,7 @@ void upload_worker_function(uint8_t worker_function_src)
     if (upload_status != 0x14)
     {
         ret[0] = 2;
-        send_usb_packet(bus_usb, debug, write_worker_function, ret, 1);
+        send_usb_packet(bus_usb, debug, upload_worker_function, ret, 1);
         pcm_rx_flush();
         return;
     }
@@ -1053,7 +1055,7 @@ void upload_worker_function(uint8_t worker_function_src)
 //    if (pcm_rx_available() == 0)
 //    {
 //        ret[0] = 3;
-//        send_usb_packet(bus_usb, debug, write_worker_function, ret, 1);
+//        send_usb_packet(bus_usb, debug, upload_worker_function, ret, 1);
 //        pcm_rx_flush();
 //        return;
 //    }
@@ -1063,7 +1065,7 @@ void upload_worker_function(uint8_t worker_function_src)
 //    if (start_status != 0x21)
 //    {
 //        ret[0] = 4;
-//        send_usb_packet(bus_usb, debug, write_worker_function, ret, 1);
+//        send_usb_packet(bus_usb, debug, upload_worker_function, ret, 1);
 //        pcm_rx_flush();
 //        return;
 //    }
@@ -1072,7 +1074,7 @@ void upload_worker_function(uint8_t worker_function_src)
     pcm_rx_flush();
 
     // Success.
-    send_usb_packet(bus_usb, debug, write_worker_function, ret, 1);
+    send_usb_packet(bus_usb, debug, upload_worker_function, ret, 1);
 }
 
 /*************************************************************************
@@ -4877,7 +4879,7 @@ void handle_usb_data(void)
                                         unlock_sbec3_bootstrap_mode(cmd_payload[0]);
                                         break;
                                     }
-                                    case write_worker_function: // 0x0C
+                                    case upload_worker_function: // 0x0C
                                     {
                                         if (!payload_bytes)
                                         {
@@ -4885,7 +4887,43 @@ void handle_usb_data(void)
                                             break;
                                         }
 
-                                        upload_worker_function(cmd_payload[0]);
+                                        write_worker_function(cmd_payload[0]);
+                                        break;
+                                    }
+                                    case start_worker_function: // 0x0D
+                                    {
+                                        if (!payload_bytes)
+                                        {
+                                            send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            break;
+                                        }
+
+                                        pcm.msg_buffer[0] = 0x20;
+                                        pcm.msg_buffer_ptr = 1;
+                                        pcm.msg_to_transmit_count = 1;
+                                        pcm.repeat = false;
+                                        pcm.repeat_next = false;
+                                        pcm.repeat_list_once = false;
+                                        pcm.repeat_stop = false;
+                                        pcm.msg_tx_pending = true;
+                                        break;
+                                    }
+                                    case exit_worker_function: // 0x0E
+                                    {
+                                        if (!payload_bytes)
+                                        {
+                                            send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
+                                            break;
+                                        }
+
+                                        pcm.msg_buffer[0] = 0x35;
+                                        pcm.msg_buffer_ptr = 1;
+                                        pcm.msg_to_transmit_count = 1;
+                                        pcm.repeat = false;
+                                        pcm.repeat_next = false;
+                                        pcm.repeat_list_once = false;
+                                        pcm.repeat_stop = false;
+                                        pcm.msg_tx_pending = true;
                                         break;
                                     }
                                     case restore_pcm_eeprom: // 0xF0
