@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 09: minor
-// 06: patch
+// 07: patch
 // (00: revision)
-// = v0.9.6(.0)
-#define FW_VERSION 0x00090600
+// = v0.9.7(.0)
+#define FW_VERSION 0x00090700
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x0009060062A2ED0B
+#define FW_DATE 0x0009070062AA0754
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -5643,76 +5643,13 @@ void handle_sci_data(void)
                 pcm.response_received = false;
                 pcm.message_length = pcm_rx_available();
 
-                if (!pcm.actuator_test_running && (pcm_rx_available() > 2) && (pcm_peek(0) == 0x13) && (pcm_peek(1) != 0x00))
+                for (uint8_t i = 0; i < pcm.message_length; i++) // put every byte in the SCI-bus message after the timestamp
                 {
-                    pcm.actuator_test_running = true;
-                    pcm_getc();
-                    pcm_getc();
-                }
-                else if ((pcm_rx_available() > 2) && (pcm_peek(0) == 0x13) && (pcm_peek(1) == 0x00) && (pcm_peek(2) == 0x00))
-                {
-                    pcm.actuator_test_running = false;
+                    pcm.message[i] = pcm_getc() & 0xFF;
                 }
 
-                if (!pcm.ls_request_running && (pcm_rx_available() > 3) && (pcm_peek(0) == 0x2A) && (pcm_peek(1) != 0x00) && (pcm_peek(2) != 0x00))
-                {
-                    pcm.ls_request_running = true;
-                    pcm.ls_request_byte = pcm_peek(1);
-                    pcm_getc();
-                    pcm_getc();
-                }
-                else if ((pcm_rx_available() > 2) && (pcm_peek(0) == 0x2A) && (pcm_peek(1) == 0x00) && (pcm_peek(2) == 0x00))
-                {
-                    pcm.ls_request_running = false;
-                }
-
-                if (pcm.actuator_test_running)
-                {
-                    if ((uint32_t)(millis() - pcm.actuator_test_byte_last_millis) >= 200)
-                    {
-                        pcm.actuator_test_byte_last_millis = millis();
-                        pcm.message_length = 2;
-
-                        pcm.message[0] = 0x13;
-                        pcm.message[1] = pcm_getc() & 0xFF;
-
-                        send_usb_packet(bus_pcm, msg_rx, sci_ls_bytes, pcm.message, pcm.message_length); // send message to laptop
-                        handle_lcd(bus_pcm, pcm.message, 0, pcm.message_length); // pass message to LCD handling function
-                    }
-                    else
-                    {
-                        pcm_getc();
-                    }
-                }
-                else if (pcm.ls_request_running)
-                {
-                    if ((uint32_t)(millis() - pcm.ls_request_last_millis) >= 200)
-                    {
-                        pcm.ls_request_last_millis = millis();
-                        pcm.message_length = 3;
-
-                        pcm.message[0] = 0x2A;
-                        pcm.message[1] = pcm.ls_request_byte;
-                        pcm.message[2] = pcm_getc() & 0xFF;
-
-                        send_usb_packet(bus_pcm, msg_rx, sci_ls_bytes, pcm.message, pcm.message_length); // send message to laptop
-                        handle_lcd(bus_pcm, pcm.message, 0, pcm.message_length); // pass message to LCD handling function
-                    }
-                    else
-                    {
-                        pcm_getc();
-                    }
-                }
-                else // normal mode
-                {
-                    for (uint8_t i = 0; i < pcm.message_length; i++) // put every byte in the SCI-bus message after the timestamp
-                    {
-                        pcm.message[i] = pcm_getc() & 0xFF;
-                    }
-
-                    send_usb_packet(bus_pcm, msg_rx, sci_ls_bytes, pcm.message, pcm.message_length); // send message to laptop
-                    handle_lcd(bus_pcm, pcm.message, 0, pcm.message_length); // pass message to LCD handling function
-                }
+                send_usb_packet(bus_pcm, msg_rx, sci_ls_bytes, pcm.message, pcm.message_length); // send message to laptop
+                handle_lcd(bus_pcm, pcm.message, 0, pcm.message_length); // pass message to LCD handling function
 
                 if (pcm.message[0] == 0x12) // pay attention to special bytes (speed change)
                 {
@@ -5990,92 +5927,136 @@ void handle_sci_data(void)
             {
                 if (pcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                 {
-                    for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
+                    if (pcm.ngc_mode) // do not wait for echo
+                    {
+                        for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
+                        {
+                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
+
+                            timeout_reached = false;
+                            pcm.last_byte_millis = millis();
+
+                            while (!timeout_reached)
+                            {
+                                // wait here for response
+                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
+                            }
+    
+                            pcm.response_received = true;
+                        }
+                    }
+                    else // wait for echo
+                    {
+                        for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
+                        {
+                            timeout_reached = false;
+                            timeout_start = millis();
+                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
+
+                            while ((pcm_rx_available() <= i) && !timeout_reached)
+                            {
+                                // wait here for echo
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
+                            }
+
+                            if (timeout_reached) // exit for-loop if there's no echo
+                            {
+                                break;
+                            }
+                        }
+                    }
+
+                    pcm.echo_received = true;
+
+                    if ((pcm.msg_buffer_ptr > 1) && (pcm.msg_buffer[0] == 0x13) && (pcm.msg_buffer[1] != 0x00))
                     {
                         timeout_reached = false;
                         timeout_start = millis();
-                        pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
 
-                        while ((pcm_rx_available() <= i) && !timeout_reached)
+                        while ((pcm_rx_available() <= 2) && !timeout_reached)
                         {
                             // wait here for echo
                             if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
                         }
 
-                        if (timeout_reached) // exit for-loop if there's no echo
+                        delay(2);
+
+                        if (!timeout_reached)
                         {
-                            send_usb_packet(bus_usb, ok_error, error_internal, err, 1);
-                            pcm_rx_flush();
-                            break;
+                            pcm_putc(0x13); // disable actuator test mode byte stream
                         }
                     }
-
-                    if (!timeout_reached)
+                    
+                    // Handle these messages with absolute minimum waiting (0x14, 0x15, 0x26, 0x27, 0x28).
+                    if (array_contains(sci_lo_speed_cmd_filter, 5, pcm_peek(0)))
                     {
-                        pcm.echo_received = true;
-                        
-                        // Handle these messages with absolute minimum waiting (0x14, 0x15, 0x26, 0x27, 0x28).
-                        if (array_contains(sci_lo_speed_cmd_filter, 5, pcm_peek(0)))
+                        uint8_t num_bytes = pcm_rx_available();
+                        timeout_reached = false;
+
+                        while ((pcm_rx_available() <= num_bytes) && !timeout_reached) // wait for 1 byte response only
                         {
-                            uint8_t num_bytes = pcm_rx_available();
-                            timeout_reached = false;
-
-                            while ((pcm_rx_available() <= num_bytes) && !timeout_reached) // wait for 1 byte response only
-                            {
-                                // wait here for response
-                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
-                            }
-
-                            if (!timeout_reached)
-                            {
-                                pcm.response_received = true;
-                            }
-                            else
-                            {
-                                send_usb_packet(bus_usb, ok_error, error_sci_ls_no_response, err, 1);
-                                pcm_rx_flush();
-                            }
+                            // wait here for response
+                            if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
                         }
-                        else
+
+                        pcm.response_received = true;
+                    }
+                    else
+                    {
+                        timeout_reached = false;
+
+                        while (!timeout_reached && (pcm_rx_available() < 17)) // wait until all bytes are received
                         {
-                            timeout_reached = false;
-
-                            while (!timeout_reached && (pcm_rx_available() < 17)) // wait until all bytes are received
-                            {
-                                // wait here for response
-                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
-                            }
-
-                            timeout_reached = false;
-                            pcm.response_received = true;
+                            // wait here for response
+                            if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
                         }
+
+                        timeout_reached = false;
+                        pcm.response_received = true;
                     }
                 }
                 else if (pcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
                 {
-                    // Navigate in the main buffer after the message length byte and start sending those bytes
-                    for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++)
+                    if (pcm.ngc_mode) // do not wait for echo
                     {
-                        timeout_reached = false;
-                        timeout_start = millis();
-                        pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
-
-                        while ((pcm_rx_available() <= (i - pcm.msg_buffer_ptr - 1)) && !timeout_reached)
+                        // Navigate in the main buffer after the message length byte and start sending those bytes
+                        for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++)
                         {
-                            // wait here for echo
-                            if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
-                        }
+                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
 
-                        if (timeout_reached) // exit for-loop if there's no echo
-                        {
-                            send_usb_packet(bus_usb, ok_error, error_internal, err, 1);
-                            pcm_rx_flush();
-                            break;
+                            timeout_reached = false;
+                            pcm.last_byte_millis = millis();
+
+                            while (!timeout_reached)
+                            {
+                                // wait here for response
+                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
+                            }
+
+                            pcm.response_received = true;
                         }
                     }
-
-                    if (!timeout_reached)
+                    else // wait for echo
                     {
+                        // Navigate in the main buffer after the message length byte and start sending those bytes
+                        for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++)
+                        {
+                            timeout_reached = false;
+                            timeout_start = millis();
+                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
+    
+                            while ((pcm_rx_available() <= (i - pcm.msg_buffer_ptr - 1)) && !timeout_reached)
+                            {
+                                // wait here for echo
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
+                            }
+    
+                            if (timeout_reached) // exit for-loop if there's no echo
+                            {
+                                break;
+                            }
+                        }
+
                         pcm.echo_received = true;
                         
                         // Handle these messages with absolute minimum waiting (0x14, 0x15, 0x26, 0x27, 0x28).
@@ -6090,15 +6071,7 @@ void handle_sci_data(void)
                                 if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
                             }
 
-                            if (!timeout_reached)
-                            {
-                                pcm.response_received = true;
-                            }
-                            else
-                            {
-                                send_usb_packet(bus_usb, ok_error, error_sci_ls_no_response, err, 1);
-                                pcm_rx_flush();
-                            }
+                            pcm.response_received = true;
                         }
                         else
                         {
@@ -6133,31 +6106,48 @@ void handle_sci_data(void)
                             pcm.msg_buffer_ptr = 241;
                         }
 
-                        for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
+                        timeout_reached = false;
+
+                        if (pcm.ngc_mode) // do not wait for response
                         {
-                            timeout_reached = false;
-                            timeout_start = millis(); // save current time
-                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
-
-                            while ((pcm_rx_available() <= i) && !timeout_reached)
+                            for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
                             {
-                                // wait here for response (echo in case of F0...FF)
-                                if ((uint32_t)(millis() - timeout_start) >= SCI_HS_T3_DELAY) timeout_reached = true;
+                                pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
+
+                                timeout_reached = false;
+                                pcm.last_byte_millis = millis();
+
+                                while (!timeout_reached)
+                                {
+                                    // wait here for response
+                                    if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
+                                }
+
+                                pcm.response_received = true;
                             }
-
-                            if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
+                        }
+                        else // wait for response
+                        {
+                            for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
                             {
-                                uint8_t ret[2] = { pcm.msg_buffer[0], pcm.msg_buffer[i] };
-                                send_usb_packet(bus_usb, ok_error, error_sci_hs_no_response, ret, 2); // return two bytes to determine which table and which address is unresponsive
-                                pcm_rx_flush();
-                                break;
+                                timeout_reached = false;
+                                timeout_start = millis(); // save current time
+                                pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
+
+                                while ((pcm_rx_available() <= i) && !timeout_reached)
+                                {
+                                    // wait here for response (echo in case of F0...FF)
+                                    if ((uint32_t)(millis() - timeout_start) >= SCI_HS_T3_DELAY) timeout_reached = true;
+                                }
+
+                                if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
+                                {
+                                    break;
+                                }
                             }
                         }
 
-                        if (!timeout_reached)
-                        {
-                            pcm.response_received = true;
-                        }
+                        pcm.response_received = true;
                     }
                     else // bootstrap mode
                     {
@@ -6253,60 +6243,93 @@ void handle_sci_data(void)
                 }
                 else if (pcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
                 {
-                    // Navigate in the main buffer after the message length byte and start sending those bytes.
-                    for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++) // repeat for the length of the message
+                    timeout_reached = false;
+
+                    if (pcm.ngc_mode) // do not wait for response
                     {
-                        timeout_reached = false;
-                        timeout_start = millis(); // save current time
-                        pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
-
-                        while ((pcm_rx_available() <= (i - pcm.msg_buffer_ptr - 1)) && !timeout_reached)
+                        for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++) // repeat for the length of the message
                         {
-                            // wait here for response (echo in case of F0...FF)
-                            if ((uint32_t)(millis() - timeout_start) >= SCI_HS_T3_DELAY) timeout_reached = true;
+                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
+
+                            timeout_reached = false;
+                            pcm.last_byte_millis = millis();
+
+                            while (!timeout_reached)
+                            {
+                                // wait here for response
+                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
+                            }
+
+                            pcm.response_received = true;
                         }
-
-                        if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
+                    }
+                    else // wait for response
+                    {
+                        // Navigate in the main buffer after the message length byte and start sending those bytes.
+                        for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++) // repeat for the length of the message
                         {
-                            uint8_t ret[2] = { pcm.msg_buffer[pcm.msg_buffer_ptr + 1], pcm.msg_buffer[i] };
-                            send_usb_packet(bus_usb, ok_error, error_sci_hs_no_response, ret, 2); // return two bytes to determine which table and which address is unresponsive
-                            pcm_rx_flush();
-                            break;
+                            timeout_reached = false;
+                            timeout_start = millis(); // save current time
+                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
+
+                            while ((pcm_rx_available() <= (i - pcm.msg_buffer_ptr - 1)) && !timeout_reached)
+                            {
+                                // wait here for response (echo in case of F0...FF)
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_HS_T3_DELAY) timeout_reached = true;
+                            }
+
+                            if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
+                            {
+                                break;
+                            }
                         }
                     }
 
-                    if (!timeout_reached)
-                    {
-                        pcm.response_received = true;
-                    }
+                    pcm.response_received = true;
                 }
             }
             else // non-standard speeds
             {
                 if (pcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                 {
-                    for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
+                    if (pcm.ngc_mode) // do not wait for echo
                     {
-                        timeout_reached = false;
-                        timeout_start = millis(); // save current time
-                        pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
-
-                        while ((pcm_rx_available() <= i) && !timeout_reached)
+                        for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
                         {
-                            // wait here for echo (half-duplex mode)
-                            if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
-                        }
+                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
 
-                        if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
-                        {
-                            send_usb_packet(bus_usb, ok_error, error_internal, err, 1);
-                            pcm_rx_flush();
-                            break;
+                            timeout_reached = false;
+                            pcm.last_byte_millis = millis();
+
+                            while (!timeout_reached)
+                            {
+                                // wait here for response
+                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
+                            }
+
+                            pcm.response_received = true;
                         }
                     }
-
-                    if (!timeout_reached)
+                    else // wait for echo
                     {
+                        for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
+                        {
+                            timeout_reached = false;
+                            timeout_start = millis(); // save current time
+                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
+
+                            while ((pcm_rx_available() <= i) && !timeout_reached)
+                            {
+                                // wait here for echo (half-duplex mode)
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
+                            }
+
+                            if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
+                            {
+                                break;
+                            }
+                        }
+
                         pcm.echo_received = true;
 
                         // Wait here for the general 1-byte response
@@ -6320,70 +6343,69 @@ void handle_sci_data(void)
                             if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T3_DELAY) timeout_reached = true;
                         }
 
-                        if (!timeout_reached)
-                        {
-                            pcm.response_received = true;
-                        }
-                        else
-                        {
-                            send_usb_packet(bus_usb, ok_error, error_sci_ls_no_response, err, 1);
-                            pcm_rx_flush();
-                        }
+                        pcm.response_received = true;
                     }
                 }
                 else if (pcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
                 {
-                    uint8_t j = 0;
-
-                    // Navigate in the main buffer after the message length byte and start sending those bytes 
-                    for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++) // repeat for the length of the message
+                    if (pcm.ngc_mode) // do not wait for echo
                     {
-                        timeout_reached = false;
-                        timeout_start = millis(); // save current time
-                        pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
-
-                        while ((pcm_rx_available() <= j) && !timeout_reached)
+                        for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++) // repeat for the length of the message
                         {
-                            // wait here for response (echo in case of F0...FF)
-                            if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
-                        }
+                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
 
-                        if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
-                        {
-                            uint8_t ret[2] = { pcm.msg_buffer[pcm.msg_buffer_ptr + 1], pcm.msg_buffer[pcm.msg_buffer_ptr + 1 + j] };
-                            send_usb_packet(bus_usb, ok_error, error_internal, ret, 2); // return two bytes to determine which table and which address is unresponsive
-                            pcm_rx_flush();
-                            break;
-                        }
+                            timeout_reached = false;
+                            pcm.last_byte_millis = millis();
 
-                        j++;
-                    }
+                            while (!timeout_reached) // wait for 1 byte response only
+                            {
+                                // wait here for response
+                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
+                            }
 
-                    if (!timeout_reached)
-                    {
-                        pcm.echo_received = true;
-
-                        // Wait here for the general 1-byte response
-                        uint8_t num_bytes = pcm_rx_available();
-                        timeout_reached = false;
-                        timeout_start = millis(); // save current time
-
-                        while ((pcm_rx_available() <= num_bytes) && !timeout_reached)
-                        {
-                            // wait here for response
-                            if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T3_DELAY) timeout_reached = true;
-                        }
-
-                        if (!timeout_reached)
-                        {
                             pcm.response_received = true;
                         }
-                        else
+                    }
+                    else // wait for echo
+                    {
+                        uint8_t j = 0;
+
+                        // Navigate in the main buffer after the message length byte and start sending those bytes 
+                        for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++) // repeat for the length of the message
                         {
-                            send_usb_packet(bus_usb, ok_error, error_sci_ls_no_response, err, 1);
-                            pcm_rx_flush();
+                            timeout_reached = false;
+                            timeout_start = millis(); // save current time
+                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
+
+                            while ((pcm_rx_available() <= j) && !timeout_reached)
+                            {
+                                // wait here for response (echo in case of F0...FF)
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
+                            }
+
+                            if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
+                            {
+                                break;
+                            }
+
+                            j++;
                         }
                     }
+
+                    pcm.echo_received = true;
+
+                    // Wait here for the general 1-byte response
+                    uint8_t num_bytes = pcm_rx_available();
+                    timeout_reached = false;
+                    timeout_start = millis(); // save current time
+
+                    while ((pcm_rx_available() <= num_bytes) && !timeout_reached)
+                    {
+                        // wait here for response
+                        if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                    }
+
+                    pcm.response_received = true;
                 }
             }
 
