@@ -2637,12 +2637,12 @@ namespace ChryslerScanner
                         {
                             if (Properties.Settings.Default.Units == "imperial")
                             {
-                                valueToInsert = Math.Round((UInt32)(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]) * 0.000125D, 3).ToString("0.000").Replace(",", ".");
+                                valueToInsert = Math.Round((uint)(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]) * 0.000125D, 3).ToString("0.000").Replace(",", ".");
                                 unitToInsert = "MILE";
                             }
                             else if (Properties.Settings.Default.Units == "metric")
                             {
-                                valueToInsert = Math.Round((UInt32)(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]) * 0.000125D * 1.609344D, 3).ToString("0.000").Replace(",", ".");
+                                valueToInsert = Math.Round((uint)(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]) * 0.000125D * 1.609344D, 3).ToString("0.000").Replace(",", ".");
                                 unitToInsert = "KILOMETER";
                             }
                         }
@@ -2802,12 +2802,12 @@ namespace ChryslerScanner
                         {
                             if (Properties.Settings.Default.Units == "imperial")
                             {
-                                valueToInsert = Math.Round((UInt32)(payload[0] << 16 | payload[1] << 8 | payload[2]) * 0.016D, 3).ToString("0.000").Replace(",", ".");
+                                valueToInsert = Math.Round((uint)(payload[0] << 16 | payload[1] << 8 | payload[2]) * 0.016D, 3).ToString("0.000").Replace(",", ".");
                                 unitToInsert = "MILE";
                             }
                             else if (Properties.Settings.Default.Units == "metric")
                             {
-                                valueToInsert = Math.Round((UInt32)(payload[0] << 16 | payload[1] << 8 | payload[2]) * 0.016D * 1.609344D, 3).ToString("0.000").Replace(",", ".");
+                                valueToInsert = Math.Round((uint)(payload[0] << 16 | payload[1] << 8 | payload[2]) * 0.016D * 1.609344D, 3).ToString("0.000").Replace(",", ".");
                                 unitToInsert = "KILOMETER";
                             }
                         }

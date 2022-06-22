@@ -58,5 +58,29 @@ namespace ChryslerScanner.Properties {
                 this["CCDBusOnDemand"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool PCIBusOnDemand {
+            get {
+                return ((bool)(this["PCIBusOnDemand"]));
+            }
+            set {
+                this["PCIBusOnDemand"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool SCIBusNGCMode {
+            get {
+                return ((bool)(this["SCIBusNGCMode"]));
+            }
+            set {
+                this["SCIBusNGCMode"] = value;
+            }
+        }
     }
 }

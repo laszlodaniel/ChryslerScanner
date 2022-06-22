@@ -88,6 +88,12 @@
     <Compile Include="DB\Records\TXRecord.cs" />
     <Compile Include="DB\SimpleBinaryReader.cs" />
     <Compile Include="DB\Table.cs" />
+    <Compile Include="EngineToolsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="EngineToolsForm.Designer.cs">
+      <DependentUpon>EngineToolsForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="FlickerFreeListBox.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -98,11 +104,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="SecuritySeedCalculatorForm.cs">
+    <Compile Include="SecurityKeyCalculatorForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="SecuritySeedCalculatorForm.Designer.cs">
-      <DependentUpon>SecuritySeedCalculatorForm.cs</DependentUpon>
+    <Compile Include="SecurityKeyCalculatorForm.Designer.cs">
+      <DependentUpon>SecurityKeyCalculatorForm.cs</DependentUpon>
     </Compile>
     <Compile Include="ReadMemoryForm.cs">
       <SubType>Form</SubType>
@@ -138,6 +144,9 @@
     <EmbeddedResource Include="BootstrapToolsForm.resx">
       <DependentUpon>BootstrapToolsForm.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="EngineToolsForm.resx">
+      <DependentUpon>EngineToolsForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -149,8 +158,8 @@
     <EmbeddedResource Include="ReadMemoryForm.resx">
       <DependentUpon>ReadMemoryForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="SecuritySeedCalculatorForm.resx">
-      <DependentUpon>SecuritySeedCalculatorForm.cs</DependentUpon>
+    <EmbeddedResource Include="SecurityKeyCalculatorForm.resx">
+      <DependentUpon>SecurityKeyCalculatorForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="WriteMemoryForm.resx">
       <DependentUpon>WriteMemoryForm.cs</DependentUpon>

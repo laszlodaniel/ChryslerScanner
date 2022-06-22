@@ -98,7 +98,8 @@ namespace ChryslerScanner
             extEEPROMChecksum = 0x04,
             CCDBusVoltages = 0x05,
             VBBVolts = 0x06,
-            VPPVolts = 0x07
+            VPPVolts = 0x07,
+            AllVolts = 0x08
         }
 
         public enum ResponseMode : byte
@@ -109,7 +110,8 @@ namespace ChryslerScanner
             extEEPROMChecksum = 0x04,
             CCDBusVoltages = 0x05,
             VBBVolts = 0x06,
-            VPPVolts = 0x07
+            VPPVolts = 0x07,
+            AllVolts = 0x08
         }
 
         public enum MsgTxMode : byte
@@ -118,7 +120,8 @@ namespace ChryslerScanner
             single = 0x02,
             list = 0x03,
             repeatedSingle = 0x04,
-            repeatedList = 0x05
+            repeatedList = 0x05,
+            singleVPP = 0x82
         }
 
         public enum MsgRxMode : byte
@@ -127,7 +130,8 @@ namespace ChryslerScanner
             single = 0x02,
             list = 0x03,
             repeatedSingle = 0x04,
-            repeatedList = 0x05
+            repeatedList = 0x05,
+            singleVPP = 0x82
         }
 
         public enum DebugMode : byte
@@ -143,8 +147,14 @@ namespace ChryslerScanner
             writeExtEEPROMblock = 0x09,
             setArbitraryUARTSpeed = 0x0A,
             initBootstrapMode = 0x0B,
-            writeWorkerFunction = 0x0C,
-            restorePCMEEPROM = 0xF0
+            uploadWorkerFunction = 0x0C,
+            startWorkerFunction = 0x0D,
+            exitWorkerFunction = 0x0E,
+            defaultSettings = 0xE0,
+            getRandomNumber = 0xE1,
+            restorePCMEEPROM = 0xF0,
+            getAW9523Data = 0xFE,
+            test = 0xFF
         }
 
         public enum ErrorMode : byte

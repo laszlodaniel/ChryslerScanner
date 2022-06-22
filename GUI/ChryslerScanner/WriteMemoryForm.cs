@@ -12,83 +12,83 @@ namespace ChryslerScanner
 {
     public partial class WriteMemoryForm : Form
     {
-        public MainForm OriginalForm;
+        private MainForm OriginalForm;
 
-        public const ushort PCMUnlockKey = 0x9018;
-        public bool PCMUnlocked = false;
+        private const ushort PCMUnlockKey = 0x9018;
+        private bool PCMUnlocked = false;
 
-        public const ushort EEPROMSize = 512; // bytes
-        public const ushort RAMSize = 6144; // bytes
+        private const ushort EEPROMSize = 512; // bytes
+        private const ushort RAMSize = 6144; // bytes
 
-        public const ushort SRIMileageOffsetStart = 0x0000;
-        public const ushort SRIMileageOffsetEnd = 0x0007;
-        public const ushort SKIMVTSSOffset = 0x0008;
-        public const ushort VINOffsetStart = 0x0062;
-        public const ushort VINOffsetEnd = 0x0072;
-        public const ushort VINLength = 17;
-        public const ushort PartNumberOffset1Start = 0x01E2;
-        public const ushort PartNumberOffset1End = 0x01EA;
-        public const ushort PartNumberOffset2Start = 0x01F0;
-        public const ushort PartNumberOffset2End = 0x01F3;
+        private const ushort SRIMileageOffsetStart = 0x0000;
+        private const ushort SRIMileageOffsetEnd = 0x0007;
+        private const ushort SKIMVTSSOffset = 0x0008;
+        private const ushort VINOffsetStart = 0x0062;
+        private const ushort VINOffsetEnd = 0x0072;
+        private const ushort VINLength = 17;
+        private const ushort PartNumberOffset1Start = 0x01E2;
+        private const ushort PartNumberOffset1End = 0x01EA;
+        private const ushort PartNumberOffset2Start = 0x01F0;
+        private const ushort PartNumberOffset2End = 0x01F3;
 
-        public const ushort CCDBCMMileageMsgLength = 6;
-        public byte[] CCDBCMMileage = new byte[CCDBCMMileageMsgLength];
-        public double CCDBCMMileageMi = 0;
-        public double CCDBCMMileageKm = 0;
-        public bool CCDBCMMileageReceived = false;
-        public const ushort SRIMileageLength = 2;
-        public byte[] SRIMileage = new byte[SRIMileageLength];
-        public uint SRIMileageRaw = 0;
-        public double SRIMileageMi = 0;
-        public double SRIMileageKm = 0;
-        public byte[] SRIMileageNew = new byte[4 * SRIMileageLength];
-        public uint SRIMileageNewRaw = 0;
-        public double SRIMileageNewMi = 0;
-        public double SRIMileageNewKm = 0;
-        public byte SKIMVTSS = 0;
-        public byte[] VIN = new byte[VINLength];
-        public string VINString;
-        public byte[] PartNumberBuffer = new byte[18];
-        public byte[] PartNumber = new byte[6];
-        public ushort PartNumberLocation = 0;
+        private const ushort CCDBCMMileageMsgLength = 6;
+        private byte[] CCDBCMMileage = new byte[CCDBCMMileageMsgLength];
+        private double CCDBCMMileageMi = 0;
+        private double CCDBCMMileageKm = 0;
+        private bool CCDBCMMileageReceived = false;
+        private const ushort SRIMileageLength = 2;
+        private byte[] SRIMileage = new byte[SRIMileageLength];
+        private uint SRIMileageRaw = 0;
+        private double SRIMileageMi = 0;
+        private double SRIMileageKm = 0;
+        private byte[] SRIMileageNew = new byte[4 * SRIMileageLength];
+        private uint SRIMileageNewRaw = 0;
+        private double SRIMileageNewMi = 0;
+        private double SRIMileageNewKm = 0;
+        private byte SKIMVTSS = 0;
+        private byte[] VIN = new byte[VINLength];
+        private string VINString;
+        private byte[] PartNumberBuffer = new byte[18];
+        private byte[] PartNumber = new byte[6];
+        private ushort PartNumberLocation = 0;
 
-        public byte[] EEPROMBuffer;
-        public byte[] RAMBuffer;
+        private byte[] EEPROMBuffer;
+        private byte[] RAMBuffer;
 
-        public string SCIBusPCMWriteMemoryLogFilename;
-        public string SCIBusPCMMemoryEEPROMBackupFilename;
-        public string SCIBusPCMMemoryRAMBackupFilename;
+        private string SCIBusPCMWriteMemoryLogFilename;
+        private string SCIBusPCMMemoryEEPROMBackupFilename;
+        private string SCIBusPCMMemoryRAMBackupFilename;
 
-        public System.Timers.Timer SCIBusPCMNextRequestTimer = new System.Timers.Timer();
-        public System.Timers.Timer SCIBusPCMRxTimeoutTimer = new System.Timers.Timer();
-        public System.Timers.Timer SCIBusPCMTxTimeoutTimer = new System.Timers.Timer();
-        public BackgroundWorker SCIBusPCMReadMemoryWorker = new BackgroundWorker();
-        public BackgroundWorker SCIBusPCMWriteMemoryWorker = new BackgroundWorker();
+        private System.Timers.Timer SCIBusPCMNextRequestTimer = new System.Timers.Timer();
+        private System.Timers.Timer SCIBusPCMRxTimeoutTimer = new System.Timers.Timer();
+        private System.Timers.Timer SCIBusPCMTxTimeoutTimer = new System.Timers.Timer();
+        private BackgroundWorker SCIBusPCMReadMemoryWorker = new BackgroundWorker();
+        private BackgroundWorker SCIBusPCMWriteMemoryWorker = new BackgroundWorker();
 
-        public Task CurrentTask = Task.None;
-        public bool SCIBusPCMResponse = false;
-        public bool SCIBusPCMNextRequest = false;
-        public byte SCIBusPCMRxRetryCount = 0;
-        public byte SCIBusPCMTxRetryCount = 0;
-        public bool SCIBusPCMReadMemoryFinished = false;
-        public bool SCIBusPCMWriteMemoryFinished = false;
-        public bool SCIBusPCMRxTimeout = false;
-        public bool SCIBusPCMTxTimeout = false;
-        public byte[] SCIBusPCMTxPayload = new byte[4];
+        private Task CurrentTask = Task.None;
+        private bool SCIBusPCMResponse = false;
+        private bool SCIBusPCMNextRequest = false;
+        private byte SCIBusPCMRxRetryCount = 0;
+        private byte SCIBusPCMTxRetryCount = 0;
+        private bool SCIBusPCMReadMemoryFinished = false;
+        private bool SCIBusPCMWriteMemoryFinished = false;
+        private bool SCIBusPCMRxTimeout = false;
+        private bool SCIBusPCMTxTimeout = false;
+        private byte[] SCIBusPCMTxPayload = new byte[4];
 
-        public byte[] SCIBusPCMMemoryOffsetStartBytes = new byte[2];
-        public uint SCIBusPCMMemoryOffsetStart = 0;
-        public byte[] SCIBusPCMMemoryOffsetEndBytes = new byte[2];
-        public uint SCIBusPCMMemoryOffsetEnd = 0;
-        public byte[] SCIBusPCMCurrentMemoryOffsetBytes = new byte[2];
-        public uint SCIBusPCMCurrentMemoryOffset = 0;
-        public byte SCIBusPCMMemoryValue = 0;
+        private byte[] SCIBusPCMMemoryOffsetStartBytes = new byte[2];
+        private uint SCIBusPCMMemoryOffsetStart = 0;
+        private byte[] SCIBusPCMMemoryOffsetEndBytes = new byte[2];
+        private uint SCIBusPCMMemoryOffsetEnd = 0;
+        private byte[] SCIBusPCMCurrentMemoryOffsetBytes = new byte[2];
+        private uint SCIBusPCMCurrentMemoryOffset = 0;
+        private byte SCIBusPCMMemoryValue = 0;
 
-        public TimeSpan ElapsedMillis;
-        public DateTime Timestamp;
-        public string TimestampString;
+        private TimeSpan ElapsedMillis;
+        private DateTime Timestamp;
+        private string TimestampString;
 
-        public enum Task
+        private enum Task
         {
             None,
             ReadSRIMileage,
@@ -108,12 +108,12 @@ namespace ChryslerScanner
             RestoreEEPROM
         }
 
-        public enum CCD_ID
+        private enum CCD_ID
         {
             BCMMileage = 0xCE
         }
 
-        public enum SCI_ID
+        private enum SCI_ID
         {
             ReadROMRAM = 0x26,
             WriteEEPROM = 0x27,
@@ -1745,7 +1745,7 @@ namespace ChryslerScanner
                         if ((CCDBusResponseBytes.Length == CCDBCMMileageMsgLength) && !CCDBCMMileageReceived)
                         {
                             CCDBCMMileage = CCDBusResponseBytes.Skip(1).Take(4).ToArray(); // skip ID copy 4-bytes long mileage only, ignore checksum (5th byte)
-                            CCDBCMMileageMi = Math.Round((UInt32)(CCDBusResponseBytes[1] << 24 | CCDBusResponseBytes[2] << 16 | CCDBusResponseBytes[3] << 8 | CCDBusResponseBytes[4]) * 0.000125D, 1);
+                            CCDBCMMileageMi = Math.Round((uint)(CCDBusResponseBytes[1] << 24 | CCDBusResponseBytes[2] << 16 | CCDBusResponseBytes[3] << 8 | CCDBusResponseBytes[4]) * 0.000125D, 1);
                             CCDBCMMileageKm = Math.Round(CCDBCMMileageMi * 1.609344D, 1);
 
                             if (Properties.Settings.Default.Units == "imperial")

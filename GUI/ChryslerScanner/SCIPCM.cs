@@ -150,7 +150,7 @@ namespace ChryslerScanner
 
             row = MessageDatabase.NewRow();
             row["id"] = 0x13;
-            row["length"] = 2;
+            row["length"] = 3;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
             row["description"] = "ACTUATOR TEST";
@@ -213,7 +213,7 @@ namespace ChryslerScanner
             row["length"] = 2;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "SET MINIMUM IDLE SPEED";
+            row["description"] = "SET IDLE SPEED";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -249,6 +249,16 @@ namespace ChryslerScanner
             MessageDatabase.Rows.Add(row);
 
             row = MessageDatabase.NewRow();
+            row["id"] = 0x1F;
+            row["length"] = 4;
+            row["parameterCount"] = 1;
+            row["message"] = string.Empty;
+            row["description"] = "WRITE RAM";
+            row["value"] = string.Empty;
+            row["unit"] = string.Empty;
+            MessageDatabase.Rows.Add(row);
+
+            row = MessageDatabase.NewRow();
             row["id"] = 0x21;
             row["length"] = 3;
             row["parameterCount"] = 1;
@@ -273,7 +283,7 @@ namespace ChryslerScanner
             row["length"] = 3;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "ENGINE CONTROLLER REQUEST";
+            row["description"] = "RESET MEMORY";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -293,7 +303,7 @@ namespace ChryslerScanner
             row["length"] = 5;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "READ ROM";
+            row["description"] = "READ FLASH MEMORY";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -409,6 +419,36 @@ namespace ChryslerScanner
             MessageDatabase.Rows.Add(row);
 
             row = MessageDatabase.NewRow();
+            row["id"] = 0x35;
+            row["length"] = 5;
+            row["parameterCount"] = 1;
+            row["message"] = string.Empty;
+            row["description"] = "GET SECURITY SEED";
+            row["value"] = string.Empty;
+            row["unit"] = string.Empty;
+            MessageDatabase.Rows.Add(row);
+
+            row = MessageDatabase.NewRow();
+            row["id"] = 0x37;
+            row["length"] = 6;
+            row["parameterCount"] = 1;
+            row["message"] = string.Empty;
+            row["description"] = "WRITE EEPROM BLOCK";
+            row["value"] = string.Empty;
+            row["unit"] = string.Empty;
+            MessageDatabase.Rows.Add(row);
+
+            row = MessageDatabase.NewRow();
+            row["id"] = 0x3A;
+            row["length"] = 5;
+            row["parameterCount"] = 1;
+            row["message"] = string.Empty;
+            row["description"] = "READ EEPROM BLOCK";
+            row["value"] = string.Empty;
+            row["unit"] = string.Empty;
+            MessageDatabase.Rows.Add(row);
+
+            row = MessageDatabase.NewRow();
             row["id"] = 0x46;
             row["length"] = 7;
             row["parameterCount"] = 2;
@@ -443,7 +483,7 @@ namespace ChryslerScanner
             row["length"] = 5;
             row["parameterCount"] = 1;
             row["message"] = string.Empty;
-            row["description"] = "BOOTSTRAP CODE NOT PROTECTED";
+            row["description"] = "BOOTSTRAP MODE NOT PROTECTED";
             row["value"] = string.Empty;
             row["unit"] = string.Empty;
             MessageDatabase.Rows.Add(row);
@@ -1960,264 +2000,204 @@ namespace ChryslerScanner
                                 switch (payload[0])
                                 {
                                     case 0x00:
-                                        if (payload.Length == 1)
-                                        {
-                                            descriptionToInsert = "ACTUATOR TEST | MODE NOT AVAILABLE";
-                                            valueToInsert = string.Empty;
-                                        }
-                                        if (payload.Length > 1)
-                                        {
-                                            if (payload[1] == 0x00)
-                                            {
-                                                descriptionToInsert = "ACTUATOR TEST";
-                                                valueToInsert = "STOPPED";
-                                            }
-                                        }
+                                        descriptionToInsert = "ACTUATOR TEST";
+                                        valueToInsert = "STOPPED";
                                         break;
                                     case 0x01:
                                         descriptionToInsert = "ACTUATOR TEST | IGNITION COIL BANK #1";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x02:
                                         descriptionToInsert = "ACTUATOR TEST | IGNITION COIL BANK #2";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x03:
                                         descriptionToInsert = "ACTUATOR TEST | IGNITION COIL BANK #3";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x04:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #1";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x05:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #2";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x06:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #3";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x07:
-                                        descriptionToInsert = "ACTUATOR TEST | IDLE AIR CONTROL (IAC) STEPPER MOTOR";
-                                        valueToInsert = "RUNNING";
+                                        descriptionToInsert = "ACTUATOR TEST | IDLE AIR CONTROL STEPPER MOTOR";
                                         break;
                                     case 0x08:
                                         descriptionToInsert = "ACTUATOR TEST | RADIATOR FAN RELAY";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x09:
                                         descriptionToInsert = "ACTUATOR TEST | A/C CLUTCH RELAY";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x0A:
                                         descriptionToInsert = "ACTUATOR TEST | AUTOMATIC SHUTDOWN (ASD) RELAY";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x0B:
                                         descriptionToInsert = "ACTUATOR TEST | EVAP PURGE SOLENOID";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x0C:
                                         descriptionToInsert = "ACTUATOR TEST | SPEED CONTROL SOLENOID";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x0D:
-                                        descriptionToInsert = "ACTUATOR TEST | GENERATOR / ALTERNATOR FIELD";
-                                        valueToInsert = "RUNNING";
+                                        descriptionToInsert = "ACTUATOR TEST | ALTERNATOR FIELD";
                                         break;
                                     case 0x0E:
                                         descriptionToInsert = "ACTUATOR TEST | TACHOMETER OUTPUT";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x0F:
                                         descriptionToInsert = "ACTUATOR TEST | TORQUE CONVERTER CLUTCH";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x10:
                                         descriptionToInsert = "ACTUATOR TEST | EGR SOLENOID";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x11:
                                         descriptionToInsert = "ACTUATOR TEST | WASTEGATE SOLENOID";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x12:
                                         descriptionToInsert = "ACTUATOR TEST | BAROMETER SOLENOID";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x14:
                                         descriptionToInsert = "ACTUATOR TEST | ALL SOLENOIDS / RELAYS";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x16:
                                         descriptionToInsert = "ACTUATOR TEST | TRANSMISSION O/D SOLENOID";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x17:
                                         descriptionToInsert = "ACTUATOR TEST | SHIFT INDICATOR LAMP";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x19:
                                         descriptionToInsert = "ACTUATOR TEST | SURGE VALVE SOLENOID";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x1A:
                                         descriptionToInsert = "ACTUATOR TEST | SPEED CONTROL VENT SOLENOID";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x1B:
                                         descriptionToInsert = "ACTUATOR TEST | SPEED CONTROL VACUUM SOLENOID";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x1C:
                                         descriptionToInsert = "ACTUATOR TEST | ASD FUEL SYSTEM";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x1D:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #4";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x1E:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #5";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x1F:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #6";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x23:
                                         descriptionToInsert = "ACTUATOR TEST | IGNITION COIL BANK #4";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x24:
                                         descriptionToInsert = "ACTUATOR TEST | IGNITION COIL BANK #5";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x25:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #7";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x26:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #8";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x28:
                                         descriptionToInsert = "ACTUATOR TEST | INTAKE HEATER BANK #1";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x29:
                                         descriptionToInsert = "ACTUATOR TEST | INTAKE HEATER BANK #2";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x2C:
                                         descriptionToInsert = "ACTUATOR TEST | SPEED CONTROL 12 VOLT FEED";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x2D:
                                         descriptionToInsert = "ACTUATOR TEST | INTAKE MANIFOLD TUNE VALVE";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x2E:
                                         descriptionToInsert = "ACTUATOR TEST | LOW SPEED RADIATOR FAN RELAY";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x2F:
                                         descriptionToInsert = "ACTUATOR TEST | HIGH SPEED RADIATOR FAN RELAY";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x30:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #9";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x31:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL INJECTOR BANK #10";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x32:
                                         descriptionToInsert = "ACTUATOR TEST | 2-3 LOCKOUT SOLENOID";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x33:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL PUMP RELAY";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x3B:
                                         descriptionToInsert = "ACTUATOR TEST | IAC STEPPER MOTOR STEP UP";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x3C:
                                         descriptionToInsert = "ACTUATOR TEST | IAC STEPPER MOTOR STEP DOWN";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x3D:
                                         descriptionToInsert = "ACTUATOR TEST | LEAK DETECTION PUMP SOLENOID";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x40:
                                         descriptionToInsert = "ACTUATOR TEST | O2 SENSOR HEATER RELAY";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x41:
                                         descriptionToInsert = "ACTUATOR TEST | OVERDRIVE LAMP";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x43:
                                         descriptionToInsert = "ACTUATOR TEST | TRANSMISSION 12 VOLT RELAY";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x44:
                                         descriptionToInsert = "ACTUATOR TEST | REVERSE LOCKOUT SOLENOID";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x46:
                                         descriptionToInsert = "ACTUATOR TEST | SHORT RUNNER VALVE";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x49:
                                         descriptionToInsert = "ACTUATOR TEST | WAIT TO START LAMP";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x52:
                                         descriptionToInsert = "ACTUATOR TEST | 1/1 2/1 O2 SENSOR HEATER RELAY";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x53:
                                         descriptionToInsert = "ACTUATOR TEST | 1/2 2/2 O2 SENSOR HEATER RELAY";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x56:
                                         descriptionToInsert = "ACTUATOR TEST | 1/1 O2 SENSOR HEATER RELAY";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x57:
                                         descriptionToInsert = "ACTUATOR TEST | O2 SENSOR HEATER RELAY";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x5A:
                                         descriptionToInsert = "ACTUATOR TEST | RADIATOR FAN SOLENOID";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x5B:
                                         descriptionToInsert = "ACTUATOR TEST | 1/2 O2 SENSOR HEATER RELAY";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x5D:
                                         descriptionToInsert = "ACTUATOR TEST | EXHAUST BRAKE";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x5E:
                                         descriptionToInsert = "ACTUATOR TEST | FUEL CONTROL";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x5F:
                                         descriptionToInsert = "ACTUATOR TEST | PWM RADIATOR FAN";
-                                        valueToInsert = "RUNNING";
                                         break;
                                     default:
                                         descriptionToInsert = "ACTUATOR TEST | OFFSET: " + Util.ByteToHexString(payload, 0, 1);
-                                        valueToInsert = string.Empty;
                                         break;
+                                }
+
+                                if (payload[0] != 0)
+                                {
+                                    if (payload[0] == payload[1])
+                                    {
+                                        valueToInsert = "RUNNING";
+                                    }
+                                    else
+                                    {
+                                        valueToInsert = "MODE NOT AVAILABLE";
+                                    }
                                 }
                             }
                             else // error
@@ -2776,7 +2756,7 @@ namespace ChryslerScanner
                         case 0x18: // control ASD relay
                             if (message.Length >= minLength)
                             {
-                                valueToInsert = "RESULT=" + Util.ByteToHexString(payload, 1, 1);
+                                valueToInsert = Util.ByteToHexString(payload, 1, 1);
                             }
                             else // error
                             {
@@ -2784,7 +2764,7 @@ namespace ChryslerScanner
                             }
                             unitToInsert = string.Empty;
                             break;
-                        case 0x19: // set minimum idle speed
+                        case 0x19: // set idle speed
                             if (message.Length >= minLength)
                             {
                                 valueToInsert = Math.Round(payload[0] * 7.85D).ToString("0");
@@ -2981,6 +2961,38 @@ namespace ChryslerScanner
                             }
                             unitToInsert = string.Empty;
                             break;
+                        case 0x1F: // write RAM
+                            if (message.Length >= minLength)
+                            {
+                                descriptionToInsert = "WRITE RAM | OFFSET: 07 " + Util.ByteToHexString(payload, 0, 1);
+
+                                switch (payload[2])
+                                {
+                                    case 0xE5:
+                                        valueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        unitToInsert = "OK";
+                                        break;
+                                    case 0x00:
+                                        valueToInsert = "DENIED (INVALID OFFSET)";
+                                        unitToInsert = string.Empty;
+                                        break;
+                                    case 0xF1:
+                                        valueToInsert = "DENIED (SECURITY LEVEL)";
+                                        unitToInsert = string.Empty;
+                                        break;
+                                    default:
+                                        valueToInsert = Util.ByteToHexString(payload, 2, 1);
+                                        unitToInsert = string.Empty;
+                                        break;
+                                }
+                            }
+                            else // error
+                            {
+                                descriptionToInsert = "WRITE RAM";
+                                valueToInsert = "ERROR";
+                                unitToInsert = string.Empty;
+                            }
+                            break;
                         case 0x21: // set sync / timing / spark scatter
                             if (message.Length >= minLength)
                             {
@@ -3111,261 +3123,97 @@ namespace ChryslerScanner
                                 unitToInsert = string.Empty;
                             }
                             break;
-                        case 0x23: // reset adaptive memory
+                        case 0x23: // reset memory
                             if (message.Length >= minLength)
                             {
                                 switch (payload[0])
                                 {
                                     case 0x01:
-                                        descriptionToInsert = "ERASE ENGINE FAULT CODES / EEPROM";
-                                        if (payload[1] == 0xFF)
-                                        {
-                                            valueToInsert = "SUCCESS";
-                                        }
-                                        else
-                                        {
-                                            valueToInsert = "FAILED";
-                                        }
-                                        unitToInsert = string.Empty;
+                                        descriptionToInsert = "ERASE ENGINE FAULT CODES";
                                         break;
                                     case 0x02:
-                                        descriptionToInsert = "RESET ADAPTIVE / RAM";
-                                        if (payload[1] != 0x00)
-                                        {
-                                            valueToInsert = "OK";
-                                        }
-                                        else
-                                        {
-                                            valueToInsert = "FAILED";
-                                        }
-                                        unitToInsert = string.Empty;
+                                        descriptionToInsert = "RESET ADAPTIVE MEMORY";
                                         break;
                                     case 0x03:
-                                        descriptionToInsert = "RESET IAC (IDLE AIR CONTROL) COUNTER";
-                                        if (payload[1] != 0x00)
-                                        {
-                                            valueToInsert = "OK";
-                                        }
-                                        else
-                                        {
-                                            valueToInsert = "FAILED";
-                                        }
-                                        unitToInsert = string.Empty;
+                                        descriptionToInsert = "RESET IAC COUNTER";
                                         break;
                                     case 0x04:
-                                        descriptionToInsert = "RESET MINIMUM TPS (THROTTLE POSITION SENSOR)";
-                                        if (payload[1] != 0x00)
-                                        {
-                                            valueToInsert = "OK";
-                                        }
-                                        else
-                                        {
-                                            valueToInsert = "FAILED";
-                                        }
-                                        unitToInsert = string.Empty;
+                                        descriptionToInsert = "RESET MINIMUM TPS VOLTS ";
                                         break;
                                     case 0x05:
                                         descriptionToInsert = "RESET FLEX FUEL PERCENT";
-                                        valueToInsert = payload[1].ToString("0");
-                                        unitToInsert = "%";
                                         break;
                                     case 0x06:
                                         descriptionToInsert = "RESET CAM/CRANK SYNC";
-                                        if (payload[1] != 0x00)
-                                        {
-                                            valueToInsert = "ON (IN SYNC)";
-                                        }
-                                        else
-                                        {
-                                            valueToInsert = "OFF (NOT IN SYNC)";
-                                        }
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x07:
                                         descriptionToInsert = "RESET FUEL SHUTOFF";
-                                        if (payload[1] != 0x00)
-                                        {
-                                            valueToInsert = "OK";
-                                        }
-                                        else
-                                        {
-                                            valueToInsert = "FAILED";
-                                        }
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x08:
                                         descriptionToInsert = "RESET RUNTIME AT STALL";
-                                        if (payload[1] != 0x00)
-                                        {
-                                            valueToInsert = "ON";
-                                        }
-                                        else
-                                        {
-                                            valueToInsert = "OFF";
-                                        }
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x0B:
                                         descriptionToInsert = "RESET CAM/CRANK";
-                                        switch (payload[1])
-                                        {
-                                            case 0x00:
-                                                valueToInsert = "TURN OFF ENGINE";
-                                                unitToInsert = "FAILED";
-                                                break;
-                                            case 0x01:
-                                                valueToInsert = "COMMAND OOR";
-                                                unitToInsert = "FAILED";
-                                                break;
-                                            case 0x02:
-                                                valueToInsert = "DENIED WIP";
-                                                unitToInsert = "FAILED";
-                                                break;
-                                            case 0xF0:
-                                                valueToInsert = "COMPLETED";
-                                                unitToInsert = "OK";
-                                                break;
-                                            default:
-                                                valueToInsert = "UNRECOGNIZED";
-                                                unitToInsert = "FAILED";
-                                                break;
-                                        }
                                         break;
                                     case 0x12:
                                         descriptionToInsert = "RESET ADAPTIVE NUMERATOR";
-                                        switch (payload[1])
-                                        {
-                                            case 0x00:
-                                                valueToInsert = "TURN OFF ENGINE";
-                                                unitToInsert = "FAILED";
-                                                break;
-                                            case 0x01:
-                                                valueToInsert = "BAD TEST ID";
-                                                unitToInsert = "FAILED";
-                                                break;
-                                            case 0x02:
-                                                valueToInsert = "MODULE BUSY";
-                                                unitToInsert = "FAILED";
-                                                break;
-                                            case 0x03:
-                                                valueToInsert = "SECURITY STATUS";
-                                                unitToInsert = "FAILED";
-                                                break;
-                                            case 0xF0:
-                                                valueToInsert = "EXECUTED";
-                                                unitToInsert = "OK";
-                                                break;
-                                            default:
-                                                valueToInsert = "UNRECOGNIZED";
-                                                unitToInsert = "FAILED";
-                                                break;
-                                        }
                                         break;
                                     case 0x13:
-                                        descriptionToInsert = "RESET SKIM";
-                                        valueToInsert = payload[1].ToString("0");
-                                        unitToInsert = string.Empty;
+                                        descriptionToInsert = "RESET SKIM F4";
                                         break;
                                     case 0x14:
                                         descriptionToInsert = "RESET DUTY CYCLE MONITOR";
-                                        switch (payload[1])
-                                        {
-                                            case 0x00:
-                                                valueToInsert = "TURN OFF ENGINE";
-                                                unitToInsert = "FAILED";
-                                                break;
-                                            case 0x01:
-                                                valueToInsert = "BAD TEST ID";
-                                                unitToInsert = "FAILED";
-                                                break;
-                                            case 0x02:
-                                                valueToInsert = "MODULE BUSY";
-                                                unitToInsert = "FAILED";
-                                                break;
-                                            case 0x03:
-                                                valueToInsert = "SECURITY STATUS";
-                                                unitToInsert = "FAILED";
-                                                break;
-                                            case 0xF0:
-                                                valueToInsert = "EXECUTED";
-                                                unitToInsert = "OK";
-                                                break;
-                                            default:
-                                                valueToInsert = "UNRECOGNIZED";
-                                                unitToInsert = "FAILED";
-                                                break;
-                                        }
+                                        break;
+                                    case 0x15:
+                                        descriptionToInsert = "RESET TRIP/IDLE/CRUISE/INJ/O/D OFF/WATER IN FUEL";
                                         break;
                                     case 0x20:
                                         descriptionToInsert = "RESET TPS ADAPTATION FOR ETC";
-                                        if (payload[1] != 0x00)
-                                        {
-                                            valueToInsert = "OK";
-                                        }
-                                        else
-                                        {
-                                            valueToInsert = "FAILED";
-                                        }
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x21:
                                         descriptionToInsert = "RESET MIN PEDAL VALUE";
-                                        if (payload[1] != 0x00)
-                                        {
-                                            valueToInsert = "OK";
-                                        }
-                                        else
-                                        {
-                                            valueToInsert = "FAILED";
-                                        }
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x22:
                                         descriptionToInsert = "RESET LEARNED KNOCK CORRECTION";
-                                        if (payload[1] != 0x00)
-                                        {
-                                            valueToInsert = "OK";
-                                        }
-                                        else
-                                        {
-                                            valueToInsert = "FAILED";
-                                        }
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x23:
                                         descriptionToInsert = "RESET LEARNED MISFIRE CORRECTION";
-                                        if (payload[1] != 0x00)
-                                        {
-                                            valueToInsert = "OK";
-                                        }
-                                        else
-                                        {
-                                            valueToInsert = "FAILED";
-                                        }
-                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x24:
                                         descriptionToInsert = "RESET IDLE ADAPTATION";
-                                        if (payload[1] != 0x00)
-                                        {
-                                            valueToInsert = "OK";
-                                        }
-                                        else
-                                        {
-                                            valueToInsert = "FAILED";
-                                        }
-                                        unitToInsert = string.Empty;
                                         break;
                                     default:
-                                        descriptionToInsert = "ENGINE CONTROLLER REQUEST | OFFSET: " + Util.ByteToHexString(payload, 0, 1);
-                                        valueToInsert = Util.ByteToHexString(payload, 1, 1);
-                                        unitToInsert = string.Empty;
+                                        descriptionToInsert = "RESET MEMORY | OFFSET: " + Util.ByteToHexString(payload, 0, 1);
                                         break;
                                 }
+
+                                switch (payload[1])
+                                {
+                                    case 0x00:
+                                        valueToInsert = "TURN OFF ENGINE";
+                                        break;
+                                    case 0x01:
+                                        valueToInsert = "ERROR";
+                                        break;
+                                    case 0x02:
+                                        valueToInsert = "DENIED (MODULE BUSY)";
+                                        break;
+                                    case 0x03:
+                                        valueToInsert = "DENIED (SECURITY LEVEL)";
+                                        break;
+                                    case 0xF0:
+                                        valueToInsert = "OK";
+                                        break;
+                                    default:
+                                        valueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        break;
+                                }
+
+                                unitToInsert = string.Empty;
                             }
                             else // error
                             {
-                                descriptionToInsert = "ENGINE CONTROLLER REQUEST";
+                                descriptionToInsert = "RESET MEMORY";
                                 valueToInsert = "ERROR";
                                 unitToInsert = string.Empty;
                             }
@@ -3443,15 +3291,15 @@ namespace ChryslerScanner
                                 unitToInsert = string.Empty;
                             }
                             break;
-                        case 0x26: // read ROM
+                        case 0x26: // read flash memory
                             if (message.Length >= minLength)
                             {
-                                descriptionToInsert = "READ ROM | OFFSET: " + Util.ByteToHexString(payload, 0, 3);
+                                descriptionToInsert = "READ FLASH MEMORY | OFFSET: " + Util.ByteToHexString(payload, 0, 3);
                                 valueToInsert = Util.ByteToHexString(payload, 3, 1);
                             }
                             else // error
                             {
-                                descriptionToInsert = "READ ROM";
+                                descriptionToInsert = "READ FLASH MEMORY";
                                 valueToInsert = "ERROR";
                             }
                             unitToInsert = string.Empty;
@@ -3484,7 +3332,7 @@ namespace ChryslerScanner
                                         unitToInsert = string.Empty;
                                         break;
                                     default:
-                                        valueToInsert = "RESULT=" + Util.ByteToHexString(payload, 3, 1);
+                                        valueToInsert = Util.ByteToHexString(payload, 3, 1);
                                         unitToInsert = string.Empty;
                                         break;
                                 }
@@ -3529,7 +3377,7 @@ namespace ChryslerScanner
                                         unitToInsert = string.Empty;
                                         break;
                                     default:
-                                        valueToInsert = "RESULT=" + Util.ByteToHexString(payload, 3, 1);
+                                        valueToInsert = Util.ByteToHexString(payload, 3, 1);
                                         unitToInsert = string.Empty;
                                         break;
                                 }
@@ -3818,7 +3666,7 @@ namespace ChryslerScanner
 
                                 if (payload[2] == checksum)
                                 {
-                                    ushort seed = (ushort)((payload[0] << 8) | payload[1]);
+                                    ushort seed = (ushort)((payload[0] << 8) + payload[1]);
 
                                     if (seed != 0)
                                     {
@@ -3855,7 +3703,7 @@ namespace ChryslerScanner
                                 switch (payload[3])
                                 {
                                     case 0x00:
-                                        valueToInsert = "MEMORY WRITE ALLOWED";
+                                        valueToInsert = "ACCEPTED";
                                         break;
                                     case 0x01:
                                         valueToInsert = "INCORRECT KEY";
@@ -3867,7 +3715,7 @@ namespace ChryslerScanner
                                         valueToInsert = "BLOCKED | RESTART PCM";
                                         break;
                                     default:
-                                        valueToInsert = "RESULT=" + Util.ByteToHexString(payload, 3, 1);
+                                        valueToInsert = Util.ByteToHexString(payload, 3, 1);
                                         break;
                                 }
                             }
@@ -3899,6 +3747,81 @@ namespace ChryslerScanner
                             }
                             else // error
                             {
+                                valueToInsert = "ERROR";
+                            }
+                            unitToInsert = string.Empty;
+                            break;
+                        case 0x35: // get security seed #1 or #2
+                            if (message.Length >= minLength)
+                            {
+                                byte checksum = (byte)(0x35 + payload[0] + payload[1] + payload[2]);
+
+                                if (payload[3] == checksum)
+                                {
+                                    ushort seed = (ushort)((payload[1] << 8) + payload[2]);
+
+                                    if (payload[0] == 1)
+                                    {
+                                        if (seed != 0)
+                                        {
+                                            ushort key = (ushort)((seed << 2) + 0x9018);
+                                            byte keyHB = (byte)(key >> 8);
+                                            byte keyLB = (byte)(key);
+                                            byte keyChecksum = (byte)(0x2C + keyHB + keyLB);
+                                            byte[] keyArray = { 0x2C, keyHB, keyLB, keyChecksum };
+                                            descriptionToInsert = "GET SECURITY SEED #1 | KEY: " + Util.ByteToHexStringSimple(keyArray);
+                                        }
+                                        else
+                                        {
+                                            descriptionToInsert = "GET SECURITY SEED #1 | PCM ALREADY UNLOCKED";
+                                        }
+                                    }
+                                    else if (payload[0] == 2)
+                                    {
+                                        if (seed != 0)
+                                        {
+                                            ushort key = (ushort)(seed & 0xFF00);
+                                            key |= (ushort)(key >> 8);
+
+                                            ushort mask = (ushort)(seed & 0xFF);
+                                            mask |= (ushort)(mask << 8);
+                                            key ^= 0x9340; // polinom
+                                            key += 0x1010;
+                                            key ^= mask;
+                                            key += 0x1911;
+                                            uint tmp = (uint)((key << 16) | key);
+                                            key += (ushort)(tmp >> 3);
+                                            byte keyHB = (byte)(key >> 8);
+                                            byte keyLB = (byte)(key);
+                                            byte keyChecksum = (byte)(0x2C + keyHB + keyLB);
+                                            byte[] keyArray = { 0x2C, keyHB, keyLB, keyChecksum };
+                                            descriptionToInsert = "GET SECURITY SEED #2 | KEY: " + Util.ByteToHexStringSimple(keyArray);
+                                        }
+                                        else
+                                        {
+                                            descriptionToInsert = "GET SECURITY SEED #2 | PCM ALREADY UNLOCKED";
+                                        }
+                                    }
+
+                                    valueToInsert = Util.ByteToHexString(payload, 1, 2);
+                                }
+                                else
+                                {
+                                    if (payload[0] == 1)
+                                    {
+                                        descriptionToInsert = "GET SECURITY SEED #1";
+                                    }
+                                    else if (payload[0] == 2)
+                                    {
+                                        descriptionToInsert = "GET SECURITY SEED #2";
+                                    }
+                                    
+                                    valueToInsert = "CHECKSUM ERROR";
+                                }
+                            }
+                            else // error
+                            {
+                                descriptionToInsert = "GET SECURITY SEED";
                                 valueToInsert = "ERROR";
                             }
                             unitToInsert = string.Empty;
@@ -3947,16 +3870,15 @@ namespace ChryslerScanner
                                 ushort echoCount = (ushort)(payload.Length - 3);
 
                                 descriptionToInsert = "UPLOAD WORKER FUNCTION | SIZE: " + size.ToString() + " BYTES";
+                                valueToInsert = Util.ByteToHexString(payload, 2, payload.Length - 3);
 
                                 if ((echoCount == size) && (payload[payload.Length - 1] == 0x14))
                                 {
-                                    valueToInsert = Util.ByteToHexString(payload, 2, payload.Length - 3);
                                     unitToInsert = "OK";
                                 }
                                 else
                                 {
-                                    valueToInsert = "ERROR";
-                                    unitToInsert = string.Empty;
+                                    unitToInsert = "ERROR";
                                 }
                             }
                             else
@@ -4059,17 +3981,17 @@ namespace ChryslerScanner
                                 {
                                     byte checksum = (byte)(message[0] + message[1] + message[2] + message[3]);
 
-                                    descriptionToInsert = "BOOTSTRAP SECURITY KEY STATUS";
+                                    descriptionToInsert = "BOOTSTRAP SECURITY STATUS";
 
                                     if (message[4] == checksum)
                                     {
                                         if ((message[2] == 0x67) && (message[3] == 0xC2))
                                         {
-                                            valueToInsert = "OK";
+                                            valueToInsert = "UNLOCKED";
                                         }
                                         else
                                         {
-                                            valueToInsert = "INVALID";
+                                            valueToInsert = "LOCKED";
                                         }
                                     }
                                     else
@@ -4098,7 +4020,7 @@ namespace ChryslerScanner
                                 }
                                 else
                                 {
-                                    descriptionToInsert = "BOOTSTRAP SECURITY KEY STATUS";
+                                    descriptionToInsert = "BOOTSTRAP SECURITY STATUS";
                                     valueToInsert = string.Empty;
                                 }
                             }
@@ -4106,7 +4028,7 @@ namespace ChryslerScanner
                             unitToInsert = string.Empty;
                             break;
                         case 0x31: // write flash block
-                            if (message.Length >= 6)
+                            if (message.Length >= minLength)
                             {
                                 List<byte> offset = new List<byte>();
                                 List<byte> length = new List<byte>();
@@ -4166,10 +4088,10 @@ namespace ChryslerScanner
                                 length.AddRange(payload.Skip(3).Take(2));
                                 values.AddRange(payload.Skip(5));
 
+                                descriptionToInsert = "READ FLASH BLOCK | OFFSET: " + Util.ByteToHexStringSimple(offset.ToArray()) + " | SIZE: " + Util.ByteToHexStringSimple(length.ToArray());
+
                                 ushort blockSize = (ushort)((payload[3] << 8) + payload[4]);
                                 ushort echoCount = (ushort)(payload.Length - 5);
-
-                                descriptionToInsert = "READ FLASH BLOCK | OFFSET: " + Util.ByteToHexStringSimple(offset.ToArray()) + " | SIZE: " + Util.ByteToHexStringSimple(length.ToArray());
 
                                 if (echoCount == blockSize)
                                 {
@@ -4178,7 +4100,16 @@ namespace ChryslerScanner
                                 }
                                 else
                                 {
-                                    valueToInsert = "READ ERROR";
+                                    switch (message[message.Length - 1]) // last payload byte stores error status
+                                    {
+                                        case 0x80:
+                                            valueToInsert = "INVALID BLOCK SIZE";
+                                            break;
+                                        default:
+                                            valueToInsert = "UNKNOWN ERROR";
+                                            break;
+                                    }
+
                                     unitToInsert = string.Empty;
                                 }
                             }
@@ -4188,6 +4119,102 @@ namespace ChryslerScanner
                                 valueToInsert = string.Empty;
                                 unitToInsert = string.Empty;
                             }                         
+                            break;
+                        case 0x37: // write EEPROM block
+                            if (message.Length >= minLength)
+                            {
+                                List<byte> offset = new List<byte>();
+                                List<byte> length = new List<byte>();
+                                List<byte> values = new List<byte>();
+                                offset.Clear();
+                                length.Clear();
+                                values.Clear();
+                                offset.AddRange(payload.Take(2));
+                                length.AddRange(payload.Skip(2).Take(2));
+                                values.AddRange(payload.Skip(4));
+
+                                descriptionToInsert = "WRITE EEPROM BLOCK | OFFSET: " + Util.ByteToHexStringSimple(offset.ToArray()) + " | SIZE: " + Util.ByteToHexStringSimple(length.ToArray());
+
+                                ushort blockSize = (ushort)((payload[2] << 8) + payload[3]);
+                                ushort echoCount = (ushort)(payload.Length - 4);
+
+                                if ((echoCount == blockSize) && (offset[0] < 2))
+                                {
+                                    valueToInsert = Util.ByteToHexStringSimple(values.ToArray());
+                                    unitToInsert = "OK";
+                                }
+                                else
+                                {
+                                    switch (message[message.Length - 1]) // last payload byte stores error status
+                                    {
+                                        case 0x80:
+                                            valueToInsert = "INVALID BLOCK SIZE";
+                                            break;
+                                        case 0x83:
+                                            valueToInsert = "INVALID OFFSET";
+                                            break;
+                                        default:
+                                            valueToInsert = "UNKNOWN ERROR";
+                                            break;
+                                    }
+
+                                    unitToInsert = string.Empty;
+                                }
+                            }
+                            else
+                            {
+                                descriptionToInsert = "WRITE EEPROM BLOCK";
+                                valueToInsert = string.Empty;
+                                unitToInsert = string.Empty;
+                            }
+                            break;
+                        case 0x3A: // read EEPROM block
+                            if (message.Length >= minLength)
+                            {
+                                List<byte> offset = new List<byte>();
+                                List<byte> length = new List<byte>();
+                                List<byte> values = new List<byte>();
+                                offset.Clear();
+                                length.Clear();
+                                values.Clear();
+                                offset.AddRange(payload.Take(2));
+                                length.AddRange(payload.Skip(2).Take(2));
+                                values.AddRange(payload.Skip(4));
+
+                                descriptionToInsert = "READ EEPROM BLOCK | OFFSET: " + Util.ByteToHexStringSimple(offset.ToArray()) + " | SIZE: " + Util.ByteToHexStringSimple(length.ToArray());
+
+                                ushort blockSize = (ushort)((payload[2] << 8) + payload[3]);
+                                ushort echoCount = (ushort)(payload.Length - 4);
+
+                                if ((echoCount == blockSize) && (offset[0] < 2))
+                                {
+                                    valueToInsert = Util.ByteToHexStringSimple(values.ToArray());
+                                    unitToInsert = "OK";
+                                }
+                                else
+                                {
+                                    switch (message[message.Length - 1]) // last payload byte stores error status
+                                    {
+                                        case 0x80:
+                                            valueToInsert = "INVALID BLOCK SIZE";
+                                            break;
+                                        case 0x83:
+                                            valueToInsert = "INVALID OFFSET";
+                                            break;
+                                        default:
+                                            valueToInsert = "UNKNOWN ERROR";
+                                            break;
+                                    }
+
+                                    unitToInsert = string.Empty;
+                                }
+                            }
+                            else
+                            {
+                                descriptionToInsert = "READ EEPROM BLOCK";
+                                valueToInsert = string.Empty;
+                                unitToInsert = string.Empty;
+                            }
                             break;
                         case 0x46: // read flash block
                             if (message.Length >= minLength)
@@ -4202,19 +4229,19 @@ namespace ChryslerScanner
                                 length.AddRange(payload.Skip(3).Take(2));
                                 values.AddRange(payload.Skip(5));
                                 descriptionToInsert = "READ FLASH BLOCK | OFFSET: " + Util.ByteToHexStringSimple(offset.ToArray()) + " | SIZE: " + Util.ByteToHexStringSimple(length.ToArray());
+                                valueToInsert = Util.ByteToHexStringSimple(values.ToArray());
 
                                 ushort blockSize = (ushort)((payload[3] << 8) + payload[4]);
                                 ushort echoCount = (ushort)(payload.Length - 5);
 
                                 if (echoCount == blockSize)
                                 {
-                                    valueToInsert = Util.ByteToHexStringSimple(values.ToArray());
+                                    
                                     unitToInsert = "OK";
                                 }
                                 else
                                 {
-                                    valueToInsert = "READ ERROR";
-                                    unitToInsert = string.Empty;
+                                    unitToInsert = "READ ERROR";
                                 }
                             }
                             else
@@ -4253,7 +4280,18 @@ namespace ChryslerScanner
                                 offsetEnd.AddRange(payload.Skip(2).Take(2));
                                 descriptionToInsert = "UPLOAD BOOTLOADER | START: " + Util.ByteToHexStringSimple(offsetStart.ToArray()) + " | END: " + Util.ByteToHexStringSimple(offsetEnd.ToArray());
                                 valueToInsert = Util.ByteToHexString(payload, 4, payload.Length - 4);
-                                unitToInsert = "OK";
+
+                                ushort start = (ushort)((payload[0] << 8) + payload[1]);
+                                ushort end = (ushort)((payload[2] << 8) + payload[3]);
+
+                                if ((end - start + 1) == (payload.Length - 4))
+                                {
+                                    unitToInsert = "OK";
+                                }
+                                else
+                                {
+                                    unitToInsert = "ERROR";
+                                }
                             }
                             else
                             {
@@ -4262,12 +4300,12 @@ namespace ChryslerScanner
                                 unitToInsert = string.Empty;
                             }
                             break;
-                        case 0xDB: // bootstrap code not protected
+                        case 0xDB: // bootstrap mode not protected
                             if (message.Length >= minLength)
                             {
                                 if (payload[0] == 0x2F && payload[1] == 0xD8 && payload[2] == 0x3E && payload[3] == 0x23)
                                 {
-                                    descriptionToInsert = "BOOTSTRAP CODE NOT PROTECTED";
+                                    descriptionToInsert = "BOOTSTRAP MODE NOT PROTECTED";
                                 }
                                 else
                                 {

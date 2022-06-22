@@ -19,17 +19,19 @@ namespace ChryslerScanner
 {
     public partial class MainForm : Form
     {
-        public bool GUIUpdateAvailable = false;
-        public bool FWUpdateAvailabile = false;
+        private bool GUIUpdateAvailable = false;
+        private bool FWUpdateAvailabile = false;
         public string GUIVersion = string.Empty;
         public string FWVersion = string.Empty;
         public string HWVersion = string.Empty;
-        public UInt64 deviceFirmwareTimestamp;
-        public string selectedPort = string.Empty;
-        public bool timeout = false;
-        public bool deviceFound = false;
-        public const uint intEEPROMsize = 4096;
-        public const uint extEEPROMsize = 4096;
+        private UInt64 deviceFirmwareTimestamp;
+        private string selectedPort = string.Empty;
+        private bool timeout = false;
+        private bool deviceFound = false;
+        private const uint intEEPROMsize = 4096;
+        private const uint extEEPROMsize = 4096;
+        private static bool PCMSelected = true;
+        private static bool TCMSelected = false;
 
         public static string USBTextLogFilename;
         public static string USBBinaryLogFilename;
@@ -41,53 +43,54 @@ namespace ChryslerScanner
         public static string CCDEEPROMBinaryFilename;
         public static string PCILogFilename;
         public static string PCMLogFilename;
-        public static string PCMEPROMTextFilename;
+        public static string PCMFlashTextFilename;
         public static string PCMEPROMBinaryFilename;
         public static string PCMEEPROMTextFilename;
         public static string PCMEEPROMBinaryFilename;
         public static string TCMLogFilename;
 
-        public int lastCCDScrollBarPosition = 0;
-        public int lastPCIScrollBarPosition = 0;
-        public int lastPCMScrollBarPosition = 0;
-        public int lastTCMScrollBarPosition = 0;
+        private int lastCCDScrollBarPosition = 0;
+        private int lastPCIScrollBarPosition = 0;
+        private int lastPCMScrollBarPosition = 0;
+        private int lastTCMScrollBarPosition = 0;
 
-        public static ushort tableRefreshRate = 0;
+        private static ushort tableRefreshRate = 0;
 
-        public List<string> CCDTableBuffer = new List<string>();
-        public List<int> CCDTableBufferLocation = new List<int>();
-        public List<int> CCDTableRowCountHistory = new List<int>();
+        private List<string> CCDTableBuffer = new List<string>();
+        private List<int> CCDTableBufferLocation = new List<int>();
+        private List<int> CCDTableRowCountHistory = new List<int>();
 
-        public List<string> PCITableBuffer = new List<string>();
-        public List<int> PCITableBufferLocation = new List<int>();
-        public List<int> PCITableRowCountHistory = new List<int>();
+        private List<string> PCITableBuffer = new List<string>();
+        private List<int> PCITableBufferLocation = new List<int>();
+        private List<int> PCITableRowCountHistory = new List<int>();
 
-        public List<string> PCMTableBuffer = new List<string>();
-        public List<int> PCMTableBufferLocation = new List<int>();
-        public List<int> PCMTableRowCountHistory = new List<int>();
+        private List<string> PCMTableBuffer = new List<string>();
+        private List<int> PCMTableBufferLocation = new List<int>();
+        private List<int> PCMTableRowCountHistory = new List<int>();
 
-        public List<string> TCMTableBuffer = new List<string>();
-        public List<int> TCMTableBufferLocation = new List<int>();
-        public List<int> TCMTableRowCountHistory = new List<int>();
+        private List<string> TCMTableBuffer = new List<string>();
+        private List<int> TCMTableBufferLocation = new List<int>();
+        private List<int> TCMTableRowCountHistory = new List<int>();
 
-        public ReadMemoryForm ReadMemory;
-        public WriteMemoryForm WriteMemory;
-        public SecuritySeedCalculatorForm SecuritySeedCalculator;
-        public BootstrapToolsForm BootstrapTools;
-        public AboutForm About;
+        private ReadMemoryForm ReadMemory;
+        private WriteMemoryForm WriteMemory;
+        private SecurityKeyCalculatorForm SecuritySeedCalculator;
+        private BootstrapToolsForm BootstrapTools;
+        private EngineToolsForm EngineTools;
+        private AboutForm About;
         public static Packet Packet = new Packet();
         public CCD CCD = new CCD();
         public PCI PCI = new PCI();
         public SCIPCM PCM = new SCIPCM();
         public SCITCM TCM = new SCITCM();
-        public System.Timers.Timer TimeoutTimer = new System.Timers.Timer();
-        public System.Timers.Timer CCDTableRefreshTimer = new System.Timers.Timer();
-        public System.Timers.Timer PCITableRefreshTimer = new System.Timers.Timer();
-        public System.Timers.Timer PCMTableRefreshTimer = new System.Timers.Timer();
-        public System.Timers.Timer TCMTableRefreshTimer = new System.Timers.Timer();
-        public WebClient Downloader = new WebClient();
-        public FileInfo fi = new FileInfo(@"DRBDBReader/database.mem");
-        public Database db;
+        private System.Timers.Timer TimeoutTimer = new System.Timers.Timer();
+        private System.Timers.Timer CCDTableRefreshTimer = new System.Timers.Timer();
+        private System.Timers.Timer PCITableRefreshTimer = new System.Timers.Timer();
+        private System.Timers.Timer PCMTableRefreshTimer = new System.Timers.Timer();
+        private System.Timers.Timer TCMTableRefreshTimer = new System.Timers.Timer();
+        private WebClient Downloader = new WebClient();
+        private FileInfo fi = new FileInfo(@"DRBDBReader/database.mem");
+        private Database db;
 
         public MainForm()
         {
@@ -127,7 +130,7 @@ namespace ChryslerScanner
             PCILogFilename = @"LOG/PCI/pcilog_" + DateTimeNow + ".txt";
 
             PCMLogFilename = @"LOG/PCM/pcmlog_" + DateTimeNow + ".txt";
-            PCMEPROMTextFilename = @"ROMs/PCM/pcm_eprom_" + DateTimeNow + ".txt";
+            //PCMFlashTextFilename = @"ROMs/PCM/pcm_flash_" + DateTimeNow + ".txt";
             //PCMEPROMBinaryFilename = @"ROMs/PCM/pcm_eprom_" + DateTimeNow + ".bin";
             //PCMEEPROMTextFilename = @"ROMs/PCM/pcm_eeprom_" + DateTimeNow + ".txt";
             //PCMEEPROMBinaryFilename = @"ROMs/PCM/pcm_eeprom_" + DateTimeNow + ".bin";
@@ -202,6 +205,24 @@ namespace ChryslerScanner
             else
             {
                 CCDBusOnDemandToolStripMenuItem.Checked = false;
+            }
+
+            if (Properties.Settings.Default.PCIBusOnDemand == true)
+            {
+                PCIBusOnDemandToolStripMenuItem.Checked = true;
+            }
+            else
+            {
+                PCIBusOnDemandToolStripMenuItem.Checked = false;
+            }
+
+            if (Properties.Settings.Default.SCIBusNGCMode == true)
+            {
+                SCIBusNGCModeToolStripMenuItem.Checked = true;
+            }
+            else
+            {
+                SCIBusNGCModeToolStripMenuItem.Checked = false;
             }
 
             ActiveControl = ConnectButton; // put focus on the connect button
@@ -674,10 +695,16 @@ namespace ChryslerScanner
                                         if (Util.IsBitClear(Packet.rx.payload[24], 4))
                                         {
                                             SCIBusPCMNGCModeString = "disabled";
+                                            SCIBusNGCModeToolStripMenuItem.Checked = false;
+                                            Properties.Settings.Default.SCIBusNGCMode = false;
+                                            Properties.Settings.Default.Save();
                                         }
                                         else
                                         {
                                             SCIBusPCMNGCModeString = "enabled";
+                                            SCIBusNGCModeToolStripMenuItem.Checked = true;
+                                            Properties.Settings.Default.SCIBusNGCMode = true;
+                                            Properties.Settings.Default.Save();
                                         }
 
                                         if (Util.IsBitClear(Packet.rx.payload[24], 3))
@@ -755,10 +782,16 @@ namespace ChryslerScanner
                                         if (Util.IsBitClear(Packet.rx.payload[33], 4))
                                         {
                                             SCIBusTCMNGCModeString = "disabled";
+                                            SCIBusNGCModeToolStripMenuItem.Checked = false;
+                                            Properties.Settings.Default.SCIBusNGCMode = false;
+                                            Properties.Settings.Default.Save();
                                         }
                                         else
                                         {
                                             SCIBusTCMNGCModeString = "enabled";
+                                            SCIBusNGCModeToolStripMenuItem.Checked = true;
+                                            Properties.Settings.Default.SCIBusNGCMode = true;
+                                            Properties.Settings.Default.Save();
                                         }
 
                                         if (Util.IsBitClear(Packet.rx.payload[33], 3))
@@ -1064,10 +1097,16 @@ namespace ChryslerScanner
                                         if (Util.IsBitClear(Packet.rx.payload[32], 4))
                                         {
                                             SCIBusNGCModeString = "disabled";
+                                            SCIBusNGCModeToolStripMenuItem.Checked = false;
+                                            Properties.Settings.Default.SCIBusNGCMode = false;
+                                            Properties.Settings.Default.Save();
                                         }
                                         else
                                         {
                                             SCIBusNGCModeString = "enabled";
+                                            SCIBusNGCModeToolStripMenuItem.Checked = true;
+                                            Properties.Settings.Default.SCIBusNGCMode = true;
+                                            Properties.Settings.Default.Save();
                                         }
 
                                         if (Util.IsBitClear(Packet.rx.payload[32], 3))
@@ -1097,32 +1136,22 @@ namespace ChryslerScanner
                                             case 0x00:
                                                 SCIBusSpeedString = "976.5 baud";
                                                 SCIBusSpeedComboBox.SelectedIndex = 1;
-                                                SCIBusReadFaultCodesButton.Enabled = true;
-                                                SCIBusEraseFaultCodesButton.Enabled = true;
                                                 break;
                                             case 0x01:
                                                 SCIBusSpeedString = "7812.5 baud";
                                                 SCIBusSpeedComboBox.SelectedIndex = 2;
-                                                SCIBusReadFaultCodesButton.Enabled = true;
-                                                SCIBusEraseFaultCodesButton.Enabled = true;
                                                 break;
                                             case 0x02:
                                                 SCIBusSpeedString = "62500 baud";
                                                 SCIBusSpeedComboBox.SelectedIndex = 3;
-                                                SCIBusReadFaultCodesButton.Enabled = false;
-                                                SCIBusEraseFaultCodesButton.Enabled = false;
                                                 break;
                                             case 0x03:
                                                 SCIBusSpeedString = "125000 baud";
                                                 SCIBusSpeedComboBox.SelectedIndex = 4;
-                                                SCIBusReadFaultCodesButton.Enabled = true;
-                                                SCIBusEraseFaultCodesButton.Enabled = true;
                                                 break;
                                             default:
                                                 SCIBusSpeedString = "unknown";
                                                 SCIBusSpeedComboBox.SelectedIndex = 0;
-                                                SCIBusReadFaultCodesButton.Enabled = true;
-                                                SCIBusEraseFaultCodesButton.Enabled = true;
                                                 break;
                                         }
                                     }
@@ -1291,10 +1320,12 @@ namespace ChryslerScanner
                                     {
                                         string SCIBusPCMStateString = string.Empty;
                                         string SCIBusPCMLogicString = string.Empty;
+                                        string SCIBusPCMNGCModeString = string.Empty;
                                         string SCIBusPCMOBDConfigurationString = string.Empty;
                                         string SCIBusPCMSpeedString = string.Empty;
                                         string SCIBusTCMStateString = string.Empty;
                                         string SCIBusTCMLogicString = string.Empty;
+                                        string SCIBusTCMNGCModeString = string.Empty;
                                         string SCIBusTCMOBDConfigurationString = string.Empty;
                                         string SCIBusTCMSpeedString = string.Empty;
 
@@ -1308,16 +1339,24 @@ namespace ChryslerScanner
                                             }
                                             else
                                             {
+                                                PCMSelected = false;
+                                                TCMSelected = true;
                                                 SCIBusTCMStateString = "enabled";
                                                 SCIBusPCMStateString = "disabled";
 
                                                 if (Util.IsBitSet(Packet.rx.payload[0], 4))
                                                 {
-                                                    // TODO: NGC mode enabled
+                                                    SCIBusTCMNGCModeString = "enabled";
+                                                    SCIBusNGCModeToolStripMenuItem.Checked = true;
+                                                    Properties.Settings.Default.SCIBusNGCMode = true;
+                                                    Properties.Settings.Default.Save();
                                                 }
                                                 else
                                                 {
-                                                    // TODO: NGC mode disabled
+                                                    SCIBusTCMNGCModeString = "disabled";
+                                                    SCIBusNGCModeToolStripMenuItem.Checked = false;
+                                                    Properties.Settings.Default.SCIBusNGCMode = false;
+                                                    Properties.Settings.Default.Save();
                                                 }
 
                                                 if (Util.IsBitClear(Packet.rx.payload[0], 3))
@@ -1342,23 +1381,14 @@ namespace ChryslerScanner
                                                 {
                                                     case 0x00:
                                                         SCIBusTCMSpeedString = "976.5 baud";
-                                                        SCIBusReadFaultCodesButton.Enabled = true;
-                                                        SCIBusEraseFaultCodesButton.Enabled = true;
                                                         break;
                                                     case 0x01:
-                                                        SCIBusTCMSpeedString = "7812.5 baud";
-                                                        SCIBusReadFaultCodesButton.Enabled = true;
-                                                        SCIBusEraseFaultCodesButton.Enabled = true;
                                                         break;
                                                     case 0x02:
                                                         SCIBusTCMSpeedString = "62500 baud";
-                                                        SCIBusReadFaultCodesButton.Enabled = false;
-                                                        SCIBusEraseFaultCodesButton.Enabled = false;
                                                         break;
                                                     case 0x03:
                                                         SCIBusTCMSpeedString = "125000 baud";
-                                                        SCIBusReadFaultCodesButton.Enabled = true;
-                                                        SCIBusEraseFaultCodesButton.Enabled = true;
                                                         break;
                                                 }
                                             }
@@ -1368,6 +1398,7 @@ namespace ChryslerScanner
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] TCM settings: " + Environment.NewLine +
                                                                                "       - state: " + SCIBusTCMStateString + Environment.NewLine +
                                                                                "       - logic: " + SCIBusTCMLogicString + Environment.NewLine +
+                                                                               "       - ngc mode: " + SCIBusTCMNGCModeString + Environment.NewLine +
                                                                                "       - obd config.: " + SCIBusTCMOBDConfigurationString + Environment.NewLine +
                                                                                "       - speed: " + SCIBusTCMSpeedString + Environment.NewLine +
                                                                                "       PCM settings: " + Environment.NewLine +
@@ -1390,16 +1421,24 @@ namespace ChryslerScanner
                                             }
                                             else
                                             {
+                                                PCMSelected = true;
+                                                TCMSelected = false;
                                                 SCIBusPCMStateString = "enabled";
                                                 SCIBusTCMStateString = "disabled";
 
                                                 if (Util.IsBitSet(Packet.rx.payload[0], 4))
                                                 {
-                                                    // TODO: NGC mode enabled
+                                                    SCIBusPCMNGCModeString = "enabled";
+                                                    SCIBusNGCModeToolStripMenuItem.Checked = true;
+                                                    Properties.Settings.Default.SCIBusNGCMode = true;
+                                                    Properties.Settings.Default.Save();
                                                 }
                                                 else
                                                 {
-                                                    // TODO: NGC mode disabled
+                                                    SCIBusPCMNGCModeString = "disabled";
+                                                    SCIBusNGCModeToolStripMenuItem.Checked = false;
+                                                    Properties.Settings.Default.SCIBusNGCMode = false;
+                                                    Properties.Settings.Default.Save();
                                                 }
 
                                                 if (Util.IsBitClear(Packet.rx.payload[0], 3))
@@ -1424,23 +1463,15 @@ namespace ChryslerScanner
                                                 {
                                                     case 0x00:
                                                         SCIBusPCMSpeedString = "976.5 baud";
-                                                        SCIBusReadFaultCodesButton.Enabled = true;
-                                                        SCIBusEraseFaultCodesButton.Enabled = true;
                                                         break;
                                                     case 0x01:
                                                         SCIBusPCMSpeedString = "7812.5 baud";
-                                                        SCIBusReadFaultCodesButton.Enabled = true;
-                                                        SCIBusEraseFaultCodesButton.Enabled = true;
                                                         break;
                                                     case 0x02:
                                                         SCIBusPCMSpeedString = "62500 baud";
-                                                        SCIBusReadFaultCodesButton.Enabled = false;
-                                                        SCIBusEraseFaultCodesButton.Enabled = false;
                                                         break;
                                                     case 0x03:
                                                         SCIBusPCMSpeedString = "125000 baud";
-                                                        SCIBusReadFaultCodesButton.Enabled = true;
-                                                        SCIBusEraseFaultCodesButton.Enabled = true;
                                                         break;
                                                 }
                                             }
@@ -1450,6 +1481,7 @@ namespace ChryslerScanner
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] PCM settings: " + Environment.NewLine +
                                                                                "       - state: " + SCIBusPCMStateString + Environment.NewLine +
                                                                                "       - logic: " + SCIBusPCMLogicString + Environment.NewLine +
+                                                                               "       - ngc mode: " + SCIBusPCMNGCModeString + Environment.NewLine +
                                                                                "       - obd config.: " + SCIBusPCMOBDConfigurationString + Environment.NewLine +
                                                                                "       - speed: " + SCIBusPCMSpeedString + Environment.NewLine +
                                                                                "       TCM settings: " + Environment.NewLine +
@@ -1848,7 +1880,7 @@ namespace ChryslerScanner
                                     }
                                     else
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid battery voltage packet:", Packet.rx.buffer);
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid bootstrap voltage packet:", Packet.rx.buffer);
                                     }
                                     break;
                                 case (byte)Packet.ResponseMode.VPPVolts:
@@ -1860,7 +1892,23 @@ namespace ChryslerScanner
                                     }
                                     else
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid battery voltage packet:", Packet.rx.buffer);
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid programming voltage packet:", Packet.rx.buffer);
+                                    }
+                                    break;
+                                case (byte)Packet.ResponseMode.AllVolts:
+                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 5))
+                                    {
+                                        string BatteryVoltageString = (((Packet.rx.payload[0] << 8) + Packet.rx.payload[1]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
+                                        string BootstrapVoltageString = (((Packet.rx.payload[2] << 8) + Packet.rx.payload[3]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
+                                        string ProgrammingVoltageString = (((Packet.rx.payload[4] << 8) + Packet.rx.payload[5]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Voltage measurements response:", Packet.rx.buffer);
+                                        Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + BatteryVoltageString + Environment.NewLine +
+                                                                       "       Bootstrap voltage: " + BootstrapVoltageString + Environment.NewLine +
+                                                                       "       Programming voltage: " + ProgrammingVoltageString);
+                                    }
+                                    else
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid voltage measurements packet:", Packet.rx.buffer);
                                     }
                                     break;
                                 default:
@@ -1899,6 +1947,7 @@ namespace ChryslerScanner
                                     }
                                     break;
                                 case (byte)Packet.MsgTxMode.single:
+                                case (byte)Packet.MsgTxMode.singleVPP:
                                     if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
                                     {
                                         switch (Packet.rx.payload[0])
@@ -2023,6 +2072,8 @@ namespace ChryslerScanner
                                 case (byte)Packet.MsgRxMode.repeatedSingle:
                                     break;
                                 case (byte)Packet.MsgRxMode.repeatedList:
+                                    break;
+                                case (byte)Packet.MsgTxMode.singleVPP:
                                     break;
                                 default:
                                     Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", Packet.rx.buffer);
@@ -2486,7 +2537,7 @@ namespace ChryslerScanner
                                         }
                                     }
                                     break;
-                                case (byte)Packet.DebugMode.writeWorkerFunction:
+                                case (byte)Packet.DebugMode.uploadWorkerFunction:
                                     if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
                                     {
                                         Util.UpdateTextBox(USBTextBox, "[RX->] Upload worker function result:", Packet.rx.buffer);
@@ -2511,6 +2562,11 @@ namespace ChryslerScanner
                                         }
                                     }
                                     break;
+                                case (byte)Packet.DebugMode.startWorkerFunction:
+                                case (byte)Packet.DebugMode.defaultSettings:
+                                case (byte)Packet.DebugMode.getRandomNumber:
+                                case (byte)Packet.DebugMode.restorePCMEEPROM:
+                                case (byte)Packet.DebugMode.getAW9523Data:
                                 default:
                                     Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", Packet.rx.buffer);
                                     break;
@@ -2608,15 +2664,18 @@ namespace ChryslerScanner
                     }
                     break;
                 case (byte)Packet.Bus.ccd:
-                    if (CCDBusOnDemandToolStripMenuItem.Checked && (DeviceCCDSCILCDTabControl.SelectedTab.Name == "CCDBusControlTabPage") || !CCDBusOnDemandToolStripMenuItem.Checked)
+                    if (CCDBusOnDemandToolStripMenuItem.Checked && (DeviceTabControl.SelectedTab.Name == "CCDBusControlTabPage") || !CCDBusOnDemandToolStripMenuItem.Checked)
                     {
                         Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message:", Packet.rx.buffer);
                         CCD.AddMessage(Packet.rx.payload.ToArray());
                     }
                     break;
                 case (byte)Packet.Bus.pci:
-                    Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus message:", Packet.rx.buffer);
-                    PCI.AddMessage(Packet.rx.payload.ToArray());
+                    if (PCIBusOnDemandToolStripMenuItem.Checked && (DeviceTabControl.SelectedTab.Name == "PCIBusControlTabPage") || !PCIBusOnDemandToolStripMenuItem.Checked)
+                    {
+                        Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus message:", Packet.rx.buffer);
+                        PCI.AddMessage(Packet.rx.payload.ToArray());
+                    }
                     break;
                 case (byte)Packet.Bus.pcm:
                     if (Packet.rx.payload.Length > 4)
@@ -2951,11 +3010,12 @@ namespace ChryslerScanner
                                         COMPortsComboBox.Enabled = false;
                                         COMPortsRefreshButton.Enabled = false;
                                         USBCommunicationGroupBox.Enabled = true;
-                                        DeviceCCDSCILCDTabControl.Enabled = true;
+                                        DeviceTabControl.Enabled = true;
                                         DiagnosticsGroupBox.Enabled = true;
                                         ReadMemoryToolStripMenuItem.Enabled = true;
                                         WriteMemoryToolStripMenuItem.Enabled = true;
                                         BootstrapToolsToolStripMenuItem.Enabled = true;
+                                        EngineToolsToolStripMenuItem.Enabled = true;
                                         Packet.PacketReceived += AnalyzePacket; // subscribe to the OnPacketReceived event
                                         CCD.Diagnostics.TableUpdated += UpdateCCDTable; // subscribe to the CCD-bus OnTableUpdated event
                                         PCI.Diagnostics.TableUpdated += UpdatePCITable; // subscribe to the PCI-bus OnTableUpdated event
@@ -3012,11 +3072,12 @@ namespace ChryslerScanner
                         COMPortsComboBox.Enabled = true;
                         COMPortsRefreshButton.Enabled = true;
                         USBCommunicationGroupBox.Enabled = false;
-                        DeviceCCDSCILCDTabControl.Enabled = false;
+                        DeviceTabControl.Enabled = false;
                         DiagnosticsGroupBox.Enabled = false;
                         ReadMemoryToolStripMenuItem.Enabled = false;
                         WriteMemoryToolStripMenuItem.Enabled = false;
                         BootstrapToolsToolStripMenuItem.Enabled = false;
+                        EngineToolsToolStripMenuItem.Enabled = false;
                         deviceFound = false;
                         timeout = false;
                         Util.UpdateTextBox(USBTextBox, "[INFO] Device disconnected (" + Packet.Serial.PortName + ").");
@@ -3505,7 +3566,7 @@ namespace ChryslerScanner
                         }
                     }
 
-                    string itemToInsert = Util.ByteToHexStringSimple(message);
+                    string itemToInsert = Util.ByteToHexString(message, 0, message.Length);
 
                     if (!match)
                     {
@@ -4001,7 +4062,7 @@ namespace ChryslerScanner
                         }
                     }
 
-                    string itemToInsert = Util.ByteToHexStringSimple(message);
+                    string itemToInsert = Util.ByteToHexString(message, 0, message.Length);
 
                     if (!match)
                     {
@@ -4308,7 +4369,14 @@ namespace ChryslerScanner
                     config = Util.ClearBit(config, 6); // unused bit, always clear
                     config = Util.ClearBit(config, 5); // PCM
 
-                    // TODO: NGC bit
+                    if (Properties.Settings.Default.SCIBusNGCMode == true)
+                    {
+                        config = Util.SetBit(config, 4);
+                    }
+                    else
+                    {
+                        config = Util.ClearBit(config, 4);
+                    }
 
                     if (SCIBusInvertedLogicCheckBox.Checked)
                     {
@@ -4366,7 +4434,14 @@ namespace ChryslerScanner
                     config = Util.ClearBit(config, 6); // unused bit, always clear
                     config = Util.SetBit(config, 5); // TCM
 
-                    // TODO: NGC bit
+                    if (Properties.Settings.Default.SCIBusNGCMode == true)
+                    {
+                        config = Util.SetBit(config, 4);
+                    }
+                    else
+                    {
+                        config = Util.ClearBit(config, 4);
+                    }
 
                     if (SCIBusInvertedLogicCheckBox.Checked)
                     {
@@ -4433,28 +4508,6 @@ namespace ChryslerScanner
             await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
         }
 
-        private async void SCIBusReadFaultCodesButton_Click(object sender, EventArgs e)
-        {
-            Packet.tx.bus = (byte)Packet.Bus.pcm;
-            Packet.tx.command = (byte)Packet.Command.msgTx;
-            Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-            Packet.tx.payload = new byte[1] { 0x10 };
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] PCM fault code list request:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
-        }
-
-        private async void SCIBusEraseFaultCodesButton_Click(object sender, EventArgs e)
-        {
-            Packet.tx.bus = (byte)Packet.Bus.pcm;
-            Packet.tx.command = (byte)Packet.Command.msgTx;
-            Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-            Packet.tx.payload = new byte[1] { 0x17 };
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Erase PCM fault code(s) request:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
-        }
-
         private void SCIBusTxMessagesListBox_DoubleClick(object sender, EventArgs e)
         {
             if ((SCIBusTxMessagesListBox.Items.Count > 0) && (SCIBusTxMessagesListBox.SelectedIndex > -1))
@@ -4486,11 +4539,6 @@ namespace ChryslerScanner
             switch (SCIBusModuleComboBox.SelectedIndex)
             {
                 case 0: // PCM
-                    //SCIBusFaultCodesLabel.Enabled = true;
-                    //SCIBusReadFaultCodesButton.Enabled = true;
-                    //SCIBusEraseFaultCodesButton.Enabled = true;
-                    //SCIBusInvertedLogicCheckBox.Enabled = true;
-
                     if (PCM.state == "enabled")
                     {
                         if (PCM.speed == "976.5 baud") SCIBusSpeedComboBox.SelectedIndex = 1;
@@ -4509,13 +4557,10 @@ namespace ChryslerScanner
                     if (PCM.configuration == "A") SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
                     else if (PCM.configuration == "B") SCIBusOBDConfigurationComboBox.SelectedIndex = 1;
 
+                    PCMSelected = true;
+                    TCMSelected = false;
                     break;
                 case 1: // TCM
-                    //SCIBusFaultCodesLabel.Enabled = false;
-                    //SCIBusReadFaultCodesButton.Enabled = false;
-                    //SCIBusEraseFaultCodesButton.Enabled = false;
-                    //SCIBusInvertedLogicCheckBox.Enabled = false;
-
                     if (TCM.state == "enabled")
                     {
                         if (TCM.speed == "976.5 baud") SCIBusSpeedComboBox.SelectedIndex = 1;
@@ -4534,6 +4579,8 @@ namespace ChryslerScanner
                     if (TCM.configuration == "A") SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
                     else if (TCM.configuration == "B") SCIBusOBDConfigurationComboBox.SelectedIndex = 1;
 
+                    PCMSelected = false;
+                    TCMSelected = true;
                     break;
                 default:
                     break;
@@ -4654,28 +4701,6 @@ namespace ChryslerScanner
             }
         }
 
-        private async void SCIBusLowSpeedSelectButton_Click(object sender, EventArgs e)
-        {
-            Packet.tx.bus = (byte)Packet.Bus.pcm;
-            Packet.tx.command = (byte)Packet.Command.msgTx;
-            Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-            Packet.tx.payload = new byte[1] { 0xFE };
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Select SCI-bus low-speed mode:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
-        }
-
-        private async void SCIBusHighSpeedSelectButton_Click(object sender, EventArgs e)
-        {
-            Packet.tx.bus = (byte)Packet.Bus.pcm;
-            Packet.tx.command = (byte)Packet.Command.msgTx;
-            Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-            Packet.tx.payload = new byte[1] { 0x12 };
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Select SCI-bus high-speed mode:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
-        }
-
         #endregion
 
         #region PCI-bus tab
@@ -4714,7 +4739,7 @@ namespace ChryslerScanner
                         }
                     }
 
-                    string itemToInsert = Util.ByteToHexStringSimple(message);
+                    string itemToInsert = Util.ByteToHexString(message, 0, message.Length);
 
                     if (!match)
                     {
@@ -5390,8 +5415,8 @@ namespace ChryslerScanner
 
         private void UpdateToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Uri GUIAssemblyInfoFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerCCDSCIScanner/master/GUI/ChryslerScanner/Properties/AssemblyInfo.cs");
-            Uri GUIZIPDownload = new Uri("https://github.com/laszlodaniel/ChryslerCCDSCIScanner/raw/master/GUI/ChryslerScanner/bin/Debug/ChryslerScanner_GUI.zip");
+            Uri GUIAssemblyInfoFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerScanner/master/GUI/ChryslerScanner/Properties/AssemblyInfo.cs");
+            Uri GUIZIPDownload = new Uri("https://github.com/laszlodaniel/ChryslerScanner/raw/master/GUI/ChryslerScanner/bin/Debug/ChryslerScanner_GUI.zip");
 
             // First check if GUI update is available.
             // Download the latest AssemblyInfo.cs file from GitHub and compare version numbers.
@@ -5455,10 +5480,7 @@ namespace ChryslerScanner
                             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                             try
                             {
-                                //Downloader.DownloadProgressChanged += new DownloadProgressChangedEventHandler(Downloader_DownloadProgressChanged);
-                                //Downloader.DownloadFileCompleted += new AsyncCompletedEventHandler(Downloader_DownloadFileCompleted);
-                                //Downloader.QueryString.Add("ChryslerCCDSCIScanner_V14X_GUI.zip", "ChryslerCCDSCIScanner_V14X_GUI");
-                                Downloader.DownloadFile(GUIZIPDownload, @"Update/ChryslerCCDSCIScanner_GUI.zip");
+                                Downloader.DownloadFile(GUIZIPDownload, @"Update/ChryslerScanner_GUI.zip");
                                 MessageBox.Show("Updated GUI download finished." + Environment.NewLine +
                                                 "Close this application and unpack the .zip-file from the Update folder!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             }
@@ -5529,7 +5551,7 @@ namespace ChryslerScanner
 
                     if (line != null)
                     {
-                        UInt32 ver = 0;
+                        uint ver = 0;
 
                         if (line.StartsWith("#define FW_DATE"))
                         {
@@ -5614,7 +5636,7 @@ namespace ChryslerScanner
                 {
                     File.Delete(@"Update/ChryslerCCDSCIScanner.ino");
                     MessageBox.Show("Device firmware update cannot be checked." + Environment.NewLine +
-                                    "Connect to the device and try again!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                    "Connect to the device and try again!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
             else if (HWVersion.Contains("v2."))
@@ -5732,8 +5754,12 @@ namespace ChryslerScanner
                 {
                     File.Delete(@"Update/CMakeLists.txt");
                     MessageBox.Show("Device firmware update cannot be checked." + Environment.NewLine +
-                                    "Connect to the device and try again!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                    "Connect to the device and try again!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
+            }
+            else
+            {
+                MessageBox.Show("Firmware update availability cannot be checked.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -5805,7 +5831,7 @@ namespace ChryslerScanner
         {
             if (SecuritySeedCalculator == null)
             {
-                SecuritySeedCalculator = new SecuritySeedCalculatorForm(this)
+                SecuritySeedCalculator = new SecurityKeyCalculatorForm(this)
                 {
                     StartPosition = FormStartPosition.CenterParent
                 };
@@ -5844,6 +5870,32 @@ namespace ChryslerScanner
                     var x = Location.X + (Width - BootstrapTools.Width) / 2;
                     var y = Location.Y + (Height - BootstrapTools.Height) / 2;
                     BootstrapTools.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
+                }
+            }
+            else
+            {
+                BootstrapTools.WindowState = FormWindowState.Normal;
+                BootstrapTools.Focus();
+            }
+        }
+
+        private void EngineToolsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (EngineTools == null)
+            {
+                EngineTools = new EngineToolsForm(this)
+                {
+                    StartPosition = FormStartPosition.CenterParent
+                };
+
+                EngineTools.FormClosed += delegate { EngineTools = null; };
+                EngineTools.Show(this);
+
+                if (EngineTools.StartPosition == FormStartPosition.CenterParent)
+                {
+                    var x = Location.X + (Width - EngineTools.Width) / 2;
+                    var y = Location.Y + (Height - EngineTools.Height) / 2;
+                    EngineTools.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
                 }
             }
             else
@@ -5899,6 +5951,34 @@ namespace ChryslerScanner
             else
             {
                 Properties.Settings.Default.CCDBusOnDemand = false;
+                Properties.Settings.Default.Save(); // save setting in application configuration file
+            }
+        }
+
+        private void PCIBusOnDemandToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (PCIBusOnDemandToolStripMenuItem.Checked)
+            {
+                Properties.Settings.Default.PCIBusOnDemand = true;
+                Properties.Settings.Default.Save(); // save setting in application configuration file
+            }
+            else
+            {
+                Properties.Settings.Default.PCIBusOnDemand = false;
+                Properties.Settings.Default.Save(); // save setting in application configuration file
+            }
+        }
+
+        private void SCIBusNGCModeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (SCIBusNGCModeToolStripMenuItem.Checked)
+            {
+                Properties.Settings.Default.SCIBusNGCMode = true;
+                Properties.Settings.Default.Save(); // save setting in application configuration file
+            }
+            else
+            {
+                Properties.Settings.Default.SCIBusNGCMode = false;
                 Properties.Settings.Default.Save(); // save setting in application configuration file
             }
         }
