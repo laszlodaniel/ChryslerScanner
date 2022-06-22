@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 09: minor
-// 07: patch
+// 08: patch
 // (00: revision)
-// = v0.9.7(.0)
-#define FW_VERSION 0x00090700
+// = v0.9.8(.0)
+#define FW_VERSION 0x00090800
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x0009070062AA0754
+#define FW_DATE 0x0009080062B323AC
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -601,7 +601,7 @@ const uint8_t LdPartNumberRead_SBEC3[338] PROGMEM =
 // Flash manufacturer and chip ID read.
 const uint8_t LdFlashID_SBEC3[92] PROGMEM =
 {
-    0xf5, 0x04, 0x37, 0x9c, 0x37, 0xbc, 0x00, 0x00, 0x37, 0xb5, 0x3e, 0x80, 0xfa, 0x00, 0x02, 0x54, 
+    0xf5, 0x04, 0x37, 0x9c, 0x37, 0xbc, 0x00, 0x00, 0x37, 0xb5, 0x0f, 0xa0, 0xfa, 0x00, 0x02, 0x54, 
     0x37, 0xb5, 0x00, 0x90, 0x8a, 0x00, 0xc5, 0x01, 0xfa, 0x00, 0x02, 0x36, 0xc5, 0x03, 0xfa, 0x00, 
     0x02, 0x36, 0x37, 0xb5, 0xff, 0xff, 0x8a, 0x00, 0x37, 0xb5, 0xff, 0xff, 0x8a, 0x00, 0x37, 0xb5, 
     0x00, 0x00, 0x8a, 0x00, 0x27, 0xf7, 0x17, 0x65, 0x7c, 0x0c, 0x76, 0x01, 0xb7, 0xf4, 0x17, 0xea, 
@@ -626,6 +626,66 @@ const uint8_t LdFlashRead_SBEC3[214] PROGMEM =
     0x7c, 0x0c, 0x76, 0x01, 0xb7, 0xf4, 0x17, 0xea, 0x7c, 0x0f, 0x27, 0xf7, 0x17, 0x65, 0x7c, 0x0d, 
     0x76, 0x42, 0x78, 0x40, 0xb6, 0xf2, 0x17, 0xe5, 0x7c, 0x0f, 0x27, 0xf7, 0x37, 0xb0, 0x00, 0x01, 
     0xb6, 0xf6, 0x27, 0xf7, 0x27, 0x4c
+};
+
+// EEPROM read.
+const uint8_t LdEEPROMRead_SBEC3[294] PROGMEM =
+{
+    0x37, 0xb5, 0x00, 0x00, 0xfa, 0x00, 0x02, 0x22, 0xb5, 0x12, 0xfa, 0x00, 0x02, 0xb2, 0xb5, 0xf0, 
+    0x37, 0x17, 0xfa, 0x00, 0x02, 0xfc, 0x7c, 0x01, 0x27, 0x31, 0x03, 0x22, 0xb6, 0xe8, 0xb0, 0xe0, 
+    0x27, 0xf7, 0xfa, 0x00, 0x02, 0x2e, 0xb4, 0x00, 0x37, 0x3b, 0x01, 0x00, 0x27, 0xf7, 0xfa, 0x00, 
+    0x03, 0x0a, 0xf8, 0x39, 0xb7, 0x08, 0xf8, 0x3b, 0xb7, 0x00, 0x37, 0x10, 0xb0, 0x66, 0xf5, 0x22, 
+    0xb0, 0x62, 0xf5, 0x3a, 0xfa, 0x00, 0x02, 0xfc, 0xfa, 0x00, 0x03, 0x0a, 0x17, 0xfa, 0x03, 0x24, 
+    0xfa, 0x00, 0x02, 0xfc, 0xfa, 0x00, 0x03, 0x0a, 0x17, 0xfa, 0x03, 0x25, 0xfa, 0x00, 0x02, 0xfc, 
+    0xfa, 0x00, 0x03, 0x0a, 0x17, 0xfa, 0x03, 0x22, 0xfa, 0x00, 0x02, 0xfc, 0xfa, 0x00, 0x03, 0x0a, 
+    0x17, 0xfa, 0x03, 0x23, 0xfa, 0x00, 0x02, 0xfc, 0x37, 0xf5, 0x03, 0x24, 0x37, 0xb8, 0x02, 0x00, 
+    0xb4, 0x20, 0x37, 0xf1, 0x03, 0x22, 0x37, 0xb8, 0x02, 0x00, 0xb2, 0x12, 0x37, 0xf5, 0x03, 0x22, 
+    0x37, 0xb8, 0x00, 0x00, 0xb7, 0x08, 0x37, 0x3a, 0xfe, 0xff, 0x27, 0xf5, 0x37, 0x75, 0x03, 0x24, 
+    0xb0, 0x0a, 0xf5, 0x80, 0xb0, 0xfe, 0xf5, 0x84, 0xfa, 0x00, 0x02, 0xfc, 0x37, 0x3b, 0x01, 0x00, 
+    0x27, 0xf7, 0x27, 0xfb, 0x37, 0x04, 0x37, 0x04, 0x37, 0x04, 0x77, 0x03, 0x37, 0xea, 0x7d, 0x30, 
+    0x37, 0xb5, 0x09, 0x08, 0x37, 0xea, 0x7c, 0x1c, 0xfa, 0x00, 0x02, 0xd6, 0xb5, 0x02, 0x37, 0xe5, 
+    0x7d, 0x12, 0x37, 0x06, 0x27, 0xf7, 0x28, 0x80, 0x7c, 0x1f, 0x29, 0x80, 0x7c, 0x1a, 0x37, 0x05, 
+    0x37, 0x01, 0xb7, 0x0a, 0x2a, 0x80, 0x7c, 0x1f, 0xff, 0xf6, 0x28, 0x80, 0x7c, 0x1f, 0x37, 0x06, 
+    0xb0, 0x04, 0x37, 0x3b, 0x01, 0x00, 0x37, 0xfc, 0xf5, 0xa5, 0x27, 0xf7, 0x17, 0x65, 0x7c, 0x0c, 
+    0x76, 0x01, 0xb7, 0xf4, 0x17, 0xea, 0x7c, 0x0f, 0x27, 0xf7, 0x17, 0x65, 0x7c, 0x0d, 0x76, 0x42, 
+    0x78, 0x40, 0xb6, 0xf2, 0x17, 0xe5, 0x7c, 0x0f, 0x27, 0xf7, 0x37, 0xb0, 0x00, 0x01, 0xb6, 0xf6, 
+    0x27, 0xf7, 0x27, 0x4c, 0x27, 0x4c
+};
+
+// EEPROM write.
+const uint8_t LdEEPROMWrite_SBEC3[484] PROGMEM =
+{
+    0xf5, 0x00, 0x37, 0x9d, 0x37, 0xbd, 0x05, 0x00, 0xfa, 0x00, 0x02, 0x42, 0xb5, 0x2e, 0xb0, 0x08, 
+    0x17, 0x75, 0x03, 0xe2, 0x78, 0x05, 0xb7, 0x1e, 0x17, 0x33, 0x03, 0xe2, 0xfa, 0x00, 0x03, 0x04, 
+    0xb5, 0xea, 0x37, 0x17, 0xfa, 0x00, 0x03, 0xb6, 0x7c, 0x01, 0x17, 0x35, 0x03, 0xe2, 0x27, 0x33, 
+    0x03, 0xde, 0x27, 0x31, 0x03, 0xdc, 0xb6, 0xe0, 0xb0, 0xca, 0xf5, 0x01, 0xfa, 0x00, 0x03, 0xb6, 
+    0x27, 0xf7, 0xfa, 0x00, 0x02, 0x66, 0xb4, 0x06, 0x37, 0x35, 0xaa, 0x55, 0x37, 0x3b, 0x01, 0x00, 
+    0xb0, 0x0e, 0x27, 0x75, 0xfa, 0x00, 0x03, 0xc4, 0x27, 0xda, 0x7c, 0x01, 0x37, 0x78, 0x03, 0xdc, 
+    0xb5, 0xee, 0x27, 0x75, 0x27, 0xf7, 0xfa, 0x00, 0x03, 0xc4, 0xf8, 0x36, 0xb7, 0x08, 0xf8, 0x38, 
+    0xb7, 0x00, 0x37, 0x10, 0xb0, 0x66, 0xf5, 0x22, 0xb0, 0x62, 0xf5, 0x37, 0xfa, 0x00, 0x03, 0xb6, 
+    0xfa, 0x00, 0x03, 0xc4, 0x17, 0xfa, 0x03, 0xde, 0xfa, 0x00, 0x03, 0xb6, 0xfa, 0x00, 0x03, 0xc4, 
+    0x17, 0xfa, 0x03, 0xdf, 0xfa, 0x00, 0x03, 0xb6, 0xfa, 0x00, 0x03, 0xc4, 0x17, 0xfa, 0x03, 0xdc, 
+    0xfa, 0x00, 0x03, 0xb6, 0xfa, 0x00, 0x03, 0xc4, 0x17, 0xfa, 0x03, 0xdd, 0xfa, 0x00, 0x03, 0xb6, 
+    0x37, 0xf5, 0x03, 0xde, 0x37, 0xb8, 0x02, 0x00, 0xb4, 0x20, 0x37, 0xf1, 0x03, 0xdc, 0x37, 0xb8, 
+    0x02, 0x00, 0xb2, 0x12, 0x37, 0xf5, 0x03, 0xdc, 0x37, 0xb8, 0x00, 0x00, 0xb7, 0x08, 0x37, 0x3a, 
+    0xfe, 0xff, 0x27, 0xf5, 0x17, 0x35, 0x03, 0xe2, 0xb0, 0x0a, 0xf5, 0x80, 0xb0, 0xfe, 0xf5, 0x84, 
+    0xfa, 0x00, 0x03, 0xb6, 0x37, 0x3b, 0x01, 0x00, 0x27, 0xf7, 0x37, 0xb5, 0x05, 0x00, 0x37, 0xea, 
+    0x7d, 0x22, 0x37, 0xb5, 0x01, 0x01, 0x37, 0xea, 0x7c, 0x1c, 0xfa, 0x00, 0x03, 0x90, 0x37, 0xe5, 
+    0x7d, 0x02, 0x27, 0xf7, 0x37, 0xb5, 0x00, 0x06, 0x37, 0xea, 0x7d, 0x28, 0x37, 0xb5, 0x04, 0x04, 
+    0x37, 0xea, 0x7c, 0x1c, 0xfa, 0x00, 0x03, 0x90, 0xb5, 0x4e, 0x37, 0xf5, 0x03, 0xde, 0x37, 0x04, 
+    0x37, 0x04, 0x37, 0x04, 0x77, 0x02, 0x37, 0xea, 0x7d, 0x2a, 0x37, 0x05, 0x27, 0xd5, 0x37, 0xea, 
+    0x7d, 0x2c, 0x28, 0x80, 0x7d, 0x46, 0x37, 0xb5, 0x06, 0x05, 0x37, 0xea, 0x7c, 0x1c, 0xfa, 0x00, 
+    0x03, 0x90, 0xb5, 0x24, 0x37, 0xb5, 0x13, 0x88, 0x37, 0xfa, 0x03, 0xe0, 0xfa, 0x00, 0x02, 0xea, 
+    0x27, 0x31, 0x03, 0xe0, 0xb7, 0x0e, 0xf9, 0x03, 0xb6, 0xee, 0x37, 0xf5, 0x03, 0xde, 0xfa, 0x00, 
+    0x03, 0x6e, 0xb5, 0x04, 0x27, 0x58, 0xb7, 0x00, 0x37, 0x3b, 0x01, 0x00, 0x27, 0xf7, 0x37, 0x04, 
+    0x37, 0x04, 0x37, 0x04, 0x77, 0x03, 0x37, 0xea, 0x7d, 0x30, 0x37, 0xb5, 0x09, 0x08, 0x37, 0xea, 
+    0x7c, 0x1c, 0xfa, 0x00, 0x03, 0x90, 0xb5, 0x02, 0x37, 0xe5, 0x7d, 0x12, 0x37, 0x06, 0x27, 0xf7, 
+    0x28, 0x80, 0x7c, 0x1f, 0x29, 0x80, 0x7c, 0x1a, 0x37, 0x05, 0x37, 0x01, 0xb7, 0x0a, 0x2a, 0x80, 
+    0x7c, 0x1f, 0xff, 0xf6, 0x28, 0x80, 0x7c, 0x1f, 0x37, 0x06, 0xb0, 0x04, 0x37, 0x3b, 0x01, 0x00, 
+    0x37, 0xfc, 0xf5, 0xa5, 0x27, 0xf7, 0x17, 0x65, 0x7c, 0x0c, 0x76, 0x01, 0xb7, 0xf4, 0x17, 0xea, 
+    0x7c, 0x0f, 0x27, 0xf7, 0x17, 0x65, 0x7c, 0x0d, 0x76, 0x42, 0x78, 0x40, 0xb6, 0xf2, 0x17, 0xe5, 
+    0x7c, 0x0f, 0x27, 0xf7, 0x37, 0xb0, 0x00, 0x01, 0xb6, 0xf6, 0x27, 0xf7, 0x27, 0x4c, 0x27, 0x4c, 
+    0x27, 0x4c, 0x27, 0x4c
 };
 
 // Empty.
@@ -716,7 +776,7 @@ void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
         pcm_putc(req_seed_cmd[i]);
     }
 
-    while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_BTSTRP_DLY); // wait for response
+    while ((uint32_t)(millis() - pcm.last_byte_millis) < (2 * SCI_BTSTRP_DLY)); // wait for response
 
     if (pcm_rx_available() < 7)
     {
@@ -773,7 +833,7 @@ void unlock_sbec3_bootstrap_mode(uint8_t bootloader_src)
             pcm_putc(send_key_cmd[i]);
         }
 
-        while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_BTSTRP_DLY); // wait for response
+        while ((uint32_t)(millis() - pcm.last_byte_millis) < (2 * SCI_BTSTRP_DLY)); // wait for response
 
         if (pcm_rx_available() < 5)
         {
@@ -994,6 +1054,44 @@ void write_worker_function(uint8_t worker_function_src)
             for (uint16_t i = 0; i < ARRAY_SIZE(LdFlashRead_SBEC3); i++)
             {
                 pcm_putc(pgm_read_byte(LdFlashRead_SBEC3 + i));
+                while (pcm_rx_available() == 0); // wait for echo
+                pcm_getc(); // read echo into oblivion
+            }
+            break;
+        }
+        case 7: // EEPROM read
+        {
+            uint8_t wf_header[3] = { 0x10, ((ARRAY_SIZE(LdEEPROMRead_SBEC3) >> 8) & 0xFF), (ARRAY_SIZE(LdEEPROMRead_SBEC3) & 0xFF) };
+
+            for (uint8_t i = 0; i < ARRAY_SIZE(wf_header); i++)
+            {
+                pcm_putc(wf_header[i]);
+                while (pcm_rx_available() == 0); // wait for echo
+                pcm_getc(); // read echo into oblivion
+            }
+
+            for (uint16_t i = 0; i < ARRAY_SIZE(LdEEPROMRead_SBEC3); i++)
+            {
+                pcm_putc(pgm_read_byte(LdEEPROMRead_SBEC3 + i));
+                while (pcm_rx_available() == 0); // wait for echo
+                pcm_getc(); // read echo into oblivion
+            }
+            break;
+        }
+        case 8: // EEPROM write
+        {
+            uint8_t wf_header[3] = { 0x10, ((ARRAY_SIZE(LdEEPROMWrite_SBEC3) >> 8) & 0xFF), (ARRAY_SIZE(LdEEPROMWrite_SBEC3) & 0xFF) };
+
+            for (uint8_t i = 0; i < ARRAY_SIZE(wf_header); i++)
+            {
+                pcm_putc(wf_header[i]);
+                while (pcm_rx_available() == 0); // wait for echo
+                pcm_getc(); // read echo into oblivion
+            }
+
+            for (uint16_t i = 0; i < ARRAY_SIZE(LdEEPROMWrite_SBEC3); i++)
+            {
+                pcm_putc(pgm_read_byte(LdEEPROMWrite_SBEC3 + i));
                 while (pcm_rx_available() == 0); // wait for echo
                 pcm_getc(); // read echo into oblivion
             }
@@ -4870,7 +4968,7 @@ void handle_usb_data(void)
                                     }
                                     case init_bootstrap_mode: // 0x0B - init SBEC3 bootstrap mode
                                     {
-                                        if (!payload_bytes)
+                                        if (!payload_bytes || (payload_length < 2))
                                         {
                                             send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
                                             break;
@@ -4881,7 +4979,7 @@ void handle_usb_data(void)
                                     }
                                     case upload_worker_function: // 0x0C
                                     {
-                                        if (!payload_bytes)
+                                        if (!payload_bytes || (payload_length < 2))
                                         {
                                             send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
                                             break;
@@ -4892,7 +4990,7 @@ void handle_usb_data(void)
                                     }
                                     case start_worker_function: // 0x0D
                                     {
-                                        if (!payload_bytes)
+                                        if (!payload_bytes || (payload_length < 2))
                                         {
                                             send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
                                             break;
@@ -4910,13 +5008,29 @@ void handle_usb_data(void)
                                     }
                                     case exit_worker_function: // 0x0E
                                     {
-                                        if (!payload_bytes)
+                                        if (!payload_bytes || (payload_length < 2))
                                         {
                                             send_usb_packet(bus_usb, ok_error, error_payload_invalid_values, err, 1); // send error packet back to the laptop
                                             break;
                                         }
 
-                                        pcm.msg_buffer[0] = 0x35;
+                                        if (cmd_payload[0] == 3) // flash read
+                                        {
+                                            pcm.msg_buffer[0] = 0x35;
+                                        }
+                                        else if (cmd_payload[0] == 7) // EEPROM read
+                                        {
+                                            pcm.msg_buffer[0] = 0x3B;
+                                        }
+                                        else if (cmd_payload[0] == 8) // EEPROM write
+                                        {
+                                            pcm.msg_buffer[0] = 0x38;
+                                        }
+                                        else
+                                        {
+                                            pcm.msg_buffer[0] = 0xFE;
+                                        }
+                                        
                                         pcm.msg_buffer_ptr = 1;
                                         pcm.msg_to_transmit_count = 1;
                                         pcm.repeat = false;
@@ -6151,7 +6265,7 @@ void handle_sci_data(void)
                     }
                     else // bootstrap mode
                     {
-                        if (((pcm.msg_buffer[0] == 0x45) || (pcm.msg_buffer[0] == 0x33)) && (pcm.msg_buffer_ptr == 6)) // custom bootloader by dino2gnt
+                        if (((pcm.msg_buffer[0] == 0x45) || (pcm.msg_buffer[0] == 0x33)) && (pcm.msg_buffer_ptr == 6)) // flash read
                         {
                             // TX: 45 AA BB CC DD EE
                             // RX: 46 AA BB CC DD EE XX YY ZZ
@@ -6174,13 +6288,11 @@ void handle_sci_data(void)
                                 while ((pcm_rx_available() <= i) && !timeout_reached)
                                 {
                                     // wait here for echo
-                                    if ((uint32_t)(millis() - timeout_start) >= SCI_HS_T3_DELAY) timeout_reached = true;
+                                    if ((uint32_t)(millis() - timeout_start) >= 100) timeout_reached = true;
                                 }
 
                                 if (timeout_reached) // exit for-loop if there's no echo
                                 {
-                                    send_usb_packet(bus_usb, ok_error, error_internal, err, 1);
-                                    pcm_rx_flush();
                                     break;
                                 }
                             }
@@ -6202,10 +6314,88 @@ void handle_sci_data(void)
                                 {
                                     pcm.response_received = true;
                                 }
-                                else // report error
+                            }
+                        }
+                        else if ((pcm.msg_buffer[0] == 0x36) && (pcm.msg_buffer_ptr == 5)) // EEPROM write
+                        {
+                            for (uint8_t i = 0; i < 5; i++) // write header while waiting for echo
+                            {
+                                timeout_reached = false;
+                                timeout_start = millis();
+                                pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
+
+                                while ((pcm_rx_available() <= i) && !timeout_reached)
                                 {
-                                    send_usb_packet(bus_usb, ok_error, error_internal, err, 1);
-                                    pcm_rx_flush();
+                                    // wait here for echo
+                                    if ((uint32_t)(millis() - timeout_start) >= 100) timeout_reached = true;
+                                }
+
+                                if (timeout_reached) // exit for-loop if there's no echo
+                                {
+                                    break;
+                                }
+                            }
+
+                            if (!timeout_reached)
+                            {
+                                for (uint8_t i = 5; i < pcm.msg_buffer_ptr; i++) // write EEPROM block without waiting for echo
+                                {
+                                    pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
+                                }
+
+                                uint16_t block_length = to_uint16(pcm.msg_buffer[3], pcm.msg_buffer[4]);
+
+                                timeout_reached = false;
+                                timeout_start = millis();
+
+                                while ((pcm_rx_available() <= (4 + block_length)) && !timeout_reached)
+                                {
+                                    // wait here until all bytes are received or timeout occurs (2000 ms)
+                                    if ((uint32_t)(millis() - timeout_start) >= 2000) timeout_reached = true;
+                                }
+
+                                if (!timeout_reached) // ok
+                                {
+                                    pcm.response_received = true;
+                                }
+                            }
+                        }
+                        else if ((pcm.msg_buffer[0] == 0x39) && (pcm.msg_buffer_ptr == 5)) // EEPROM read
+                        {
+                            for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
+                            {
+                                timeout_reached = false;
+                                timeout_start = millis();
+                                pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
+
+                                while ((pcm_rx_available() <= i) && !timeout_reached)
+                                {
+                                    // wait here for echo
+                                    if ((uint32_t)(millis() - timeout_start) >= 100) timeout_reached = true;
+                                }
+
+                                if (timeout_reached) // exit for-loop if there's no echo
+                                {
+                                    break;
+                                }
+                            }
+
+                            if (!timeout_reached)
+                            {
+                                uint16_t block_length = to_uint16(pcm.msg_buffer[3], pcm.msg_buffer[4]);
+
+                                timeout_reached = false;
+                                timeout_start = millis();
+
+                                while ((pcm_rx_available() <= (4 + block_length)) && !timeout_reached)
+                                {
+                                    // wait here until all bytes are received or timeout occurs (2000 ms)
+                                    if ((uint32_t)(millis() - timeout_start) >= 1000) timeout_reached = true;
+                                }
+
+                                if (!timeout_reached) // ok
+                                {
+                                    pcm.response_received = true;
                                 }
                             }
                         }
@@ -6225,9 +6415,6 @@ void handle_sci_data(void)
 
                                 if (timeout_reached) // exit for-loop if there's no answer for a long period of time, no need to waste time for other bytes (if any), watchdog timer is ticking...
                                 {
-                                    uint8_t ret[1] = { 0xFF };
-                                    send_usb_packet(bus_usb, ok_error, error_sci_hs_no_response, ret, 1);
-                                    pcm_rx_flush();
                                     break;
                                 }
                             }
