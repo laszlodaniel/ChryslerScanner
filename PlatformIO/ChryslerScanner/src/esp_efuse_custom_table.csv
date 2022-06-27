@@ -1,0 +1,3 @@
+# field_name,     efuse_block, bit_start, bit_count, comment #
+
+HARDWARE_VERSION, EFUSE_BLK3,  56,        16,        Hardware version
