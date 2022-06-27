@@ -344,6 +344,8 @@ namespace ChryslerScanner
                         {
                             UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 5. Backup EEPROM.");
                             WorkerFunctionComboBox.SelectedIndex = (byte)WorkerFunction.EEPROMRead;
+                            SCIBusCurrentMemoryOffset = 0;
+                            SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/512 bytes)";
                             SCIBusTxPayload = new byte[5] { 0x39, 0x00, 0x00, 0x02, 0x00 };
                             UploadButton_Click(this, EventArgs.Empty);
                             SCIBusEEPROMReadFilename = @"ROMs/PCM/pcm_eeprom_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".bin";
@@ -373,6 +375,9 @@ namespace ChryslerScanner
                             UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 7. Write flash memory.");
                             WorkerFunctionComboBox.SelectedIndex = (byte)WorkerFunction.FlashWrite;
                             UploadButton_Click(this, EventArgs.Empty);
+
+                            SCIBusCurrentMemoryOffset = 0;
+                            SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / (double)FlashChipSize * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/" + FlashChipSize.ToString() + " bytes)";
                         }
                         else
                         {
@@ -431,7 +436,7 @@ namespace ChryslerScanner
                         {
                             WorkerFunctionComboBox.SelectedIndex = (byte)WorkerFunction.EEPROMRead;
                             SCIBusCurrentMemoryOffset = 0;
-                            SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/ 512 bytes)";
+                            SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/512 bytes)";
                             SCIBusTxPayload = new byte[5];
                             SCIBusTxPayload[0] = 0x39;
                             SCIBusTxPayload[1] = (byte)((SCIBusCurrentMemoryOffset >> 8) & 0xFF);
@@ -459,7 +464,7 @@ namespace ChryslerScanner
                         {
                             WorkerFunctionComboBox.SelectedIndex = (byte)WorkerFunction.EEPROMWrite;
                             SCIBusCurrentMemoryOffset = 0;
-                            SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/ 512 bytes)";
+                            SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/512 bytes)";
                             SCIBusTxPayload = new byte[5 + EEPROMWriteBlockSize];
                             SCIBusTxPayload[0] = 0x36;
                             SCIBusTxPayload[1] = (byte)((SCIBusCurrentMemoryOffset >> 8) & 0xFF);
@@ -951,7 +956,7 @@ namespace ChryslerScanner
                 BootstrapButton.Enabled = false;
                 BootloaderComboBox.Enabled = false;
                 SCIBusCurrentMemoryOffset = 0;
-                SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/ 512 bytes)";
+                SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/512 bytes)";
                 SCIBusBootstrapWorker.RunWorkerAsync();
             }
         }
@@ -1003,7 +1008,7 @@ namespace ChryslerScanner
                     BootstrapButton.Enabled = false;
                     BootloaderComboBox.Enabled = false;
                     SCIBusCurrentMemoryOffset = 0;
-                    SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/ 512 bytes)";
+                    SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/512 bytes)";
                     SCIBusBootstrapWorker.RunWorkerAsync();
                 }
                 else
@@ -1759,7 +1764,7 @@ namespace ChryslerScanner
                                             if ((SCIBusResponseBytes[1] == SCIBusTxPayload[1]) && (SCIBusResponseBytes[2] == SCIBusTxPayload[2]))
                                             {
                                                 SCIBusCurrentMemoryOffset += EEPROMWriteBlockSize;
-                                                SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/ 512 bytes)";
+                                                SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/512 bytes)";
                                                 ExitButton_Click(this, EventArgs.Empty);
                                                 SCIBusResponse = true;
                                                 SCIBusRxTimeoutTimer.Stop();
@@ -1830,7 +1835,7 @@ namespace ChryslerScanner
                                                 if ((SCIBusResponseBytes[1] == SCIBusTxPayload[1]) && (SCIBusResponseBytes[2] == SCIBusTxPayload[2]))
                                                 {
                                                     SCIBusCurrentMemoryOffset += EEPROMReadBlockSize;
-                                                    SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/ 512 bytes)";
+                                                    SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/512 bytes)";
                                                     ExitButton_Click(this, EventArgs.Empty);
                                                     SCIBusResponse = true;
                                                     SCIBusRxTimeoutTimer.Stop();

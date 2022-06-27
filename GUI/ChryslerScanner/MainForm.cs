@@ -5693,7 +5693,7 @@ namespace ChryslerScanner
                         }
                         else
                         {
-                            if (File.Exists(@"Tools/esptool.exe") && File.Exists(@"Tools/bootloader.bin") && File.Exists(@"Tools/partitions.bin") && File.Exists(@"Tools/ota_data_initial.bin"))
+                            if (File.Exists(@"Tools/esptool.exe") && File.Exists(@"Tools/bootloader.bin") && File.Exists(@"Tools/partition_custom_table.bin") && File.Exists(@"Tools/ota_data_initial.bin"))
                             {
                                 if (MessageBox.Show("Latest firmware version: " + latestFWVersionString + Environment.NewLine +
                                                     "Current firmware version: " + FWVersion + Environment.NewLine +
@@ -5718,7 +5718,7 @@ namespace ChryslerScanner
                                         Process process = new Process();
                                         process.StartInfo.WorkingDirectory = "Tools";
                                         process.StartInfo.FileName = "esptool.exe";
-                                        process.StartInfo.Arguments = "--chip esp32 --port " + selectedPort + " --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader.bin 0x8000 partitions.bin 0xe000 ota_data_initial.bin 0x10000 ChryslerScanner.bin";
+                                        process.StartInfo.Arguments = "--chip esp32 --port " + selectedPort + " --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader.bin 0x8000 partition_custom_table.bin 0xe000 ota_data_initial.bin 0x10000 ChryslerScanner.bin";
                                         process.Start();
                                         process.WaitForExit();
                                         this.Refresh();
