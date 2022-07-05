@@ -3862,6 +3862,7 @@ bool IRAM_ATTR pci_idle_timer_isr_callback(void *arg)
     timer_pause(PCI_IDLE_TIMER_GROUP, PCI_IDLE_TIMER);
     pci.tx.complete = true;
     pci.rx.ifr_detected = false;
+    pci.rx.sof_read = false;
 
     for (int i = 0; i < pci_rx_ptr; i++)
     {
