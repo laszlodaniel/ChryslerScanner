@@ -1322,18 +1322,26 @@ namespace ChryslerScanner
                                             {
                                                 OldPartNumberString = Util.ByteToHexString(SCIBusResponseBytes, 1, 4).Replace(" ", "");
 
-                                                if ((SCIBusResponseBytes[5] >= 0x41) && (SCIBusResponseBytes[6] >= 0x41))
+                                                if ((SCIBusResponseBytes[5] >= 0x41) && (SCIBusResponseBytes[5] <= 0x5A) && (SCIBusResponseBytes[6] >= 0x41) && (SCIBusResponseBytes[6] <= 0x5A))
                                                 {
                                                     OldPartNumberString += Encoding.ASCII.GetString(SCIBusResponseBytes, 5, 2);
+                                                }
+                                                else // no revision label available, append 99 by default
+                                                {
+                                                    OldPartNumberString += "99";
                                                 }
                                             }
                                             else if (SCIBusResponseBytes[21] != 0xFF)
                                             {
                                                 OldPartNumberString = Util.ByteToHexString(SCIBusResponseBytes, 21, 4).Replace(" ", "");
 
-                                                if ((SCIBusResponseBytes[25] >= 0x41) && (SCIBusResponseBytes[26] >= 0x41))
+                                                if ((SCIBusResponseBytes[25] >= 0x41) && (SCIBusResponseBytes[25] <= 0x5A) && (SCIBusResponseBytes[26] >= 0x41) && (SCIBusResponseBytes[26] <= 0x5A))
                                                 {
                                                     OldPartNumberString += Encoding.ASCII.GetString(SCIBusResponseBytes, 25, 2);
+                                                }
+                                                else // no revision label available, append 99 by default
+                                                {
+                                                    OldPartNumberString += "99";
                                                 }
                                             }
                                             else

@@ -2281,8 +2281,8 @@ namespace ChryslerScanner
                                         valueToInsert = payload[1].ToString("0");
                                         unitToInsert = string.Empty;
                                         break;
-                                    case 0x0E: // adaptive fuel factor
-                                        descriptionToInsert = "ADAPTIVE FUEL FACTOR";
+                                    case 0x0E: // Long Term Fuel Trim Bank 1
+                                        descriptionToInsert = "LONG TERM FUEL TRIM BANK 1";
                                         valueToInsert = payload[1].ToString("0");
                                         unitToInsert = string.Empty;
                                         break;
@@ -2366,6 +2366,25 @@ namespace ChryslerScanner
                                             unitToInsert = "KPA";
                                         }
 
+                                        break;
+                                    case 0x1B: // intake air temperature
+                                        descriptionToInsert = "INTAKE AIR TEMPERATURE";
+
+                                        if (Properties.Settings.Default.Units == "imperial")
+                                        {
+                                            valueToInsert = Math.Round((payload[1] * 1.8D) - 198.4D).ToString("0");
+                                            unitToInsert = "°F";
+                                        }
+                                        else if (Properties.Settings.Default.Units == "metric")
+                                        {
+                                            valueToInsert = (payload[1] - 128).ToString("0");
+                                            unitToInsert = "°C";
+                                        }
+                                        break;
+                                    case 0x1C: // intake air temperature sensor voltage
+                                        descriptionToInsert = "INTAKE AIR TEMPERATURE SENSOR VOLTAGE";
+                                        valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
+                                        unitToInsert = "V";
                                         break;
                                     case 0x1D: // cruise target speed
                                         descriptionToInsert = "CRUISE TARGET SPEED";
@@ -2534,10 +2553,25 @@ namespace ChryslerScanner
                                         valueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0');
                                         unitToInsert = string.Empty;
                                         break;
+                                    case 0x29: // read fuel setting
+                                        descriptionToInsert = "READ FUEL SETTING";
+                                        valueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        unitToInsert = string.Empty;
+                                        break;
+                                    case 0x2A: // read set sync
+                                        descriptionToInsert = "READ SET SYNC";
+                                        valueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        unitToInsert = string.Empty;
+                                        break;
                                     case 0x2F: // upstream (pre-cat) o2 sensor voltage
                                         descriptionToInsert = "UPSTREAM O2 SENSOR VOLTAGE (PRE-CATALISATOR)";
                                         valueToInsert = Math.Round(payload[1] * 0.0196D, 3).ToString("0.000").Replace(",", ".");
                                         unitToInsert = "V";
+                                        break;
+                                    case 0x31: // Long Term Fuel Trim Bank 2
+                                        descriptionToInsert = "LONG TERM FUEL TRIM BANK 2";
+                                        valueToInsert = payload[1].ToString("0");
+                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x32: // A/C high side pressure sensor voltage
                                         descriptionToInsert = "A/C HIGH SIDE PRESSURE SENSOR VOLTAGE";
@@ -2558,6 +2592,16 @@ namespace ChryslerScanner
                                             unitToInsert = "KPA";
                                         }
 
+                                        break;
+                                    case 0x3B: // Fuel system status 1
+                                        descriptionToInsert = "FUEL SYSTEM STATUS 1";
+                                        valueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        unitToInsert = string.Empty;
+                                        break;
+                                    case 0x3E: // Read fuel factor LH
+                                        descriptionToInsert = "READ FUEL FACTOR LH";
+                                        valueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x3F: // downstream (post-cat) o2 sensor voltage
                                         descriptionToInsert = "DOWNSTREAM O2 SENSOR VOLTAGE (POST-CATALISATOR)";
@@ -2650,6 +2694,11 @@ namespace ChryslerScanner
                                             unitToInsert = "LITER";
                                         }
 
+                                        break;
+                                    case 0x57: // Fuel system status 2
+                                        descriptionToInsert = "FUEL SYSTEM STATUS 2";
+                                        valueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        unitToInsert = string.Empty;
                                         break;
                                     case 0x5C: // calculated engine load
                                         descriptionToInsert = "CALCULATED ENGINE LOAD";

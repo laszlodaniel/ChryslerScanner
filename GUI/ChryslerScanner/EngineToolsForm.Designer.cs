@@ -59,9 +59,9 @@
             this.ResetMemoryComboBox = new System.Windows.Forms.ComboBox();
             this.ResetMemoryOKButton = new System.Windows.Forms.Button();
             this.SecurityGroupBox = new System.Windows.Forms.GroupBox();
+            this.LegacySecurityCheckBox = new System.Windows.Forms.CheckBox();
             this.SecurityLevelComboBox = new System.Windows.Forms.ComboBox();
             this.SecurityUnlockButton = new System.Windows.Forms.Button();
-            this.LegacySecurityCheckBox = new System.Windows.Forms.CheckBox();
             this.FaultCodeGroupBox.SuspendLayout();
             this.BaudrateGroupBox.SuspendLayout();
             this.ActuatorTestGroupBox.SuspendLayout();
@@ -418,7 +418,7 @@
             "140B | Intake manifold absolute pressure",
             "140C | Target IAC stepper motor position",
             "140D |",
-            "140E | Adaptive fuel factor",
+            "140E | Long term fuel trim bank 1",
             "140F | Barometric pressure",
             "1410 | Minimum airflow",
             "1411 | Engine speed",
@@ -431,8 +431,8 @@
             "1418 | Cylinder 3 retard",
             "1419 | Cylinder 4 retard",
             "141A | Target boost",
-            "141B |",
-            "141C |",
+            "141B | Intake air temperature",
+            "141C | Intake air temperature sensor voltage",
             "141D | Cruise target speed",
             "141E | Key-on cycles error 2",
             "141F | Key-on cycles error 3",
@@ -453,7 +453,7 @@
             "142E |",
             "142F | Upstream O2 sensor voltage",
             "1430 |",
-            "1431 |",
+            "1431 | Long term fuel trim bank 2",
             "1432 | A/C high side pressure sensor voltage",
             "1433 | A/C high side pressure",
             "1434 |",
@@ -463,10 +463,10 @@
             "1438 |",
             "1439 |",
             "143A |",
-            "143B |",
+            "143B | Fuel system status",
             "143C |",
             "143D |",
-            "143E |",
+            "143E | Read fuel factor LH",
             "143F | Downstream O2 sensor voltage",
             "1440 | Intake MAP sensor voltage",
             "1441 | Vehicle speed",
@@ -491,9 +491,9 @@
             "1454 |",
             "1455 |",
             "1456 |",
-            "1457 |",
-            "1458 |",
-            "1459 |",
+            "1457 | Fuel system status 2",
+            "1458 | Cruise status 1",
+            "1459 | Cruise status 2",
             "145A | Output shaft speed",
             "145B | Governor pressure duty cycle",
             "145C | Calculated engine load",
@@ -712,6 +712,18 @@
             this.SecurityGroupBox.TabStop = false;
             this.SecurityGroupBox.Text = "Security";
             // 
+            // LegacySecurityCheckBox
+            // 
+            this.LegacySecurityCheckBox.AutoSize = true;
+            this.LegacySecurityCheckBox.Checked = true;
+            this.LegacySecurityCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.LegacySecurityCheckBox.Location = new System.Drawing.Point(66, 47);
+            this.LegacySecurityCheckBox.Name = "LegacySecurityCheckBox";
+            this.LegacySecurityCheckBox.Size = new System.Drawing.Size(61, 17);
+            this.LegacySecurityCheckBox.TabIndex = 27;
+            this.LegacySecurityCheckBox.Text = "Legacy";
+            this.LegacySecurityCheckBox.UseVisualStyleBackColor = true;
+            // 
             // SecurityLevelComboBox
             // 
             this.SecurityLevelComboBox.DropDownHeight = 226;
@@ -737,18 +749,6 @@
             this.SecurityUnlockButton.Text = "Unlock";
             this.SecurityUnlockButton.UseVisualStyleBackColor = true;
             this.SecurityUnlockButton.Click += new System.EventHandler(this.SecurityUnlockButton_Click);
-            // 
-            // LegacySecurityCheckBox
-            // 
-            this.LegacySecurityCheckBox.AutoSize = true;
-            this.LegacySecurityCheckBox.Checked = true;
-            this.LegacySecurityCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.LegacySecurityCheckBox.Location = new System.Drawing.Point(66, 47);
-            this.LegacySecurityCheckBox.Name = "LegacySecurityCheckBox";
-            this.LegacySecurityCheckBox.Size = new System.Drawing.Size(61, 17);
-            this.LegacySecurityCheckBox.TabIndex = 27;
-            this.LegacySecurityCheckBox.Text = "Legacy";
-            this.LegacySecurityCheckBox.UseVisualStyleBackColor = true;
             // 
             // EngineToolsForm
             // 

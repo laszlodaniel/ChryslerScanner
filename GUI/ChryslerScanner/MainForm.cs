@@ -1243,6 +1243,7 @@ namespace ChryslerScanner
                                     EEPROMWriteEnableCheckBox.Visible = false;
                                     EEPROMWriteValuesLabel.Visible = false;
                                     EEPROMWriteValuesTextBox.Visible = false;
+                                    MeasureCCDBusVoltagesButton.Visible = false;
                                     CCDBusTerminationBiasOnOffCheckBox.Enabled = false;
                                     LCDApplySettingsButton.Enabled = false;
                                 }
