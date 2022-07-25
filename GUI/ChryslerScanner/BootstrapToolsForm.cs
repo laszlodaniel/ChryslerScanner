@@ -587,7 +587,7 @@ namespace ChryslerScanner
         {
             UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "User is instructed to turn key to OFF position.");
 
-            if (MessageBox.Show("Turn key to OFF position." + Environment.NewLine + "Click OK when done.", "Information", MessageBoxButtons.OKCancel, MessageBoxIcon.Information, MessageBoxDefaultButton.Button2) == DialogResult.OK)
+            if (MessageBox.Show("Turn key to OFF position and wait at least 10 seconds." + Environment.NewLine + "Click OK when done.", "Information", MessageBoxButtons.OKCancel, MessageBoxIcon.Information, MessageBoxDefaultButton.Button2) == DialogResult.OK)
             {
                 if (OriginalForm.PCM.speed != "62500 baud")
                 {
