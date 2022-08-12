@@ -91,15 +91,7 @@ namespace ChryslerScanner
 
             #region PCI-bus messages
 
-            row = MessageDatabase.NewRow();
-            row["id"] = 0x02;
-            row["length"] = 3;
-            row["parameterCount"] = 1;
-            row["message"] = string.Empty;
-            row["description"] = "SHIFT LEVER POSITION";
-            row["value"] = string.Empty;
-            row["unit"] = string.Empty;
-            MessageDatabase.Rows.Add(row);
+            // Empty.
 
             #endregion
 
@@ -171,59 +163,359 @@ namespace ChryslerScanner
                 modifiedID = (ushort)((ID << 8) & 0xFF00);
             }
 
-            int rowIndex = MessageDatabase.Rows.IndexOf(MessageDatabase.Rows.Find(ID)); // search ID byte among known messages and get row index
-
-            if (rowIndex != -1) // -1 if row not found
+            switch (ID)
             {
-                descriptionToInsert = MessageDatabase.Rows[rowIndex]["description"].ToString();
+                case 0x10: // engine speed, vehicle speed, MAP sensor value
+                    descriptionToInsert = "ENGINE SPEED | VEHICLE SPEED | MAP SENSOR";
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
 
-                int minLength = Convert.ToInt32(MessageDatabase.Rows[rowIndex]["length"]);
+                    if (message.Length >= 7)
+                    {
+                        double EngineSpeed = (((payload[0] << 8) + payload[1]) * 0.25D);
+                        double VehicleSpeed = 0;
 
-                switch (ID)
-                {
-                    case 0x02: // shift lever position
-                        if (message.Length >= minLength)
+                        if (Properties.Settings.Default.Units == "imperial")
                         {
-                            switch (payload[0])
+                            VehicleSpeed = ((payload[2] << 8) + payload[3]) * 0.0049D;
+                        }
+                        else if (Properties.Settings.Default.Units == "metric")
+                        {
+                            VehicleSpeed = ((payload[2] << 8) + payload[3]) * 1.609344D * 0.0049D;
+                        }
+
+                        double MAPValue = 0;
+
+                        if (Properties.Settings.Default.Units == "imperial")
+                        {
+                            MAPValue = payload[4] / 0.412D * 0.145037738D;
+                        }
+                        else if (Properties.Settings.Default.Units == "metric")
+                        {
+                            MAPValue = payload[4] / 0.412D;
+                        }
+
+                        if (Properties.Settings.Default.Units == "imperial")
+                        {
+                            descriptionToInsert = "ENGINE: " + EngineSpeed.ToString("0.00") + " RPM | VEHICLE: " + VehicleSpeed.ToString("0.00") + " MPH";
+                            valueToInsert = "MAP: " + MAPValue.ToString("0.00") + " PSI";
+                        }
+                        else if (Properties.Settings.Default.Units == "metric")
+                        {
+                            descriptionToInsert = "ENGINE: " + EngineSpeed.ToString("0.00") + " RPM | VEHICLE: " + VehicleSpeed.ToString("0.00") + " KM/H";
+                            valueToInsert = "MAP: " + MAPValue.ToString("0.00") + " KPA";
+                        }
+
+                        unitToInsert = string.Empty;
+                    }
+                    break;
+                case 0x14: // vehicle speed sensor, raw distance pulse signal
+                    descriptionToInsert = "VEHICLE SPEED SENSOR";
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
+
+                    if (message.Length >= 4)
+                    {
+                        ushort DistancePulse = (ushort)((payload[0] << 8) + payload[1]);
+
+                        if (Properties.Settings.Default.Units == "imperial")
+                        {
+                            if (DistancePulse != 0xFFFF)
                             {
-                                case 0x01:
-                                    valueToInsert = "PARK";
-                                    break;
-                                case 0x02:
-                                    valueToInsert = "REVERSE";
-                                    break;
-                                case 0x03:
-                                    valueToInsert = "NEUTRAL";
-                                    break;
-                                case 0x05:
-                                    valueToInsert = "DRIVE";
-                                    break;
-                                case 0x06:
-                                    valueToInsert = "AUTOSHIFT";
-                                    break;
-                                default:
-                                    valueToInsert = "UNDEFINED";
-                                    break;
+                                valueToInsert = Math.Round(28800.0D / DistancePulse, 1).ToString("0.0").Replace(",", ".");
+                            }
+                            else
+                            {
+                                valueToInsert = "0.0";
                             }
 
-                            unitToInsert = string.Empty;
+                            unitToInsert = "MPH";
+                        }
+                        else if (Properties.Settings.Default.Units == "metric")
+                        {
+                            if ((payload[0] != 0xFF) && (payload[1] != 0xFF))
+                            {
+                                valueToInsert = Math.Round(28800.0D / DistancePulse * 1.609344D, 1).ToString("0.0").Replace(",", ".");
+                            }
+                            else
+                            {
+                                valueToInsert = "0.0";
+                            }
+
+                            unitToInsert = "KM/H";
+                        }
+                    }
+                    break;
+                case 0x1A: // TPS volts, cruise flags
+                    descriptionToInsert = "THROTTLE POSITION SENSOR VOLTAGE | CRUISE FLAGS";
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
+
+                    if (message.Length >= 6)
+                    {
+                        double TPSVolts = payload[0] * 0.0191D;
+                        byte CruiseFlags = payload[2];
+
+                        valueToInsert = TPSVolts.ToString("0.000") + " | " + CruiseFlags;
+                        unitToInsert = "V | N/A";
+                    }
+                    break;
+                case 0x35: // MIC lamp status
+                    descriptionToInsert = "MIC LAMP STATUS";
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
+
+                    if (message.Length >= 4)
+                    {
+                        valueToInsert = Util.ByteToHexString(payload, 0, 2);
+                    }
+                    break;
+                case 0x37: // shift lever position
+                    descriptionToInsert = "SHIFT LEVER POSITION";
+
+                    if (message.Length >= 4)
+                    {
+                        switch (payload[0])
+                        {
+                            case 0x01:
+                                valueToInsert = "PARK";
+                                break;
+                            case 0x02:
+                                valueToInsert = "REVERSE";
+                                break;
+                            case 0x03:
+                                valueToInsert = "NEUTRAL";
+                                break;
+                            case 0x05:
+                                valueToInsert = "DRIVE";
+                                break;
+                            case 0x06:
+                                valueToInsert = "AUTOSHIFT";
+                                break;
+                            default:
+                                valueToInsert = "UNDEFINED";
+                                break;
+                        }
+
+                        unitToInsert = string.Empty;
+                    }
+                    else
+                    {
+                        valueToInsert = "ERROR";
+                        unitToInsert = string.Empty;
+                    }
+                    break;
+                case 0x5D: // mileage increment
+                    descriptionToInsert = "MILEAGE INCREMENT";
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
+
+                    if (message.Length >= 7)
+                    {
+                        if (Properties.Settings.Default.Units == "imperial")
+                        {
+                            valueToInsert = Math.Round(payload[0] * 0.000125D, 6).ToString("0.000000").Replace(",", ".") + " | " + Util.ByteToHexStringSimple(new byte[1] { payload[1] });
+                            unitToInsert = "MI | N/A";
+                        }
+                        else if (Properties.Settings.Default.Units == "metric")
+                        {
+                            valueToInsert = Math.Round(payload[0] * 0.000125D * 1.609344D, 6).ToString("0.000000").Replace(",", ".") + " | " + Util.ByteToHexStringSimple(new byte[1] { payload[1] });
+                            unitToInsert = "KM | N/A";
+                        }
+                    }
+                    break;
+                case 0x72: // odometer
+                    descriptionToInsert = "VEHICLE DISTANCE / ODOMETER";
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
+
+                    if (message.Length >= 6)
+                    {
+                        if (Properties.Settings.Default.Units == "imperial")
+                        {
+                            valueToInsert = Math.Round((uint)(payload[0] << 24 + payload[1] << 16 + payload[2] << 8 + payload[3]) * 0.000125D, 3).ToString("0.000").Replace(",", ".");
+                            unitToInsert = "MILE";
+                        }
+                        else if (Properties.Settings.Default.Units == "metric")
+                        {
+                            valueToInsert = Math.Round((uint)(payload[0] << 24 + payload[1] << 16 + payload[2] << 8 + payload[3]) * 0.000125D * 1.609344D, 3).ToString("0.000").Replace(",", ".");
+                            unitToInsert = "KILOMETER";
+                        }
+                    }
+                    break;
+                case 0xA0: // distance to empty
+                    descriptionToInsert = "DISTANCE TO EMPTY";
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
+
+                    if (message.Length >= 4)
+                    {
+                        if (Properties.Settings.Default.Units == "imperial")
+                        {
+                            valueToInsert = Math.Round(((payload[0] << 8) + payload[1]) * 0.1D, 1).ToString("0.0").Replace(",", ".");
+                            unitToInsert = "MILE";
+                        }
+                        else if (Properties.Settings.Default.Units == "metric")
+                        {
+                            valueToInsert = Math.Round(((payload[0] << 8) + payload[1]) * 0.1D * 1.609344D, 1).ToString("0.0").Replace(",", ".");
+                            unitToInsert = "KILOMETER";
+                        }
+                    }
+                    break;
+                case 0xA4: // fuel tank level percent
+                    descriptionToInsert = "FUEL TANK LEVEL";
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
+
+                    if (message.Length >= 3)
+                    {
+                        valueToInsert = Math.Round((payload[0] * 0.3922D), 1).ToString("0.0").Replace(",", ".");
+                        unitToInsert = "%";
+                    }
+                    break;
+                case 0xA5: // fuel tank level
+                    descriptionToInsert = "FUEL TANK LEVEL";
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
+
+                    if (message.Length >= 4)
+                    {
+                        if (Properties.Settings.Default.Units == "imperial")
+                        {
+                            valueToInsert = Math.Round(payload[1] * 0.125D, 1).ToString("0.0").Replace(",", ".");
+                            unitToInsert = "GALLON";
+                        }
+                        else if (Properties.Settings.Default.Units == "metric")
+                        {
+                            valueToInsert = Math.Round(payload[1] * 0.125D * 3.785412D, 1).ToString("0.0").Replace(",", ".");
+                            unitToInsert = "LITER";
+                        }
+                    }
+                    break;
+                case 0xB0: // check engine lamp state
+                    descriptionToInsert = "CHECK ENGINE LAMP STATE";
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
+
+                    if (message.Length >= 5)
+                    {
+                        if (Util.IsBitSet(payload[0], 7))
+                        {
+                            valueToInsert = "ON";
                         }
                         else
                         {
-                            valueToInsert = "ERROR";
-                            unitToInsert = string.Empty;
+                            valueToInsert = "OFF";
                         }
-                        break;
-                    default:
-                        valueToInsert = string.Empty;
-                        unitToInsert = string.Empty;
-                        break;
-                }
+                    }
+                    break;
+                case 0xC0: // battery voltage, charging voltage, coolant temperature, intake air temperature
+                    descriptionToInsert = "BATTERY | CHARGING | COOLANT | IAT";
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
 
-                MessageDatabase.Rows[rowIndex]["message"] = hexBytesToInsert; // edit data table
-                MessageDatabase.Rows[rowIndex]["description"] = descriptionToInsert; // edit data table
-                MessageDatabase.Rows[rowIndex]["value"] = valueToInsert; // edit data table
-                MessageDatabase.Rows[rowIndex]["unit"] = unitToInsert; // edit data table
+                    if (message.Length >= 6)
+                    {
+                        double BatteryVoltage = payload[0] * 0.0625;
+                        double ChargingVoltage = payload[1] * 0.0625;
+                        byte CoolantTemperature = (byte)(payload[2] - 40); // °C
+                        byte IntakeAirTemperature = (byte)(payload[3] - 40); // °C
+
+                        if (Properties.Settings.Default.Units == "imperial")
+                        {
+                            descriptionToInsert = "BATTERY: " + BatteryVoltage.ToString("0.0") + " V | CHARGING: N/A | COOLANT: " + (1.8 * CoolantTemperature + 32).ToString("0") + " °F";
+                            valueToInsert = "IAT: " + (1.8 * IntakeAirTemperature + 32).ToString("0") + " °F";
+                        }
+                        else if (Properties.Settings.Default.Units == "metric")
+                        {
+                            descriptionToInsert = "BATTERY: " + BatteryVoltage.ToString("0.0") + " V | CHARGING: N/A | COOLANT: " + CoolantTemperature.ToString("0") + " °C";
+                            valueToInsert = "IAT: " + IntakeAirTemperature.ToString("0") + " °C";
+                        }
+
+                        unitToInsert = string.Empty;
+                    }
+                    break;
+                case 0xD0: // limp state 1
+                    descriptionToInsert = "LIMP STATE 1";
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
+
+                    if (message.Length >= 4)
+                    {
+                        valueToInsert = Util.ByteToHexString(payload, 0, 2);
+                    }
+                    break;
+                case 0xD1: // limp state 2
+                    descriptionToInsert = "LIMP STATE 2";
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
+
+                    if (message.Length >= 7)
+                    {
+                        valueToInsert = Util.ByteToHexString(payload, 0, 5);
+                    }
+                    break;
+                case 0xD2: // A/C high-side pressure, intake air temperature
+                    descriptionToInsert = "A/C HIGH SIDE PRESSURE | IAT";
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
+
+                    if (message.Length >= 6)
+                    {
+                        double ACHighSidePressurePSI = payload[2] * 2.03; // psi
+                        byte IntakeAirTemperature = (byte)(1.8 * payload[1] - 40); // °F
+
+                        if (Properties.Settings.Default.Units == "imperial")
+                        {
+                            descriptionToInsert = "A/C HIGH SIDE PRESSURE: " + ACHighSidePressurePSI.ToString("0.0") + " PSI";
+                            valueToInsert = "IAT: " + IntakeAirTemperature.ToString("0") + " °F";
+                        }
+                        else if (Properties.Settings.Default.Units == "metric")
+                        {
+                            descriptionToInsert = "A/C HIGH SIDE PRESSURE: " + (ACHighSidePressurePSI * 6.894757).ToString("0.0") + " KPA";
+                            valueToInsert = "IAT: " + (payload[1] - 40).ToString("0") + " °C";
+                        }
+
+                        unitToInsert = string.Empty;
+                    }
+                    break;
+                case 0xDF: // accumulated mileage
+                    descriptionToInsert = "ACCUMULATED MILEAGE";
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
+
+                    if (message.Length >= 3)
+                    {
+                        valueToInsert = Util.ByteToHexString(payload, 0, 1);
+                    }
+                    break;
+                case 0xED: // vehicle information
+                    descriptionToInsert = "VEHICLE INFORMATION";
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
+
+                    if (message.Length >= 7)
+                    {
+                        valueToInsert = Util.ByteToHexString(payload, 0, 5);
+                    }
+                    break;
+                case 0xF0: // VIN
+                    descriptionToInsert = "VEHICLE IDENTIFICATION NUMBER (VIN) CHARACTER";
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
+
+                    if (((payload[0] == 0x01) && (message.Length >= 4)) || ((payload[0] == 0x02) && (message.Length >= 7)) || ((payload[0] == 0x06) && (message.Length >= 7)) || ((payload[0] == 0x0A) && (message.Length >= 7)) || ((payload[0] == 0x0E) && (message.Length >= 7)))
+                    {
+                        VIN = VIN.Remove(payload[0] - 1, payload.Length - 1).Insert(payload[0] - 1, Encoding.ASCII.GetString(payload.Skip(1).Take(payload.Length - 1).ToArray()));
+                        valueToInsert = VIN;
+                        unitToInsert = string.Empty;
+                    }
+                    break;
+                default:
+                    descriptionToInsert = string.Empty;
+                    valueToInsert = string.Empty;
+                    unitToInsert = string.Empty;
+                    break;
             }
 
             if (message.Length < 9) // max 8 message byte fits the message column
