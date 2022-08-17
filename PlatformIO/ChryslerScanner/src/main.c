@@ -338,7 +338,7 @@ uint8_t calculate_checksum(uint8_t *buffer, uint16_t index, uint16_t length)
 {
     uint8_t checksum = 0;
 
-    for (uint16_t i = index ; i < length; i++)
+    for (uint16_t i = index; i < length; i++)
     {
         checksum += buffer[i]; // add bytes together
     }
@@ -3446,6 +3446,7 @@ void sci_boot_task(void *pvParameters)
                         }
                         case FlashMemoryTypeIndex_M28F210: // 256 kB
                         case FlashMemoryTypeIndex_M28F220: // 256 kB
+                        case FlashMemoryTypeIndex_M28F200: // 256 kB
                         {
                             wf_header[1] = (sizeof(LdFlashErase_M28F220_256k) >> 8) & 0xFF;
                             wf_header[2] = sizeof(LdFlashErase_M28F220_256k) & 0xFF;
@@ -3524,6 +3525,7 @@ void sci_boot_task(void *pvParameters)
                         }
                         case FlashMemoryTypeIndex_M28F210: // 256 kB
                         case FlashMemoryTypeIndex_M28F220: // 256 kB
+                        case FlashMemoryTypeIndex_M28F200: // 256 kB
                         {
                             wf_header[1] = (sizeof(LdFlashWrite_M28F220_256k) >> 8) & 0xFF;
                             wf_header[2] = sizeof(LdFlashWrite_M28F220_256k) & 0xFF;

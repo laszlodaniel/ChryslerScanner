@@ -109,7 +109,9 @@ namespace ChryslerScanner
             N28F010 = 0xB4,
             N28F020 = 0xBD,
             M28F210 = 0xE0,
-            M28F220 = 0xE6
+            M28F220 = 0xE6,
+            M28F200T = 0x74,
+            M28F200B = 0x75
         }
 
         private enum BootloaderError
@@ -1426,6 +1428,12 @@ namespace ChryslerScanner
                                                     case (byte)FlashMemoryType.M28F220:
                                                         UpdateTextBox(SCIBusBootstrapInfoTextBox, "M28F220 (256 kB).");
                                                         FlashChipComboBox.SelectedIndex = 6;
+                                                        FlashChipSize = 262144; // bytes
+                                                        break;
+                                                    case (byte)FlashMemoryType.M28F200T:
+                                                    case (byte)FlashMemoryType.M28F200B:
+                                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "M28F200 (256 kB).");
+                                                        FlashChipComboBox.SelectedIndex = 7;
                                                         FlashChipSize = 262144; // bytes
                                                         break;
                                                     default:

@@ -204,7 +204,8 @@ namespace ChryslerScanner
             "Intel N28F010 (128k)",
             "Intel N28F020 (256k)",
             "ST M28F210 (256 kB)",
-            "ST M28F220 (256 kB)"});
+            "ST M28F220 (256 kB)",
+            "ST M28F200 (256 kB)"});
             this.FlashChipComboBox.Location = new System.Drawing.Point(67, 17);
             this.FlashChipComboBox.Name = "FlashChipComboBox";
             this.FlashChipComboBox.Size = new System.Drawing.Size(152, 21);

@@ -127,7 +127,8 @@ enum FlashMemoryTypeIndex {
     FlashMemoryTypeIndex_N28F010   = 0x03,
     FlashMemoryTypeIndex_N28F020   = 0x04,
     FlashMemoryTypeIndex_M28F210   = 0x05,
-    FlashMemoryTypeIndex_M28F220   = 0x06
+    FlashMemoryTypeIndex_M28F220   = 0x06,
+    FlashMemoryTypeIndex_M28F200   = 0x07
 };
 
 enum BootloaderError {
