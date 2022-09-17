@@ -59,6 +59,8 @@ namespace ChryslerScanner
             this.EEPROMFileLabel = new System.Windows.Forms.Label();
             this.SCIBusBootstrapToolsProgressLabel = new System.Windows.Forms.Label();
             this.SCIBusBootstrapToolsHelpButton = new System.Windows.Forms.Button();
+            this.FlashMemoryBackupCheckBox = new System.Windows.Forms.CheckBox();
+            this.EEPROMBackupCheckBox = new System.Windows.Forms.CheckBox();
             this.InitializeBootstrapModeGroupBox.SuspendLayout();
             this.UploadWorkerFunctionGroupBox.SuspendLayout();
             this.FlashMemoryGroupBox.SuspendLayout();
@@ -234,6 +236,7 @@ namespace ChryslerScanner
             // 
             // FlashMemoryGroupBox
             // 
+            this.FlashMemoryGroupBox.Controls.Add(this.FlashMemoryBackupCheckBox);
             this.FlashMemoryGroupBox.Controls.Add(this.FlashReadButton);
             this.FlashMemoryGroupBox.Controls.Add(this.FlashStopButton);
             this.FlashMemoryGroupBox.Controls.Add(this.FlashWriteButton);
@@ -310,6 +313,7 @@ namespace ChryslerScanner
             // 
             // EEPROMGroupBox
             // 
+            this.EEPROMGroupBox.Controls.Add(this.EEPROMBackupCheckBox);
             this.EEPROMGroupBox.Controls.Add(this.EEPROMReadButton);
             this.EEPROMGroupBox.Controls.Add(this.EEPROMStopButton);
             this.EEPROMGroupBox.Controls.Add(this.EEPROMWriteButton);
@@ -400,6 +404,32 @@ namespace ChryslerScanner
             this.SCIBusBootstrapToolsHelpButton.Text = "Help";
             this.SCIBusBootstrapToolsHelpButton.UseVisualStyleBackColor = true;
             // 
+            // FlashMemoryBackupCheckBox
+            // 
+            this.FlashMemoryBackupCheckBox.AutoSize = true;
+            this.FlashMemoryBackupCheckBox.Checked = true;
+            this.FlashMemoryBackupCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.FlashMemoryBackupCheckBox.Location = new System.Drawing.Point(12, 74);
+            this.FlashMemoryBackupCheckBox.Name = "FlashMemoryBackupCheckBox";
+            this.FlashMemoryBackupCheckBox.Size = new System.Drawing.Size(63, 17);
+            this.FlashMemoryBackupCheckBox.TabIndex = 20;
+            this.FlashMemoryBackupCheckBox.Text = "Backup";
+            this.FlashMemoryBackupCheckBox.UseVisualStyleBackColor = true;
+            this.FlashMemoryBackupCheckBox.CheckedChanged += new System.EventHandler(this.FlashMemoryBackupCheckBox_CheckedChanged);
+            // 
+            // EEPROMBackupCheckBox
+            // 
+            this.EEPROMBackupCheckBox.AutoSize = true;
+            this.EEPROMBackupCheckBox.Checked = true;
+            this.EEPROMBackupCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.EEPROMBackupCheckBox.Location = new System.Drawing.Point(12, 47);
+            this.EEPROMBackupCheckBox.Name = "EEPROMBackupCheckBox";
+            this.EEPROMBackupCheckBox.Size = new System.Drawing.Size(63, 17);
+            this.EEPROMBackupCheckBox.TabIndex = 21;
+            this.EEPROMBackupCheckBox.Text = "Backup";
+            this.EEPROMBackupCheckBox.UseVisualStyleBackColor = true;
+            this.EEPROMBackupCheckBox.CheckedChanged += new System.EventHandler(this.EEPROMBackupCheckBox_CheckedChanged);
+            // 
             // BootstrapToolsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -462,5 +492,7 @@ namespace ChryslerScanner
         private System.Windows.Forms.Button SCIBusBootstrapToolsHelpButton;
         private System.Windows.Forms.Button FlashReadButton;
         private System.Windows.Forms.Button EEPROMReadButton;
+        private System.Windows.Forms.CheckBox FlashMemoryBackupCheckBox;
+        private System.Windows.Forms.CheckBox EEPROMBackupCheckBox;
     }
 }

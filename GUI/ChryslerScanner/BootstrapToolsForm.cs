@@ -583,6 +583,9 @@ namespace ChryslerScanner
             BootloaderComboBox.Enabled = true;
             WorkerFunctionComboBox.SelectedIndex = (byte)WorkerFunction.Empty;
             CurrentTask = Task.None;
+
+            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Scanner SCI-bus speed is set to 7812.5 baud.");
+            OriginalForm.SelectSCIBusPCMLSMode();
         }
 
         private void BootstrapButton_Click(object sender, EventArgs e)
@@ -877,6 +880,17 @@ namespace ChryslerScanner
             }
         }
 
+        private void FlashMemoryBackupCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!FlashMemoryBackupCheckBox.Checked)
+            {
+                if (MessageBox.Show("Skipping flash memory backup could lead to data loss." + Environment.NewLine + "Do you really want to continue without backup?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.No)
+                {
+                    FlashMemoryBackupCheckBox.Checked = true;
+                }
+            }
+        }
+
         private void EEPROMBrowseButton_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog OpenEEPROMFileDialog = new OpenFileDialog())
@@ -1028,6 +1042,17 @@ namespace ChryslerScanner
             }
         }
 
+        private void EEPROMBackupCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!EEPROMBackupCheckBox.Checked)
+            {
+                if (MessageBox.Show("Skipping EEPROM backup could lead to data loss." + Environment.NewLine + "Do you really want to continue without backup?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.No)
+                {
+                    EEPROMBackupCheckBox.Checked = true;
+                }
+            }
+        }
+
         private void WorkerFunctionComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
             switch (WorkerFunctionComboBox.SelectedIndex)
@@ -1070,16 +1095,34 @@ namespace ChryslerScanner
                                                 switch (CurrentTask)
                                                 {
                                                     case Task.DetectFlashMemoryType:
-                                                        CurrentTask = Task.BackupFlashMemory;
-                                                        SCIBusCurrentMemoryOffset = 0;
-                                                        SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / (double)FlashChipSize * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/" + FlashChipSize.ToString() + " bytes)";
-                                                        SCIBusTxPayload = new byte[6];
-                                                        SCIBusTxPayload[0] = 0x33;
-                                                        SCIBusTxPayload[1] = (byte)((SCIBusCurrentMemoryOffset >> 16) & 0xFF);
-                                                        SCIBusTxPayload[2] = (byte)((SCIBusCurrentMemoryOffset >> 8) & 0xFF);
-                                                        SCIBusTxPayload[3] = (byte)(SCIBusCurrentMemoryOffset & 0xFF);
-                                                        SCIBusTxPayload[4] = (byte)((FlashReadBlockSize >> 8) & 0xFF);
-                                                        SCIBusTxPayload[5] = (byte)(FlashReadBlockSize & 0xFF);
+                                                        if (FlashMemoryBackupCheckBox.Checked)
+                                                        {
+                                                            CurrentTask = Task.BackupFlashMemory;
+                                                            SCIBusCurrentMemoryOffset = 0;
+                                                            SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / (double)FlashChipSize * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/" + FlashChipSize.ToString() + " bytes)";
+                                                            SCIBusTxPayload = new byte[6];
+                                                            SCIBusTxPayload[0] = 0x33;
+                                                            SCIBusTxPayload[1] = (byte)((SCIBusCurrentMemoryOffset >> 16) & 0xFF);
+                                                            SCIBusTxPayload[2] = (byte)((SCIBusCurrentMemoryOffset >> 8) & 0xFF);
+                                                            SCIBusTxPayload[3] = (byte)(SCIBusCurrentMemoryOffset & 0xFF);
+                                                            SCIBusTxPayload[4] = (byte)((FlashReadBlockSize >> 8) & 0xFF);
+                                                            SCIBusTxPayload[5] = (byte)(FlashReadBlockSize & 0xFF);
+                                                        }
+                                                        else
+                                                        {
+                                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 4. Backup flash memory." + Environment.NewLine + Environment.NewLine + "Skip flash memory backup.");
+
+                                                            if (EEPROMBackupCheckBox.Checked)
+                                                            {
+                                                                CurrentTask = Task.BackupEEPROM;
+                                                            }
+                                                            else
+                                                            {
+                                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 5. Backup EEPROM." + Environment.NewLine + Environment.NewLine + "Skip EEPROM backup.");
+
+                                                                CurrentTask = Task.EraseFlashMemory;
+                                                            }
+                                                        }
                                                         SCIBusResponse = true;
                                                         break;
                                                     case Task.EraseFlashMemory:

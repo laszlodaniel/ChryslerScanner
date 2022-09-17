@@ -2879,6 +2879,12 @@ namespace ChryslerScanner
             SCIBusModuleConfigSpeedApplyButton_Click(this, EventArgs.Empty);
         }
 
+        public void SelectSCIBusPCMLSMode()
+        {
+            SCIBusSpeedComboBox.SelectedIndex = 2; // 7812.5 baud
+            SCIBusModuleConfigSpeedApplyButton_Click(this, EventArgs.Empty);
+        }
+
         #endregion
 
         #region USB communication
