@@ -583,12 +583,6 @@ namespace ChryslerScanner
             BootloaderComboBox.Enabled = true;
             WorkerFunctionComboBox.SelectedIndex = (byte)WorkerFunction.Empty;
             CurrentTask = Task.None;
-
-            if (OriginalForm.PCM.speed == "62500 baud")
-            {
-                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Scanner SCI-bus speed is set to 7812.5 baud.");
-                OriginalForm.SelectSCIBusPCMLSMode();
-            }
         }
 
         private void BootstrapButton_Click(object sender, EventArgs e)
