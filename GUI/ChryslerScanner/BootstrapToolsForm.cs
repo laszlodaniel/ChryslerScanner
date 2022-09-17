@@ -584,8 +584,11 @@ namespace ChryslerScanner
             WorkerFunctionComboBox.SelectedIndex = (byte)WorkerFunction.Empty;
             CurrentTask = Task.None;
 
-            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Scanner SCI-bus speed is set to 7812.5 baud.");
-            OriginalForm.SelectSCIBusPCMLSMode();
+            if (OriginalForm.PCM.speed == "62500 baud")
+            {
+                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Scanner SCI-bus speed is set to 7812.5 baud.");
+                OriginalForm.SelectSCIBusPCMLSMode();
+            }
         }
 
         private void BootstrapButton_Click(object sender, EventArgs e)
@@ -652,11 +655,23 @@ namespace ChryslerScanner
                     OriginalForm.TransmitUSBPacket("[<-TX] Remove VBB from SCI-RX pin:");
 
                     UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "ECU bootstrapping is cancelled.");
+
+                    if (OriginalForm.PCM.speed == "62500 baud")
+                    {
+                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Scanner SCI-bus speed is set to 7812.5 baud.");
+                        OriginalForm.SelectSCIBusPCMLSMode();
+                    }
                 }
             }
             else
             {
                 UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "ECU bootstrapping is cancelled.");
+
+                if (OriginalForm.PCM.speed == "62500 baud")
+                {
+                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Scanner SCI-bus speed is set to 7812.5 baud.");
+                    OriginalForm.SelectSCIBusPCMLSMode();
+                }
             }
         }
 
@@ -2091,6 +2106,13 @@ namespace ChryslerScanner
         private void BootstrapToolsForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (SCIBusBootstrapWorker.IsBusy) SCIBusBootstrapWorker.CancelAsync();
+
+            if (OriginalForm.PCM.speed == "62500 baud")
+            {
+                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Scanner SCI-bus speed is set to 7812.5 baud.");
+                OriginalForm.SelectSCIBusPCMLSMode();
+            }
+
             MainForm.Packet.PacketReceived -= PacketReceivedHandler; // unsubscribe from the OnPacketReceived event
         }
     }
