@@ -41,6 +41,7 @@
             this.ActuatorTestStopButton = new System.Windows.Forms.Button();
             this.ActuatorTestStartButton = new System.Windows.Forms.Button();
             this.DiagnosticDataGroupBox = new System.Windows.Forms.GroupBox();
+            this.DiagnosticDataCSVCheckBox = new System.Windows.Forms.CheckBox();
             this.MillisecondsLabel01 = new System.Windows.Forms.Label();
             this.DiagnosticDataRepeatIntervalTextBox = new System.Windows.Forms.TextBox();
             this.DiagnosticDataRepeatIntervalCheckBox = new System.Windows.Forms.CheckBox();
@@ -333,6 +334,7 @@
             // 
             // DiagnosticDataGroupBox
             // 
+            this.DiagnosticDataGroupBox.Controls.Add(this.DiagnosticDataCSVCheckBox);
             this.DiagnosticDataGroupBox.Controls.Add(this.MillisecondsLabel01);
             this.DiagnosticDataGroupBox.Controls.Add(this.DiagnosticDataRepeatIntervalTextBox);
             this.DiagnosticDataGroupBox.Controls.Add(this.DiagnosticDataRepeatIntervalCheckBox);
@@ -347,10 +349,22 @@
             this.DiagnosticDataGroupBox.TabStop = false;
             this.DiagnosticDataGroupBox.Text = "Diagnostic data";
             // 
+            // DiagnosticDataCSVCheckBox
+            // 
+            this.DiagnosticDataCSVCheckBox.AutoSize = true;
+            this.DiagnosticDataCSVCheckBox.Checked = true;
+            this.DiagnosticDataCSVCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.DiagnosticDataCSVCheckBox.Location = new System.Drawing.Point(325, 142);
+            this.DiagnosticDataCSVCheckBox.Name = "DiagnosticDataCSVCheckBox";
+            this.DiagnosticDataCSVCheckBox.Size = new System.Drawing.Size(47, 17);
+            this.DiagnosticDataCSVCheckBox.TabIndex = 27;
+            this.DiagnosticDataCSVCheckBox.Text = "CSV";
+            this.DiagnosticDataCSVCheckBox.UseVisualStyleBackColor = true;
+            // 
             // MillisecondsLabel01
             // 
             this.MillisecondsLabel01.AutoSize = true;
-            this.MillisecondsLabel01.Location = new System.Drawing.Point(318, 143);
+            this.MillisecondsLabel01.Location = new System.Drawing.Point(281, 143);
             this.MillisecondsLabel01.Name = "MillisecondsLabel01";
             this.MillisecondsLabel01.Size = new System.Drawing.Size(20, 13);
             this.MillisecondsLabel01.TabIndex = 24;
@@ -359,7 +373,7 @@
             // DiagnosticDataRepeatIntervalTextBox
             // 
             this.DiagnosticDataRepeatIntervalTextBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
-            this.DiagnosticDataRepeatIntervalTextBox.Location = new System.Drawing.Point(283, 139);
+            this.DiagnosticDataRepeatIntervalTextBox.Location = new System.Drawing.Point(246, 139);
             this.DiagnosticDataRepeatIntervalTextBox.Name = "DiagnosticDataRepeatIntervalTextBox";
             this.DiagnosticDataRepeatIntervalTextBox.Size = new System.Drawing.Size(34, 21);
             this.DiagnosticDataRepeatIntervalTextBox.TabIndex = 26;
@@ -372,9 +386,9 @@
             this.DiagnosticDataRepeatIntervalCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.DiagnosticDataRepeatIntervalCheckBox.Location = new System.Drawing.Point(184, 142);
             this.DiagnosticDataRepeatIntervalCheckBox.Name = "DiagnosticDataRepeatIntervalCheckBox";
-            this.DiagnosticDataRepeatIntervalCheckBox.Size = new System.Drawing.Size(101, 17);
+            this.DiagnosticDataRepeatIntervalCheckBox.Size = new System.Drawing.Size(64, 17);
             this.DiagnosticDataRepeatIntervalCheckBox.TabIndex = 25;
-            this.DiagnosticDataRepeatIntervalCheckBox.Text = "Repeat interval:";
+            this.DiagnosticDataRepeatIntervalCheckBox.Text = "Repeat:";
             this.DiagnosticDataRepeatIntervalCheckBox.UseVisualStyleBackColor = true;
             this.DiagnosticDataRepeatIntervalCheckBox.CheckedChanged += new System.EventHandler(this.DiagnosticDataRepeatIntervalCheckBox_CheckedChanged);
             // 
@@ -647,23 +661,23 @@
             this.ResetMemoryComboBox.Items.AddRange(new object[] {
             "2300 |",
             "2301 | Engine fault codes",
-            "2302 | Adaptive memory",
-            "2303 | IAC counter value",
+            "2302 | Adaptive fuel factor",
+            "2303 | IAC counter",
             "2304 | Minimum TPS volts",
             "2305 | Flex fuel percent",
             "2306 | Cam/Crank sync",
             "2307 | Fuel shutoff",
             "2308 | Runtime at stall",
-            "2309 |",
-            "230A |",
-            "230B | Cam/Crank",
-            "230C |",
-            "230D |",
-            "230E |",
-            "230F |",
-            "2310 |",
-            "2311 |",
-            "2312 | Adaptive numerator",
+            "2309 | Door lock enable",
+            "230A | Door lock disable",
+            "230B | Cam/Crank timing reference",
+            "230C | A/C fault enable",
+            "230D | A/C fault disable",
+            "230E | S/C fault enable",
+            "230F | S/C fault disable",
+            "2310 | PS fault enable",
+            "2311 | PS fault disable",
+            "2312 | EEPROM / Adaptive numerator",
             "2313 | SKIM F4",
             "2314 | Duty cycle monitor",
             "2315 | Trip/idle/cruise/injector/O/D off/water in fuel",
@@ -816,5 +830,6 @@
         private System.Windows.Forms.ComboBox SecurityLevelComboBox;
         private System.Windows.Forms.Button SecurityUnlockButton;
         private System.Windows.Forms.CheckBox LegacySecurityCheckBox;
+        private System.Windows.Forms.CheckBox DiagnosticDataCSVCheckBox;
     }
 }

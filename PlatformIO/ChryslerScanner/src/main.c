@@ -2190,10 +2190,10 @@ void ccd_event_task(void *pvParameters)
 
                     for (int i = 0; i < length; i++)
                     {
-                        ccd.msg.rx_buffer[ccd.msg.rx_ptr + i] = data[i];
+                        ccd.msg.rx_buffer[ccd.msg.rx_ptr] = data[i];
                         ccd.msg.rx_ptr++;
 
-                        if (ccd.msg.rx_ptr > CCD_RX_BUF_SIZE) ccd.msg.rx_ptr = 0;
+                        if (ccd.msg.rx_ptr >= CCD_RX_BUF_SIZE) ccd.msg.rx_ptr = 0;
                     }
 
                     break;
@@ -2459,10 +2459,10 @@ void sci_event_task(void *pvParameters)
 
                     for (int i = 0; i < length; i++)
                     {
-                        sci.msg.rx_buffer[sci.msg.rx_ptr + i] = data[i];
+                        sci.msg.rx_buffer[sci.msg.rx_ptr] = data[i];
                         sci.msg.rx_ptr++;
 
-                        if (sci.msg.rx_ptr > SCI_RX_BUF_SIZE) sci.msg.rx_ptr = 0;
+                        if (sci.msg.rx_ptr >= SCI_RX_BUF_SIZE) sci.msg.rx_ptr = 0;
                     }
 
                     sci.msg.byte_received = true;
@@ -3423,6 +3423,7 @@ void sci_boot_task(void *pvParameters)
                             break;
                         }
                         case FlashMemoryTypeIndex_N28F020: // 256 kB
+                        case FlashMemoryTypeIndex_TMS28F210: // 256 kB
                         {
                             wf_header[1] = (sizeof(LdFlashErase_N28F020_256k) >> 8) & 0xFF;
                             wf_header[2] = sizeof(LdFlashErase_N28F020_256k) & 0xFF;
@@ -3502,6 +3503,7 @@ void sci_boot_task(void *pvParameters)
                         case FlashMemoryTypeIndex_CAT28F102: // 128 kB
                         case FlashMemoryTypeIndex_N28F010: // 128 kB
                         case FlashMemoryTypeIndex_N28F020: // 256 kB
+                        case FlashMemoryTypeIndex_TMS28F210: // 256 kB
                         {
                             wf_header[1] = (sizeof(LdFlashWrite_M28F102_128k) >> 8) & 0xFF;
                             wf_header[2] = sizeof(LdFlashWrite_M28F102_128k) & 0xFF;

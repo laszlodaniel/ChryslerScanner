@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,8 +15,16 @@ namespace ChryslerScanner
     {
         private MainForm OriginalForm;
 
+        private string CSVFilename = string.Empty;
+        private string CSVHeader = string.Empty;
+        private string CSVLine = string.Empty;
+        private byte DiagnosticItemCount = 0;
+        private List<byte[]> DiagnosticItems = new List<byte[]>();
+        private byte FirstDiagnosticItemID = 0;
+
         private enum SCI_ID
         {
+            DiagnosticData = 0x14,
             GetSecuritySeedLegacy = 0x2B,
             GetSecuritySeed = 0x35,
             SendSecurityKey = 0x2C
@@ -200,10 +209,44 @@ namespace ChryslerScanner
                 MainForm.Packet.GeneratePacket();
                 OriginalForm.TransmitUSBPacket("[<-TX] Request diagnostic data:");
             }
+
+            if (DiagnosticDataCSVCheckBox.Checked && (count > 0))
+            {
+                DiagnosticItemCount = count;
+                DiagnosticItems.Clear();
+                
+                for (int i = 0; i < count; i++)
+                {
+                    DiagnosticItems.Add(new byte[2] { 0x14, (byte)DiagnosticDataListBox.SelectedIndices[i] });
+                }
+
+                string Header = "Milliseconds";
+
+                foreach (var item in DiagnosticItems)
+                {
+                    Header += "," + Util.ByteToHexStringSimple(item);
+                }
+
+                FirstDiagnosticItemID = DiagnosticItems[0][1]; // remember first diagnostic data ID
+                DiagnosticItems.Clear();
+
+                Header = Header.Replace(" ", ""); // remove whitespaces
+
+                if (Header != CSVHeader)
+                {
+                    string DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                    CSVFilename = @"LOG/PCM/pcmlog_" + DateTimeNow + ".csv";
+                    CSVHeader = Header;
+                    File.AppendAllText(CSVFilename, CSVHeader);
+                }
+            }
         }
 
         private void DiagnosticDataStopButton_Click(object sender, EventArgs e)
         {
+            DiagnosticItemCount = 0;
+            DiagnosticItems.Clear();
+
             MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
             MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
             MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.stop;
@@ -373,6 +416,34 @@ namespace ChryslerScanner
                     {
                         switch (SCIBusResponseBytes[0])
                         {
+                            case (byte)SCI_ID.DiagnosticData:
+                                if (SCIBusResponseBytes.Length >= 3)
+                                {
+                                    if (DiagnosticDataCSVCheckBox.Checked && (DiagnosticItemCount > 0))
+                                    {
+                                        DiagnosticItems.Add(SCIBusResponseBytes);
+
+                                        if ((DiagnosticItems.Count == 1) && (SCIBusResponseBytes[1] != DiagnosticItems[0][1])) // keep columns ordered
+                                        {
+                                            DiagnosticItems.Clear();
+                                        }
+                                    }
+
+                                    if ((DiagnosticItems.Count == DiagnosticItemCount) && (DiagnosticItemCount > 0))
+                                    {
+                                        uint Millis = (uint)((MainForm.Packet.rx.payload[0] << 24) + (MainForm.Packet.rx.payload[1] << 16) + (MainForm.Packet.rx.payload[2] << 8) + MainForm.Packet.rx.payload[3]);
+                                        CSVLine = Millis.ToString();
+
+                                        foreach (var item in DiagnosticItems)
+                                        {
+                                            CSVLine += "," + item[2].ToString();
+                                        }
+
+                                        File.AppendAllText(CSVFilename, Environment.NewLine + CSVLine);
+                                        DiagnosticItems.Clear();
+                                    }
+                                }
+                                break;
                             case (byte)SCI_ID.GetSecuritySeedLegacy:
                                 if (SCIBusResponseBytes.Length >= 4)
                                 {

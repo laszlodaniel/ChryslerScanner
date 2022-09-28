@@ -44,6 +44,7 @@ namespace ChryslerScanner
             this.FlashChipLabel = new System.Windows.Forms.Label();
             this.SCIBusBootstrapInfoTextBox = new System.Windows.Forms.TextBox();
             this.FlashMemoryGroupBox = new System.Windows.Forms.GroupBox();
+            this.FlashMemoryBackupCheckBox = new System.Windows.Forms.CheckBox();
             this.FlashReadButton = new System.Windows.Forms.Button();
             this.FlashStopButton = new System.Windows.Forms.Button();
             this.FlashWriteButton = new System.Windows.Forms.Button();
@@ -51,6 +52,7 @@ namespace ChryslerScanner
             this.FlashFileNameLabel = new System.Windows.Forms.Label();
             this.FlashFileLabel = new System.Windows.Forms.Label();
             this.EEPROMGroupBox = new System.Windows.Forms.GroupBox();
+            this.EEPROMBackupCheckBox = new System.Windows.Forms.CheckBox();
             this.EEPROMReadButton = new System.Windows.Forms.Button();
             this.EEPROMStopButton = new System.Windows.Forms.Button();
             this.EEPROMWriteButton = new System.Windows.Forms.Button();
@@ -59,8 +61,6 @@ namespace ChryslerScanner
             this.EEPROMFileLabel = new System.Windows.Forms.Label();
             this.SCIBusBootstrapToolsProgressLabel = new System.Windows.Forms.Label();
             this.SCIBusBootstrapToolsHelpButton = new System.Windows.Forms.Button();
-            this.FlashMemoryBackupCheckBox = new System.Windows.Forms.CheckBox();
-            this.EEPROMBackupCheckBox = new System.Windows.Forms.CheckBox();
             this.InitializeBootstrapModeGroupBox.SuspendLayout();
             this.UploadWorkerFunctionGroupBox.SuspendLayout();
             this.FlashMemoryGroupBox.SuspendLayout();
@@ -207,7 +207,8 @@ namespace ChryslerScanner
             "Intel N28F020 (256k)",
             "ST M28F210 (256 kB)",
             "ST M28F220 (256 kB)",
-            "ST M28F200 (256 kB)"});
+            "ST M28F200 (256 kB)",
+            "TI TMS28F210 (256 kB)"});
             this.FlashChipComboBox.Location = new System.Drawing.Point(67, 17);
             this.FlashChipComboBox.Name = "FlashChipComboBox";
             this.FlashChipComboBox.Size = new System.Drawing.Size(152, 21);
@@ -252,6 +253,19 @@ namespace ChryslerScanner
             this.FlashMemoryGroupBox.TabIndex = 10;
             this.FlashMemoryGroupBox.TabStop = false;
             this.FlashMemoryGroupBox.Text = "Flash memory";
+            // 
+            // FlashMemoryBackupCheckBox
+            // 
+            this.FlashMemoryBackupCheckBox.AutoSize = true;
+            this.FlashMemoryBackupCheckBox.Checked = true;
+            this.FlashMemoryBackupCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.FlashMemoryBackupCheckBox.Location = new System.Drawing.Point(12, 74);
+            this.FlashMemoryBackupCheckBox.Name = "FlashMemoryBackupCheckBox";
+            this.FlashMemoryBackupCheckBox.Size = new System.Drawing.Size(63, 17);
+            this.FlashMemoryBackupCheckBox.TabIndex = 20;
+            this.FlashMemoryBackupCheckBox.Text = "Backup";
+            this.FlashMemoryBackupCheckBox.UseVisualStyleBackColor = true;
+            this.FlashMemoryBackupCheckBox.CheckedChanged += new System.EventHandler(this.FlashMemoryBackupCheckBox_CheckedChanged);
             // 
             // FlashReadButton
             // 
@@ -326,6 +340,19 @@ namespace ChryslerScanner
             this.EEPROMGroupBox.TabIndex = 20;
             this.EEPROMGroupBox.TabStop = false;
             this.EEPROMGroupBox.Text = "EEPROM";
+            // 
+            // EEPROMBackupCheckBox
+            // 
+            this.EEPROMBackupCheckBox.AutoSize = true;
+            this.EEPROMBackupCheckBox.Checked = true;
+            this.EEPROMBackupCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.EEPROMBackupCheckBox.Location = new System.Drawing.Point(12, 47);
+            this.EEPROMBackupCheckBox.Name = "EEPROMBackupCheckBox";
+            this.EEPROMBackupCheckBox.Size = new System.Drawing.Size(63, 17);
+            this.EEPROMBackupCheckBox.TabIndex = 21;
+            this.EEPROMBackupCheckBox.Text = "Backup";
+            this.EEPROMBackupCheckBox.UseVisualStyleBackColor = true;
+            this.EEPROMBackupCheckBox.CheckedChanged += new System.EventHandler(this.EEPROMBackupCheckBox_CheckedChanged);
             // 
             // EEPROMReadButton
             // 
@@ -403,32 +430,6 @@ namespace ChryslerScanner
             this.SCIBusBootstrapToolsHelpButton.TabIndex = 29;
             this.SCIBusBootstrapToolsHelpButton.Text = "Help";
             this.SCIBusBootstrapToolsHelpButton.UseVisualStyleBackColor = true;
-            // 
-            // FlashMemoryBackupCheckBox
-            // 
-            this.FlashMemoryBackupCheckBox.AutoSize = true;
-            this.FlashMemoryBackupCheckBox.Checked = true;
-            this.FlashMemoryBackupCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.FlashMemoryBackupCheckBox.Location = new System.Drawing.Point(12, 74);
-            this.FlashMemoryBackupCheckBox.Name = "FlashMemoryBackupCheckBox";
-            this.FlashMemoryBackupCheckBox.Size = new System.Drawing.Size(63, 17);
-            this.FlashMemoryBackupCheckBox.TabIndex = 20;
-            this.FlashMemoryBackupCheckBox.Text = "Backup";
-            this.FlashMemoryBackupCheckBox.UseVisualStyleBackColor = true;
-            this.FlashMemoryBackupCheckBox.CheckedChanged += new System.EventHandler(this.FlashMemoryBackupCheckBox_CheckedChanged);
-            // 
-            // EEPROMBackupCheckBox
-            // 
-            this.EEPROMBackupCheckBox.AutoSize = true;
-            this.EEPROMBackupCheckBox.Checked = true;
-            this.EEPROMBackupCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.EEPROMBackupCheckBox.Location = new System.Drawing.Point(12, 47);
-            this.EEPROMBackupCheckBox.Name = "EEPROMBackupCheckBox";
-            this.EEPROMBackupCheckBox.Size = new System.Drawing.Size(63, 17);
-            this.EEPROMBackupCheckBox.TabIndex = 21;
-            this.EEPROMBackupCheckBox.Text = "Backup";
-            this.EEPROMBackupCheckBox.UseVisualStyleBackColor = true;
-            this.EEPROMBackupCheckBox.CheckedChanged += new System.EventHandler(this.EEPROMBackupCheckBox_CheckedChanged);
             // 
             // BootstrapToolsForm
             // 

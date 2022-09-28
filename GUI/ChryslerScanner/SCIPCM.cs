@@ -3181,13 +3181,13 @@ namespace ChryslerScanner
                                         descriptionToInsert = "ERASE ENGINE FAULT CODES";
                                         break;
                                     case 0x02:
-                                        descriptionToInsert = "RESET ADAPTIVE MEMORY";
+                                        descriptionToInsert = "RESET ADAPTIVE FUEL FACTOR (LTFT)";
                                         break;
                                     case 0x03:
                                         descriptionToInsert = "RESET IAC COUNTER";
                                         break;
                                     case 0x04:
-                                        descriptionToInsert = "RESET MINIMUM TPS VOLTS ";
+                                        descriptionToInsert = "RESET MINIMUM TPS VOLTS";
                                         break;
                                     case 0x05:
                                         descriptionToInsert = "RESET FLEX FUEL PERCENT";
@@ -3201,11 +3201,35 @@ namespace ChryslerScanner
                                     case 0x08:
                                         descriptionToInsert = "RESET RUNTIME AT STALL";
                                         break;
+                                    case 0x09:
+                                        descriptionToInsert = "DOOR LOCK ENABLE";
+                                        break;
+                                    case 0x0A:
+                                        descriptionToInsert = "DOOR LOCK DISABLE";
+                                        break;
                                     case 0x0B:
-                                        descriptionToInsert = "RESET CAM/CRANK";
+                                        descriptionToInsert = "RESET CAM/CRANK TIMING REFERENCE";
+                                        break;
+                                    case 0x0C:
+                                        descriptionToInsert = "A/C FAULT ENABLE";
+                                        break;
+                                    case 0x0D:
+                                        descriptionToInsert = "A/C FAULT DISABLE";
+                                        break;
+                                    case 0x0E:
+                                        descriptionToInsert = "S/C FAULT ENABLE";
+                                        break;
+                                    case 0x0F:
+                                        descriptionToInsert = "S/C FAULT DISABLE";
+                                        break;
+                                    case 0x10:
+                                        descriptionToInsert = "PS FAULT ENABLE";
+                                        break;
+                                    case 0x11:
+                                        descriptionToInsert = "PS FAULT DISABLE";
                                         break;
                                     case 0x12:
-                                        descriptionToInsert = "RESET ADAPTIVE NUMERATOR";
+                                        descriptionToInsert = "RESET EEPROM / ADAPTIVE NUMERATOR";
                                         break;
                                     case 0x13:
                                         descriptionToInsert = "RESET SKIM F4";

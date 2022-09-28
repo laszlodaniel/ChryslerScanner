@@ -99,7 +99,8 @@ namespace ChryslerScanner
         {
             STMicroelectronics = 0x20,
             CATALYST = 0x31,
-            Intel = 0x89
+            Intel = 0x89,
+            TexasInstruments = 0x97
         }
 
         private enum FlashMemoryType
@@ -111,7 +112,8 @@ namespace ChryslerScanner
             M28F210 = 0xE0,
             M28F220 = 0xE6,
             M28F200T = 0x74,
-            M28F200B = 0x75
+            M28F200B = 0x75,
+            TMS28F210 = 0xE5
         }
 
         private enum BootloaderError
@@ -1442,6 +1444,9 @@ namespace ChryslerScanner
                                                 case (byte)FlashMemoryManufacturer.Intel:
                                                     UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory: Intel ");
                                                     break;
+                                                case (byte)FlashMemoryManufacturer.TexasInstruments:
+                                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory: Texas Instruments ");
+                                                    break;
                                                 default:
                                                     UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory: unknown ");
                                                     ManufacturerKnown = false;
@@ -1486,6 +1491,11 @@ namespace ChryslerScanner
                                                     case (byte)FlashMemoryType.M28F200B:
                                                         UpdateTextBox(SCIBusBootstrapInfoTextBox, "M28F200 (256 kB).");
                                                         FlashChipComboBox.SelectedIndex = 7;
+                                                        FlashChipSize = 262144; // bytes
+                                                        break;
+                                                    case (byte)FlashMemoryType.TMS28F210:
+                                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "TMS28F210 (256 kB).");
+                                                        FlashChipComboBox.SelectedIndex = 8;
                                                         FlashChipSize = 262144; // bytes
                                                         break;
                                                     default:

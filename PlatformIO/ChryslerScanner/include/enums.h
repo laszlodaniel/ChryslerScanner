@@ -115,20 +115,22 @@ enum WorkerFunction {
 
 enum FlashMemoryManufacturer
 {
-    STMicroelectronics = 0x20,
-    CATALYST           = 0x31,
-    Intel              = 0x89
+    FlashMemoryManufacturer_STMicroelectronics = 0x20,
+    FlashMemoryManufacturer_CATALYST           = 0x31,
+    FlashMemoryManufacturer_Intel              = 0x89,
+    FlashMemoryManufacturer_TexasInstruments   = 0x97
 };
 
 enum FlashMemoryTypeIndex {
     FlashMemoryTypeIndex_Unknown   = 0x00,
-    FlashMemoryTypeIndex_M28F102   = 0x01,
-    FlashMemoryTypeIndex_CAT28F102 = 0x02,
-    FlashMemoryTypeIndex_N28F010   = 0x03,
-    FlashMemoryTypeIndex_N28F020   = 0x04,
-    FlashMemoryTypeIndex_M28F210   = 0x05,
-    FlashMemoryTypeIndex_M28F220   = 0x06,
-    FlashMemoryTypeIndex_M28F200   = 0x07
+    FlashMemoryTypeIndex_M28F102   = 0x01, // 0x50
+    FlashMemoryTypeIndex_CAT28F102 = 0x02, // 0x51
+    FlashMemoryTypeIndex_N28F010   = 0x03, // 0xB4
+    FlashMemoryTypeIndex_N28F020   = 0x04, // 0xBD
+    FlashMemoryTypeIndex_M28F210   = 0x05, // 0xE0
+    FlashMemoryTypeIndex_M28F220   = 0x06, // 0xE6
+    FlashMemoryTypeIndex_M28F200   = 0x07, // 0x74-0x75
+    FlashMemoryTypeIndex_TMS28F210 = 0x08  // 0xE5
 };
 
 enum BootloaderError {
