@@ -10,12 +10,10 @@ namespace ChryslerScanner
     public class SCITCM
     {
         public SCITCMDiagnosticsTable Diagnostics = new SCITCMDiagnosticsTable();
-        public DataTable MessageDatabase = new DataTable("TCMDatabase");
         public DataTable TransmissionDTC = new DataTable("TransmissionDTC");
         public List<byte> transmissionFaultCodeList = new List<byte>();
         public bool transmissionFaultCodesSaved = true;
-        public ushort[] IDList;
-        public byte[] DTCList;
+        public byte[] transmissionDTCList;
         public DataColumn column;
         public DataRow row;
 
@@ -37,78 +35,6 @@ namespace ChryslerScanner
 
         public SCITCM()
         {
-            column = new DataColumn();
-            column.DataType = typeof(ushort);
-            column.ColumnName = "id";
-            column.ReadOnly = true;
-            column.Unique = true;
-            MessageDatabase.Columns.Add(column);
-
-            column = new DataColumn();
-            column.DataType = typeof(byte);
-            column.ColumnName = "length";
-            column.ReadOnly = true;
-            column.Unique = false;
-            MessageDatabase.Columns.Add(column);
-
-            column = new DataColumn();
-            column.DataType = typeof(byte);
-            column.ColumnName = "parameterCount";
-            column.ReadOnly = true;
-            column.Unique = false;
-            MessageDatabase.Columns.Add(column);
-
-            column = new DataColumn();
-            column.DataType = typeof(string);
-            column.ColumnName = "message";
-            column.ReadOnly = false;
-            column.Unique = false;
-            MessageDatabase.Columns.Add(column);
-
-            column = new DataColumn();
-            column.DataType = typeof(string);
-            column.ColumnName = "description";
-            column.ReadOnly = false;
-            column.Unique = false;
-            MessageDatabase.Columns.Add(column);
-
-            column = new DataColumn();
-            column.DataType = typeof(string);
-            column.ColumnName = "value";
-            column.ReadOnly = false;
-            column.Unique = false;
-            MessageDatabase.Columns.Add(column);
-
-            column = new DataColumn();
-            column.DataType = typeof(string);
-            column.ColumnName = "unit";
-            column.ReadOnly = false;
-            column.Unique = false;
-            MessageDatabase.Columns.Add(column);
-
-            DataColumn[] PrimaryKeyColumns = new DataColumn[1];
-            PrimaryKeyColumns[0] = MessageDatabase.Columns["id"];
-            MessageDatabase.PrimaryKey = PrimaryKeyColumns;
-
-            DataSet dataSet = new DataSet();
-            dataSet.Tables.Add(MessageDatabase);
-
-            #region SCI-bus (TCM) messages
-
-            row = MessageDatabase.NewRow();
-            row["id"] = 0x10;
-            row["length"] = 3;
-            row["parameterCount"] = 1;
-            row["message"] = string.Empty;
-            row["description"] = "TRANSMISSION FAULT CODE LIST";
-            row["value"] = string.Empty;
-            row["unit"] = string.Empty;
-            MessageDatabase.Rows.Add(row);
-
-            #endregion
-
-            IDList = MessageDatabase.AsEnumerable().Select(r => r.Field<ushort>("id")).ToArray();
-
             column = new DataColumn();
             column.DataType = typeof(byte);
             column.ColumnName = "id";
@@ -139,7 +65,7 @@ namespace ChryslerScanner
 
             #endregion
 
-            DTCList = TransmissionDTC.AsEnumerable().Select(r => r.Field<byte>("id")).ToArray();
+            transmissionDTCList = TransmissionDTC.AsEnumerable().Select(r => r.Field<byte>("id")).ToArray();
         }
 
         public void UpdateHeader(string state = "enabled", string speed = null, string logic = null, string configuration = null)
@@ -170,10 +96,7 @@ namespace ChryslerScanner
             if ((data == null) || (data.Length < 5)) return;
             
             StringBuilder rowToAdd = new StringBuilder(EmptyLine); // add empty line first
-            string hexBytesToInsert = string.Empty;
-            string descriptionToInsert = string.Empty;
-            string valueToInsert = string.Empty;
-            string unitToInsert = string.Empty;
+
             byte[] timestamp = new byte[4];
             byte[] message = new byte[] { };
             byte[] payload = new byte[] { };
@@ -198,22 +121,40 @@ namespace ChryslerScanner
             byte ID = message[0];
             ushort modifiedID;
 
-            if ((ID == 0x14)  || (ID == 0x22) || ((ID >= 0xF0) && (ID < 0xFE)))
+            if (ID == 0x14)
             {
                 if (payload.Length > 0) modifiedID = (ushort)(((ID << 8) & 0xFF00) + payload[0]);
                 else modifiedID = (ushort)((ID << 8) & 0xFF00);
             }
-            else 
+            else
             {
                 modifiedID = (ushort)((ID << 8) & 0xFF00);
             }
 
-            int rowIndex = MessageDatabase.Rows.IndexOf(MessageDatabase.Rows.Find(ID)); // search ID byte among known messages and get row index
+            string descriptionToInsert = string.Empty;
+            string valueToInsert = string.Empty;
+            string unitToInsert = string.Empty;
 
-            if (rowIndex != -1) // row found
+            if ((speed == "976.5 baud") || (speed == "7812.5 baud"))
             {
-                // ...
+                switch (ID)
+                {
+                    default:
+                        descriptionToInsert = string.Empty;
+                        break;
+                }
             }
+            else if ((speed == "62500 baud") || (speed == "125000 baud"))
+            {
+                switch (ID)
+                {
+                    default:
+                        descriptionToInsert = string.Empty;
+                        break;
+                }
+            }
+
+            string hexBytesToInsert;
 
             if (message.Length < 9) // max 8 message byte fits the message column
             {

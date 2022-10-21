@@ -63,6 +63,11 @@
             this.LegacySecurityCheckBox = new System.Windows.Forms.CheckBox();
             this.SecurityLevelComboBox = new System.Windows.Forms.ComboBox();
             this.SecurityUnlockButton = new System.Windows.Forms.Button();
+            this.ConfigurationGroupBox = new System.Windows.Forms.GroupBox();
+            this.ConfigurationGetPartNumberButton = new System.Windows.Forms.Button();
+            this.ConfigurationGetAllButton = new System.Windows.Forms.Button();
+            this.ConfigurationComboBox = new System.Windows.Forms.ComboBox();
+            this.ConfigurationGetButton = new System.Windows.Forms.Button();
             this.FaultCodeGroupBox.SuspendLayout();
             this.BaudrateGroupBox.SuspendLayout();
             this.ActuatorTestGroupBox.SuspendLayout();
@@ -71,6 +76,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.SetIdleSpeedTrackBar)).BeginInit();
             this.ResetMemoryGroupBox.SuspendLayout();
             this.SecurityGroupBox.SuspendLayout();
+            this.ConfigurationGroupBox.SuspendLayout();
             this.SuspendLayout();
             // 
             // FaultCodeGroupBox
@@ -419,24 +425,24 @@
             this.DiagnosticDataListBox.ItemHeight = 14;
             this.DiagnosticDataListBox.Items.AddRange(new object[] {
             "1400 |",
-            "1401 | Ambient air temperature sensor voltage",
-            "1402 | Upstream O2 sensor voltage",
+            "1401 | Battery temperature sensor voltage",
+            "1402 | Upstream O2 1/1 sensor voltage",
             "1403 |",
             "1404 |",
             "1405 | Engine coolant temperature",
             "1406 | Engine coolant temperature sensor voltage",
             "1407 | Throttle position sensor voltage",
             "1408 | Minimum throttle position sensor voltage",
-            "1409 | Knock sensor voltage",
+            "1409 | Knock sensor voltage 1",
             "140A | Battery voltage",
-            "140B | Intake manifold absolute pressure",
+            "140B | Intake manifold absolute pressure (MAP)",
             "140C | Target IAC stepper motor position",
             "140D |",
-            "140E | Long term fuel trim bank 1",
+            "140E | Long term fuel trim 1",
             "140F | Barometric pressure",
-            "1410 | Minimum airflow",
+            "1410 | Minimum air flow test",
             "1411 | Engine speed",
-            "1412 | CAM/CRANK sync sense",
+            "1412 | Cam/Crank sync sense",
             "1413 | Key-on cycles error 1",
             "1414 |",
             "1415 | Spark advance",
@@ -451,49 +457,49 @@
             "141E | Key-on cycles error 2",
             "141F | Key-on cycles error 3",
             "1420 | Cruise status",
-            "1421 |",
+            "1421 | Cylinder 1 retard",
             "1422 |",
             "1423 |",
-            "1424 | Target battery charging voltage",
+            "1424 | Battery charging voltage",
             "1425 | Over 5 psi boost timer",
-            "1426 | Wastegate duty cycle",
+            "1426 |",
             "1427 | Theft alarm status",
             "1428 | Wastegate duty cycle",
             "1429 | Read fuel setting",
             "142A | Read set sync",
             "142B |",
-            "142C |",
-            "142D |",
+            "142C | Cruise switch voltage sense",
+            "142D | Ambient/Battery temperature",
             "142E |",
-            "142F | Upstream O2 sensor voltage",
-            "1430 |",
-            "1431 | Long term fuel trim bank 2",
+            "142F | Upstream O2 2/1 sensor voltage",
+            "1430 | Knock sensor voltage 2",
+            "1431 | Long term fuel trim 2",
             "1432 | A/C high side pressure sensor voltage",
             "1433 | A/C high side pressure",
-            "1434 |",
-            "1435 |",
+            "1434 | Flex fuel sensor voltage",
+            "1435 | Flex fuel info 1",
             "1436 |",
             "1437 |",
             "1438 |",
             "1439 |",
             "143A |",
-            "143B | Fuel system status",
+            "143B | Fuel system status 1",
             "143C |",
             "143D |",
-            "143E | Read fuel factor LH",
-            "143F | Downstream O2 sensor voltage",
-            "1440 | Intake MAP sensor voltage",
+            "143E | Calpot voltage",
+            "143F | Downstream O2 1/2 sensor voltage",
+            "1440 | MAP sensor voltage",
             "1441 | Vehicle speed",
-            "1442 | Upstream O2 level",
+            "1442 | Upstream O2 1/1 sensor voltage",
             "1443 |",
             "1444 |",
-            "1445 |",
-            "1446 | Throttle position sensor",
-            "1447 |",
-            "1448 | Downstream O2 level",
-            "1449 |",
-            "144A |",
-            "144B |",
+            "1445 | MAP vacuum",
+            "1446 | Throttle position relative",
+            "1447 | Spark advance",
+            "1448 | Upstream O2 2/1 sensor voltage",
+            "1449 | Downstream O2 2/2 sensor voltage",
+            "144A | Downstream O2 1/2 sensor voltage",
+            "144B | Downstream O2 2/2 sensor voltage",
             "144C |",
             "144D |",
             "144E | Fuel level sensor voltage",
@@ -506,24 +512,24 @@
             "1455 |",
             "1456 |",
             "1457 | Fuel system status 2",
-            "1458 | Cruise status 1",
-            "1459 | Cruise status 2",
+            "1458 | Cruise cutout status",
+            "1459 | Cruise denied status",
             "145A | Output shaft speed",
             "145B | Governor pressure duty cycle",
             "145C | Calculated engine load",
             "145D |",
             "145E |",
-            "145F |",
-            "1460 |",
+            "145F | EGR position sensor voltage",
+            "1460 | EGR Zref update D.C.",
             "1461 |",
             "1462 |",
             "1463 |",
-            "1464 |",
-            "1465 |",
-            "1466 |",
+            "1464 | Actual purge current",
+            "1465 | Catalyst temperature sensor voltage",
+            "1466 | Catalyst temperature",
             "1467 |",
             "1468 |",
-            "1469 |",
+            "1469 | Ambient temperature sensor voltage",
             "146A |",
             "146B |",
             "146C |",
@@ -719,7 +725,7 @@
             this.SecurityGroupBox.Controls.Add(this.LegacySecurityCheckBox);
             this.SecurityGroupBox.Controls.Add(this.SecurityLevelComboBox);
             this.SecurityGroupBox.Controls.Add(this.SecurityUnlockButton);
-            this.SecurityGroupBox.Location = new System.Drawing.Point(9, 472);
+            this.SecurityGroupBox.Location = new System.Drawing.Point(259, 472);
             this.SecurityGroupBox.Name = "SecurityGroupBox";
             this.SecurityGroupBox.Size = new System.Drawing.Size(129, 73);
             this.SecurityGroupBox.TabIndex = 31;
@@ -764,11 +770,100 @@
             this.SecurityUnlockButton.UseVisualStyleBackColor = true;
             this.SecurityUnlockButton.Click += new System.EventHandler(this.SecurityUnlockButton_Click);
             // 
+            // ConfigurationGroupBox
+            // 
+            this.ConfigurationGroupBox.Controls.Add(this.ConfigurationGetPartNumberButton);
+            this.ConfigurationGroupBox.Controls.Add(this.ConfigurationGetAllButton);
+            this.ConfigurationGroupBox.Controls.Add(this.ConfigurationComboBox);
+            this.ConfigurationGroupBox.Controls.Add(this.ConfigurationGetButton);
+            this.ConfigurationGroupBox.Location = new System.Drawing.Point(9, 472);
+            this.ConfigurationGroupBox.Name = "ConfigurationGroupBox";
+            this.ConfigurationGroupBox.Size = new System.Drawing.Size(241, 73);
+            this.ConfigurationGroupBox.TabIndex = 32;
+            this.ConfigurationGroupBox.TabStop = false;
+            this.ConfigurationGroupBox.Text = "Configuration";
+            // 
+            // ConfigurationGetPartNumberButton
+            // 
+            this.ConfigurationGetPartNumberButton.Location = new System.Drawing.Point(65, 43);
+            this.ConfigurationGetPartNumberButton.Name = "ConfigurationGetPartNumberButton";
+            this.ConfigurationGetPartNumberButton.Size = new System.Drawing.Size(111, 23);
+            this.ConfigurationGetPartNumberButton.TabIndex = 31;
+            this.ConfigurationGetPartNumberButton.Text = "Get part number";
+            this.ConfigurationGetPartNumberButton.UseVisualStyleBackColor = true;
+            this.ConfigurationGetPartNumberButton.Click += new System.EventHandler(this.InformationGetPartNumberButton_Click);
+            // 
+            // ConfigurationGetAllButton
+            // 
+            this.ConfigurationGetAllButton.Location = new System.Drawing.Point(180, 43);
+            this.ConfigurationGetAllButton.Name = "ConfigurationGetAllButton";
+            this.ConfigurationGetAllButton.Size = new System.Drawing.Size(55, 23);
+            this.ConfigurationGetAllButton.TabIndex = 30;
+            this.ConfigurationGetAllButton.Text = "Get all";
+            this.ConfigurationGetAllButton.UseVisualStyleBackColor = true;
+            this.ConfigurationGetAllButton.Click += new System.EventHandler(this.InformationGetAllButton_Click);
+            // 
+            // ConfigurationComboBox
+            // 
+            this.ConfigurationComboBox.DropDownHeight = 226;
+            this.ConfigurationComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.ConfigurationComboBox.Font = new System.Drawing.Font("Courier New", 8.25F);
+            this.ConfigurationComboBox.FormattingEnabled = true;
+            this.ConfigurationComboBox.IntegralHeight = false;
+            this.ConfigurationComboBox.Items.AddRange(new object[] {
+            "2A00 |",
+            "2A01 | PCM part number 1-2",
+            "2A02 | PCM part number 3-4",
+            "2A03 | PCM part number 5-6",
+            "2A04 | PCM part number 7-8",
+            "2A05 | N/A",
+            "2A06 | Emission type info",
+            "2A07 | Chassis type info",
+            "2A08 | Aspiration type info",
+            "2A09 | Injection type info",
+            "2A0A | Fuel type info",
+            "2A0B | Model year info",
+            "2A0C | Engine displacement",
+            "2A0D | A/C system type info",
+            "2A0E | Engine mfg info",
+            "2A0F | Controller hw info",
+            "2A10 | Body style info",
+            "2A11 | Module software phase",
+            "2A12 | Module software ver.",
+            "2A13 | Module software family",
+            "2A14 | Module software month",
+            "2A15 | Module software day",
+            "2A16 | Transmission type info",
+            "2A17 | PCM part number 9",
+            "2A18 | PCM part number 10",
+            "2A19 | Software rev. level",
+            "2A1A | Homologation number 1",
+            "2A1B | Homologation number 2",
+            "2A1C | Homologation number 3",
+            "2A1D | Homologation number 4",
+            "2A1E | Homologation number 5",
+            "2A1F | Homologation number 6"});
+            this.ConfigurationComboBox.Location = new System.Drawing.Point(7, 16);
+            this.ConfigurationComboBox.Name = "ConfigurationComboBox";
+            this.ConfigurationComboBox.Size = new System.Drawing.Size(227, 22);
+            this.ConfigurationComboBox.TabIndex = 29;
+            // 
+            // ConfigurationGetButton
+            // 
+            this.ConfigurationGetButton.Location = new System.Drawing.Point(6, 43);
+            this.ConfigurationGetButton.Name = "ConfigurationGetButton";
+            this.ConfigurationGetButton.Size = new System.Drawing.Size(55, 23);
+            this.ConfigurationGetButton.TabIndex = 19;
+            this.ConfigurationGetButton.Text = "Get";
+            this.ConfigurationGetButton.UseVisualStyleBackColor = true;
+            this.ConfigurationGetButton.Click += new System.EventHandler(this.InformationGetButton_Click);
+            // 
             // EngineToolsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(397, 553);
+            this.Controls.Add(this.ConfigurationGroupBox);
             this.Controls.Add(this.SecurityGroupBox);
             this.Controls.Add(this.ResetMemoryGroupBox);
             this.Controls.Add(this.SetIdleSpeedGroupBox);
@@ -790,6 +885,7 @@
             this.ResetMemoryGroupBox.ResumeLayout(false);
             this.SecurityGroupBox.ResumeLayout(false);
             this.SecurityGroupBox.PerformLayout();
+            this.ConfigurationGroupBox.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -831,5 +927,10 @@
         private System.Windows.Forms.Button SecurityUnlockButton;
         private System.Windows.Forms.CheckBox LegacySecurityCheckBox;
         private System.Windows.Forms.CheckBox DiagnosticDataCSVCheckBox;
+        private System.Windows.Forms.GroupBox ConfigurationGroupBox;
+        private System.Windows.Forms.Button ConfigurationGetAllButton;
+        private System.Windows.Forms.ComboBox ConfigurationComboBox;
+        private System.Windows.Forms.Button ConfigurationGetButton;
+        private System.Windows.Forms.Button ConfigurationGetPartNumberButton;
     }
 }

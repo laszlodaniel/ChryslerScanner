@@ -87,7 +87,8 @@ namespace ChryslerScanner
             "Empty",
             "SBEC3 (128k)",
             "SBEC3 (256k)",
-            "SBEC3 (256k) custom"});
+            "SBEC3 (256k) custom",
+            "JTEC"});
             this.BootloaderComboBox.Location = new System.Drawing.Point(67, 17);
             this.BootloaderComboBox.Name = "BootloaderComboBox";
             this.BootloaderComboBox.Size = new System.Drawing.Size(152, 21);
@@ -158,8 +159,10 @@ namespace ChryslerScanner
             "Flash erase",
             "Flash write",
             "Verify flash checksum",
-            "EEPROM read",
-            "EEPROM write"});
+            "EEPROM read (SPI)",
+            "EEPROM write (SPI)",
+            "EEPROM read (Parallel)",
+            "EEPROM write (Parallel)"});
             this.WorkerFunctionComboBox.Location = new System.Drawing.Point(67, 17);
             this.WorkerFunctionComboBox.Name = "WorkerFunctionComboBox";
             this.WorkerFunctionComboBox.Size = new System.Drawing.Size(152, 21);

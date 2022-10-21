@@ -40,6 +40,7 @@ namespace ChryslerScanner
             ActuatorTestComboBox.SelectedIndex = 1;
             ResetMemoryComboBox.SelectedIndex = 1;
             SecurityLevelComboBox.SelectedIndex = 0;
+            ConfigurationComboBox.SelectedIndex = 1;
 
             ActiveControl = ReadFaultCodesButton;
         }
@@ -144,7 +145,7 @@ namespace ChryslerScanner
                     MainForm.Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
                     MainForm.Packet.tx.payload = payloadList.ToArray();
                     MainForm.Packet.GeneratePacket();
-                    OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat behavior:");
+                    OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:");
 
                     MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
                 }
@@ -185,7 +186,7 @@ namespace ChryslerScanner
                     MainForm.Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
                     MainForm.Packet.tx.payload = payloadList.ToArray();
                     MainForm.Packet.GeneratePacket();
-                    OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat behavior:");
+                    OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:");
 
                     MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedList;
                 }
@@ -290,7 +291,7 @@ namespace ChryslerScanner
             MainForm.Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
             MainForm.Packet.tx.payload = payloadList.ToArray();
             MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat behavior:");
+            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:");
 
             bool success = int.TryParse(SetIdleSpeedTextBox.Text, out int SetRPM);
 
@@ -311,7 +312,7 @@ namespace ChryslerScanner
             MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
             MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
             MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
-            MainForm.Packet.tx.payload = new byte[2] { 0x19, (byte)((double)SetRPM / 7.85) };
+            MainForm.Packet.tx.payload = new byte[2] { 0x19, (byte)(SetRPM / 7.85) };
             MainForm.Packet.GeneratePacket();
             OriginalForm.TransmitUSBPacket("[<-TX] Set idle speed:");
         }
@@ -404,6 +405,98 @@ namespace ChryslerScanner
             }
         }
 
+        private void InformationGetButton_Click(object sender, EventArgs e)
+        {
+            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+            MainForm.Packet.tx.payload = new byte[2] { 0x2A, (byte)ConfigurationComboBox.SelectedIndex };
+            MainForm.Packet.GeneratePacket();
+            OriginalForm.TransmitUSBPacket("[<-TX] Information request:");
+        }
+
+        private void InformationGetPartNumberButton_Click(object sender, EventArgs e)
+        {
+            bool success = int.TryParse(DiagnosticDataRepeatIntervalTextBox.Text, out int repeatInterval);
+
+            if (!success || (repeatInterval == 0))
+            {
+                repeatInterval = 50;
+                DiagnosticDataRepeatIntervalTextBox.Text = "50";
+            }
+
+            List<byte> payloadList = new List<byte>();
+            byte[] repeatIntervalArray = new byte[2];
+
+            repeatIntervalArray[0] = (byte)((repeatInterval >> 8) & 0xFF);
+            repeatIntervalArray[1] = (byte)(repeatInterval & 0xFF);
+
+            payloadList.Add((byte)Packet.Bus.pcm);
+            payloadList.AddRange(repeatIntervalArray);
+
+            MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
+            MainForm.Packet.tx.command = (byte)Packet.Command.settings;
+            MainForm.Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
+            MainForm.Packet.tx.payload = payloadList.ToArray();
+            MainForm.Packet.GeneratePacket();
+            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:");
+
+            const byte infoCount = 6; // part number is stored in 6 bytes
+
+            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.list;
+            MainForm.Packet.tx.payload = new byte[(3 * infoCount) + 1] { infoCount, 0x02, 0x2A, 0x01, 0x02, 0x2A, 0x02, 0x02, 0x2A, 0x03, 0x02, 0x2A, 0x04, 0x02, 0x2A, 0x17, 0x02, 0x2A, 0x18 };
+            MainForm.Packet.GeneratePacket();
+            OriginalForm.TransmitUSBPacket("[<-TX] PCM part number request:");
+        }
+
+        private void InformationGetAllButton_Click(object sender, EventArgs e)
+        {
+            bool success = int.TryParse(DiagnosticDataRepeatIntervalTextBox.Text, out int repeatInterval);
+
+            if (!success || (repeatInterval == 0))
+            {
+                repeatInterval = 50;
+                DiagnosticDataRepeatIntervalTextBox.Text = "50";
+            }
+
+            List<byte> payloadList = new List<byte>();
+            byte[] repeatIntervalArray = new byte[2];
+
+            repeatIntervalArray[0] = (byte)((repeatInterval >> 8) & 0xFF);
+            repeatIntervalArray[1] = (byte)(repeatInterval & 0xFF);
+
+            payloadList.Add((byte)Packet.Bus.pcm);
+            payloadList.AddRange(repeatIntervalArray);
+
+            MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
+            MainForm.Packet.tx.command = (byte)Packet.Command.settings;
+            MainForm.Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
+            MainForm.Packet.tx.payload = payloadList.ToArray();
+            MainForm.Packet.GeneratePacket();
+            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:");
+
+            const byte infoCount = 31; // there are fixed 31 information records available
+
+            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.list;
+            MainForm.Packet.tx.payload = new byte[(3 * infoCount) + 1];
+            MainForm.Packet.tx.payload[0] = infoCount;
+
+            for (int i = 0; i < infoCount; i++)
+            {
+                MainForm.Packet.tx.payload[1 + (i * 3)] = 2; // message length
+                MainForm.Packet.tx.payload[1 + (i * 3) + 1] = 0x2A; // request ID
+                MainForm.Packet.tx.payload[1 + (i * 3) + 1 + 1] = (byte)(i + 1); // request parameter
+            }
+
+            
+            MainForm.Packet.GeneratePacket();
+            OriginalForm.TransmitUSBPacket("[<-TX] Information request:");
+        }
+
         private void PacketReceivedHandler(object sender, EventArgs e)
         {
             switch (MainForm.Packet.rx.bus)
@@ -423,7 +516,7 @@ namespace ChryslerScanner
                                     {
                                         DiagnosticItems.Add(SCIBusResponseBytes);
 
-                                        if ((DiagnosticItems.Count == 1) && (SCIBusResponseBytes[1] != DiagnosticItems[0][1])) // keep columns ordered
+                                        if ((DiagnosticItems.Count == 1) && (SCIBusResponseBytes[1] != FirstDiagnosticItemID)) // keep columns ordered
                                         {
                                             DiagnosticItems.Clear();
                                         }
@@ -441,6 +534,13 @@ namespace ChryslerScanner
 
                                         File.AppendAllText(CSVFilename, Environment.NewLine + CSVLine);
                                         DiagnosticItems.Clear();
+                                    }
+                                }
+                                else if (SCIBusResponseBytes.Length < 3)
+                                {
+                                    if (DiagnosticDataCSVCheckBox.Checked)
+                                    {
+                                        DiagnosticItems.Add(new byte[3] { 0x14, 0x00, 0x00 }); // an invalid response would break the CSV-file format, add an empty response instead
                                     }
                                 }
                                 break;

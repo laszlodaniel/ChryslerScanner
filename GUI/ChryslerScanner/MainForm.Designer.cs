@@ -44,7 +44,6 @@
             this.IncludeTimestampInLogFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.CCDBusOnDemandToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.PCIBusOnDemandToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.SCIBusNGCModeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.AboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.USBCommunicationGroupBox = new System.Windows.Forms.GroupBox();
             this.USBSendPacketButton = new System.Windows.Forms.Button();
@@ -122,6 +121,7 @@
             this.PCIBusTxMessageComboBox = new System.Windows.Forms.ComboBox();
             this.PCIBusTxMessagesListBox = new System.Windows.Forms.ListBox();
             this.SCIBusControlTabPage = new System.Windows.Forms.TabPage();
+            this.SCIBusNGCModeCheckBox = new System.Windows.Forms.CheckBox();
             this.SCIBusOBDConfigurationComboBox = new System.Windows.Forms.ComboBox();
             this.SCIBusOBDConfigurationLabel = new System.Windows.Forms.Label();
             this.SCIBusInvertedLogicCheckBox = new System.Windows.Forms.CheckBox();
@@ -272,8 +272,7 @@
             this.UnitsToolStripMenuItem,
             this.IncludeTimestampInLogFilesToolStripMenuItem,
             this.CCDBusOnDemandToolStripMenuItem,
-            this.PCIBusOnDemandToolStripMenuItem,
-            this.SCIBusNGCModeToolStripMenuItem});
+            this.PCIBusOnDemandToolStripMenuItem});
             this.SettingsToolStripMenuItem.Name = "SettingsToolStripMenuItem";
             this.SettingsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.SettingsToolStripMenuItem.Text = "Settings";
@@ -292,7 +291,7 @@
             this.MetricUnitsToolStripMenuItem.Checked = true;
             this.MetricUnitsToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.MetricUnitsToolStripMenuItem.Name = "MetricUnitsToolStripMenuItem";
-            this.MetricUnitsToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
+            this.MetricUnitsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.MetricUnitsToolStripMenuItem.Text = "Metric";
             this.MetricUnitsToolStripMenuItem.Click += new System.EventHandler(this.MetricUnitsToolStripMenuItem_Click);
             // 
@@ -300,7 +299,7 @@
             // 
             this.ImperialUnitsToolStripMenuItem.CheckOnClick = true;
             this.ImperialUnitsToolStripMenuItem.Name = "ImperialUnitsToolStripMenuItem";
-            this.ImperialUnitsToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
+            this.ImperialUnitsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.ImperialUnitsToolStripMenuItem.Text = "Imperial";
             this.ImperialUnitsToolStripMenuItem.Click += new System.EventHandler(this.ImperialUnitsToolStripMenuItem_Click);
             // 
@@ -326,14 +325,6 @@
             this.PCIBusOnDemandToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
             this.PCIBusOnDemandToolStripMenuItem.Text = "PCI-bus on demand";
             this.PCIBusOnDemandToolStripMenuItem.Click += new System.EventHandler(this.PCIBusOnDemandToolStripMenuItem_Click);
-            // 
-            // SCIBusNGCModeToolStripMenuItem
-            // 
-            this.SCIBusNGCModeToolStripMenuItem.CheckOnClick = true;
-            this.SCIBusNGCModeToolStripMenuItem.Name = "SCIBusNGCModeToolStripMenuItem";
-            this.SCIBusNGCModeToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
-            this.SCIBusNGCModeToolStripMenuItem.Text = "SCI-bus NGC mode";
-            this.SCIBusNGCModeToolStripMenuItem.Click += new System.EventHandler(this.SCIBusNGCModeToolStripMenuItem_Click);
             // 
             // AboutToolStripMenuItem
             // 
@@ -1197,6 +1188,7 @@
             // SCIBusControlTabPage
             // 
             this.SCIBusControlTabPage.BackColor = System.Drawing.Color.Transparent;
+            this.SCIBusControlTabPage.Controls.Add(this.SCIBusNGCModeCheckBox);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusOBDConfigurationComboBox);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusOBDConfigurationLabel);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusInvertedLogicCheckBox);
@@ -1223,6 +1215,16 @@
             this.SCIBusControlTabPage.Size = new System.Drawing.Size(353, 217);
             this.SCIBusControlTabPage.TabIndex = 1;
             this.SCIBusControlTabPage.Text = "SCI-bus";
+            // 
+            // SCIBusNGCModeCheckBox
+            // 
+            this.SCIBusNGCModeCheckBox.AutoSize = true;
+            this.SCIBusNGCModeCheckBox.Location = new System.Drawing.Point(273, 195);
+            this.SCIBusNGCModeCheckBox.Name = "SCIBusNGCModeCheckBox";
+            this.SCIBusNGCModeCheckBox.Size = new System.Drawing.Size(78, 17);
+            this.SCIBusNGCModeCheckBox.TabIndex = 20;
+            this.SCIBusNGCModeCheckBox.Text = "NGC mode";
+            this.SCIBusNGCModeCheckBox.UseVisualStyleBackColor = true;
             // 
             // SCIBusOBDConfigurationComboBox
             // 
@@ -2025,8 +2027,8 @@
         private System.Windows.Forms.ListBox PCIBusTxMessagesListBox;
         private FlickerFreeListBox PCIBusDiagnosticsListBox;
         private System.Windows.Forms.ToolStripMenuItem EngineToolsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem SCIBusNGCModeToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem PCIBusOnDemandToolStripMenuItem;
+        private System.Windows.Forms.CheckBox SCIBusNGCModeCheckBox;
     }
 }
 

@@ -216,15 +216,6 @@ namespace ChryslerScanner
                 PCIBusOnDemandToolStripMenuItem.Checked = false;
             }
 
-            if (Properties.Settings.Default.SCIBusNGCMode == true)
-            {
-                SCIBusNGCModeToolStripMenuItem.Checked = true;
-            }
-            else
-            {
-                SCIBusNGCModeToolStripMenuItem.Checked = false;
-            }
-
             ActiveControl = ConnectButton; // put focus on the connect button
         }
 
@@ -476,16 +467,16 @@ namespace ChryslerScanner
             switch (bus)
             {
                 case Packet.Bus.ccd:
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Set CCD-bus message repeat behavior:", Packet.tx.buffer);
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Set CCD-bus message repeat:", Packet.tx.buffer);
                     break;
                 case Packet.Bus.pci:
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Set PCI-bus message repeat behavior:", Packet.tx.buffer);
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Set PCI-bus message repeat:", Packet.tx.buffer);
                     break;
                 case Packet.Bus.pcm:
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Set SCI-bus (PCM) message repeat behavior:", Packet.tx.buffer);
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Set SCI-bus (PCM) message repeat:", Packet.tx.buffer);
                     break;
                 case Packet.Bus.tcm:
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Set SCI-bus (TCM) message repeat behavior:", Packet.tx.buffer);
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Set SCI-bus (TCM) message repeat:", Packet.tx.buffer);
                     break;
                 default:
                     break;
@@ -695,16 +686,12 @@ namespace ChryslerScanner
                                         if (Util.IsBitClear(Packet.rx.payload[24], 4))
                                         {
                                             SCIBusPCMNGCModeString = "disabled";
-                                            SCIBusNGCModeToolStripMenuItem.Checked = false;
-                                            Properties.Settings.Default.SCIBusNGCMode = false;
-                                            Properties.Settings.Default.Save();
+                                            SCIBusNGCModeCheckBox.Checked = false;
                                         }
                                         else
                                         {
                                             SCIBusPCMNGCModeString = "enabled";
-                                            SCIBusNGCModeToolStripMenuItem.Checked = true;
-                                            Properties.Settings.Default.SCIBusNGCMode = true;
-                                            Properties.Settings.Default.Save();
+                                            SCIBusNGCModeCheckBox.Checked = true;
                                         }
 
                                         if (Util.IsBitClear(Packet.rx.payload[24], 3))
@@ -782,16 +769,12 @@ namespace ChryslerScanner
                                         if (Util.IsBitClear(Packet.rx.payload[33], 4))
                                         {
                                             SCIBusTCMNGCModeString = "disabled";
-                                            SCIBusNGCModeToolStripMenuItem.Checked = false;
-                                            Properties.Settings.Default.SCIBusNGCMode = false;
-                                            Properties.Settings.Default.Save();
+                                            SCIBusNGCModeCheckBox.Checked = false;
                                         }
                                         else
                                         {
                                             SCIBusTCMNGCModeString = "enabled";
-                                            SCIBusNGCModeToolStripMenuItem.Checked = true;
-                                            Properties.Settings.Default.SCIBusNGCMode = true;
-                                            Properties.Settings.Default.Save();
+                                            SCIBusNGCModeCheckBox.Checked = true;
                                         }
 
                                         if (Util.IsBitClear(Packet.rx.payload[33], 3))
@@ -1074,7 +1057,7 @@ namespace ChryslerScanner
                                     if (Util.IsBitClear(Packet.rx.payload[23], 6)) PCIBusLogicString = "active-low";
                                     else PCIBusLogicString = "active-high";
 
-                                    PCIBusSpeedString = "10400 baud";
+                                    PCIBusSpeedString = "10416 baud";
 
                                     PCI.UpdateHeader(PCIBusStateString, PCIBusSpeedString, PCIBusLogicString);
 
@@ -1097,16 +1080,12 @@ namespace ChryslerScanner
                                         if (Util.IsBitClear(Packet.rx.payload[32], 4))
                                         {
                                             SCIBusNGCModeString = "disabled";
-                                            SCIBusNGCModeToolStripMenuItem.Checked = false;
-                                            Properties.Settings.Default.SCIBusNGCMode = false;
-                                            Properties.Settings.Default.Save();
+                                            SCIBusNGCModeCheckBox.Checked = false;
                                         }
                                         else
                                         {
                                             SCIBusNGCModeString = "enabled";
-                                            SCIBusNGCModeToolStripMenuItem.Checked = true;
-                                            Properties.Settings.Default.SCIBusNGCMode = true;
-                                            Properties.Settings.Default.Save();
+                                            SCIBusNGCModeCheckBox.Checked = true;
                                         }
 
                                         if (Util.IsBitClear(Packet.rx.payload[32], 3))
@@ -1348,16 +1327,12 @@ namespace ChryslerScanner
                                                 if (Util.IsBitSet(Packet.rx.payload[0], 4))
                                                 {
                                                     SCIBusTCMNGCModeString = "enabled";
-                                                    SCIBusNGCModeToolStripMenuItem.Checked = true;
-                                                    Properties.Settings.Default.SCIBusNGCMode = true;
-                                                    Properties.Settings.Default.Save();
+                                                    SCIBusNGCModeCheckBox.Checked = true;
                                                 }
                                                 else
                                                 {
                                                     SCIBusTCMNGCModeString = "disabled";
-                                                    SCIBusNGCModeToolStripMenuItem.Checked = false;
-                                                    Properties.Settings.Default.SCIBusNGCMode = false;
-                                                    Properties.Settings.Default.Save();
+                                                    SCIBusNGCModeCheckBox.Checked = false;
                                                 }
 
                                                 if (Util.IsBitClear(Packet.rx.payload[0], 3))
@@ -1430,16 +1405,12 @@ namespace ChryslerScanner
                                                 if (Util.IsBitSet(Packet.rx.payload[0], 4))
                                                 {
                                                     SCIBusPCMNGCModeString = "enabled";
-                                                    SCIBusNGCModeToolStripMenuItem.Checked = true;
-                                                    Properties.Settings.Default.SCIBusNGCMode = true;
-                                                    Properties.Settings.Default.Save();
+                                                    SCIBusNGCModeCheckBox.Checked = true;
                                                 }
                                                 else
                                                 {
                                                     SCIBusPCMNGCModeString = "disabled";
-                                                    SCIBusNGCModeToolStripMenuItem.Checked = false;
-                                                    Properties.Settings.Default.SCIBusNGCMode = false;
-                                                    Properties.Settings.Default.Save();
+                                                    SCIBusNGCModeCheckBox.Checked = false;
                                                 }
 
                                                 if (Util.IsBitClear(Packet.rx.payload[0], 3))
@@ -2750,7 +2721,7 @@ namespace ChryslerScanner
                                         {
                                             Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) erase fault code list:", Packet.rx.buffer);
 
-                                            if (Packet.rx.payload[5] == 0xE0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) erase fault code list success.");
+                                            if (Packet.rx.payload[5] == 0xE0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) fault code list erased.");
                                             else Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) erase fault code list error.");
                                         }
                                         else // error
@@ -4376,7 +4347,7 @@ namespace ChryslerScanner
                     config = Util.ClearBit(config, 6); // unused bit, always clear
                     config = Util.ClearBit(config, 5); // PCM
 
-                    if (Properties.Settings.Default.SCIBusNGCMode == true)
+                    if (SCIBusNGCModeCheckBox.Checked)
                     {
                         config = Util.SetBit(config, 4);
                     }
@@ -4441,7 +4412,7 @@ namespace ChryslerScanner
                     config = Util.ClearBit(config, 6); // unused bit, always clear
                     config = Util.SetBit(config, 5); // TCM
 
-                    if (Properties.Settings.Default.SCIBusNGCMode == true)
+                    if (SCIBusNGCModeCheckBox.Checked)
                     {
                         config = Util.SetBit(config, 4);
                     }
@@ -5972,20 +5943,6 @@ namespace ChryslerScanner
             else
             {
                 Properties.Settings.Default.PCIBusOnDemand = false;
-                Properties.Settings.Default.Save(); // save setting in application configuration file
-            }
-        }
-
-        private void SCIBusNGCModeToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (SCIBusNGCModeToolStripMenuItem.Checked)
-            {
-                Properties.Settings.Default.SCIBusNGCMode = true;
-                Properties.Settings.Default.Save(); // save setting in application configuration file
-            }
-            else
-            {
-                Properties.Settings.Default.SCIBusNGCMode = false;
                 Properties.Settings.Default.Save(); // save setting in application configuration file
             }
         }
