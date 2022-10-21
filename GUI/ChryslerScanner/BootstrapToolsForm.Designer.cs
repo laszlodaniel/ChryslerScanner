@@ -88,7 +88,7 @@ namespace ChryslerScanner
             "SBEC3 (128k)",
             "SBEC3 (256k)",
             "SBEC3 (256k) custom",
-            "JTEC"});
+            "JTEC (256k)"});
             this.BootloaderComboBox.Location = new System.Drawing.Point(67, 17);
             this.BootloaderComboBox.Name = "BootloaderComboBox";
             this.BootloaderComboBox.Size = new System.Drawing.Size(152, 21);
