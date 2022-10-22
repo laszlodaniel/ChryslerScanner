@@ -277,7 +277,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xA4:
-                    descriptionToInsert = "FUEL TANK LEVEL";
+                    descriptionToInsert = "FUEL LEVEL";
 
                     if (message.Length >= 3)
                     {
@@ -287,7 +287,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xA5:
-                    descriptionToInsert = "FUEL TANK LEVEL SENSOR";
+                    descriptionToInsert = "FUEL LEVEL SENSOR VOLTAGE | FUEL LEVEL";
 
                     if (message.Length >= 4)
                     {

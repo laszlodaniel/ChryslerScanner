@@ -150,30 +150,27 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x0C:
-                    descriptionToInsert = "BATTERY: | OIL: | COOLANT:";
-                    valueToInsert = "IAT:";
+                    descriptionToInsert = "BATTERY | OIL | COOLANT | IAT";
 
                     if (message.Length >= 6)
                     {
+                        double BatteryVoltage = payload[0] * 0.125;
+                        double OilPressurePSI = payload[1] * 0.5;
+                        double OilPressureKPA = payload[1] * 0.5 * 6.894757;
+                        double CoolantTemperatureC = payload[2] - 64;
+                        double CoolantTemperatureF = 1.8 * CoolantTemperatureC + 32.0;
+                        double IntakeAirTemperatureC = payload[3] - 64;
+                        double IntakeAirTemperatureF = 1.8 * IntakeAirTemperatureC + 32.0;
+
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            string batteryVoltage = Math.Round(payload[0] * 0.125, 1).ToString("0.0").Replace(",", ".");
-                            string oilPressure = Math.Round(payload[1] * 0.5, 1).ToString("0.0").Replace(",", ".");
-                            string coolantTemperature = Math.Round((payload[2] * 1.8) - 83.2).ToString("0");
-                            string intakeAirTemperature = Math.Round((payload[3] * 1.8) - 83.2).ToString("0");
-
-                            descriptionToInsert = "BATTERY: " + batteryVoltage + " V | " + "OIL: " + oilPressure + " PSI | " + "COOLANT: " + coolantTemperature + " °F";
-                            valueToInsert = "IAT: " + intakeAirTemperature + " °F";
+                            descriptionToInsert = "BATTERY: " + BatteryVoltage.ToString("0.0").Replace(",", ".") + " V | OIL: " + OilPressurePSI.ToString("0.0").Replace(",", ".") + " PSI | COOLANT: " + CoolantTemperatureF.ToString("0") + " °F";
+                            valueToInsert = "IAT: " + IntakeAirTemperatureF.ToString("0") + " °F";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            string batteryVoltage = Math.Round(payload[0] * 0.125, 1).ToString("0.0").Replace(",", ".");
-                            string oilPressure = Math.Round(payload[1] * 0.5 * 6.894757, 1).ToString("0.0").Replace(",", ".");
-                            string coolantTemperature = (payload[2] - 64).ToString("0");
-                            string intakeAirTemperature = (payload[3] - 64).ToString("0");
-
-                            descriptionToInsert = "BATTERY: " + batteryVoltage + " V | " + "OIL: " + oilPressure + " KPA | " + "COOLANT: " + coolantTemperature + " °C";
-                            valueToInsert = "IAT: " + intakeAirTemperature + " °C";
+                            descriptionToInsert = "BATTERY: " + BatteryVoltage.ToString("0.0").Replace(",", ".") + " V | OIL: " + OilPressureKPA.ToString("0.0").Replace(",", ".") + " KPA | COOLANT: " + CoolantTemperatureC.ToString("0") + " °C";
+                            valueToInsert = "IAT: " + IntakeAirTemperatureC.ToString("0") + " °C";
                         }
                     }
                     break;
@@ -321,7 +318,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x25:
-                    descriptionToInsert = "FUEL TANK LEVEL";
+                    descriptionToInsert = "FUEL LEVEL";
 
                     if (message.Length >= 3)
                     {
@@ -761,12 +758,24 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x95:
-                    descriptionToInsert = "FUEL LEVEL SENSOR VOLTAGE AND LEVEL";
+                    descriptionToInsert = "FUEL LEVEL SENSOR VOLTAGE | FUEL LEVEL";
 
                     if (message.Length >= 4)
                     {
-                        valueToInsert = Util.ByteToHexString(payload, 0, 1) + " | " + Util.ByteToHexString(payload, 1, 1);
-                        unitToInsert = "V | L";
+                        double FuelLevelSensorVolts = payload[0] * 0.0191;
+                        double FuelLevelG = payload[1] * 0.125;
+                        double FuelLevelL = payload[1] * 0.125 * 3.785412;
+
+                        if (Properties.Settings.Default.Units == "imperial")
+                        {
+                            valueToInsert = Math.Round(FuelLevelSensorVolts, 3).ToString("0.000").Replace(",", ".") + " | " + Math.Round(FuelLevelG, 1).ToString("0.0").Replace(",", ".");
+                            unitToInsert = "V | GALLON";
+                        }
+                        else if (Properties.Settings.Default.Units == "metric")
+                        {
+                            valueToInsert = Math.Round(FuelLevelSensorVolts, 3).ToString("0.000").Replace(",", ".") + " | " + Math.Round(FuelLevelL, 1).ToString("0.0").Replace(",", ".");
+                            unitToInsert = "V | LITER";
+                        }
                     }
                     break;
                 case 0x99:
