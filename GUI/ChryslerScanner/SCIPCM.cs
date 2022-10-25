@@ -4716,13 +4716,13 @@ namespace ChryslerScanner
                                     DescriptionToInsert = "INJECTOR PULSE WIDTH 2 | ERROR: REQUEST F4 29 2A";
                                     break;
                                 case 0x2B:
-                                    double LTFT1 = payload[1] * 0.1953125;
+                                    double LTFT1 = payload[1] * 0.196;
                                     DescriptionToInsert = "LONG TERM FUEL TRIM 1";
                                     ValueToInsert = Math.Round(LTFT1, 3).ToString("0.000").Replace(",", ".");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 case 0x2C:
-                                    double LTFT2 = payload[1] * 0.1953125;
+                                    double LTFT2 = payload[1] * 0.196;
                                     DescriptionToInsert = "LONG TERM FUEL TRIM 2";
                                     ValueToInsert = Math.Round(LTFT2, 3).ToString("0.000").Replace(",", ".");
                                     UnitToInsert = "PERCENT";
@@ -5034,13 +5034,13 @@ namespace ChryslerScanner
                                     ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                     break;
                                 case 0x44:
-                                    double STFT1 = payload[1] * 0.1953125;
+                                    double STFT1 = payload[1] * 0.196;
                                     DescriptionToInsert = "SHORT TERM FUEL TRIM 1";
                                     ValueToInsert = Math.Round(STFT1, 3).ToString("0.000").Replace(",", ".");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 case 0x45:
-                                    double STFT2 = payload[1] * 0.1953125;
+                                    double STFT2 = payload[1] * 0.196;
                                     DescriptionToInsert = "SHORT TERM FUEL TRIM 2";
                                     ValueToInsert = Math.Round(STFT2, 3).ToString("0.000").Replace(",", ".");
                                     UnitToInsert = "PERCENT";
@@ -5393,25 +5393,25 @@ namespace ChryslerScanner
                                     UnitToInsert = "PERCENT";
                                     break;
                                 case 0xAD:
-                                    double STFT1A = payload[1] * 0.1953125;
+                                    double STFT1A = payload[1] * 0.196;
                                     DescriptionToInsert = "SHORT TERM FUEL TRIM 1 A";
                                     ValueToInsert = Math.Round(STFT1A, 3).ToString("0.000").Replace(",", ".");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 case 0xAE:
-                                    double LTFT1A = payload[1] * 0.1953125;
+                                    double LTFT1A = payload[1] * 0.196;
                                     DescriptionToInsert = "LONG TERM FUEL TRIM 1 A";
                                     ValueToInsert = Math.Round(LTFT1A, 3).ToString("0.000").Replace(",", ".");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 case 0xAF:
-                                    double STFT2A = payload[1] * 0.1953125;
+                                    double STFT2A = payload[1] * 0.196;
                                     DescriptionToInsert = "SHORT TERM FUEL TRIM 2 A";
                                     ValueToInsert = Math.Round(STFT2A, 3).ToString("0.000").Replace(",", ".");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 case 0xB0:
-                                    double LTFT2A = payload[1] * 0.1953125;
+                                    double LTFT2A = payload[1] * 0.196;
                                     DescriptionToInsert = "LONG TERM FUEL TRIM 2 A";
                                     ValueToInsert = Math.Round(LTFT2A, 3).ToString("0.000").Replace(",", ".");
                                     UnitToInsert = "PERCENT";
