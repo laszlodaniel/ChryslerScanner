@@ -68,6 +68,9 @@
             this.ConfigurationGetAllButton = new System.Windows.Forms.Button();
             this.ConfigurationComboBox = new System.Windows.Forms.ComboBox();
             this.ConfigurationGetButton = new System.Windows.Forms.Button();
+            this.RAMTableGroupBox = new System.Windows.Forms.GroupBox();
+            this.RAMTableComboBox = new System.Windows.Forms.ComboBox();
+            this.RAMTableSelectButton = new System.Windows.Forms.Button();
             this.FaultCodeGroupBox.SuspendLayout();
             this.BaudrateGroupBox.SuspendLayout();
             this.ActuatorTestGroupBox.SuspendLayout();
@@ -77,6 +80,7 @@
             this.ResetMemoryGroupBox.SuspendLayout();
             this.SecurityGroupBox.SuspendLayout();
             this.ConfigurationGroupBox.SuspendLayout();
+            this.RAMTableGroupBox.SuspendLayout();
             this.SuspendLayout();
             // 
             // FaultCodeGroupBox
@@ -126,6 +130,7 @@
             // Baud976Button
             // 
             this.Baud976Button.Enabled = false;
+            this.Baud976Button.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.Baud976Button.Location = new System.Drawing.Point(7, 16);
             this.Baud976Button.Name = "Baud976Button";
             this.Baud976Button.Size = new System.Drawing.Size(55, 23);
@@ -137,6 +142,7 @@
             // Baud125000Button
             // 
             this.Baud125000Button.Enabled = false;
+            this.Baud125000Button.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.Baud125000Button.Location = new System.Drawing.Point(184, 16);
             this.Baud125000Button.Name = "Baud125000Button";
             this.Baud125000Button.Size = new System.Drawing.Size(55, 23);
@@ -147,6 +153,7 @@
             // 
             // Baud62500Button
             // 
+            this.Baud62500Button.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.Baud62500Button.Location = new System.Drawing.Point(125, 16);
             this.Baud62500Button.Name = "Baud62500Button";
             this.Baud62500Button.Size = new System.Drawing.Size(55, 23);
@@ -157,6 +164,7 @@
             // 
             // Baud7812Button
             // 
+            this.Baud7812Button.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.Baud7812Button.Location = new System.Drawing.Point(66, 16);
             this.Baud7812Button.Name = "Baud7812Button";
             this.Baud7812Button.Size = new System.Drawing.Size(55, 23);
@@ -172,7 +180,7 @@
             this.ActuatorTestGroupBox.Controls.Add(this.ActuatorTestStartButton);
             this.ActuatorTestGroupBox.Location = new System.Drawing.Point(9, 55);
             this.ActuatorTestGroupBox.Name = "ActuatorTestGroupBox";
-            this.ActuatorTestGroupBox.Size = new System.Drawing.Size(379, 73);
+            this.ActuatorTestGroupBox.Size = new System.Drawing.Size(295, 73);
             this.ActuatorTestGroupBox.TabIndex = 1;
             this.ActuatorTestGroupBox.TabStop = false;
             this.ActuatorTestGroupBox.Text = "Actuator test";
@@ -192,12 +200,12 @@
             "1304 | Fuel injector bank #1",
             "1305 | Fuel injector bank #2",
             "1306 | Fuel injector bank #3",
-            "1307 | Idle air control (IAC) stepper motor",
+            "1307 | Idle air control motor",
             "1308 | Radiator fan relay",
             "1309 | A/C clutch relay",
-            "130A | Automatic shutdown (ASD) relay",
+            "130A | Automatic shutdown relay",
             "130B | Evap purge solenoid",
-            "130C | Speed control solenoids (vacuum/vent)",
+            "130C | Cruise control solenoids",
             "130D | Alternator field",
             "130E | Tachometer output",
             "130F | Torque converter clutch",
@@ -211,8 +219,8 @@
             "1317 | Shift indicator lamp",
             "1318 |",
             "1319 | Surge valve solenoid",
-            "131A | Speed control vent solenoid",
-            "131B | Speed control vacuum solenoid",
+            "131A | Cruise control vent solenoid",
+            "131B | Cruise control vacuum solenoid",
             "131C | ASD fuel system",
             "131D | Fuel injector bank #4",
             "131E | Fuel injector bank #5",
@@ -229,7 +237,7 @@
             "1329 | Intake heater bank #2",
             "132A |",
             "132B |",
-            "132C | Speed control 12 volt feed",
+            "132C | Cruise control 12V feed",
             "132D | Intake manifold tune valve",
             "132E | Low speed radiator fan relay",
             "132F | High speed radiator fan relay",
@@ -244,15 +252,15 @@
             "1338 |",
             "1339 |",
             "133A |",
-            "133B | IAC stepper motor step up",
-            "133C | IAC stepper motor step down",
-            "133D | Leak detection pump solenoid",
+            "133B | IAC motor step up",
+            "133C | IAC motor step down",
+            "133D | LD pump solenoid",
             "133E |",
             "133F |",
             "1340 | O2 sensor heater relay",
             "1341 | Overdrive lamp",
             "1342 |",
-            "1343 | Transmission 12 volt relay",
+            "1343 | Transmission 12V relay",
             "1344 | Reverse lockout solenoid",
             "1345 |",
             "1346 | Short runner valve",
@@ -267,8 +275,8 @@
             "134F |",
             "1350 |",
             "1351 |",
-            "1352 | 1/1 2/1 O2 sensor heater relay",
-            "1353 | 1/2 2/2 O2 sensor heater relay",
+            "1352 | O2 X/1 sensor heater relay",
+            "1353 | O2 X/2 sensor heater relay",
             "1354 |",
             "1355 |",
             "1356 | 1/1 O2 sensor heater relay",
@@ -315,7 +323,7 @@
             "137F |"});
             this.ActuatorTestComboBox.Location = new System.Drawing.Point(7, 16);
             this.ActuatorTestComboBox.Name = "ActuatorTestComboBox";
-            this.ActuatorTestComboBox.Size = new System.Drawing.Size(365, 22);
+            this.ActuatorTestComboBox.Size = new System.Drawing.Size(281, 22);
             this.ActuatorTestComboBox.TabIndex = 29;
             // 
             // ActuatorTestStopButton
@@ -388,8 +396,6 @@
             // DiagnosticDataRepeatIntervalCheckBox
             // 
             this.DiagnosticDataRepeatIntervalCheckBox.AutoSize = true;
-            this.DiagnosticDataRepeatIntervalCheckBox.Checked = true;
-            this.DiagnosticDataRepeatIntervalCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.DiagnosticDataRepeatIntervalCheckBox.Location = new System.Drawing.Point(184, 142);
             this.DiagnosticDataRepeatIntervalCheckBox.Name = "DiagnosticDataRepeatIntervalCheckBox";
             this.DiagnosticDataRepeatIntervalCheckBox.Size = new System.Drawing.Size(64, 17);
@@ -433,7 +439,7 @@
             "1406 | Engine coolant temperature sensor voltage",
             "1407 | Throttle position sensor voltage",
             "1408 | Minimum throttle position sensor voltage",
-            "1409 | Knock sensor voltage 1",
+            "1409 | Knock sensor 1 voltage",
             "140A | Battery voltage",
             "140B | Intake manifold absolute pressure (MAP)",
             "140C | Target IAC stepper motor position",
@@ -453,17 +459,17 @@
             "141A | Target boost",
             "141B | Intake air temperature",
             "141C | Intake air temperature sensor voltage",
-            "141D | Cruise target speed",
+            "141D | Cruise set speed",
             "141E | Key-on cycles error 2",
             "141F | Key-on cycles error 3",
-            "1420 | Cruise status",
+            "1420 | Cruise control status 1",
             "1421 | Cylinder 1 retard",
             "1422 |",
             "1423 |",
             "1424 | Battery charging voltage",
             "1425 | Over 5 psi boost timer",
             "1426 |",
-            "1427 | Theft alarm status",
+            "1427 | Vehicle theft alarm status",
             "1428 | Wastegate duty cycle",
             "1429 | Read fuel setting",
             "142A | Read set sync",
@@ -472,7 +478,7 @@
             "142D | Ambient/Battery temperature",
             "142E |",
             "142F | Upstream O2 2/1 sensor voltage",
-            "1430 | Knock sensor voltage 2",
+            "1430 | Knock sensor 2 voltage",
             "1431 | Long term fuel trim 2",
             "1432 | A/C high side pressure sensor voltage",
             "1433 | A/C high side pressure",
@@ -512,8 +518,8 @@
             "1455 |",
             "1456 |",
             "1457 | Fuel system status 2",
-            "1458 | Cruise cutout status",
-            "1459 | Cruise denied status",
+            "1458 | Cruise control status 1",
+            "1459 | Cruise control status 2",
             "145A | Output shaft speed",
             "145B | Governor pressure duty cycle",
             "145C | Calculated engine load",
@@ -858,11 +864,60 @@
             this.ConfigurationGetButton.UseVisualStyleBackColor = true;
             this.ConfigurationGetButton.Click += new System.EventHandler(this.InformationGetButton_Click);
             // 
+            // RAMTableGroupBox
+            // 
+            this.RAMTableGroupBox.Controls.Add(this.RAMTableComboBox);
+            this.RAMTableGroupBox.Controls.Add(this.RAMTableSelectButton);
+            this.RAMTableGroupBox.Location = new System.Drawing.Point(313, 55);
+            this.RAMTableGroupBox.Name = "RAMTableGroupBox";
+            this.RAMTableGroupBox.Size = new System.Drawing.Size(75, 73);
+            this.RAMTableGroupBox.TabIndex = 21;
+            this.RAMTableGroupBox.TabStop = false;
+            this.RAMTableGroupBox.Text = "RAM table";
+            // 
+            // RAMTableComboBox
+            // 
+            this.RAMTableComboBox.DropDownHeight = 226;
+            this.RAMTableComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.RAMTableComboBox.Font = new System.Drawing.Font("Courier New", 8.25F);
+            this.RAMTableComboBox.FormattingEnabled = true;
+            this.RAMTableComboBox.IntegralHeight = false;
+            this.RAMTableComboBox.Items.AddRange(new object[] {
+            "F0",
+            "F1",
+            "F2",
+            "F3",
+            "F4",
+            "F5",
+            "F6",
+            "F7",
+            "F8",
+            "F9",
+            "FA",
+            "FB",
+            "FC",
+            "FD"});
+            this.RAMTableComboBox.Location = new System.Drawing.Point(8, 16);
+            this.RAMTableComboBox.Name = "RAMTableComboBox";
+            this.RAMTableComboBox.Size = new System.Drawing.Size(53, 22);
+            this.RAMTableComboBox.TabIndex = 30;
+            // 
+            // RAMTableSelectButton
+            // 
+            this.RAMTableSelectButton.Location = new System.Drawing.Point(7, 43);
+            this.RAMTableSelectButton.Name = "RAMTableSelectButton";
+            this.RAMTableSelectButton.Size = new System.Drawing.Size(55, 23);
+            this.RAMTableSelectButton.TabIndex = 20;
+            this.RAMTableSelectButton.Text = "Select";
+            this.RAMTableSelectButton.UseVisualStyleBackColor = true;
+            this.RAMTableSelectButton.Click += new System.EventHandler(this.RAMTableSelectButton_Click);
+            // 
             // EngineToolsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(397, 553);
+            this.Controls.Add(this.RAMTableGroupBox);
             this.Controls.Add(this.ConfigurationGroupBox);
             this.Controls.Add(this.SecurityGroupBox);
             this.Controls.Add(this.ResetMemoryGroupBox);
@@ -886,6 +941,7 @@
             this.SecurityGroupBox.ResumeLayout(false);
             this.SecurityGroupBox.PerformLayout();
             this.ConfigurationGroupBox.ResumeLayout(false);
+            this.RAMTableGroupBox.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -932,5 +988,8 @@
         private System.Windows.Forms.ComboBox ConfigurationComboBox;
         private System.Windows.Forms.Button ConfigurationGetButton;
         private System.Windows.Forms.Button ConfigurationGetPartNumberButton;
+        private System.Windows.Forms.GroupBox RAMTableGroupBox;
+        private System.Windows.Forms.Button RAMTableSelectButton;
+        private System.Windows.Forms.ComboBox RAMTableComboBox;
     }
 }

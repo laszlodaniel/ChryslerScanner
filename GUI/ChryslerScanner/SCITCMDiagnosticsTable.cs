@@ -14,8 +14,8 @@ namespace ChryslerScanner
         public List<ushort> IDByteList = new List<ushort>();
         public List<byte> UniqueIDByteList = new List<byte>();
 
-        public const int listStart = 5;
-        public int lastUpdatedLine = 1;
+        public const int ListStart = 5;
+        public int LastUpdatedLine = 1;
 
         public SCITCMDiagnosticsTable()
         {
@@ -52,27 +52,29 @@ namespace ChryslerScanner
                 if (!UniqueIDByteList.Contains(uniqueID)) UniqueIDByteList.Add(uniqueID);
 
                 IDByteList.Add(modifiedID);
-                IDByteList.Sort();
+
+                if (Properties.Settings.Default.SortByID == true) IDByteList.Sort();
+
                 location = IDByteList.FindIndex(x => x == modifiedID);
 
                 if (IDByteList.Count == 1)
                 {
-                    Table.RemoveAt(listStart);
-                    Table.Insert(listStart, row);
+                    Table.RemoveAt(ListStart);
+                    Table.Insert(ListStart, row);
                 }
                 else
                 {
-                    Table.Insert(listStart + location, row);
+                    Table.Insert(ListStart + location, row);
                 }
 
-                lastUpdatedLine = listStart + location;
+                LastUpdatedLine = ListStart + location;
             }
             else
             {
                 location = IDByteList.FindIndex(x => x == modifiedID);
-                Table.RemoveAt(listStart + location);
-                Table.Insert(listStart + location, row);
-                lastUpdatedLine = listStart + location;
+                Table.RemoveAt(ListStart + location);
+                Table.Insert(ListStart + location, row);
+                LastUpdatedLine = ListStart + location;
             }
         }
 

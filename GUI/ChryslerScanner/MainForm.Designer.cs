@@ -44,6 +44,7 @@
             this.IncludeTimestampInLogFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.CCDBusOnDemandToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.PCIBusOnDemandToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.SortMessagesByIDByteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.AboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.USBCommunicationGroupBox = new System.Windows.Forms.GroupBox();
             this.USBSendPacketButton = new System.Windows.Forms.Button();
@@ -171,12 +172,12 @@
             this.DiagnosticsResetViewButton = new System.Windows.Forms.Button();
             this.DiagnosticsTabControl = new System.Windows.Forms.TabControl();
             this.CCDBusDiagnosticsTabPage = new System.Windows.Forms.TabPage();
-            this.CCDBusDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
             this.PCIBusDiagnosticsTabPage = new System.Windows.Forms.TabPage();
-            this.PCIBusDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
             this.SCIBusPCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
-            this.SCIBusPCMDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
             this.SCIBusTCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
+            this.CCDBusDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
+            this.PCIBusDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
+            this.SCIBusPCMDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
             this.SCIBusTCMDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
             this.MenuStrip.SuspendLayout();
             this.USBCommunicationGroupBox.SuspendLayout();
@@ -223,7 +224,7 @@
             // UpdateToolStripMenuItem
             // 
             this.UpdateToolStripMenuItem.Name = "UpdateToolStripMenuItem";
-            this.UpdateToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
+            this.UpdateToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
             this.UpdateToolStripMenuItem.Text = "Update";
             this.UpdateToolStripMenuItem.Click += new System.EventHandler(this.UpdateToolStripMenuItem_Click);
             // 
@@ -231,7 +232,7 @@
             // 
             this.ReadMemoryToolStripMenuItem.Enabled = false;
             this.ReadMemoryToolStripMenuItem.Name = "ReadMemoryToolStripMenuItem";
-            this.ReadMemoryToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
+            this.ReadMemoryToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
             this.ReadMemoryToolStripMenuItem.Text = "Read memory";
             this.ReadMemoryToolStripMenuItem.Click += new System.EventHandler(this.ReadMemoryToolStripMenuItem_Click);
             // 
@@ -239,14 +240,14 @@
             // 
             this.WriteMemoryToolStripMenuItem.Enabled = false;
             this.WriteMemoryToolStripMenuItem.Name = "WriteMemoryToolStripMenuItem";
-            this.WriteMemoryToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
+            this.WriteMemoryToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
             this.WriteMemoryToolStripMenuItem.Text = "Write memory";
             this.WriteMemoryToolStripMenuItem.Click += new System.EventHandler(this.WriteMemoryToolStripMenuItem_Click);
             // 
             // SecurityKeyCalculatorToolStripMenuItem
             // 
             this.SecurityKeyCalculatorToolStripMenuItem.Name = "SecurityKeyCalculatorToolStripMenuItem";
-            this.SecurityKeyCalculatorToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
+            this.SecurityKeyCalculatorToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
             this.SecurityKeyCalculatorToolStripMenuItem.Text = "Security key calculator";
             this.SecurityKeyCalculatorToolStripMenuItem.Click += new System.EventHandler(this.SecuritySeedCalculatorToolStripMenuItem_Click);
             // 
@@ -254,7 +255,8 @@
             // 
             this.BootstrapToolsToolStripMenuItem.Enabled = false;
             this.BootstrapToolsToolStripMenuItem.Name = "BootstrapToolsToolStripMenuItem";
-            this.BootstrapToolsToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
+            this.BootstrapToolsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.B)));
+            this.BootstrapToolsToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
             this.BootstrapToolsToolStripMenuItem.Text = "Bootstrap tools";
             this.BootstrapToolsToolStripMenuItem.Click += new System.EventHandler(this.BootstrapToolsToolStripMenuItem_Click);
             // 
@@ -262,7 +264,8 @@
             // 
             this.EngineToolsToolStripMenuItem.Enabled = false;
             this.EngineToolsToolStripMenuItem.Name = "EngineToolsToolStripMenuItem";
-            this.EngineToolsToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
+            this.EngineToolsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.E)));
+            this.EngineToolsToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
             this.EngineToolsToolStripMenuItem.Text = "Engine tools";
             this.EngineToolsToolStripMenuItem.Click += new System.EventHandler(this.EngineToolsToolStripMenuItem_Click);
             // 
@@ -272,7 +275,8 @@
             this.UnitsToolStripMenuItem,
             this.IncludeTimestampInLogFilesToolStripMenuItem,
             this.CCDBusOnDemandToolStripMenuItem,
-            this.PCIBusOnDemandToolStripMenuItem});
+            this.PCIBusOnDemandToolStripMenuItem,
+            this.SortMessagesByIDByteToolStripMenuItem});
             this.SettingsToolStripMenuItem.Name = "SettingsToolStripMenuItem";
             this.SettingsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.SettingsToolStripMenuItem.Text = "Settings";
@@ -291,7 +295,7 @@
             this.MetricUnitsToolStripMenuItem.Checked = true;
             this.MetricUnitsToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.MetricUnitsToolStripMenuItem.Name = "MetricUnitsToolStripMenuItem";
-            this.MetricUnitsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.MetricUnitsToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
             this.MetricUnitsToolStripMenuItem.Text = "Metric";
             this.MetricUnitsToolStripMenuItem.Click += new System.EventHandler(this.MetricUnitsToolStripMenuItem_Click);
             // 
@@ -299,7 +303,7 @@
             // 
             this.ImperialUnitsToolStripMenuItem.CheckOnClick = true;
             this.ImperialUnitsToolStripMenuItem.Name = "ImperialUnitsToolStripMenuItem";
-            this.ImperialUnitsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.ImperialUnitsToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
             this.ImperialUnitsToolStripMenuItem.Text = "Imperial";
             this.ImperialUnitsToolStripMenuItem.Click += new System.EventHandler(this.ImperialUnitsToolStripMenuItem_Click);
             // 
@@ -321,10 +325,21 @@
             // 
             // PCIBusOnDemandToolStripMenuItem
             // 
+            this.PCIBusOnDemandToolStripMenuItem.CheckOnClick = true;
             this.PCIBusOnDemandToolStripMenuItem.Name = "PCIBusOnDemandToolStripMenuItem";
             this.PCIBusOnDemandToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
             this.PCIBusOnDemandToolStripMenuItem.Text = "PCI-bus on demand";
             this.PCIBusOnDemandToolStripMenuItem.Click += new System.EventHandler(this.PCIBusOnDemandToolStripMenuItem_Click);
+            // 
+            // SortMessagesByIDByteToolStripMenuItem
+            // 
+            this.SortMessagesByIDByteToolStripMenuItem.Checked = true;
+            this.SortMessagesByIDByteToolStripMenuItem.CheckOnClick = true;
+            this.SortMessagesByIDByteToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.SortMessagesByIDByteToolStripMenuItem.Name = "SortMessagesByIDByteToolStripMenuItem";
+            this.SortMessagesByIDByteToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
+            this.SortMessagesByIDByteToolStripMenuItem.Text = "Sort messages by ID byte";
+            this.SortMessagesByIDByteToolStripMenuItem.Click += new System.EventHandler(this.SortMessagesByIDByteToolStripMenuItem_Click);
             // 
             // AboutToolStripMenuItem
             // 
@@ -1758,17 +1773,6 @@
             this.CCDBusDiagnosticsTabPage.TabIndex = 0;
             this.CCDBusDiagnosticsTabPage.Text = "CCD-bus";
             // 
-            // CCDBusDiagnosticsListBox
-            // 
-            this.CCDBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
-            this.CCDBusDiagnosticsListBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
-            this.CCDBusDiagnosticsListBox.ItemHeight = 15;
-            this.CCDBusDiagnosticsListBox.Location = new System.Drawing.Point(2, 2);
-            this.CCDBusDiagnosticsListBox.Name = "CCDBusDiagnosticsListBox";
-            this.CCDBusDiagnosticsListBox.ScrollAlwaysVisible = true;
-            this.CCDBusDiagnosticsListBox.Size = new System.Drawing.Size(873, 484);
-            this.CCDBusDiagnosticsListBox.TabIndex = 0;
-            // 
             // PCIBusDiagnosticsTabPage
             // 
             this.PCIBusDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
@@ -1778,17 +1782,6 @@
             this.PCIBusDiagnosticsTabPage.Size = new System.Drawing.Size(877, 495);
             this.PCIBusDiagnosticsTabPage.TabIndex = 3;
             this.PCIBusDiagnosticsTabPage.Text = "PCI-bus";
-            // 
-            // PCIBusDiagnosticsListBox
-            // 
-            this.PCIBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
-            this.PCIBusDiagnosticsListBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
-            this.PCIBusDiagnosticsListBox.ItemHeight = 15;
-            this.PCIBusDiagnosticsListBox.Location = new System.Drawing.Point(2, 2);
-            this.PCIBusDiagnosticsListBox.Name = "PCIBusDiagnosticsListBox";
-            this.PCIBusDiagnosticsListBox.ScrollAlwaysVisible = true;
-            this.PCIBusDiagnosticsListBox.Size = new System.Drawing.Size(873, 484);
-            this.PCIBusDiagnosticsListBox.TabIndex = 1;
             // 
             // SCIBusPCMDiagnosticsTabPage
             // 
@@ -1801,6 +1794,39 @@
             this.SCIBusPCMDiagnosticsTabPage.TabIndex = 1;
             this.SCIBusPCMDiagnosticsTabPage.Text = "SCI-bus (PCM)";
             // 
+            // SCIBusTCMDiagnosticsTabPage
+            // 
+            this.SCIBusTCMDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
+            this.SCIBusTCMDiagnosticsTabPage.Controls.Add(this.SCIBusTCMDiagnosticsListBox);
+            this.SCIBusTCMDiagnosticsTabPage.Location = new System.Drawing.Point(4, 22);
+            this.SCIBusTCMDiagnosticsTabPage.Name = "SCIBusTCMDiagnosticsTabPage";
+            this.SCIBusTCMDiagnosticsTabPage.Padding = new System.Windows.Forms.Padding(3);
+            this.SCIBusTCMDiagnosticsTabPage.Size = new System.Drawing.Size(877, 495);
+            this.SCIBusTCMDiagnosticsTabPage.TabIndex = 2;
+            this.SCIBusTCMDiagnosticsTabPage.Text = "SCI-bus (TCM)";
+            // 
+            // CCDBusDiagnosticsListBox
+            // 
+            this.CCDBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
+            this.CCDBusDiagnosticsListBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.CCDBusDiagnosticsListBox.ItemHeight = 15;
+            this.CCDBusDiagnosticsListBox.Location = new System.Drawing.Point(2, 2);
+            this.CCDBusDiagnosticsListBox.Name = "CCDBusDiagnosticsListBox";
+            this.CCDBusDiagnosticsListBox.ScrollAlwaysVisible = true;
+            this.CCDBusDiagnosticsListBox.Size = new System.Drawing.Size(873, 484);
+            this.CCDBusDiagnosticsListBox.TabIndex = 0;
+            // 
+            // PCIBusDiagnosticsListBox
+            // 
+            this.PCIBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
+            this.PCIBusDiagnosticsListBox.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.PCIBusDiagnosticsListBox.ItemHeight = 15;
+            this.PCIBusDiagnosticsListBox.Location = new System.Drawing.Point(2, 2);
+            this.PCIBusDiagnosticsListBox.Name = "PCIBusDiagnosticsListBox";
+            this.PCIBusDiagnosticsListBox.ScrollAlwaysVisible = true;
+            this.PCIBusDiagnosticsListBox.Size = new System.Drawing.Size(873, 484);
+            this.PCIBusDiagnosticsListBox.TabIndex = 1;
+            // 
             // SCIBusPCMDiagnosticsListBox
             // 
             this.SCIBusPCMDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
@@ -1812,17 +1838,6 @@
             this.SCIBusPCMDiagnosticsListBox.SelectionMode = System.Windows.Forms.SelectionMode.None;
             this.SCIBusPCMDiagnosticsListBox.Size = new System.Drawing.Size(873, 484);
             this.SCIBusPCMDiagnosticsListBox.TabIndex = 0;
-            // 
-            // SCIBusTCMDiagnosticsTabPage
-            // 
-            this.SCIBusTCMDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
-            this.SCIBusTCMDiagnosticsTabPage.Controls.Add(this.SCIBusTCMDiagnosticsListBox);
-            this.SCIBusTCMDiagnosticsTabPage.Location = new System.Drawing.Point(4, 22);
-            this.SCIBusTCMDiagnosticsTabPage.Name = "SCIBusTCMDiagnosticsTabPage";
-            this.SCIBusTCMDiagnosticsTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.SCIBusTCMDiagnosticsTabPage.Size = new System.Drawing.Size(877, 495);
-            this.SCIBusTCMDiagnosticsTabPage.TabIndex = 2;
-            this.SCIBusTCMDiagnosticsTabPage.Text = "SCI-bus (TCM)";
             // 
             // SCIBusTCMDiagnosticsListBox
             // 
@@ -1847,10 +1862,12 @@
             this.Controls.Add(this.MenuStrip);
             this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.KeyPreview = true;
             this.MainMenuStrip = this.MenuStrip;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Chrysler Scanner";
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.MainForm_KeyDown);
             this.MenuStrip.ResumeLayout(false);
             this.MenuStrip.PerformLayout();
             this.USBCommunicationGroupBox.ResumeLayout(false);
@@ -2029,6 +2046,7 @@
         private System.Windows.Forms.ToolStripMenuItem EngineToolsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem PCIBusOnDemandToolStripMenuItem;
         private System.Windows.Forms.CheckBox SCIBusNGCModeCheckBox;
+        private System.Windows.Forms.ToolStripMenuItem SortMessagesByIDByteToolStripMenuItem;
     }
 }
 

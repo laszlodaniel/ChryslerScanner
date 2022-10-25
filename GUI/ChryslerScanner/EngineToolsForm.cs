@@ -21,6 +21,8 @@ namespace ChryslerScanner
         private byte DiagnosticItemCount = 0;
         private List<byte[]> DiagnosticItems = new List<byte[]>();
         private byte FirstDiagnosticItemID = 0;
+        private byte[] WordRequestFilter = new byte[6] { 0x0A, 0x0C, 0x27, 0x29, 0x35, 0x4B };
+        private byte WordRequestCount = 0;
 
         private enum SCI_ID
         {
@@ -37,32 +39,92 @@ namespace ChryslerScanner
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
             MainForm.Packet.PacketReceived += PacketReceivedHandler; // subscribe to the OnPacketReceived event
 
+            RAMTableComboBox.SelectedIndex = 4;
             ActuatorTestComboBox.SelectedIndex = 1;
             ResetMemoryComboBox.SelectedIndex = 1;
             SecurityLevelComboBox.SelectedIndex = 0;
             ConfigurationComboBox.SelectedIndex = 1;
+
+            if (OriginalForm.PCM.speed == "7812.5 baud")
+            {
+                LowSpeedLayout();
+            }
+            else if (OriginalForm.PCM.speed == "62500 baud")
+            {
+                HighSpeedLayout();
+                AddHighSpeedDiagnosticData((byte)(0xF0 + RAMTableComboBox.SelectedIndex));
+            }
 
             ActiveControl = ReadFaultCodesButton;
         }
 
         private void ReadFaultCodesButton_Click(object sender, EventArgs e)
         {
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-            MainForm.Packet.tx.payload = new byte[1] { 0x10 };
+            if (OriginalForm.PCM.speed == "7812.5 baud")
+            {
+                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+                MainForm.Packet.tx.payload = new byte[1] { 0x10 };
+            }
+            else if (OriginalForm.PCM.speed == "62500 baud")
+            {
+                bool success = int.TryParse(DiagnosticDataRepeatIntervalTextBox.Text, out int repeatInterval);
+
+                if (!success || (repeatInterval == 0))
+                {
+                    repeatInterval = 50;
+                    DiagnosticDataRepeatIntervalTextBox.Text = "50";
+                }
+
+                List<byte> payloadList = new List<byte>();
+                byte[] repeatIntervalArray = new byte[2];
+
+                repeatIntervalArray[0] = (byte)((repeatInterval >> 8) & 0xFF);
+                repeatIntervalArray[1] = (byte)(repeatInterval & 0xFF);
+
+                payloadList.Add((byte)Packet.Bus.pcm);
+                payloadList.AddRange(repeatIntervalArray);
+
+                MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
+                MainForm.Packet.tx.command = (byte)Packet.Command.settings;
+                MainForm.Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
+                MainForm.Packet.tx.payload = payloadList.ToArray();
+                MainForm.Packet.GeneratePacket();
+                OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:");
+
+                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.list;
+                MainForm.Packet.tx.payload = new byte[25] { 0x08, 0x02, 0xF4, 0x01, 0x02, 0xF4, 0x02, 0x02, 0xF4, 0x74, 0x02, 0xF4, 0x75, 0x02, 0xF4, 0x76, 0x02, 0xF4, 0x77, 0x02, 0xF4, 0x78, 0x02, 0xF4, 0x79 };
+            }
+            else
+            {
+                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+                MainForm.Packet.tx.payload = new byte[1] { 0x10 };
+            }
+
             MainForm.Packet.GeneratePacket();
             OriginalForm.TransmitUSBPacket("[<-TX] PCM fault code list request:");
         }
 
         private void EraseFaultCodesButton_Click(object sender, EventArgs e)
         {
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-            MainForm.Packet.tx.payload = new byte[1] { 0x17 };
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Erase PCM fault code(s) request:");
+            if (OriginalForm.PCM.speed == "7812.5 baud")
+            {
+                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+                MainForm.Packet.tx.payload = new byte[1] { 0x17 };
+                MainForm.Packet.GeneratePacket();
+                OriginalForm.TransmitUSBPacket("[<-TX] Erase PCM fault code(s) request:");
+            }
+            else
+            {
+                MessageBox.Show("Fault codes can only be erased in low-speed mode.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         }
 
         private void Baud976Button_Click(object sender, EventArgs e)
@@ -72,6 +134,9 @@ namespace ChryslerScanner
 
         private void Baud7812Button_Click(object sender, EventArgs e)
         {
+            LowSpeedLayout();
+            AddLowSpeedDiagnosticData();
+
             MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
             MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
             MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
@@ -82,12 +147,18 @@ namespace ChryslerScanner
 
         private void Baud62500Button_Click(object sender, EventArgs e)
         {
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-            MainForm.Packet.tx.payload = new byte[1] { 0x12 };
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Select SCI-bus high-speed mode:");
+            if (OriginalForm.PCM.speed == "7812.5 baud")
+            {
+                HighSpeedLayout();
+                AddHighSpeedDiagnosticData((byte)(0xF0 + RAMTableComboBox.SelectedIndex));
+
+                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+                MainForm.Packet.tx.payload = new byte[1] { 0x12 };
+                MainForm.Packet.GeneratePacket();
+                OriginalForm.TransmitUSBPacket("[<-TX] Select SCI-bus high-speed mode:");
+            }
         }
 
         private void Baud125000Button_Click(object sender, EventArgs e)
@@ -123,30 +194,7 @@ namespace ChryslerScanner
             {
                 if (DiagnosticDataRepeatIntervalCheckBox.Checked)
                 {
-                    bool success = int.TryParse(DiagnosticDataRepeatIntervalTextBox.Text, out int repeatInterval);
-
-                    if (!success || (repeatInterval == 0))
-                    {
-                        repeatInterval = 50;
-                        DiagnosticDataRepeatIntervalTextBox.Text = "50";
-                    }
-
-                    List<byte> payloadList = new List<byte>();
-                    byte[] repeatIntervalArray = new byte[2];
-
-                    repeatIntervalArray[0] = (byte)((repeatInterval >> 8) & 0xFF);
-                    repeatIntervalArray[1] = (byte)(repeatInterval & 0xFF);
-
-                    payloadList.Add((byte)Packet.Bus.pcm);
-                    payloadList.AddRange(repeatIntervalArray);
-
-                    MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
-                    MainForm.Packet.tx.command = (byte)Packet.Command.settings;
-                    MainForm.Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
-                    MainForm.Packet.tx.payload = payloadList.ToArray();
-                    MainForm.Packet.GeneratePacket();
-                    OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:");
-
+                    SetupRepeat();
                     MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
                 }
                 else
@@ -154,40 +202,37 @@ namespace ChryslerScanner
                     MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
                 }
 
-                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                MainForm.Packet.tx.payload = new byte[2] { 0x14, (byte)DiagnosticDataListBox.SelectedIndex };
-                MainForm.Packet.GeneratePacket();
-                OriginalForm.TransmitUSBPacket("[<-TX] Request diagnostic data:");
+                if (OriginalForm.PCM.speed == "7812.5 baud")
+                {
+                    MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                    MainForm.Packet.tx.payload = new byte[2] { 0x14, (byte)DiagnosticDataListBox.SelectedIndex };
+                    MainForm.Packet.GeneratePacket();
+                    OriginalForm.TransmitUSBPacket("[<-TX] Request diagnostic data:");
+                }
+                else if (OriginalForm.PCM.speed == "62500 baud")
+                {
+                    if (WordRequestFilter.Contains((byte)DiagnosticDataListBox.SelectedIndex))
+                    {
+                        MainForm.Packet.tx.payload = new byte[3] { (byte)(0xF0 + RAMTableComboBox.SelectedIndex), (byte)DiagnosticDataListBox.SelectedIndex, (byte)(DiagnosticDataListBox.SelectedIndex + 1) };
+                    }
+                    else
+                    {
+                        MainForm.Packet.tx.payload = new byte[2] { (byte)(0xF0 + RAMTableComboBox.SelectedIndex), (byte)DiagnosticDataListBox.SelectedIndex };
+                    }
+
+                    MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;                    
+                    MainForm.Packet.GeneratePacket();
+                    OriginalForm.TransmitUSBPacket("[<-TX] Request diagnostic data:");
+                }
             }
             else if (count > 1)
             {
+                SetupRepeat();
+
                 if (DiagnosticDataRepeatIntervalCheckBox.Checked)
                 {
-                    bool success = int.TryParse(DiagnosticDataRepeatIntervalTextBox.Text, out int repeatInterval);
-
-                    if (!success || (repeatInterval == 0))
-                    {
-                        repeatInterval = 50;
-                        DiagnosticDataRepeatIntervalTextBox.Text = "50";
-                    }
-
-                    List<byte> payloadList = new List<byte>();
-                    byte[] repeatIntervalArray = new byte[2];
-
-                    repeatIntervalArray[0] = (byte)((repeatInterval >> 8) & 0xFF);
-                    repeatIntervalArray[1] = (byte)(repeatInterval & 0xFF);
-
-                    payloadList.Add((byte)Packet.Bus.pcm);
-                    payloadList.AddRange(repeatIntervalArray);
-
-                    MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
-                    MainForm.Packet.tx.command = (byte)Packet.Command.settings;
-                    MainForm.Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
-                    MainForm.Packet.tx.payload = payloadList.ToArray();
-                    MainForm.Packet.GeneratePacket();
-                    OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:");
-
                     MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedList;
                 }
                 else
@@ -195,30 +240,92 @@ namespace ChryslerScanner
                     MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.list;
                 }
 
-                MainForm.Packet.tx.payload = new byte[(3 * count) + 1];
-                MainForm.Packet.tx.payload[0] = count;
-
-                for (int i = 0; i < count; i++)
+                if (OriginalForm.PCM.speed == "7812.5 baud")
                 {
-                    MainForm.Packet.tx.payload[1 + (i * 3)] = 2; // message length
-                    MainForm.Packet.tx.payload[1 + (i * 3) + 1] = 0x14; // request ID
-                    MainForm.Packet.tx.payload[1 + (i * 3) + 1 + 1] = (byte)DiagnosticDataListBox.SelectedIndices[i]; // request parameter
-                }
+                    MainForm.Packet.tx.payload = new byte[(3 * count) + 1];
+                    MainForm.Packet.tx.payload[0] = count;
 
-                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                MainForm.Packet.GeneratePacket();
-                OriginalForm.TransmitUSBPacket("[<-TX] Request diagnostic data:");
+                    ushort bp = 1; // buffer pointer
+
+                    for (int i = 0; i < count; i++)
+                    {
+                        MainForm.Packet.tx.payload[bp] = 2; // message length
+                        MainForm.Packet.tx.payload[bp + 1] = 0x14; // request ID
+                        MainForm.Packet.tx.payload[bp + 2] = (byte)DiagnosticDataListBox.SelectedIndices[i]; // request parameter
+                        bp += 3;
+                    }
+
+                    MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                    MainForm.Packet.GeneratePacket();
+                    OriginalForm.TransmitUSBPacket("[<-TX] Request diagnostic data:");
+                }
+                else if (OriginalForm.PCM.speed == "62500 baud")
+                {
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (WordRequestFilter.Contains((byte)DiagnosticDataListBox.SelectedIndices[i]))
+                        {
+                            WordRequestCount++;
+                        }
+                    }
+
+                    MainForm.Packet.tx.payload = new byte[1 + ((count - WordRequestCount) * 3) + WordRequestCount * 4];
+                    MainForm.Packet.tx.payload[0] = count;
+
+                    ushort bp = 1; // buffer pointer
+
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (WordRequestFilter.Contains((byte)DiagnosticDataListBox.SelectedIndices[i]))
+                        {
+                            MainForm.Packet.tx.payload[bp] = 3;
+                            MainForm.Packet.tx.payload[bp + 1] = (byte)(0xF0 + RAMTableComboBox.SelectedIndex);
+                            MainForm.Packet.tx.payload[bp + 2] = (byte)DiagnosticDataListBox.SelectedIndices[i];
+                            MainForm.Packet.tx.payload[bp + 3] = (byte)(DiagnosticDataListBox.SelectedIndices[i] + 1); // [i + 1] would be good too but only if next line is selected
+                            bp += 4;
+                        }
+                        else
+                        {
+                            MainForm.Packet.tx.payload[bp] = 2;
+                            MainForm.Packet.tx.payload[bp + 1] = (byte)(0xF0 + RAMTableComboBox.SelectedIndex);
+                            MainForm.Packet.tx.payload[bp + 2] = (byte)DiagnosticDataListBox.SelectedIndices[i];
+                            bp += 3;
+                        }
+                    }
+
+                    MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                    MainForm.Packet.GeneratePacket();
+                    OriginalForm.TransmitUSBPacket("[<-TX] Request diagnostic data:");
+                }
             }
 
             if (DiagnosticDataCSVCheckBox.Checked && (count > 0))
             {
                 DiagnosticItemCount = count;
                 DiagnosticItems.Clear();
-                
-                for (int i = 0; i < count; i++)
+
+                if (OriginalForm.PCM.speed == "7812.5 baud")
                 {
-                    DiagnosticItems.Add(new byte[2] { 0x14, (byte)DiagnosticDataListBox.SelectedIndices[i] });
+                    for (int i = 0; i < count; i++)
+                    {
+                        DiagnosticItems.Add(new byte[2] { 0x14, (byte)DiagnosticDataListBox.SelectedIndices[i] });
+                    }
+                }
+                else if (OriginalForm.PCM.speed == "62500 baud")
+                {
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (WordRequestFilter.Contains((byte)DiagnosticDataListBox.SelectedIndices[i]))
+                        {
+                            DiagnosticItems.Add(new byte[3] { (byte)(0xF0 + RAMTableComboBox.SelectedIndex), (byte)DiagnosticDataListBox.SelectedIndices[i], (byte)(DiagnosticDataListBox.SelectedIndices[i] + 1) });
+                        }
+                        else
+                        {
+                            DiagnosticItems.Add(new byte[2] { (byte)(0xF0 + RAMTableComboBox.SelectedIndex), (byte)DiagnosticDataListBox.SelectedIndices[i] });
+                        }
+                    }
                 }
 
                 string Header = "Milliseconds";
@@ -233,7 +340,7 @@ namespace ChryslerScanner
 
                 Header = Header.Replace(" ", ""); // remove whitespaces
 
-                if (Header != CSVHeader)
+                if (Header != CSVHeader) // header changed, create new file
                 {
                     string DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss");
                     CSVFilename = @"LOG/PCM/pcmlog_" + DateTimeNow + ".csv";
@@ -265,13 +372,13 @@ namespace ChryslerScanner
         {
             if (DiagnosticDataRepeatIntervalCheckBox.Checked)
             {
-                DiagnosticDataRepeatIntervalTextBox.Enabled = true;
-                MillisecondsLabel01.Enabled = true;
+                //DiagnosticDataRepeatIntervalTextBox.Enabled = true;
+                //MillisecondsLabel01.Enabled = true;
             }
             else
             {
-                DiagnosticDataRepeatIntervalTextBox.Enabled = false;
-                MillisecondsLabel01.Enabled = false;
+                //DiagnosticDataRepeatIntervalTextBox.Enabled = false;
+                //MillisecondsLabel01.Enabled = false;
             }
         }
 
@@ -507,9 +614,144 @@ namespace ChryslerScanner
 
                     if (SCIBusResponseBytes.Length > 0)
                     {
-                        switch (SCIBusResponseBytes[0])
+                        if (OriginalForm.PCM.speed == "7812.5 baud")
                         {
-                            case (byte)SCI_ID.DiagnosticData:
+
+                            switch (SCIBusResponseBytes[0])
+                            {
+                                case (byte)SCI_ID.DiagnosticData:
+                                    if (SCIBusResponseBytes.Length >= 3)
+                                    {
+                                        if (DiagnosticDataCSVCheckBox.Checked && (DiagnosticItemCount > 0))
+                                        {
+                                            DiagnosticItems.Add(SCIBusResponseBytes);
+
+                                            if ((DiagnosticItems.Count == 1) && (SCIBusResponseBytes[1] != FirstDiagnosticItemID)) // keep columns ordered
+                                            {
+                                                DiagnosticItems.Clear();
+                                            }
+                                        }
+
+                                        if ((DiagnosticItems.Count == DiagnosticItemCount) && (DiagnosticItemCount > 0))
+                                        {
+                                            uint Millis = (uint)((MainForm.Packet.rx.payload[0] << 24) + (MainForm.Packet.rx.payload[1] << 16) + (MainForm.Packet.rx.payload[2] << 8) + MainForm.Packet.rx.payload[3]);
+                                            CSVLine = Millis.ToString();
+
+                                            foreach (var item in DiagnosticItems)
+                                            {
+                                                CSVLine += "," + item[2].ToString();
+                                            }
+
+                                            File.AppendAllText(CSVFilename, Environment.NewLine + CSVLine);
+                                            DiagnosticItems.Clear();
+                                        }
+                                    }
+                                    else if (SCIBusResponseBytes.Length < 3)
+                                    {
+                                        if (DiagnosticDataCSVCheckBox.Checked)
+                                        {
+                                            DiagnosticItems.Add(new byte[3] { 0x14, 0x00, 0x00 }); // an invalid response would break the CSV-file format, add an empty response instead
+                                        }
+                                    }
+                                    break;
+                                case (byte)SCI_ID.GetSecuritySeedLegacy:
+                                    if (SCIBusResponseBytes.Length >= 4)
+                                    {
+                                        byte checksum = (byte)(SCIBusResponseBytes[0] + SCIBusResponseBytes[1] + SCIBusResponseBytes[2]);
+
+                                        if (SCIBusResponseBytes[3] == checksum)
+                                        {
+                                            ushort seed = (ushort)((SCIBusResponseBytes[1] << 8) + SCIBusResponseBytes[2]);
+
+                                            if (seed != 0)
+                                            {
+                                                ushort key = (ushort)((seed << 2) + 0x9018);
+                                                byte keyHB = (byte)(key >> 8);
+                                                byte keyLB = (byte)(key);
+                                                byte keyChecksum = (byte)(0x2C + keyHB + keyLB);
+                                                byte[] keyArray = { (byte)SCI_ID.SendSecurityKey, keyHB, keyLB, keyChecksum };
+
+                                                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+                                                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                                                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+                                                MainForm.Packet.tx.payload = keyArray;
+                                                MainForm.Packet.GeneratePacket();
+                                                OriginalForm.TransmitUSBPacket("[<-TX] Send level 1 security key:");
+                                            }
+                                        }
+                                    }
+                                    break;
+                                case (byte)SCI_ID.GetSecuritySeed:
+                                    if (SCIBusResponseBytes.Length >= 5)
+                                    {
+                                        if (SCIBusResponseBytes[1] == 0x01)
+                                        {
+                                            byte checksum = (byte)(SCIBusResponseBytes[0] + SCIBusResponseBytes[1] + SCIBusResponseBytes[2] + SCIBusResponseBytes[3]);
+
+                                            if (SCIBusResponseBytes[4] == checksum)
+                                            {
+                                                ushort seed = (ushort)((SCIBusResponseBytes[2] << 8) + SCIBusResponseBytes[3]);
+
+                                                if (seed != 0)
+                                                {
+                                                    ushort key = (ushort)((seed << 2) + 0x9018);
+                                                    byte keyHB = (byte)(key >> 8);
+                                                    byte keyLB = (byte)(key);
+                                                    byte keyChecksum = (byte)(0x2C + keyHB + keyLB);
+                                                    byte[] keyArray = { (byte)SCI_ID.SendSecurityKey, keyHB, keyLB, keyChecksum };
+
+                                                    MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+                                                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                                                    MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+                                                    MainForm.Packet.tx.payload = keyArray;
+                                                    MainForm.Packet.GeneratePacket();
+                                                    OriginalForm.TransmitUSBPacket("[<-TX] Send level 1 security key:");
+                                                }
+                                            }
+                                        }
+                                        else if (SCIBusResponseBytes[1] == 0x02)
+                                        {
+                                            byte checksum = (byte)(SCIBusResponseBytes[0] + SCIBusResponseBytes[1] + SCIBusResponseBytes[2] + SCIBusResponseBytes[3]);
+
+                                            if (SCIBusResponseBytes[4] == checksum)
+                                            {
+                                                ushort seed = (ushort)((SCIBusResponseBytes[2] << 8) + SCIBusResponseBytes[3]);
+
+                                                if (seed != 0)
+                                                {
+                                                    ushort key = (ushort)(seed & 0xFF00);
+                                                    key |= (ushort)(key >> 8);
+
+                                                    ushort mask = (ushort)(seed & 0xFF);
+                                                    mask |= (ushort)(mask << 8);
+                                                    key ^= 0x9340; // polinom
+                                                    key += 0x1010;
+                                                    key ^= mask;
+                                                    key += 0x1911;
+                                                    uint tmp = (uint)((key << 16) | key);
+                                                    key += (ushort)(tmp >> 3);
+                                                    byte keyHB = (byte)(key >> 8);
+                                                    byte keyLB = (byte)(key);
+                                                    byte keyChecksum = (byte)(0x2C + keyHB + keyLB);
+                                                    byte[] keyArray = { 0x2C, keyHB, keyLB, keyChecksum };
+
+                                                    MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+                                                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                                                    MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+                                                    MainForm.Packet.tx.payload = keyArray;
+                                                    MainForm.Packet.GeneratePacket();
+                                                    OriginalForm.TransmitUSBPacket("[<-TX] Send level 2 security key:");
+                                                }
+                                            }
+                                        }
+                                    }
+                                    break;
+                            }
+                        }
+                        else if (OriginalForm.PCM.speed == "62500 baud")
+                        {
+                            if ((SCIBusResponseBytes[0] >= 0xF0) && (SCIBusResponseBytes[0] <= 0xFD))
+                            {
                                 if (SCIBusResponseBytes.Length >= 3)
                                 {
                                     if (DiagnosticDataCSVCheckBox.Checked && (DiagnosticItemCount > 0))
@@ -540,106 +782,530 @@ namespace ChryslerScanner
                                 {
                                     if (DiagnosticDataCSVCheckBox.Checked)
                                     {
-                                        DiagnosticItems.Add(new byte[3] { 0x14, 0x00, 0x00 }); // an invalid response would break the CSV-file format, add an empty response instead
+                                        DiagnosticItems.Add(new byte[3] { (byte)(0xF0 + RAMTableComboBox.SelectedIndex), 0x00, 0x00 }); // an invalid response would break the CSV-file format, add an empty response instead
                                     }
                                 }
-                                break;
-                            case (byte)SCI_ID.GetSecuritySeedLegacy:
-                                if (SCIBusResponseBytes.Length >= 4)
-                                {
-                                    byte checksum = (byte)(SCIBusResponseBytes[0] + SCIBusResponseBytes[1] + SCIBusResponseBytes[2]);
-
-                                    if (SCIBusResponseBytes[3] == checksum)
-                                    {
-                                        ushort seed = (ushort)((SCIBusResponseBytes[1] << 8) + SCIBusResponseBytes[2]);
-
-                                        if (seed != 0)
-                                        {
-                                            ushort key = (ushort)((seed << 2) + 0x9018);
-                                            byte keyHB = (byte)(key >> 8);
-                                            byte keyLB = (byte)(key);
-                                            byte keyChecksum = (byte)(0x2C + keyHB + keyLB);
-                                            byte[] keyArray = { (byte)SCI_ID.SendSecurityKey, keyHB, keyLB, keyChecksum };
-
-                                            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                                            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                                            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                                            MainForm.Packet.tx.payload = keyArray;
-                                            MainForm.Packet.GeneratePacket();
-                                            OriginalForm.TransmitUSBPacket("[<-TX] Send level 1 security key:");
-                                        }
-                                    }
-                                }
-                                break;
-                            case (byte)SCI_ID.GetSecuritySeed:
-                                if (SCIBusResponseBytes.Length >= 5)
-                                {
-                                    if (SCIBusResponseBytes[1] == 0x01)
-                                    {
-                                        byte checksum = (byte)(SCIBusResponseBytes[0] + SCIBusResponseBytes[1] + SCIBusResponseBytes[2] + SCIBusResponseBytes[3]);
-
-                                        if (SCIBusResponseBytes[4] == checksum)
-                                        {
-                                            ushort seed = (ushort)((SCIBusResponseBytes[2] << 8) + SCIBusResponseBytes[3]);
-
-                                            if (seed != 0)
-                                            {
-                                                ushort key = (ushort)((seed << 2) + 0x9018);
-                                                byte keyHB = (byte)(key >> 8);
-                                                byte keyLB = (byte)(key);
-                                                byte keyChecksum = (byte)(0x2C + keyHB + keyLB);
-                                                byte[] keyArray = { (byte)SCI_ID.SendSecurityKey, keyHB, keyLB, keyChecksum };
-
-                                                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                                                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                                                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                                                MainForm.Packet.tx.payload = keyArray;
-                                                MainForm.Packet.GeneratePacket();
-                                                OriginalForm.TransmitUSBPacket("[<-TX] Send level 1 security key:");
-                                            }
-                                        }
-                                    }
-                                    else if (SCIBusResponseBytes[1] == 0x02)
-                                    {
-                                        byte checksum = (byte)(SCIBusResponseBytes[0] + SCIBusResponseBytes[1] + SCIBusResponseBytes[2] + SCIBusResponseBytes[3]);
-
-                                        if (SCIBusResponseBytes[4] == checksum)
-                                        {
-                                            ushort seed = (ushort)((SCIBusResponseBytes[2] << 8) + SCIBusResponseBytes[3]);
-
-                                            if (seed != 0)
-                                            {
-                                                ushort key = (ushort)(seed & 0xFF00);
-                                                key |= (ushort)(key >> 8);
-
-                                                ushort mask = (ushort)(seed & 0xFF);
-                                                mask |= (ushort)(mask << 8);
-                                                key ^= 0x9340; // polinom
-                                                key += 0x1010;
-                                                key ^= mask;
-                                                key += 0x1911;
-                                                uint tmp = (uint)((key << 16) | key);
-                                                key += (ushort)(tmp >> 3);
-                                                byte keyHB = (byte)(key >> 8);
-                                                byte keyLB = (byte)(key);
-                                                byte keyChecksum = (byte)(0x2C + keyHB + keyLB);
-                                                byte[] keyArray = { 0x2C, keyHB, keyLB, keyChecksum };
-
-                                                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                                                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                                                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                                                MainForm.Packet.tx.payload = keyArray;
-                                                MainForm.Packet.GeneratePacket();
-                                                OriginalForm.TransmitUSBPacket("[<-TX] Send level 2 security key:");
-                                            }
-                                        }
-                                    }
-                                }
-                                break;
+                            }
                         }
                     }
                     break;
             }
+        }
+
+        private void LowSpeedLayout()
+        {
+            //Baud7812Button.Enabled = false;
+            Baud7812Button.BackColor = Color.RoyalBlue;
+            Baud7812Button.ForeColor = Color.White;
+            Baud7812Button.FlatAppearance.BorderColor = Color.RoyalBlue;
+            Baud7812Button.FlatAppearance.BorderSize = 1;
+            //Baud62500Button.Enabled = true;
+            Baud62500Button.BackColor = SystemColors.ControlLight;
+            Baud62500Button.ForeColor = SystemColors.ControlText;
+            Baud62500Button.FlatAppearance.BorderColor = SystemColors.ActiveBorder;
+            Baud62500Button.FlatAppearance.BorderSize = 1;
+            RAMTableGroupBox.Enabled = false;
+            ActuatorTestGroupBox.Enabled = true;
+            DiagnosticDataGroupBox.Enabled = true;
+            SetIdleSpeedGroupBox.Enabled = true;
+            ResetMemoryGroupBox.Enabled = true;
+            ConfigurationGroupBox.Enabled = true;
+            SecurityGroupBox.Enabled = true;
+        }
+
+        private void AddLowSpeedDiagnosticData()
+        {
+            DiagnosticDataListBox.Items.Clear();
+            DiagnosticDataListBox.Items.AddRange(new object[] {
+            "1400 |",
+            "1401 | Battery temperature sensor voltage",
+            "1402 | Upstream O2 1/1 sensor voltage",
+            "1403 |",
+            "1404 |",
+            "1405 | Engine coolant temperature",
+            "1406 | Engine coolant temperature sensor voltage",
+            "1407 | Throttle position sensor voltage",
+            "1408 | Minimum throttle position sensor voltage",
+            "1409 | Knock sensor 1 voltage",
+            "140A | Battery voltage",
+            "140B | Intake manifold absolute pressure (MAP)",
+            "140C | Target IAC stepper motor position",
+            "140D |",
+            "140E | Long term fuel trim 1",
+            "140F | Barometric pressure",
+            "1410 | Minimum air flow test",
+            "1411 | Engine speed",
+            "1412 | Cam/Crank sync sense",
+            "1413 | Key-on cycles error 1",
+            "1414 |",
+            "1415 | Spark advance",
+            "1416 | Cylinder 1 retard",
+            "1417 | Cylinder 2 retard",
+            "1418 | Cylinder 3 retard",
+            "1419 | Cylinder 4 retard",
+            "141A | Target boost",
+            "141B | Intake air temperature",
+            "141C | Intake air temperature sensor voltage",
+            "141D | Cruise set speed",
+            "141E | Key-on cycles error 2",
+            "141F | Key-on cycles error 3",
+            "1420 | Cruise control status 1",
+            "1421 | Cylinder 1 retard",
+            "1422 |",
+            "1423 |",
+            "1424 | Battery charging voltage",
+            "1425 | Over 5 psi boost timer",
+            "1426 |",
+            "1427 | Vehicle theft alarm status",
+            "1428 | Wastegate duty cycle",
+            "1429 | Read fuel setting",
+            "142A | Read set sync",
+            "142B |",
+            "142C | Cruise switch voltage sense",
+            "142D | Ambient/Battery temperature",
+            "142E |",
+            "142F | Upstream O2 2/1 sensor voltage",
+            "1430 | Knock sensor 2 voltage",
+            "1431 | Long term fuel trim 2",
+            "1432 | A/C high-side pressure sensor voltage",
+            "1433 | A/C high-side pressure",
+            "1434 | Flex fuel sensor voltage",
+            "1435 | Flex fuel info 1",
+            "1436 |",
+            "1437 |",
+            "1438 |",
+            "1439 |",
+            "143A |",
+            "143B | Fuel system status 1",
+            "143C |",
+            "143D |",
+            "143E | Calpot voltage",
+            "143F | Downstream O2 1/2 sensor voltage",
+            "1440 | MAP sensor voltage",
+            "1441 | Vehicle speed",
+            "1442 | Upstream O2 1/1 sensor level",
+            "1443 |",
+            "1444 |",
+            "1445 | MAP vacuum",
+            "1446 | Throttle position relative",
+            "1447 | Spark advance",
+            "1448 | Upstream O2 2/1 sensor level",
+            "1449 | Downstream O2 2/2 sensor voltage",
+            "144A | Downstream O2 1/2 sensor level",
+            "144B | Downstream O2 2/2 sensor level",
+            "144C |",
+            "144D |",
+            "144E | Fuel level sensor voltage",
+            "144F | Fuel level",
+            "1450 |",
+            "1451 |",
+            "1452 |",
+            "1453 |",
+            "1454 |",
+            "1455 |",
+            "1456 |",
+            "1457 | Fuel system status 2",
+            "1458 | Cruise control status 1",
+            "1459 | Cruise control status 2",
+            "145A | Output shaft speed",
+            "145B | Governor pressure duty cycle",
+            "145C | Calculated engine load",
+            "145D |",
+            "145E |",
+            "145F | EGR position sensor voltage",
+            "1460 | EGR Zref update D.C.",
+            "1461 |",
+            "1462 |",
+            "1463 |",
+            "1464 | Actual purge current",
+            "1465 | Catalyst temperature sensor voltage",
+            "1466 | Catalyst temperature",
+            "1467 |",
+            "1468 |",
+            "1469 | Ambient temperature sensor voltage",
+            "146A |",
+            "146B |",
+            "146C |",
+            "146D | T-case switch voltage",
+            "146E |",
+            "146F |",
+            "1470 |",
+            "1471 |",
+            "1472 |",
+            "1473 |",
+            "1474 |",
+            "1475 |",
+            "1476 |",
+            "1477 |",
+            "1478 |",
+            "1479 |",
+            "147A | FCA current",
+            "147B |",
+            "147C | Oil temperature sensor voltage",
+            "147D | Oil temperature",
+            "147E |",
+            "147F |"});
+
+        }
+
+        private void HighSpeedLayout()
+        {
+            //Baud7812Button.Enabled = true;
+            Baud7812Button.BackColor = SystemColors.ControlLight;
+            Baud7812Button.ForeColor = SystemColors.ControlText;
+            Baud7812Button.FlatAppearance.BorderColor = SystemColors.ActiveBorder;
+            Baud7812Button.FlatAppearance.BorderSize = 1;
+            //Baud62500Button.Enabled = false;
+            Baud62500Button.BackColor = Color.IndianRed;
+            Baud62500Button.ForeColor = Color.White;
+            Baud62500Button.FlatAppearance.BorderColor = Color.IndianRed;
+            Baud62500Button.FlatAppearance.BorderSize = 1;
+            RAMTableGroupBox.Enabled = true;
+            ActuatorTestGroupBox.Enabled = false;
+            DiagnosticDataGroupBox.Enabled = true;
+            SetIdleSpeedGroupBox.Enabled = false;
+            ResetMemoryGroupBox.Enabled = false;
+            ConfigurationGroupBox.Enabled = false;
+            SecurityGroupBox.Enabled = false;
+        }
+
+        private void AddHighSpeedDiagnosticData(byte RAMTable)
+        {
+            DiagnosticDataListBox.Items.Clear();
+
+            switch (RAMTable)
+            {
+                case 0xF0:
+                    DiagnosticDataListBox.Items.AddRange(new object[] {
+                    "F000 |"});
+                    break;
+                case 0xF1:
+                    DiagnosticDataListBox.Items.AddRange(new object[] {
+                    "F100 |"});
+                    break;
+                case 0xF2:
+                    DiagnosticDataListBox.Items.AddRange(new object[] {
+                    "F200 |"});
+                    break;
+                case 0xF3:
+                    DiagnosticDataListBox.Items.AddRange(new object[] {
+                    "F300 |"});
+                    break;
+                case 0xF4:
+                    DiagnosticDataListBox.Items.AddRange(new object[] {
+                    "F400 |",
+                    "F401 | DTC 1",
+                    "F402 | DTC 8",
+                    "F403 | Key-on cycles error 1",
+                    "F404 | Key-on cycles error 2",
+                    "F405 | Key-on cycles error 3",
+                    "F406 | DTC counter 1",
+                    "F407 | DTC counter 2",
+                    "F408 | DTC counter 3",
+                    "F409 | DTC counter 4",
+                    "F40A0B | Engine speed",
+                    "F40B |",
+                    "F40C0D | Vehicle speed",
+                    "F40D |",
+                    "F40E | Cruise control button pressed",
+                    "F40F | Battery voltage",
+                    "F410 | Ambient temperature sensor voltage",
+                    "F411 | Ambient temperature",
+                    "F412 | Thorttle position sensor (TPS) voltage",
+                    "F413 | Minimum TPS voltage",
+                    "F414 | Calculated TPS voltage",
+                    "F415 | Engine coolant temperature sensor voltage",
+                    "F416 | Engine coolant temperature",
+                    "F417 | Intake MAP sensor voltage",
+                    "F418 | Intake manifold absolute pressure",
+                    "F419 | Barometric pressure",
+                    "F41A | MAP vacuum",
+                    "F41B | Upstream O2 1/1 sensor voltage",
+                    "F41C | Upstream O2 2/1 sensor voltage",
+                    "F41D | Intake air temperature sensor voltage",
+                    "F41E | Intake air temperature",
+                    "F41F | Knock sensor 1 voltage",
+                    "F420 | Knock sensor 2 voltage",
+                    "F421 | Cruise switch voltage",
+                    "F422 | Battery temperature sensor voltage",
+                    "F423 | Flex fuel sensor voltage",
+                    "F424 | Flex fuel ethanol percentage",
+                    "F425 | A/C high-side pressure sensor voltage",
+                    "F426 | A/C high-side pressure",
+                    "F42728 | Injector pulse width 1",
+                    "F428 |",
+                    "F4292A | Injector pulse width 2",
+                    "F42A |",
+                    "F42B | Long term fuel trim 1",
+                    "F42C | Long term fuel trim 2",
+                    "F42D | Engine coolant temperature 2",
+                    "F42E | Engine coolant temperature 3",
+                    "F42F | Spark advance",
+                    "F430 | Total knock retard",
+                    "F431 | Cylinder 1 retard",
+                    "F432 | Cylinder 2 retard",
+                    "F433 | Cylinder 3 retard",
+                    "F434 | Cylinder 4 retard",
+                    "F43536 | Target idle speed",
+                    "F436 |",
+                    "F437 | Target idle air control motor steps",
+                    "F438 |",
+                    "F439 |",
+                    "F43A | Charging voltage",
+                    "F43B | Cruise set speed",
+                    "F43C | Bit state 5",
+                    "F43D | Bit state 6",
+                    "F43E | Idle air control motor steps",
+                    "F43F | Cruise control status 1",
+                    "F440 | Vehicle theft alarm status",
+                    "F441 | Crankshaft/Camshaft sync state",
+                    "F442 | Fuel system status 1",
+                    "F443 | Current adaptive cell ID",
+                    "F444 | Short term fuel trim 1",
+                    "F445 | Short term fuel trim 2",
+                    "F446 | Emission settings 1",
+                    "F447 | Emission settings 2",
+                    "F448 | Downstream O2 1/2 sensor voltage",
+                    "F449 | Downstream O2 2/2 sensor voltage",
+                    "F44A | Closed loop timer",
+                    "F44B4C | Time from start/run",
+                    "F44C |",
+                    "F44D | Runtime at stall",
+                    "F44E | Current fuel shutoff",
+                    "F44F | History of fuel shutoff",
+                    "F450 |",
+                    "F451 | Adaptive numerator 1",
+                    "F452 |",
+                    "F453 |",
+                    "F454 |",
+                    "F455 |",
+                    "F456 |",
+                    "F457 | RPM/VSS ratio",
+                    "F458 |",
+                    "F459 |",
+                    "F45A | Dwell coil 1 (cylinders 1 & 4)",
+                    "F45B | Dwell coil 2 (cylinders 2 & 3)",
+                    "F45C | Dwell coil 3 (cylinders 3 & 6)",
+                    "F45D | Fan duty cycle",
+                    "F45E |",
+                    "F45F |",
+                    "F460 | A/C relay state",
+                    "F461 |",
+                    "F462 |",
+                    "F463 |",
+                    "F464 |",
+                    "F465 |",
+                    "F466 |",
+                    "F467 |",
+                    "F468 |",
+                    "F469 |",
+                    "F46A |",
+                    "F46B |",
+                    "F46C |",
+                    "F46D |",
+                    "F46E |",
+                    "F46F |",
+                    "F470 |",
+                    "F471 |",
+                    "F472 |",
+                    "F473 | Limp states",
+                    "F474 | DTC 2",
+                    "F475 | DTC 3",
+                    "F476 | DTC 4",
+                    "F477 | DTC 5",
+                    "F478 | DTC 6",
+                    "F479 | DTC 7",
+                    "F47A |",
+                    "F47B |",
+                    "F47C |",
+                    "F47D |",
+                    "F47E |",
+                    "F47F |",
+                    "F480 |",
+                    "F481 |",
+                    "F482 |",
+                    "F483 |",
+                    "F484 |",
+                    "F485 |",
+                    "F486 |",
+                    "F487 |",
+                    "F488 |",
+                    "F489 |",
+                    "F48A |",
+                    "F48B |",
+                    "F48C |",
+                    "F48D |",
+                    "F48E | Bit states 7",
+                    "F48F |",
+                    "F490 |",
+                    "F491 |",
+                    "F492 |",
+                    "F493 |",
+                    "F494 | EGR Zref update D.C.",
+                    "F495 | EGR position sensor voltage",
+                    "F496 | Actual purge current",
+                    "F497 |",
+                    "F498 | TPS intermittent counter",
+                    "F499 |",
+                    "F49A |",
+                    "F49B | Transmission temperature",
+                    "F49C |",
+                    "F49D |",
+                    "F49E |",
+                    "F49F |",
+                    "F4A0 |",
+                    "F4A1 |",
+                    "F4A2 |",
+                    "F4A3 | Cam timing position",
+                    "F4A4 | Engine good trip counter",
+                    "F4A5 | Engine warm-up cycle counter",
+                    "F4A6 | OBD2 monitor test results 1",
+                    "F4A7 |",
+                    "F4A8 |",
+                    "F4A9 | Fuel system status 1",
+                    "F4AA | Fuel system status 2",
+                    "F4AB | Engine load",
+                    "F4AC |",
+                    "F4AD | Short term fuel trim 1 A",
+                    "F4AE | Long term fuel trim 1 A",
+                    "F4AF | Short term fuel trim 2 A",
+                    "F4B0 | Long term fuel trum 2 A",
+                    "F4B1 | Intake manifold absolute pressure",
+                    "F4B2 | Engine speed",
+                    "F4B3 | Vehicle speed",
+                    "F4B4 | MAP vacuum",
+                    "F4B5 | Last emission related DTC stored",
+                    "F4B6 | Catalyst temperature sensor voltage",
+                    "F4B7 | Purge duty cycle",
+                    "F4B8 |",
+                    "F4B9 |",
+                    "F4BA |",
+                    "F4BB |",
+                    "F4BC |",
+                    "F4BD |",
+                    "F4BE |",
+                    "F4BF |",
+                    "F4C0 | Catalyst temperature",
+                    "F4C1 | Fuel level status 1",
+                    "F4C2 | Fuel level sensor voltage 3",
+                    "F4C3 |",
+                    "F4C4 |",
+                    "F4C5 |",
+                    "F4C6 |",
+                    "F4C7 |",
+                    "F4C8 |",
+                    "F4C9 |",
+                    "F4CA |",
+                    "F4CB |",
+                    "F4CC |",
+                    "F4CD |",
+                    "F4CE |",
+                    "F4CF |",
+                    "F4D0 |",
+                    "F4D1 |",
+                    "F4D2 |",
+                    "F4D3 |",
+                    "F4D4 |",
+                    "F4D5 |",
+                    "F4D6 |",
+                    "F4D7 |",
+                    "F4D8 |",
+                    "F4D9 |",
+                    "F4DA | P_PCM_NOC_STRDCAMTIME",
+                    "F4DB | Fuel level sensor voltage 2",
+                    "F4DC |",
+                    "F4DD |",
+                    "F4DE | Fuel level sensor voltage 1",
+                    "F4DF | Fuel level",
+                    "F4E0 |",
+                    "F4E1 |",
+                    "F4E2 |",
+                    "F4E3 | Calculated engine load",
+                    "F4E4 | OBD2 monitor test results 2",
+                    "F4E5 |",
+                    "F4E6 |",
+                    "F4E7 | Cell #1 - idle cell",
+                    "F4E8 | Cell #2 - 1st off idle cell",
+                    "F4E9 | Cell #3 - 2nd off idle cell",
+                    "F4EA |",
+                    "F4EB |",
+                    "F4EC | Fuel system status 2",
+                    "F4ED | Cruise control status 1",
+                    "F4EE | Cruise control satuts 2",
+                    "F4EF | Calculated TPS voltage"});
+                    break;
+                case 0xF5:
+                    DiagnosticDataListBox.Items.AddRange(new object[] {
+                    "F500 |"});
+                    break;
+                case 0xF6:
+                    DiagnosticDataListBox.Items.AddRange(new object[] {
+                    "F600 |"});
+                    break;
+                case 0xF7:
+                    DiagnosticDataListBox.Items.AddRange(new object[] {
+                    "F700 |"});
+                    break;
+                case 0xF8:
+                    DiagnosticDataListBox.Items.AddRange(new object[] {
+                    "F800 |"});
+                    break;
+                case 0xF9:
+                    DiagnosticDataListBox.Items.AddRange(new object[] {
+                    "F900 |"});
+                    break;
+                case 0xFA:
+                    DiagnosticDataListBox.Items.AddRange(new object[] {
+                    "FA00 |"});
+                    break;
+                case 0xFB:
+                    DiagnosticDataListBox.Items.AddRange(new object[] {
+                    "FB00 |"});
+                    break;
+                case 0xFC:
+                    DiagnosticDataListBox.Items.AddRange(new object[] {
+                    "FC00 |"});
+                    break;
+                case 0xFD:
+                    DiagnosticDataListBox.Items.AddRange(new object[] {
+                    "FD00 |"});
+                    break;
+                default:
+                    break;
+
+            }
+        }
+
+        private void SetupRepeat()
+        {
+            bool success = int.TryParse(DiagnosticDataRepeatIntervalTextBox.Text, out int repeatInterval);
+
+            if (!success || (repeatInterval == 0))
+            {
+                repeatInterval = 50;
+                DiagnosticDataRepeatIntervalTextBox.Text = "50";
+            }
+
+            List<byte> payloadList = new List<byte>();
+            byte[] repeatIntervalArray = new byte[2];
+
+            repeatIntervalArray[0] = (byte)((repeatInterval >> 8) & 0xFF);
+            repeatIntervalArray[1] = (byte)(repeatInterval & 0xFF);
+
+            payloadList.Add((byte)Packet.Bus.pcm);
+            payloadList.AddRange(repeatIntervalArray);
+
+            MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
+            MainForm.Packet.tx.command = (byte)Packet.Command.settings;
+            MainForm.Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
+            MainForm.Packet.tx.payload = payloadList.ToArray();
+            MainForm.Packet.GeneratePacket();
+            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:");
+        }
+
+        private void RAMTableSelectButton_Click(object sender, EventArgs e)
+        {
+            AddHighSpeedDiagnosticData((byte)(0xF0 + RAMTableComboBox.SelectedIndex));
         }
 
         private void EngineToolsForm_FormClosing(object sender, FormClosingEventArgs e)

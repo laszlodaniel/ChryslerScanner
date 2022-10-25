@@ -15,8 +15,8 @@ namespace ChryslerScanner
 
         public int B2Row = 5;
         public int F2Row = 6;
-        public const int listStart = 8;
-        public int lastUpdatedLine = 1;
+        public const int ListStart = 8;
+        public int LastUpdatedLine = 1;
 
         public CCDDiagnosticsTable()
         {
@@ -56,27 +56,29 @@ namespace ChryslerScanner
                 if (!UniqueIDByteList.Contains(uniqueID)) UniqueIDByteList.Add(uniqueID);
 
                 IDByteList.Add(modifiedID);
-                IDByteList.Sort();
+
+                if (Properties.Settings.Default.SortByID == true) IDByteList.Sort();
+
                 location = IDByteList.FindIndex(x => x == modifiedID);
 
                 if (IDByteList.Count == 1)
                 {
-                    Table.RemoveAt(listStart);
-                    Table.Insert(listStart, row);
+                    Table.RemoveAt(ListStart);
+                    Table.Insert(ListStart, row);
                 }
                 else
                 {
-                    Table.Insert(listStart + location, row);
+                    Table.Insert(ListStart + location, row);
                 }
 
-                lastUpdatedLine = listStart + location;
+                LastUpdatedLine = ListStart + location;
             }
             else if (IDByteList.Contains(modifiedID) && ((modifiedID >> 8) != 0xB2) && ((modifiedID >>8) != 0xF2)) // if it's not diagnostic request or response message
             {
                 location = IDByteList.FindIndex(x => x == modifiedID);
-                Table.RemoveAt(listStart + location);
-                Table.Insert(listStart + location, row);
-                lastUpdatedLine = listStart + location;
+                Table.RemoveAt(ListStart + location);
+                Table.Insert(ListStart + location, row);
+                LastUpdatedLine = ListStart + location;
             }
 
             switch (modifiedID >> 8)
@@ -88,14 +90,14 @@ namespace ChryslerScanner
                     Table.Insert(B2Row, row);
                     //Table.RemoveAt(F2Row);
                     //Table.Insert(F2Row, "│ F2 -- -- -- -- --       │ RESPONSE |                                          │                         │             │");
-                    lastUpdatedLine = B2Row;
+                    LastUpdatedLine = B2Row;
                     break;
                 case 0xF2:
                     if (!B2F2IDByteList.Contains(0xF2)) B2F2IDByteList.Add(0xF2);
                     B2F2IDByteList.Sort();
                     Table.RemoveAt(F2Row);
                     Table.Insert(F2Row, row);
-                    lastUpdatedLine = F2Row;
+                    LastUpdatedLine = F2Row;
                     break;
                 default:
                     break;

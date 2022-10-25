@@ -24,12 +24,12 @@ namespace ChryslerScanner
         public string GUIVersion = string.Empty;
         public string FWVersion = string.Empty;
         public string HWVersion = string.Empty;
-        private UInt64 deviceFirmwareTimestamp;
-        private string selectedPort = string.Empty;
+        private UInt64 DeviceFirmwareTimestamp;
+        private string SelectedPort = string.Empty;
         private bool timeout = false;
-        private bool deviceFound = false;
-        private const uint intEEPROMsize = 4096;
-        private const uint extEEPROMsize = 4096;
+        private bool DeviceFound = false;
+        private const uint IntEEPROMsize = 4096;
+        private const uint ExtEEPROMsize = 4096;
         private static bool PCMSelected = true;
         private static bool TCMSelected = false;
 
@@ -49,12 +49,12 @@ namespace ChryslerScanner
         public static string PCMEEPROMBinaryFilename;
         public static string TCMLogFilename;
 
-        private int lastCCDScrollBarPosition = 0;
-        private int lastPCIScrollBarPosition = 0;
-        private int lastPCMScrollBarPosition = 0;
-        private int lastTCMScrollBarPosition = 0;
+        private int LastCCDScrollBarPosition = 0;
+        private int LastPCIScrollBarPosition = 0;
+        private int LastPCMScrollBarPosition = 0;
+        private int LastTCMScrollBarPosition = 0;
 
-        private static ushort tableRefreshRate = 0;
+        private static ushort TableRefreshRate = 0;
 
         private List<string> CCDTableBuffer = new List<string>();
         private List<int> CCDTableBufferLocation = new List<int>();
@@ -145,22 +145,22 @@ namespace ChryslerScanner
             timeout = false;
 
             CCDTableRefreshTimer.Elapsed += new ElapsedEventHandler(CCDTableRefreshHandler);
-            CCDTableRefreshTimer.Interval = 25; // ms
+            CCDTableRefreshTimer.Interval = 5; // ms
             CCDTableRefreshTimer.AutoReset = true;
             CCDTableRefreshTimer.Enabled = true;
 
             PCITableRefreshTimer.Elapsed += new ElapsedEventHandler(PCITableRefreshHandler);
-            PCITableRefreshTimer.Interval = 25; // ms
+            PCITableRefreshTimer.Interval = 5; // ms
             PCITableRefreshTimer.AutoReset = true;
             PCITableRefreshTimer.Enabled = true;
 
             PCMTableRefreshTimer.Elapsed += new ElapsedEventHandler(PCMTableRefreshHandler);
-            PCMTableRefreshTimer.Interval = 25; // ms
+            PCMTableRefreshTimer.Interval = 5; // ms
             PCMTableRefreshTimer.AutoReset = true;
             PCMTableRefreshTimer.Enabled = true;
 
             TCMTableRefreshTimer.Elapsed += new ElapsedEventHandler(TCMTableRefreshHandler);
-            TCMTableRefreshTimer.Interval = 25; // ms
+            TCMTableRefreshTimer.Interval = 5; // ms
             TCMTableRefreshTimer.AutoReset = true;
             TCMTableRefreshTimer.Enabled = true;
 
@@ -216,6 +216,15 @@ namespace ChryslerScanner
                 PCIBusOnDemandToolStripMenuItem.Checked = false;
             }
 
+            if (Properties.Settings.Default.SortByID == true)
+            {
+                SortMessagesByIDByteToolStripMenuItem.Checked = true;
+            }
+            else
+            {
+                SortMessagesByIDByteToolStripMenuItem.Checked = false;
+            }
+
             ActiveControl = ConnectButton; // put focus on the connect button
         }
 
@@ -231,7 +240,7 @@ namespace ChryslerScanner
                 {
                     CCDBusDiagnosticsListBox.BeginUpdate();
 
-                    lastCCDScrollBarPosition = CCDBusDiagnosticsListBox.GetVerticalScrollPosition();
+                    LastCCDScrollBarPosition = CCDBusDiagnosticsListBox.GetVerticalScrollPosition();
 
                     // Update header line.
                     CCDBusDiagnosticsListBox.Items.RemoveAt(1);
@@ -248,7 +257,7 @@ namespace ChryslerScanner
                         CCDBusDiagnosticsListBox.Items.Insert(CCDTableBufferLocation[i], CCDTableBuffer[i]);
                     }
 
-                    CCDBusDiagnosticsListBox.SetVerticalScrollPosition(lastCCDScrollBarPosition);
+                    CCDBusDiagnosticsListBox.SetVerticalScrollPosition(LastCCDScrollBarPosition);
 
                     CCDBusDiagnosticsListBox.EndUpdate();
 
@@ -267,7 +276,7 @@ namespace ChryslerScanner
                 {
                     PCIBusDiagnosticsListBox.BeginUpdate();
 
-                    lastPCIScrollBarPosition = PCIBusDiagnosticsListBox.GetVerticalScrollPosition();
+                    LastPCIScrollBarPosition = PCIBusDiagnosticsListBox.GetVerticalScrollPosition();
 
                     // Update header line.
                     PCIBusDiagnosticsListBox.Items.RemoveAt(1);
@@ -284,7 +293,7 @@ namespace ChryslerScanner
                         PCIBusDiagnosticsListBox.Items.Insert(PCITableBufferLocation[i], PCITableBuffer[i]);
                     }
 
-                    PCIBusDiagnosticsListBox.SetVerticalScrollPosition(lastPCIScrollBarPosition);
+                    PCIBusDiagnosticsListBox.SetVerticalScrollPosition(LastPCIScrollBarPosition);
 
                     PCIBusDiagnosticsListBox.EndUpdate();
 
@@ -303,7 +312,7 @@ namespace ChryslerScanner
                 {
                     SCIBusPCMDiagnosticsListBox.BeginUpdate();
 
-                    lastPCMScrollBarPosition = SCIBusPCMDiagnosticsListBox.GetVerticalScrollPosition();
+                    LastPCMScrollBarPosition = SCIBusPCMDiagnosticsListBox.GetVerticalScrollPosition();
 
                     // Update header line.
                     SCIBusPCMDiagnosticsListBox.Items.RemoveAt(1);
@@ -320,7 +329,7 @@ namespace ChryslerScanner
                         SCIBusPCMDiagnosticsListBox.Items.Insert(PCMTableBufferLocation[i], PCMTableBuffer[i]);
                     }
 
-                    SCIBusPCMDiagnosticsListBox.SetVerticalScrollPosition(lastPCMScrollBarPosition);
+                    SCIBusPCMDiagnosticsListBox.SetVerticalScrollPosition(LastPCMScrollBarPosition);
 
                     SCIBusPCMDiagnosticsListBox.EndUpdate();
 
@@ -339,7 +348,7 @@ namespace ChryslerScanner
                 {
                     SCIBusTCMDiagnosticsListBox.BeginUpdate();
 
-                    lastTCMScrollBarPosition = SCIBusTCMDiagnosticsListBox.GetVerticalScrollPosition();
+                    LastTCMScrollBarPosition = SCIBusTCMDiagnosticsListBox.GetVerticalScrollPosition();
 
                     // Update header line.
                     SCIBusTCMDiagnosticsListBox.Items.RemoveAt(1);
@@ -356,7 +365,7 @@ namespace ChryslerScanner
                         SCIBusTCMDiagnosticsListBox.Items.Insert(TCMTableBufferLocation[i], TCMTableBuffer[i]);
                     }
 
-                    SCIBusTCMDiagnosticsListBox.SetVerticalScrollPosition(lastTCMScrollBarPosition);
+                    SCIBusTCMDiagnosticsListBox.SetVerticalScrollPosition(LastTCMScrollBarPosition);
 
                     SCIBusTCMDiagnosticsListBox.EndUpdate();
 
@@ -377,16 +386,16 @@ namespace ChryslerScanner
                 COMPortsComboBox.Items.AddRange(ports);
                 ConnectButton.Enabled = true;
 
-                if (selectedPort == string.Empty) // if no port has been selected
+                if (SelectedPort == string.Empty) // if no port has been selected
                 {
                     COMPortsComboBox.SelectedIndex = 0; // select first available port
-                    selectedPort = COMPortsComboBox.Text;
+                    SelectedPort = COMPortsComboBox.Text;
                 }
                 else
                 {
                     try
                     {
-                        COMPortsComboBox.SelectedIndex = COMPortsComboBox.Items.IndexOf(selectedPort); // try to find previously selected port
+                        COMPortsComboBox.SelectedIndex = COMPortsComboBox.Items.IndexOf(SelectedPort); // try to find previously selected port
                     }
                     catch
                     {
@@ -399,7 +408,7 @@ namespace ChryslerScanner
                 COMPortsComboBox.Items.Add("N/A");
                 ConnectButton.Enabled = false;
                 COMPortsComboBox.SelectedIndex = 0; // select "N/A"
-                selectedPort = string.Empty;
+                SelectedPort = string.Empty;
                 Util.UpdateTextBox(USBTextBox, "[INFO] No device available.");
             }
         }
@@ -1654,7 +1663,7 @@ namespace ChryslerScanner
                                             DateTime HardwareDate = Util.UnixTimeStampToDateTime((Packet.rx.payload[6] << 24) + (Packet.rx.payload[7] << 16) + (Packet.rx.payload[8] << 8) + Packet.rx.payload[9]);
                                             DateTime AssemblyDate = Util.UnixTimeStampToDateTime((Packet.rx.payload[14] << 24) + (Packet.rx.payload[15] << 16) + (Packet.rx.payload[16] << 8) + Packet.rx.payload[17]);
                                             DateTime FirmwareDate = Util.UnixTimeStampToDateTime((Packet.rx.payload[22] << 24) + (Packet.rx.payload[23] << 16) + (Packet.rx.payload[24] << 8) + Packet.rx.payload[25]);
-                                            deviceFirmwareTimestamp = (UInt64)((Packet.rx.payload[22] << 24) + (Packet.rx.payload[23] << 16) + (Packet.rx.payload[24] << 8) + Packet.rx.payload[25]);
+                                            DeviceFirmwareTimestamp = (UInt64)((Packet.rx.payload[22] << 24) + (Packet.rx.payload[23] << 16) + (Packet.rx.payload[24] << 8) + Packet.rx.payload[25]);
                                             string HardwareDateString = HardwareDate.ToString("yyyy.MM.dd HH:mm:ss");
                                             string AssemblyDateString = AssemblyDate.ToString("yyyy.MM.dd HH:mm:ss");
                                             string FirmwareDateString = FirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
@@ -2650,11 +2659,11 @@ namespace ChryslerScanner
                     }
                     break;
                 case (byte)Packet.Bus.pcm:
-                    if (Packet.rx.payload.Length > 4)
+                    switch (Packet.rx.mode)
                     {
-                        switch (Packet.rx.mode)
-                        {
-                            case (byte)Packet.SCISpeedMode.lowSpeed:
+                        case (byte)Packet.SCISpeedMode.lowSpeed:
+                            if (Packet.rx.payload.Length > 4)
+                            {
                                 switch (Packet.rx.payload[4]) // ID byte
                                 {
                                     case 0x10: // fault code list request
@@ -2733,16 +2742,36 @@ namespace ChryslerScanner
                                         Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) low-speed message:", Packet.rx.buffer);
                                         break;
                                 }
-                                break;
-                            case (byte)Packet.SCISpeedMode.highSpeed:
-                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) high-speed message:", Packet.rx.buffer);
-                                break;
-                            default:
-                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message:", Packet.rx.buffer);
-                                break;
-                        }
+                            }
+                            break;
+                        case (byte)Packet.SCISpeedMode.highSpeed:
+                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) high-speed message:", Packet.rx.buffer);
+                            break;
+                        default:
+                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message:", Packet.rx.buffer);
+                            break;
                     }
+
                     PCM.AddMessage(Packet.rx.payload.ToArray());
+                    
+                    //if ((Packet.rx.buffer.Length == 491) && (Packet.rx.mode == (byte)Packet.SCISpeedMode.highSpeed) && 
+                    //    (Packet.rx.payload[5] == 0x00) && (Packet.rx.payload[7] == 0x01) && (Packet.rx.payload[Packet.rx.payload.Length - 4] == 0xEE) && 
+                    //    (Packet.rx.payload[Packet.rx.payload.Length - 2] == 0xEF))
+                    //{
+                    //    byte[] timestamp = Packet.rx.payload.Take(4).ToArray();
+                    //    byte table = Packet.rx.payload[4];
+                    //    byte[] message;
+                    //    byte[] result = new byte[7];
+
+                    //    for (int i = 0; i < 240; i++)
+                    //    {
+                    //        message = Packet.rx.payload.Skip(5 + 2 * i).Take(2).ToArray();
+                    //        Array.Copy(timestamp, 0, result, 0, timestamp.Length);
+                    //        result[4] = table;
+                    //        Array.Copy(message, 0, result, 5, message.Length);
+                    //        PCM.AddMessage(result);
+                    //    }
+                    //}
                     break;
                 case (byte)Packet.Bus.tcm:
                     Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message:", Packet.rx.buffer);
@@ -2763,8 +2792,8 @@ namespace ChryslerScanner
             }
 
             // Add current line to the buffer.
-            CCDTableBuffer.Add(CCD.Diagnostics.Table[CCD.Diagnostics.lastUpdatedLine]);
-            CCDTableBufferLocation.Add(CCD.Diagnostics.lastUpdatedLine);
+            CCDTableBuffer.Add(CCD.Diagnostics.Table[CCD.Diagnostics.LastUpdatedLine]);
+            CCDTableBufferLocation.Add(CCD.Diagnostics.LastUpdatedLine);
             CCDTableRowCountHistory.Add(CCD.Diagnostics.Table.Count);
 
             //if (CCD.Diagnostics.lastUpdatedLine == CCD.Diagnostics.B2Row)
@@ -2784,8 +2813,8 @@ namespace ChryslerScanner
             }
 
             // Add current line to the buffer.
-            PCITableBuffer.Add(PCI.Diagnostics.Table[PCI.Diagnostics.lastUpdatedLine]);
-            PCITableBufferLocation.Add(PCI.Diagnostics.lastUpdatedLine);
+            PCITableBuffer.Add(PCI.Diagnostics.Table[PCI.Diagnostics.LastUpdatedLine]);
+            PCITableBufferLocation.Add(PCI.Diagnostics.LastUpdatedLine);
             PCITableRowCountHistory.Add(PCI.Diagnostics.Table.Count);
         }
 
@@ -2798,8 +2827,8 @@ namespace ChryslerScanner
             }
 
             // Add current line to the buffer.
-            PCMTableBuffer.Add(PCM.Diagnostics.Table[PCM.Diagnostics.lastUpdatedLine]);
-            PCMTableBufferLocation.Add(PCM.Diagnostics.lastUpdatedLine);
+            PCMTableBuffer.Add(PCM.Diagnostics.Table[PCM.Diagnostics.LastUpdatedLine]);
+            PCMTableBufferLocation.Add(PCM.Diagnostics.LastUpdatedLine);
             PCMTableRowCountHistory.Add(PCM.Diagnostics.Table.Count);
 
             // Add visible RAM-table to the buffer.
@@ -2823,8 +2852,8 @@ namespace ChryslerScanner
             }
 
             // Add current line to the buffer.
-            TCMTableBuffer.Add(TCM.Diagnostics.Table[TCM.Diagnostics.lastUpdatedLine]);
-            TCMTableBufferLocation.Add(TCM.Diagnostics.lastUpdatedLine);
+            TCMTableBuffer.Add(TCM.Diagnostics.Table[TCM.Diagnostics.LastUpdatedLine]);
+            TCMTableBufferLocation.Add(TCM.Diagnostics.LastUpdatedLine);
             TCMTableRowCountHistory.Add(TCM.Diagnostics.Table.Count);
         }
 
@@ -2902,7 +2931,7 @@ namespace ChryslerScanner
 
         private void COMPortsComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            selectedPort = COMPortsComboBox.Text;
+            SelectedPort = COMPortsComboBox.Text;
         }
 
         private void ConnectButton_Click(object sender, EventArgs e)
@@ -2957,7 +2986,7 @@ namespace ChryslerScanner
 
                             //TimeoutTimer.Start();
 
-                            while (!timeout && !deviceFound)
+                            while (!timeout && !DeviceFound)
                             {
                                 Thread.Sleep(1);
                                 
@@ -2983,7 +3012,7 @@ namespace ChryslerScanner
                                         //timeout = false;
                                         //Util.UpdateTextBox(USBTextBox, "[INFO] Handshake OK: " + receivedHandshake);
                                         Util.UpdateTextBox(USBTextBox, "[INFO] Device connected (" + Packet.Serial.PortName + ").");
-                                        deviceFound = true;
+                                        DeviceFound = true;
                                         ConnectButton.Text = "Disconnect";
                                         COMPortsComboBox.Enabled = false;
                                         COMPortsRefreshButton.Enabled = false;
@@ -3020,13 +3049,13 @@ namespace ChryslerScanner
                             //    Util.UpdateTextBox(USBTextBox, "[INFO] Device is not responding on " + Packet.Serial.PortName + ".");
                             //}
 
-                            if (deviceFound) break;
+                            if (DeviceFound) break;
                         }
                     }
 
                     ConnectButton.Enabled = true;
 
-                    if (!deviceFound)
+                    if (!DeviceFound)
                     {
                         COMPortsRefreshButton.Enabled = true;
                         COMPortsComboBox.Enabled = true;
@@ -3056,7 +3085,7 @@ namespace ChryslerScanner
                         WriteMemoryToolStripMenuItem.Enabled = false;
                         BootstrapToolsToolStripMenuItem.Enabled = false;
                         EngineToolsToolStripMenuItem.Enabled = false;
-                        deviceFound = false;
+                        DeviceFound = false;
                         timeout = false;
                         Util.UpdateTextBox(USBTextBox, "[INFO] Device disconnected (" + Packet.Serial.PortName + ").");
                         if (ReadMemory != null) ReadMemory.Close();
@@ -3207,7 +3236,7 @@ namespace ChryslerScanner
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Internal EEPROM byte read request:", Packet.tx.buffer);
                     await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
 
-                    if (offset > (intEEPROMsize - 1))
+                    if (offset > (IntEEPROMsize - 1))
                     {
                         MessageBox.Show("Internal EEPROM size exceeded (4096 bytes)!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
@@ -3226,7 +3255,7 @@ namespace ChryslerScanner
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Internal EEPROM block read request:", Packet.tx.buffer);
                     await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
 
-                    if ((offset + (readCount - 1)) > (intEEPROMsize - 1))
+                    if ((offset + (readCount - 1)) > (IntEEPROMsize - 1))
                     {
                         MessageBox.Show("Internal EEPROM size exceeded (4096 bytes)!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
@@ -3248,7 +3277,7 @@ namespace ChryslerScanner
                     Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM byte read request:", Packet.tx.buffer);
                     await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
 
-                    if (offset > (extEEPROMsize - 1))
+                    if (offset > (ExtEEPROMsize - 1))
                     {
                         MessageBox.Show("External EEPROM size exceeded (4096 bytes)!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
@@ -3267,7 +3296,7 @@ namespace ChryslerScanner
                     Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM block read request:", Packet.tx.buffer);
                     await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
 
-                    if ((offset + (readCount - 1)) > (extEEPROMsize - 1))
+                    if ((offset + (readCount - 1)) > (ExtEEPROMsize - 1))
                     {
                         MessageBox.Show("External EEPROM size exceeded (4096 bytes)!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
@@ -3312,7 +3341,7 @@ namespace ChryslerScanner
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Internal EEPROM byte write request:", Packet.tx.buffer);
                     await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
 
-                    if (offset > (intEEPROMsize - 1))
+                    if (offset > (IntEEPROMsize - 1))
                     {
                         MessageBox.Show("Internal EEPROM size exceeded (4096 bytes)!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
@@ -3331,7 +3360,7 @@ namespace ChryslerScanner
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Internal EEPROM block write request:", Packet.tx.buffer);
                     await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
 
-                    if ((offset + (writeCount - 1)) > (intEEPROMsize - 1))
+                    if ((offset + (writeCount - 1)) > (IntEEPROMsize - 1))
                     {
                         MessageBox.Show("Internal EEPROM size exceeded (4096 bytes)!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
@@ -3357,7 +3386,7 @@ namespace ChryslerScanner
                     Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM byte write request:", Packet.tx.buffer);
                     await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
 
-                    if (offset > (extEEPROMsize - 1))
+                    if (offset > (ExtEEPROMsize - 1))
                     {
                         MessageBox.Show("External EEPROM size exceeded (4096 bytes)!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
@@ -3376,7 +3405,7 @@ namespace ChryslerScanner
                     Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM block write request:", Packet.tx.buffer);
                     await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
 
-                    if ((offset + (writeCount - 1)) > (extEEPROMsize - 1))
+                    if ((offset + (writeCount - 1)) > (ExtEEPROMsize - 1))
                     {
                         MessageBox.Show("External EEPROM size exceeded (4096 bytes)!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
@@ -5102,7 +5131,7 @@ namespace ChryslerScanner
                     CCDTableBuffer.Clear();
                     CCDTableBufferLocation.Clear();
                     CCDTableRowCountHistory.Clear();
-                    CCD.Diagnostics.lastUpdatedLine = 1;
+                    CCD.Diagnostics.LastUpdatedLine = 1;
                     CCD.Diagnostics.InitCCDTable();
                     CCDBusDiagnosticsListBox.Items.Clear();
                     CCDBusDiagnosticsListBox.Items.AddRange(CCD.Diagnostics.Table.ToArray());
@@ -5114,7 +5143,7 @@ namespace ChryslerScanner
                     PCITableBuffer.Clear();
                     PCITableBufferLocation.Clear();
                     PCITableRowCountHistory.Clear();
-                    PCI.Diagnostics.lastUpdatedLine = 1;
+                    PCI.Diagnostics.LastUpdatedLine = 1;
                     PCI.Diagnostics.InitPCITable();
                     PCIBusDiagnosticsListBox.Items.Clear();
                     PCIBusDiagnosticsListBox.Items.AddRange(PCI.Diagnostics.Table.ToArray());
@@ -5125,7 +5154,7 @@ namespace ChryslerScanner
                     PCMTableBuffer.Clear();
                     PCMTableBufferLocation.Clear();
                     PCMTableRowCountHistory.Clear();
-                    PCM.Diagnostics.lastUpdatedLine = 1;
+                    PCM.Diagnostics.LastUpdatedLine = 1;
                     PCM.Diagnostics.InitSCIPCMTable();
                     PCM.Diagnostics.InitRAMDumpTable();
                     PCM.Diagnostics.RAMDumpTableVisible = false;
@@ -5139,7 +5168,7 @@ namespace ChryslerScanner
                     TCMTableBuffer.Clear();
                     TCMTableBufferLocation.Clear();
                     TCMTableRowCountHistory.Clear();
-                    TCM.Diagnostics.lastUpdatedLine = 1;
+                    TCM.Diagnostics.LastUpdatedLine = 1;
                     TCM.Diagnostics.InitSCITCMTable();
                     //TCM.Diagnostics.InitRAMDumpTable();
                     //TCM.Diagnostics.RAMDumpTableVisible = false;
@@ -5497,7 +5526,7 @@ namespace ChryslerScanner
                     MessageBox.Show("Firmware update availability cannot be checked.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
 
-                if (File.Exists(@"Update/ChryslerCCDSCIScanner.ino") && deviceFound)
+                if (File.Exists(@"Update/ChryslerCCDSCIScanner.ino") && DeviceFound)
                 {
                     // Get new version/UNIX time value from the downloaded file
                     string line = string.Empty;
@@ -5578,7 +5607,7 @@ namespace ChryslerScanner
                                         Process process = new Process();
                                         process.StartInfo.WorkingDirectory = "Tools";
                                         process.StartInfo.FileName = "avrdude.exe";
-                                        process.StartInfo.Arguments = "-C avrdude.conf -p m2560 -c wiring -P " + selectedPort + " -b 115200 -D -U flash:w:ChryslerCCDSCIScanner.ino.mega.hex:i";
+                                        process.StartInfo.Arguments = "-C avrdude.conf -p m2560 -c wiring -P " + SelectedPort + " -b 115200 -D -U flash:w:ChryslerCCDSCIScanner.ino.mega.hex:i";
                                         process.Start();
                                         process.WaitForExit();
                                         this.Refresh();
@@ -5610,7 +5639,7 @@ namespace ChryslerScanner
 
                     File.Delete(@"Update/ChryslerCCDSCIScanner.ino");
                 }
-                else if (!deviceFound)
+                else if (!DeviceFound)
                 {
                     File.Delete(@"Update/ChryslerCCDSCIScanner.ino");
                     MessageBox.Show("Device firmware update cannot be checked." + Environment.NewLine +
@@ -5632,7 +5661,7 @@ namespace ChryslerScanner
                     MessageBox.Show("Firmware update availability cannot be checked.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
 
-                if (File.Exists(@"Update/CMakeLists.txt") && deviceFound)
+                if (File.Exists(@"Update/CMakeLists.txt") && DeviceFound)
                 {
                     string line = string.Empty;
                     bool done = false;
@@ -5696,7 +5725,7 @@ namespace ChryslerScanner
                                         Process process = new Process();
                                         process.StartInfo.WorkingDirectory = "Tools";
                                         process.StartInfo.FileName = "esptool.exe";
-                                        process.StartInfo.Arguments = "--chip esp32 --port " + selectedPort + " --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader.bin 0x8000 partition_custom_table.bin 0xe000 ota_data_initial.bin 0x10000 ChryslerScanner.bin";
+                                        process.StartInfo.Arguments = "--chip esp32 --port " + SelectedPort + " --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader.bin 0x8000 partition_custom_table.bin 0xe000 ota_data_initial.bin 0x10000 ChryslerScanner.bin";
                                         process.Start();
                                         process.WaitForExit();
                                         this.Refresh();
@@ -5728,7 +5757,7 @@ namespace ChryslerScanner
 
                     File.Delete(@"Update/CMakeLists.txt");
                 }
-                else if (!deviceFound)
+                else if (!DeviceFound)
                 {
                     File.Delete(@"Update/CMakeLists.txt");
                     MessageBox.Show("Device firmware update cannot be checked." + Environment.NewLine +
@@ -5849,6 +5878,9 @@ namespace ChryslerScanner
                     var y = Location.Y + (Height - BootstrapTools.Height) / 2;
                     BootstrapTools.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
                 }
+
+                DeviceTabControl.SelectedTab = SCIBusControlTabPage;
+                DiagnosticsTabControl.SelectedTab = SCIBusPCMDiagnosticsTabPage;
             }
             else
             {
@@ -5875,6 +5907,9 @@ namespace ChryslerScanner
                     var y = Location.Y + (Height - EngineTools.Height) / 2;
                     EngineTools.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
                 }
+
+                DeviceTabControl.SelectedTab = SCIBusControlTabPage;
+                DiagnosticsTabControl.SelectedTab = SCIBusPCMDiagnosticsTabPage;
             }
             else
             {
@@ -5947,6 +5982,20 @@ namespace ChryslerScanner
             }
         }
 
+        private void SortMessagesByIDByteToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (SortMessagesByIDByteToolStripMenuItem.Checked)
+            {
+                Properties.Settings.Default.SortByID = true;
+                Properties.Settings.Default.Save(); // save setting in application configuration file
+            }
+            else
+            {
+                Properties.Settings.Default.SortByID = false;
+                Properties.Settings.Default.Save(); // save setting in application configuration file
+            }
+        }
+
         private void AboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
             About = new AboutForm(this)
@@ -5959,6 +6008,22 @@ namespace ChryslerScanner
         }
 
         #endregion
+
+        private void MainForm_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (DeviceFound)
+            {
+                if (e.Control && e.KeyCode == Keys.B) // Ctrl+B shortcut
+                {
+                    BootstrapToolsToolStripMenuItem_Click(this, EventArgs.Empty);
+                }
+
+                if (e.Control && e.KeyCode == Keys.E) // Ctrl+E shortcut
+                {
+                    EngineToolsToolStripMenuItem_Click(this, EventArgs.Empty);
+                }
+            }
+        }
     }
 
     public static class StringExt

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -9,10 +10,10 @@ namespace ChryslerScanner
     {
         public PCIDiagnosticsTable Diagnostics = new PCIDiagnosticsTable();
 
-        private const int hexBytesColumnStart = 2;
-        private const int descriptionColumnStart = 28;
-        private const int valueColumnStart = 82;
-        private const int unitColumnStart = 108;
+        private const int HexBytesColumnStart = 2;
+        private const int DescriptionColumnStart = 28;
+        private const int ValueColumnStart = 82;
+        private const int UnitColumnStart = 108;
         private string state = string.Empty;
         private string speed = "10416 baud";
         private string logic = "non-inverted";
@@ -56,8 +57,6 @@ namespace ChryslerScanner
         {
             if ((data == null) || (data.Length < 5)) return;
 
-            StringBuilder rowToAdd = new StringBuilder(EmptyLine); // add empty line first
-
             byte[] timestamp = new byte[4];
             byte[] message = new byte[] { };
             byte[] payload = new byte[] { };
@@ -92,18 +91,18 @@ namespace ChryslerScanner
                 modifiedID = (ushort)((ID << 8) & 0xFF00); // keep ID byte only (XX 00)
             }
 
-            string descriptionToInsert;
-            string valueToInsert = string.Empty;
-            string unitToInsert = string.Empty;
+            string DescriptionToInsert;
+            string ValueToInsert = string.Empty;
+            string UnitToInsert = string.Empty;
 
             switch (ID)
             {
                 case 0x10:
-                    descriptionToInsert = "ENGINE SPEED | VEHICLE SPEED | MAP SENSOR";
+                    DescriptionToInsert = "ENGINE SPEED | VEHICLE SPEED | MAP";
 
                     if (message.Length >= 7)
                     {
-                        double EngineSpeed = (((payload[0] << 8) + payload[1]) * 0.25);
+                        double EngineSpeed = ((payload[0] << 8) + payload[1]) * 0.25;
                         double VehicleSpeedMPH = ((payload[2] << 8) + payload[3]) * 0.0049;
                         double VehicleSpeedKMH = ((payload[2] << 8) + payload[3]) * 0.0049 * 1.609344;
                         byte MAPKPA = payload[4];
@@ -111,18 +110,18 @@ namespace ChryslerScanner
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            descriptionToInsert = "ENGINE: " + EngineSpeed.ToString("0.00").Replace(",", ".") + " RPM | VEHICLE: " + VehicleSpeedMPH.ToString("0.00").Replace(",", ".") + " MPH";
-                            valueToInsert = "MAP: " + MAPPSI.ToString("0.00").Replace(",", ".") + " PSI";
+                            DescriptionToInsert = "ENGINE: " + Math.Round(EngineSpeed, 1).ToString("0.0").Replace(",", ".") + " RPM | VEHICLE: " + Math.Round(VehicleSpeedMPH, 1).ToString("0.0").Replace(",", ".") + " MPH";
+                            ValueToInsert = "MAP: " + Math.Round(MAPPSI, 1).ToString("0.0").Replace(",", ".") + " PSI";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            descriptionToInsert = "ENGINE: " + EngineSpeed.ToString("0.00").Replace(",", ".") + " RPM | VEHICLE: " + VehicleSpeedKMH.ToString("0.00").Replace(",", ".") + " KM/H";
-                            valueToInsert = "MAP: " + MAPKPA.ToString("0") + " KPA";
+                            DescriptionToInsert = "ENGINE: " + Math.Round(EngineSpeed, 1).ToString("0.0").Replace(",", ".") + " RPM | VEHICLE: " + Math.Round(VehicleSpeedKMH, 1).ToString("0.0").Replace(",", ".") + " KM/H";
+                            ValueToInsert = "MAP: " + MAPKPA.ToString("0") + " KPA";
                         }
                     }
                     break;
                 case 0x14:
-                    descriptionToInsert = "VEHICLE SPEED SENSOR";
+                    DescriptionToInsert = "VEHICLE SPEED SENSOR";
 
                     if (message.Length >= 4)
                     {
@@ -134,90 +133,147 @@ namespace ChryslerScanner
                         {
                             if (DistancePulse != 0xFFFF)
                             {
-                                valueToInsert = Math.Round(VehicleSpeedMPH, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(VehicleSpeedMPH, 1).ToString("0.0").Replace(",", ".");
                             }
                             else
                             {
-                                valueToInsert = "0.0";
+                                ValueToInsert = "0.0";
                             }
 
-                            unitToInsert = "MPH";
+                            UnitToInsert = "MPH";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
                             if (DistancePulse != 0xFFFF)
                             {
-                                valueToInsert = Math.Round(VehicleSpeedKMH, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(VehicleSpeedKMH, 1).ToString("0.0").Replace(",", ".");
                             }
                             else
                             {
-                                valueToInsert = "0.0";
+                                ValueToInsert = "0.0";
                             }
 
-                            unitToInsert = "KM/H";
+                            UnitToInsert = "KM/H";
                         }
                     }
                     break;
                 case 0x1A:
-                    descriptionToInsert = "TPS | CRUISE SPEED | N/A | TARGET IDLE";
+                    DescriptionToInsert = "TPS | CRUISE SPEED | N/A | TARGET IDLE";
 
                     if (message.Length >= 6)
                     {
                         double TPSVolts = payload[0] * 0.0191;
                         byte CruiseSpeedKMH = payload[1];
-                        byte CruiseSpeedMPH = (byte)(payload[1] * 1.609344);
+                        double CruiseSpeedMPH = (byte)(payload[1] * 1.609344);
                         double TargetIdle = payload[3] * 0.25 * 32.0;
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            descriptionToInsert = "TPS: " + TPSVolts.ToString("0.000").Replace(",", ".") + " V | CRUISE SPEED: " + CruiseSpeedMPH.ToString("0") + " MPH | " + "N/A: " + Util.ByteToHexString(payload, 2, 1);
-                            valueToInsert = "TARGET IDLE: " + TargetIdle.ToString("0") + " RPM";
+                            DescriptionToInsert = "TPS: " + Math.Round(TPSVolts, 3).ToString("0.000").Replace(",", ".") + " V | CRUISE SPEED: " + Math.Round(CruiseSpeedMPH).ToString("0") + " MPH | " + "N/A: " + Util.ByteToHexString(payload, 2, 1);
+                            ValueToInsert = "TARGET IDLE: " + Math.Round(TargetIdle).ToString("0") + " RPM";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            descriptionToInsert = "TPS: " + TPSVolts.ToString("0.000").Replace(",", ".") + " V | CRUISE SPEED: " + CruiseSpeedKMH.ToString("0") + " KM/H | " + "N/A: " + Util.ByteToHexString(payload, 2, 1);
-                            valueToInsert = "TARGET IDLE: " + TargetIdle.ToString("0") + " RPM";
+                            DescriptionToInsert = "TPS: " + Math.Round(TPSVolts, 3).ToString("0.000").Replace(",", ".") + " V | CRUISE SPEED: " + CruiseSpeedKMH.ToString("0") + " KM/H | " + "N/A: " + Util.ByteToHexString(payload, 2, 1);
+                            ValueToInsert = "TARGET IDLE: " + Math.Round(TargetIdle).ToString("0") + " RPM";
                         }
                     }
                     break;
-                case 0x35:
-                    descriptionToInsert = "MIC LAMP STATUS";
+                case 0x1F:
+                    DescriptionToInsert = "INSTRUMENT CLUSTER STATUS";
 
                     if (message.Length >= 4)
                     {
-                        valueToInsert = Util.ByteToHexString(payload, 0, 2);
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 2);
+                    }
+                    break;
+                case 0x2B:
+                    DescriptionToInsert = "AUTOMATIC TEMPERATURE CONTROL STATUS";
+
+                    if (message.Length >= 5)
+                    {
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 3);
+                    }
+                    break;
+                case 0x2D:
+                    DescriptionToInsert = "INSTRUMENT CLUSTER LAMP STATUS";
+
+                    if (message.Length >= 4)
+                    {
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 2);
+                    }
+                    break;
+                case 0x33:
+                    DescriptionToInsert = "SEAT BELT SWITCH";
+
+                    if (message.Length >= 3)
+                    {
+                        if (Util.IsBitSet(payload[0], 0)) ValueToInsert = "CLOSED";
+                        else ValueToInsert = "OPEN";
+                    }
+                    break;
+                case 0x35:
+                    DescriptionToInsert = "MIC LAMP STATUS";
+
+                    if (message.Length >= 4)
+                    {
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 2);
                     }
                     break;
                 case 0x37:
-                    descriptionToInsert = "SHIFT LEVER POSITION";
+                    DescriptionToInsert = "SHIFT LEVER POSITION";
 
                     if (message.Length >= 4)
                     {
                         switch (payload[0])
                         {
                             case 0x01:
-                                valueToInsert = "PARK";
+                                ValueToInsert = "PARK";
                                 break;
                             case 0x02:
-                                valueToInsert = "REVERSE";
+                                ValueToInsert = "REVERSE";
                                 break;
                             case 0x03:
-                                valueToInsert = "NEUTRAL";
+                                ValueToInsert = "NEUTRAL";
                                 break;
                             case 0x05:
-                                valueToInsert = "DRIVE";
+                                ValueToInsert = "DRIVE";
                                 break;
                             case 0x06:
-                                valueToInsert = "AUTOSHIFT";
+                                ValueToInsert = "AUTOSHIFT";
                                 break;
                             default:
-                                valueToInsert = "UNDEFINED";
+                                ValueToInsert = "UNDEFINED";
                                 break;
                         }
                     }
                     break;
+                case 0x4F:
+                    DescriptionToInsert = "VEHICLE THEFT ALARM STATUS";
+
+                    if (message.Length >= 7)
+                    {
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 5);
+                    }
+                    break;
+                case 0x52:
+                    DescriptionToInsert = "A/C RELAY STATE";
+
+                    if (message.Length >= 3)
+                    {
+                        ValueToInsert = Convert.ToString(payload[0], 2).PadLeft(8, '0');
+                    }
+                    break;
+                case 0x5A:
+                    DescriptionToInsert = "IGNITION SWITCH STATUS";
+
+                    if (message.Length >= 5)
+                    {
+                        Util.ByteToHexString(payload, 0, 3);
+                    }
+                    break;
                 case 0x5D:
-                    descriptionToInsert = "MILEAGE INCREMENT | N/A";
+                    DescriptionToInsert = "MILEAGE INCREMENT | N/A";
 
                     if (message.Length >= 7)
                     {
@@ -226,18 +282,26 @@ namespace ChryslerScanner
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            valueToInsert = Math.Round(MileageIncrementMi, 6).ToString("0.000000").Replace(",", ".") + " | " + Util.ByteToHexStringSimple(new byte[4] { payload[1], payload[2], payload[3], payload[4] });
-                            unitToInsert = "MI | N/A";
+                            ValueToInsert = Math.Round(MileageIncrementMi, 6).ToString("0.000000").Replace(",", ".") + " | " + Util.ByteToHexStringSimple(new byte[4] { payload[1], payload[2], payload[3], payload[4] });
+                            UnitToInsert = "MI | N/A";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            valueToInsert = Math.Round(MileageIncrementKm, 6).ToString("0.000000").Replace(",", ".") + " | " + Util.ByteToHexStringSimple(new byte[4] { payload[1], payload[2], payload[3], payload[4] });
-                            unitToInsert = "KM | N/A";
+                            ValueToInsert = Math.Round(MileageIncrementKm, 6).ToString("0.000000").Replace(",", ".") + " | " + Util.ByteToHexStringSimple(new byte[4] { payload[1], payload[2], payload[3], payload[4] });
+                            UnitToInsert = "KM | N/A";
                         }
                     }
                     break;
+                case 0x60:
+                    DescriptionToInsert = "AUTO HEAD LAMP STATUS 1";
+
+                    if (message.Length >= 4)
+                    {
+                        Util.ByteToHexString(payload, 0, 2);
+                    }
+                    break;
                 case 0x72:
-                    descriptionToInsert = "VEHICLE DISTANCE / ODOMETER";
+                    DescriptionToInsert = "VEHICLE DISTANCE / ODOMETER";
 
                     if (message.Length >= 6)
                     {
@@ -246,18 +310,26 @@ namespace ChryslerScanner
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            valueToInsert = Math.Round(OdometerMi, 3).ToString("0.000").Replace(",", ".");
-                            unitToInsert = "MILE";
+                            ValueToInsert = Math.Round(OdometerMi, 3).ToString("0.000").Replace(",", ".");
+                            UnitToInsert = "MILE";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            valueToInsert = Math.Round(OdometerKm, 3).ToString("0.000").Replace(",", ".");
-                            unitToInsert = "KILOMETER";
+                            ValueToInsert = Math.Round(OdometerKm, 3).ToString("0.000").Replace(",", ".");
+                            UnitToInsert = "KILOMETER";
                         }
                     }
                     break;
+                case 0x8D:
+                    DescriptionToInsert = "RADIO STATUS";
+
+                    if (message.Length >= 4)
+                    {
+                        Util.ByteToHexString(payload, 0, 2);
+                    }
+                    break;
                 case 0xA0:
-                    descriptionToInsert = "DISTANCE TO EMPTY";
+                    DescriptionToInsert = "DISTANCE TO EMPTY";
 
                     if (message.Length >= 4)
                     {
@@ -266,28 +338,28 @@ namespace ChryslerScanner
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            valueToInsert = Math.Round(DTEMi, 1).ToString("0.0").Replace(",", ".");
-                            unitToInsert = "MILE";
+                            ValueToInsert = Math.Round(DTEMi, 1).ToString("0.0").Replace(",", ".");
+                            UnitToInsert = "MILE";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            valueToInsert = Math.Round(DTEKm, 1).ToString("0.0").Replace(",", ".");
-                            unitToInsert = "KILOMETER";
+                            ValueToInsert = Math.Round(DTEKm, 1).ToString("0.0").Replace(",", ".");
+                            UnitToInsert = "KILOMETER";
                         }
                     }
                     break;
                 case 0xA4:
-                    descriptionToInsert = "FUEL LEVEL";
+                    DescriptionToInsert = "FUEL LEVEL";
 
                     if (message.Length >= 3)
                     {
                         double FuelLevelPercent = payload[0] * 0.3922;
-                        valueToInsert = Math.Round(FuelLevelPercent, 1).ToString("0.0").Replace(",", ".");
-                        unitToInsert = "PERCENT";
+                        ValueToInsert = Math.Round(FuelLevelPercent, 1).ToString("0.0").Replace(",", ".");
+                        UnitToInsert = "PERCENT";
                     }
                     break;
                 case 0xA5:
-                    descriptionToInsert = "FUEL LEVEL SENSOR VOLTAGE | FUEL LEVEL";
+                    DescriptionToInsert = "FUEL LEVEL SENSOR VOLTAGE | FUEL LEVEL";
 
                     if (message.Length >= 4)
                     {
@@ -297,33 +369,75 @@ namespace ChryslerScanner
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            valueToInsert = Math.Round(FuelLevelSensorVolts, 3).ToString("0.000").Replace(",", ".") + " | " + Math.Round(FuelLevelG, 1).ToString("0.0").Replace(",", ".");
-                            unitToInsert = "V | GALLON";
+                            ValueToInsert = Math.Round(FuelLevelSensorVolts, 3).ToString("0.000").Replace(",", ".") + " | " + Math.Round(FuelLevelG, 1).ToString("0.0").Replace(",", ".");
+                            UnitToInsert = "V | GALLON";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            valueToInsert = Math.Round(FuelLevelSensorVolts, 3).ToString("0.000").Replace(",", ".") + " | " + Math.Round(FuelLevelL, 1).ToString("0.0").Replace(",", ".");
-                            unitToInsert = "V | LITER";
+                            ValueToInsert = Math.Round(FuelLevelSensorVolts, 3).ToString("0.000").Replace(",", ".") + " | " + Math.Round(FuelLevelL, 1).ToString("0.0").Replace(",", ".");
+                            UnitToInsert = "V | LITER";
                         }
                     }
                     break;
+                case 0xAC:
+                    DescriptionToInsert = "RADIO CLOCK DISPLAY";
+
+                    if (message.Length >= 4)
+                    {
+                        Util.ByteToHexString(payload, 0, 2);
+                    }
+                    break;
                 case 0xB0:
-                    descriptionToInsert = "CHECK ENGINE LAMP STATE";
+                    DescriptionToInsert = "CHECK ENGINE LAMP STATE";
 
                     if (message.Length >= 5)
                     {
                         if (Util.IsBitSet(payload[0], 7))
                         {
-                            valueToInsert = "ON";
+                            ValueToInsert = "ON";
                         }
                         else
                         {
-                            valueToInsert = "OFF";
+                            ValueToInsert = "OFF";
                         }
                     }
                     break;
+                case 0xB1:
+                    DescriptionToInsert = "SKIM STATUS";
+
+                    if (message.Length >= 3)
+                    {
+                        List<string> WarningList = new List<string>();
+                        WarningList.Clear();
+
+                        if (payload[0] == 0)
+                        {
+                            ValueToInsert = "NO WARNING";
+                        }
+                        else
+                        {
+                            if (Util.IsBitSet(payload[0], 0)) WarningList.Add("WARNING");
+                            if (Util.IsBitSet(payload[0], 1)) WarningList.Add("FAILURE");
+
+                            foreach (string s in WarningList)
+                            {
+                                ValueToInsert += s + " | ";
+                            }
+
+                            if (ValueToInsert.Length > 2) ValueToInsert = ValueToInsert.Remove(ValueToInsert.Length - 3); // remove last "|" character
+                        }
+                    }
+                    break;
+                case 0xB8:
+                    DescriptionToInsert = "AIRBAG STATUS";
+
+                    if (message.Length >= 4)
+                    {
+                        Util.ByteToHexString(payload, 0, 2);
+                    }
+                    break;
                 case 0xC0:
-                    descriptionToInsert = "BATTERY | OIL | COOLANT | IAT";
+                    DescriptionToInsert = "BATTERY | OIL | COOLANT | AMBIENT";
 
                     if (message.Length >= 6)
                     {
@@ -332,88 +446,139 @@ namespace ChryslerScanner
                         double OilPressureKPA = payload[1] * 0.5 * 6.894757;
                         double CoolantTemperatureC = payload[2] - 40;
                         double CoolantTemperatureF = 1.8 * CoolantTemperatureC + 32.0;
-                        double IntakeAirTemperatureC = payload[3] - 40;
-                        double IntakeAirTemperatureF = 1.8 * IntakeAirTemperatureC + 32.0;
+                        double AmbientTemperatureC = payload[3] - 40;
+                        double AmbientTemperatureF = 1.8 * AmbientTemperatureC + 32.0;
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            descriptionToInsert = "BATTERY: " + BatteryVoltage.ToString("0.0").Replace(",", ".") + " V | OIL: " + OilPressurePSI.ToString("0.0").Replace(",", ".") + " PSI | COOLANT: " + CoolantTemperatureF.ToString("0") + " °F";
-                            valueToInsert = "IAT: " + IntakeAirTemperatureF.ToString("0") + " °F";
+                            DescriptionToInsert = "BATTERY: " + Math.Round(BatteryVoltage, 1).ToString("0.0").Replace(",", ".") + " V | OIL: " + Math.Round(OilPressurePSI, 1).ToString("0.0").Replace(",", ".") + " PSI | COOLANT: " + Math.Round(CoolantTemperatureF).ToString("0") + " °F";
+                            ValueToInsert = "AMBIENT: " + Math.Round(AmbientTemperatureF).ToString("0") + " °F";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            descriptionToInsert = "BATTERY: " + BatteryVoltage.ToString("0.0").Replace(",", ".") + " V | OIL: " + OilPressureKPA.ToString("0.0").Replace(",", ".") + " KPA | COOLANT: " + CoolantTemperatureC.ToString("0") + " °C";
-                            valueToInsert = "IAT: " + IntakeAirTemperatureC.ToString("0") + " °C";
+                            DescriptionToInsert = "BATTERY: " + Math.Round(BatteryVoltage, 1).ToString("0.0").Replace(",", ".") + " V | OIL: " + Math.Round(OilPressureKPA, 1).ToString("0.0").Replace(",", ".") + " KPA | COOLANT: " + CoolantTemperatureC.ToString("0") + " °C";
+                            ValueToInsert = "AMBIENT: " + AmbientTemperatureC.ToString("0") + " °C";
+                        }
+                    }
+                    break;
+                case 0xCC:
+                    DescriptionToInsert = "OUTSIDE AIR TEMPERATURE | OAT SENSOR VOLTAGE";
+
+                    if (message.Length >= 4)
+                    {
+                        double OutsideAirTemperatureC = payload[0] - 70.0;
+                        double OutsideAirTemperatureF = 1.8 * OutsideAirTemperatureC + 32.0;
+                        double OATSensorVoltage = payload[1] * 0.0196;
+
+                        if (Properties.Settings.Default.Units == "imperial")
+                        {
+                            ValueToInsert = Math.Round(OutsideAirTemperatureF).ToString("0") + " | " + Math.Round(OATSensorVoltage, 3).ToString("0.000").Replace(",", ".");
+                            UnitToInsert = "°F | V";
+                        }
+                        else if (Properties.Settings.Default.Units == "metric")
+                        {
+                            ValueToInsert = Math.Round(OutsideAirTemperatureC).ToString("0") + " | " + Math.Round(OATSensorVoltage, 3).ToString("0.000").Replace(",", ".");
+                            UnitToInsert = "°C | V";
                         }
                     }
                     break;
                 case 0xD0:
-                    descriptionToInsert = "LIMP STATE 1";
+                    DescriptionToInsert = "LIMP STATE 1";
 
                     if (message.Length >= 4)
                     {
-                        valueToInsert = Util.ByteToHexString(payload, 0, 2);
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 2);
                     }
                     break;
                 case 0xD1:
-                    descriptionToInsert = "LIMP STATE 2";
+                    DescriptionToInsert = "LIMP STATE 2";
 
                     if (message.Length >= 7)
                     {
-                        valueToInsert = Util.ByteToHexString(payload, 0, 5);
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 5);
                     }
                     break;
                 case 0xD2:
-                    descriptionToInsert = "BARO | IAT | A/C HSP | N/A";
+                    DescriptionToInsert = "BARO | IAT | A/C HSP | ETHANOL PERCENT";
 
                     if (message.Length >= 6)
                     {
                         byte BarometricPressureKPA = payload[0];
-                        double BarometricPressurePSI = payload[0] * 0.14504;
-                        double IntakeAirTemperatureC = payload[1] - 40; // °C
-                        double IntakeAirTemperatureF = 1.8 * IntakeAirTemperatureC + 32; // °F
-                        double ACHighSidePressurePSI = payload[2] * 2.03; // psi
-                        double ACHighSidePressureKPA = payload[2] * 2.03 * 6.894757; // kPa
+                        double BarometricPressurePSI = BarometricPressureKPA * 0.14504;
+                        double IntakeAirTemperatureC = payload[1] - 40;
+                        double IntakeAirTemperatureF = 1.8 * IntakeAirTemperatureC + 32;
+                        double ACHighSidePressurePSI = payload[2] * 2.03;
+                        double ACHighSidePressureKPA = ACHighSidePressurePSI * 6.894757;
+                        double EthanolPercent = payload[3] * 0.5;
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            descriptionToInsert = "BARO: " + BarometricPressurePSI.ToString("0.0").Replace(",", ".") + " PSI | IAT: " + IntakeAirTemperatureF.ToString("0") + " °F | A/C HSP: " + ACHighSidePressurePSI.ToString("0.0").Replace(",", ".") + " PSI";
-                            valueToInsert = "N/A: " + Util.ByteToHexString(payload, 3, 1);
+                            DescriptionToInsert = "BARO: " + Math.Round(BarometricPressurePSI, 1).ToString("0.0").Replace(",", ".") + " PSI | IAT: " + Math.Round(IntakeAirTemperatureF).ToString("0") + " °F | A/C HSP: " + Math.Round(ACHighSidePressurePSI, 1).ToString("0.0").Replace(",", ".") + " PSI";
+                            ValueToInsert = "ETHANOL: " + Math.Round(EthanolPercent, 1).ToString("0.0").Replace(",", ".") + " PERCENT";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            descriptionToInsert = "BARO: " + BarometricPressureKPA.ToString("0.0").Replace(",", ".") + " KPA | IAT: " + IntakeAirTemperatureC.ToString("0") + " °C | A/C HSP: " + ACHighSidePressureKPA.ToString("0.0").Replace(",", ".") + " KPA";
-                            valueToInsert = "N/A: " + Util.ByteToHexString(payload, 3, 1);
+                            DescriptionToInsert = "BARO: " + BarometricPressureKPA.ToString("0.0").Replace(",", ".") + " KPA | IAT: " + Math.Round(IntakeAirTemperatureC).ToString("0") + " °C | A/C HSP: " + Math.Round(ACHighSidePressureKPA, 1).ToString("0.0").Replace(",", ".") + " KPA";
+                            ValueToInsert = "ETHANOL: " + Math.Round(EthanolPercent, 1).ToString("0.0").Replace(",", ".") + " PERCENT";
                         }
                     }
                     break;
                 case 0xDF:
-                    descriptionToInsert = "ACCUMULATED MILEAGE";
+                    DescriptionToInsert = "ACCUMULATED MILEAGE";
 
                     if (message.Length >= 3)
                     {
-                        valueToInsert = Util.ByteToHexString(payload, 0, 1);
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 1);
                     }
                     break;
+                case 0xE4:
+                    DescriptionToInsert = "AUTO HEAD LAMP STATUS 2";
+
+                    if (message.Length >= 4)
+                    {
+                        Util.ByteToHexString(payload, 0, 2);
+                    }
+                    break;
+                case 0xEA:
+                    DescriptionToInsert = "TRANSMISSION TEMPERATURE";
+
+                    if (message.Length >= 3)
+                    {
+                        double TransmissionTemperatureC = payload[0] - 64;
+                        double TransmissionTemperatureF = 1.8 * TransmissionTemperatureC + 32.0;
+
+                        if (Properties.Settings.Default.Units == "imperial")
+                        {
+                            ValueToInsert = Math.Round(TransmissionTemperatureF).ToString("0");
+                            UnitToInsert = "°F";
+                        }
+                        else if (Properties.Settings.Default.Units == "metric")
+                        {
+                            ValueToInsert = Math.Round(TransmissionTemperatureC).ToString("0");
+                            UnitToInsert = "°C";
+                        }
+                    }
+
+                    break;
                 case 0xED:
-                    descriptionToInsert = "CONFIGURATION | CRBFUL ENGDSP CYLVPC SALENG BSTYLE";
+                    DescriptionToInsert = "CONFIGURATION | CRBFUL ENGDSP CYLVPC SALENG BSTYLE";
 
                     if (message.Length >= 7)
                     {
-                        valueToInsert = Util.ByteToHexString(payload, 0, 5);
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 5);
                     }
                     break;
                 case 0xF0:
-                    descriptionToInsert = "VEHICLE IDENTIFICATION NUMBER (VIN) CHARACTER";
+                    DescriptionToInsert = "VEHICLE IDENTIFICATION NUMBER (VIN) CHARACTER";
 
                     if (((payload[0] == 0x01) && (message.Length >= 4)) || ((payload[0] == 0x02) && (message.Length >= 7)) || ((payload[0] == 0x06) && (message.Length >= 7)) || ((payload[0] == 0x0A) && (message.Length >= 7)) || ((payload[0] == 0x0E) && (message.Length >= 7)))
                     {
                         VIN = VIN.Remove(payload[0] - 1, payload.Length - 1).Insert(payload[0] - 1, Encoding.ASCII.GetString(payload.Skip(1).Take(payload.Length - 1).ToArray()));
-                        valueToInsert = VIN;
+                        ValueToInsert = VIN;
                     }
                     break;
                 default:
-                    descriptionToInsert = string.Empty;
+                    DescriptionToInsert = string.Empty;
                     break;
             }
 
@@ -428,21 +593,23 @@ namespace ChryslerScanner
                 hexBytesToInsert = Util.ByteToHexString(message, 0, 7) + " .. ";
             }
 
-            if (descriptionToInsert.Length > 51) descriptionToInsert = Util.TruncateString(descriptionToInsert, 48) + "...";
-            if (valueToInsert.Length > 23) valueToInsert = Util.TruncateString(valueToInsert, 20) + "...";
-            if (unitToInsert.Length > 11) unitToInsert = Util.TruncateString(unitToInsert, 8) + "...";
+            if (DescriptionToInsert.Length > 51) DescriptionToInsert = Util.TruncateString(DescriptionToInsert, 48) + "...";
+            if (ValueToInsert.Length > 23) ValueToInsert = Util.TruncateString(ValueToInsert, 20) + "...";
+            if (UnitToInsert.Length > 11) UnitToInsert = Util.TruncateString(UnitToInsert, 8) + "...";
 
-            rowToAdd.Remove(hexBytesColumnStart, hexBytesToInsert.Length);
-            rowToAdd.Insert(hexBytesColumnStart, hexBytesToInsert);
+            StringBuilder rowToAdd = new StringBuilder(EmptyLine); // add empty line first
 
-            rowToAdd.Remove(descriptionColumnStart, descriptionToInsert.Length);
-            rowToAdd.Insert(descriptionColumnStart, descriptionToInsert);
+            rowToAdd.Remove(HexBytesColumnStart, hexBytesToInsert.Length);
+            rowToAdd.Insert(HexBytesColumnStart, hexBytesToInsert);
 
-            rowToAdd.Remove(valueColumnStart, valueToInsert.Length);
-            rowToAdd.Insert(valueColumnStart, valueToInsert);
+            rowToAdd.Remove(DescriptionColumnStart, DescriptionToInsert.Length);
+            rowToAdd.Insert(DescriptionColumnStart, DescriptionToInsert);
 
-            rowToAdd.Remove(unitColumnStart, unitToInsert.Length);
-            rowToAdd.Insert(unitColumnStart, unitToInsert);
+            rowToAdd.Remove(ValueColumnStart, ValueToInsert.Length);
+            rowToAdd.Insert(ValueColumnStart, ValueToInsert);
+
+            rowToAdd.Remove(UnitColumnStart, UnitToInsert.Length);
+            rowToAdd.Insert(UnitColumnStart, UnitToInsert);
 
             Diagnostics.AddRow(modifiedID, rowToAdd.ToString());
 

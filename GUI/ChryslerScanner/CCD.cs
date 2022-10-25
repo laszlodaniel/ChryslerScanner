@@ -10,10 +10,10 @@ namespace ChryslerScanner
     {
         public CCDDiagnosticsTable Diagnostics = new CCDDiagnosticsTable();
 
-        private const int hexBytesColumnStart = 2;
-        private const int descriptionColumnStart = 28;
-        private const int valueColumnStart = 82;
-        private const int unitColumnStart = 108;
+        private const int HexBytesColumnStart = 2;
+        private const int DescriptionColumnStart = 28;
+        private const int ValueColumnStart = 82;
+        private const int UnitColumnStart = 108;
         private string state = string.Empty;
         private string speed = "7812.5 baud";
         private string logic = "non-inverted";
@@ -24,11 +24,11 @@ namespace ChryslerScanner
         public string EmptyLine      = "│                         │                                                     │                         │             │";
         public string HeaderModified = string.Empty;
 
-        public bool transmissionLRCVIRequested = false;
-        public bool transmission24CVIRequested = false;
-        public bool transmissionODCVIRequested = false;
-        public bool transmissionUDCVIRequested = false;
-        public bool transmissionTemperatureRequested = false;
+        public bool TransmissionLRCVIRequested = false;
+        public bool Transmission24CVIRequested = false;
+        public bool TransmissionODCVIRequested = false;
+        public bool TransmissionUDCVIRequested = false;
+        public bool TransmissionTemperatureRequested = false;
 
         public string VIN = "-----------------"; // 17 characters
 
@@ -62,8 +62,6 @@ namespace ChryslerScanner
         public void AddMessage(byte[] data)
         {
             if ((data == null) || (data.Length < 5)) return;
-
-            StringBuilder rowToAdd = new StringBuilder(EmptyLine); // add empty line first
 
             byte[] timestamp = new byte[4];
             byte[] message = new byte[] { };
@@ -99,42 +97,42 @@ namespace ChryslerScanner
                 modifiedID = (ushort)((ID << 8) & 0xFF00); // keep ID byte only (XX 00)
             }
 
-            string descriptionToInsert;
-            string valueToInsert = string.Empty;
-            string unitToInsert = string.Empty;
+            string DescriptionToInsert;
+            string ValueToInsert = string.Empty;
+            string UnitToInsert = string.Empty;
 
             switch (ID)
             {
                 case 0x02:
-                    descriptionToInsert = "SHIFT LEVER POSITION";
+                    DescriptionToInsert = "SHIFT LEVER POSITION";
 
                     if (message.Length >= 3)
                     {
                         switch (payload[0])
                         {
                             case 0x01:
-                                valueToInsert = "PARK";
+                                ValueToInsert = "PARK";
                                 break;
                             case 0x02:
-                                valueToInsert = "REVERSE";
+                                ValueToInsert = "REVERSE";
                                 break;
                             case 0x03:
-                                valueToInsert = "NEUTRAL";
+                                ValueToInsert = "NEUTRAL";
                                 break;
                             case 0x05:
-                                valueToInsert = "DRIVE";
+                                ValueToInsert = "DRIVE";
                                 break;
                             case 0x06:
-                                valueToInsert = "AUTOSHIFT";
+                                ValueToInsert = "AUTOSHIFT";
                                 break;
                             default:
-                                valueToInsert = "UNDEFINED";
+                                ValueToInsert = "UNDEFINED";
                                 break;
                         }
                     }
                     break;
                 case 0x0A:
-                    descriptionToInsert = "SEND DIAGNOSTIC FAILURE DATA";
+                    DescriptionToInsert = "SEND DIAGNOSTIC FAILURE DATA";
 
                     if (message.Length >= 4)
                     {
@@ -142,15 +140,15 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x0B:
-                    descriptionToInsert = "SKIM STATUS";
+                    DescriptionToInsert = "SKIM STATUS";
 
                     if (message.Length >= 3)
                     {
-                        valueToInsert = Convert.ToString(payload[0], 2).PadLeft(8, '0');
+                        ValueToInsert = Convert.ToString(payload[0], 2).PadLeft(8, '0');
                     }
                     break;
                 case 0x0C:
-                    descriptionToInsert = "BATTERY | OIL | COOLANT | IAT";
+                    DescriptionToInsert = "BATTERY | OIL | COOLANT | AMBIENT";
 
                     if (message.Length >= 6)
                     {
@@ -159,23 +157,23 @@ namespace ChryslerScanner
                         double OilPressureKPA = payload[1] * 0.5 * 6.894757;
                         double CoolantTemperatureC = payload[2] - 64;
                         double CoolantTemperatureF = 1.8 * CoolantTemperatureC + 32.0;
-                        double IntakeAirTemperatureC = payload[3] - 64;
-                        double IntakeAirTemperatureF = 1.8 * IntakeAirTemperatureC + 32.0;
+                        double AmbientTemperatureC = payload[3] - 64;
+                        double AmbientTemperatureF = 1.8 * AmbientTemperatureC + 32.0;
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            descriptionToInsert = "BATTERY: " + BatteryVoltage.ToString("0.0").Replace(",", ".") + " V | OIL: " + OilPressurePSI.ToString("0.0").Replace(",", ".") + " PSI | COOLANT: " + CoolantTemperatureF.ToString("0") + " °F";
-                            valueToInsert = "IAT: " + IntakeAirTemperatureF.ToString("0") + " °F";
+                            DescriptionToInsert = "BATTERY: " + Math.Round(BatteryVoltage, 1).ToString("0.0").Replace(",", ".") + " V | OIL: " + Math.Round(OilPressurePSI, 1).ToString("0.0").Replace(",", ".") + " PSI | COOLANT: " + Math.Round(CoolantTemperatureF, 1).ToString("0") + " °F";
+                            ValueToInsert = "AMBIENT: " + Math.Round(AmbientTemperatureF).ToString("0") + " °F";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            descriptionToInsert = "BATTERY: " + BatteryVoltage.ToString("0.0").Replace(",", ".") + " V | OIL: " + OilPressureKPA.ToString("0.0").Replace(",", ".") + " KPA | COOLANT: " + CoolantTemperatureC.ToString("0") + " °C";
-                            valueToInsert = "IAT: " + IntakeAirTemperatureC.ToString("0") + " °C";
+                            DescriptionToInsert = "BATTERY: " + Math.Round(BatteryVoltage, 1).ToString("0.0").Replace(",", ".") + " V | OIL: " + Math.Round(OilPressureKPA, 1).ToString("0.0").Replace(",", ".") + " KPA | COOLANT: " + CoolantTemperatureC.ToString("0") + " °C";
+                            ValueToInsert = "AMBIENT: " + AmbientTemperatureC.ToString("0") + " °C";
                         }
                     }
                     break;
                 case 0x0D:
-                    descriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
 
                     if (message.Length >= 4)
                     {
@@ -183,7 +181,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x10:
-                    descriptionToInsert = "HVAC MESSAGE";
+                    DescriptionToInsert = "HVAC MESSAGE";
 
                     if (message.Length >= 4)
                     {
@@ -191,7 +189,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x11:
-                    descriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
 
                     if (message.Length >= 4)
                     {
@@ -199,7 +197,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x12:
-                    descriptionToInsert = "REQUEST EEPROM READ - COMPASS MINI-TRIP";
+                    DescriptionToInsert = "REQUEST EEPROM READ - COMPASS MINI-TRIP";
 
                     if (message.Length >= 6)
                     {
@@ -207,41 +205,41 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x16:
-                    descriptionToInsert = "VEHICLE THEFT SECURITY STATE";
+                    DescriptionToInsert = "VEHICLE THEFT SECURITY STATE";
 
                     if (message.Length >= 3)
                     {
                         switch (payload[0])
                         {
                             case 0x00:
-                                valueToInsert = "DISARMED";
+                                ValueToInsert = "DISARMED";
                                 break;
                             case 0x01:
-                                valueToInsert = "TIMING OUT";
+                                ValueToInsert = "TIMING OUT";
                                 break;
                             case 0x02:
-                                valueToInsert = "ARMED";
+                                ValueToInsert = "ARMED";
                                 break;
                             case 0x04:
-                                valueToInsert = "HORN AND LIGHTS";
+                                ValueToInsert = "HORN AND LIGHTS";
                                 break;
                             case 0x08:
-                                valueToInsert = "LIGHTS ONLY";
+                                ValueToInsert = "LIGHTS ONLY";
                                 break;
                             case 0x10:
-                                valueToInsert = "TIMED OUT";
+                                ValueToInsert = "TIMED OUT";
                                 break;
                             case 0x20:
-                                valueToInsert = "SELF DIAGS";
+                                ValueToInsert = "SELF DIAGS";
                                 break;
                             default:
-                                valueToInsert = "NONE";
+                                ValueToInsert = "NONE";
                                 break;
                         }
                     }
                     break;
                 case 0x1B:
-                    descriptionToInsert = "LAST OS TEMPERATURE";
+                    DescriptionToInsert = "LAST OS TEMPERATURE";
 
                     if (message.Length >= 4)
                     {
@@ -249,7 +247,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x1C:
-                    descriptionToInsert = "FUEL LEVEL COUNTS";
+                    DescriptionToInsert = "FUEL LEVEL COUNTS";
 
                     if (message.Length >= 4)
                     {
@@ -257,89 +255,93 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x23:
-                    descriptionToInsert = "COUNTRY CODE";
+                    DescriptionToInsert = "COUNTRY CODE";
 
                     if (message.Length >= 4)
                     {
                         switch (payload[0])
                         {
                             case 0x00:
-                                valueToInsert = "USA";
+                                ValueToInsert = "USA";
                                 break;
                             case 0x01:
-                                valueToInsert = "GULF COAST";
+                                ValueToInsert = "GULF COAST";
                                 break;
                             case 0x02:
-                                valueToInsert = "EUROPE";
+                                ValueToInsert = "EUROPE";
                                 break;
                             case 0x03:
-                                valueToInsert = "JAPAN";
+                                ValueToInsert = "JAPAN";
                                 break;
                             case 0x04:
-                                valueToInsert = "MALAYSIA";
+                                ValueToInsert = "MALAYSIA";
                                 break;
                             case 0x05:
-                                valueToInsert = "INDONESIA";
+                                ValueToInsert = "INDONESIA";
                                 break;
                             case 0x06:
-                                valueToInsert = "AUSTRALIA";
+                                ValueToInsert = "AUSTRALIA";
                                 break;
                             case 0x07:
-                                valueToInsert = "ENGLAND";
+                                ValueToInsert = "ENGLAND";
                                 break;
                             case 0x08:
-                                valueToInsert = "VENEZUELA";
+                                ValueToInsert = "VENEZUELA";
                                 break;
                             case 0x09:
-                                valueToInsert = "CANADA";
+                                ValueToInsert = "CANADA";
                                 break;
                             case 0x0A:
                             default:
-                                valueToInsert = "UNKNOWN";
+                                ValueToInsert = "UNKNOWN";
                                 break;
                         }
                     }
                     break;
                 case 0x24:
-                    descriptionToInsert = "VEHICLE SPEED";
+                    DescriptionToInsert = "VEHICLE SPEED";
 
                     if (message.Length >= 4)
                     {
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            valueToInsert = payload[0].ToString("0");
-                            unitToInsert = "MPH";
+                            ValueToInsert = payload[0].ToString("0");
+                            UnitToInsert = "MPH";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            valueToInsert = payload[1].ToString("0");
-                            unitToInsert = "KM/H";
+                            ValueToInsert = payload[1].ToString("0");
+                            UnitToInsert = "KM/H";
                         }
                     }
                     break;
                 case 0x25:
-                    descriptionToInsert = "FUEL LEVEL";
+                    DescriptionToInsert = "FUEL LEVEL";
 
                     if (message.Length >= 3)
                     {
-                        valueToInsert = Math.Round(payload[0] * 0.3922, 1).ToString("0.0").Replace(",", ".");
-                        unitToInsert = "PERCENT";
+                        double FuelLevelPercent = payload[0] * 0.3922;
+                        ValueToInsert = Math.Round(FuelLevelPercent, 1).ToString("0.0").Replace(",", ".");
+                        UnitToInsert = "PERCENT";
                     }
                     break;
                 case 0x29:
-                    descriptionToInsert = "LAST ENGINE SHUTDOWN";
+                    DescriptionToInsert = "LAST ENGINE SHUTDOWN";
 
                     if (message.Length >= 4)
                     {
-                        if (payload[0] < 10) valueToInsert = "0";
-                        valueToInsert += payload[0].ToString("0") + ":";
-                        if (payload[1] < 10) valueToInsert += "0";
-                        valueToInsert += payload[1].ToString("0");
-                        unitToInsert = "HOUR:MINUTE";
+                        byte TimerHours = payload[0];
+                        byte TimerMinutes = payload[1];
+                        
+                        if (TimerHours < 10) ValueToInsert = "0";
+                        ValueToInsert += TimerHours.ToString("0") + ":";
+                        if (TimerMinutes < 10) ValueToInsert += "0";
+                        ValueToInsert += TimerMinutes.ToString("0");
+                        UnitToInsert = "HOUR:MINUTE";
                     }
                     break;
                 case 0x2A:
-                    descriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
 
                     if (message.Length >= 4)
                     {
@@ -347,38 +349,38 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x2C:
-                    descriptionToInsert = "WIPER";
+                    DescriptionToInsert = "WIPER";
 
                     if (message.Length >= 3)
                     {
                         switch (payload[0])
                         {
                             case 0x04:
-                                valueToInsert = "WIPERS ON";
+                                ValueToInsert = "WIPERS ON";
                                 break;
                             case 0x08:
-                                valueToInsert = "WASH ON";
+                                ValueToInsert = "WASH ON";
                                 break;
                             case 0x02:
-                                valueToInsert = "ARMED";
+                                ValueToInsert = "ARMED";
                                 break;
                             case 0x0C:
-                                valueToInsert = "WIPE / WASH";
+                                ValueToInsert = "WIPE / WASH";
                                 break;
                             case 0x20:
-                                valueToInsert = "INT WIPE";
+                                ValueToInsert = "INT WIPE";
                                 break;
                             case 0x28:
-                                valueToInsert = "INT WIPE / WASH";
+                                ValueToInsert = "INT WIPE / WASH";
                                 break;
                             default:
-                                valueToInsert = "IDLE";
+                                ValueToInsert = "IDLE";
                                 break;
                         }
                     }
                     break;
                 case 0x34:
-                    descriptionToInsert = "BCM TO MIC MESSAGE";
+                    DescriptionToInsert = "BCM TO MIC MESSAGE";
 
                     if (message.Length >= 4)
                     {
@@ -386,19 +388,19 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x35:
-                    descriptionToInsert = "US/METRIC STATUS | SEAT-BELT:";
+                    DescriptionToInsert = "US/METRIC STATUS | SEAT-BELT:";
 
                     if (message.Length >= 4)
                     {
-                        if (Util.IsBitSet(payload[0], 1)) valueToInsert = "METRIC";
-                        else valueToInsert = "US";
+                        if (Util.IsBitSet(payload[0], 1)) ValueToInsert = "METRIC";
+                        else ValueToInsert = "US";
 
-                        if (Util.IsBitSet(payload[0], 2)) descriptionToInsert = "US/METRIC STATUS | SEATBELT: BUCKLED";
-                        else descriptionToInsert = "US/METRIC STATUS | SEATBELT: UNBUCKLED";
+                        if (Util.IsBitSet(payload[0], 2)) DescriptionToInsert = "US/METRIC STATUS | SEATBELT: BUCKLED";
+                        else DescriptionToInsert = "US/METRIC STATUS | SEATBELT: UNBUCKLED";
                     }
                     break;
                 case 0x36:
-                    descriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
 
                     if (message.Length >= 4)
                     {
@@ -406,29 +408,29 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x3A:
-                    descriptionToInsert = "INSTRUMENT CLUSTER LAMP STATES";
+                    DescriptionToInsert = "INSTRUMENT CLUSTER LAMP STATES";
 
                     if (message.Length >= 4)
                     {
                         switch (payload[0])
                         {
                             case 0x08:
-                                valueToInsert = "ACM LAMP";
+                                ValueToInsert = "ACM LAMP";
                                 break;
                             case 0x10:
-                                valueToInsert = "AIRBAG LAMP";
+                                ValueToInsert = "AIRBAG LAMP";
                                 break;
                             case 0x80:
-                                valueToInsert = "SEATBELT LAMP";
+                                ValueToInsert = "SEATBELT LAMP";
                                 break;
                             default:
-                                valueToInsert = "UNKNOWN";
+                                ValueToInsert = "UNKNOWN";
                                 break;
                         }
                     }
                     break;
                 case 0x3B:
-                    descriptionToInsert = "SEND COMPENSATION AND CHECKSUM DATA";
+                    DescriptionToInsert = "SEND COMPENSATION AND CHECKSUM DATA";
 
                     if (message.Length >= 4)
                     {
@@ -436,32 +438,37 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x42:
-                    descriptionToInsert = "THROTTLE POSITION SENSOR | CRUISE SET SPEED";
+                    DescriptionToInsert = "THROTTLE POSITION SENSOR | CRUISE SET SPEED";
 
                     if (message.Length >= 4)
                     {
+                        double TPS = payload[0] * 0.65;
+                        double CruiseSetSpeedMPH = payload[1];
+                        double CruiseSetSpeedKMH = payload[1] * 1.609344;
+
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            valueToInsert = Math.Round(payload[0] * 0.65).ToString("0") + " | " + payload[1].ToString("0");
-                            unitToInsert = "% | MPH";
+                            ValueToInsert = Math.Round(TPS).ToString("0") + " | " + CruiseSetSpeedMPH.ToString("0");
+                            UnitToInsert = "% | MPH";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            valueToInsert = Math.Round(payload[0] * 0.65).ToString("0") + " | " + (payload[1] * 1.609344).ToString("0");
-                            unitToInsert = "% | KM/H";
+                            ValueToInsert = Math.Round(TPS).ToString("0") + " | " + Math.Round(CruiseSetSpeedKMH).ToString("0");
+                            UnitToInsert = "% | KM/H";
                         }
                     }
                     break;
                 case 0x44:
-                    descriptionToInsert = "FUEL USED";
+                    DescriptionToInsert = "FUEL USED";
 
                     if (message.Length >= 4)
                     {
-                        valueToInsert = ((payload[0] << 8) + payload[1]).ToString("0");
+                        ushort FuelUsed = (ushort)((payload[0] << 8) + payload[1]);
+                        ValueToInsert = FuelUsed.ToString("0");
                     }
                     break;
                 case 0x46:
-                    descriptionToInsert = "REQUEST CALIBRATION DATA";
+                    DescriptionToInsert = "REQUEST CALIBRATION DATA";
 
                     if (message.Length >= 4)
                     {
@@ -469,7 +476,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x4B:
-                    descriptionToInsert = "N/S AND E/W A/D";
+                    DescriptionToInsert = "N/S AND E/W A/D";
 
                     if (message.Length >= 4)
                     {
@@ -477,7 +484,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x4D:
-                    descriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
 
                     if (message.Length >= 4)
                     {
@@ -485,76 +492,81 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x50:
-                    descriptionToInsert = "MIC LAMP STATE (AIRBAG | SEATBELT)";
+                    DescriptionToInsert = "MIC LAMP STATE (AIRBAG | SEATBELT)";
 
                     if (message.Length >= 3)
                     {
-                        List<string> lampList = new List<string>();
-                        lampList.Clear();
+                        List<string> LampList = new List<string>();
+                        LampList.Clear();
 
                         if (payload[0] == 0)
                         {
-                            valueToInsert = string.Empty;
+                            ValueToInsert = string.Empty;
                         }
                         else
                         {
-                            if (Util.IsBitSet(payload[0], 0)) lampList.Add("AIRBAG");
-                            if (Util.IsBitSet(payload[0], 2)) lampList.Add("SEATBELT");
-                            valueToInsert = string.Empty;
+                            if (Util.IsBitSet(payload[0], 0)) LampList.Add("AIRBAG");
+                            if (Util.IsBitSet(payload[0], 2)) LampList.Add("SEATBELT");
+                            ValueToInsert = string.Empty;
 
-                            foreach (string s in lampList)
+                            foreach (string s in LampList)
                             {
-                                valueToInsert += s + " | ";
+                                ValueToInsert += s + " | ";
                             }
 
-                            if (valueToInsert.Length > 2) valueToInsert = valueToInsert.Remove(valueToInsert.Length - 3); // remove last "|" character
+                            if (ValueToInsert.Length > 2) ValueToInsert = ValueToInsert.Remove(ValueToInsert.Length - 3); // remove last "|" character
                         }
                     }
                     break;
                 case 0x52:
-                    descriptionToInsert = "TRANSMISSION STATUS / SELECTED GEAR";
+                    DescriptionToInsert = "TRANSMISSION STATUS / SELECTED GEAR";
 
                     if (message.Length >= 4)
                     {
                         switch (payload[0])
                         {
                             case 0x10:
-                                valueToInsert = "1ST";
+                                ValueToInsert = "1ST";
                                 break;
                             case 0x20:
-                                valueToInsert = "2ND";
+                                ValueToInsert = "2ND";
                                 break;
                             case 0x30:
-                                valueToInsert = "3RD";
+                                ValueToInsert = "3RD";
                                 break;
                             case 0x40:
-                                valueToInsert = "4TH";
+                                ValueToInsert = "4TH";
                                 break;
                             default:
-                                valueToInsert = "UNDEFINED";
+                                ValueToInsert = "UNDEFINED";
                                 break;
                         }
                     }
                     break;
                 case 0x54:
-                    descriptionToInsert = "BAROMETRIC PRESSURE | TEMPERATURE";
+                    DescriptionToInsert = "BAROMETRIC PRESSURE | INTAKE AIR TEMPERATURE";
 
                     if (message.Length >= 4)
                     {
+                        double BarometricPressurePSI = payload[0] * 0.1217 * 0.49109778;
+                        double BarometricPressureKPA = payload[0] * 0.1217 * 25.4 * 0.133322368;
+                        double IntakeAirTemperatureC = payload[1] - 128;
+                        double IntakeAirTemperatureF = 1.8 * IntakeAirTemperatureC + 32.0;
+
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            valueToInsert = Math.Round(payload[0] * 0.1217 * 0.49109778, 1).ToString("0.0").Replace(",", ".") + " | " + Math.Round((payload[1] * 1.8) - 198.4).ToString("0");
-                            unitToInsert = "PSI | °F";
+                            ValueToInsert = Math.Round(BarometricPressurePSI, 1).ToString("0.0").Replace(",", ".") + " | " + Math.Round(IntakeAirTemperatureF).ToString("0");
+                            UnitToInsert = "PSI | °F";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            valueToInsert = Math.Round(payload[0] * 0.1217 * 25.4 * 0.133322368, 1).ToString("0.0").Replace(",", ".") + " | " + (payload[1] - 128).ToString("0");
-                            unitToInsert = "KPA | °C";
+                            ValueToInsert = Math.Round(BarometricPressureKPA, 1).ToString("0.0").Replace(",", ".") + " | " + Math.Round(IntakeAirTemperatureC).ToString("0");
+                            UnitToInsert = "KPA | °C";
                         }
                     }
                     break;
                 case 0x56:
-                    descriptionToInsert = "REQUESTED MIL STATE - TRANSMISSION";
+                    DescriptionToInsert = "REQUESTED MIL STATE - TRANSMISSION";
 
                     if (message.Length >= 4)
                     {
@@ -562,7 +574,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x6B:
-                    descriptionToInsert = "COMPASS COMP. AND CHECKSUM DATA RECEIVED";
+                    DescriptionToInsert = "COMPASS COMP. AND CHECKSUM DATA RECEIVED";
 
                     if (message.Length >= 4)
                     {
@@ -570,7 +582,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x6D:
-                    descriptionToInsert = "VEHICLE IDENTIFICATION NUMBER (VIN) CHARACTER";
+                    DescriptionToInsert = "VEHICLE IDENTIFICATION NUMBER (VIN) CHARACTER";
 
                     if (message.Length >= 4)
                     {
@@ -579,28 +591,32 @@ namespace ChryslerScanner
                             // Replace characters in the VIN string (one by one)
                             VIN = VIN.Remove(payload[0] - 1, 1).Insert(payload[0] - 1, ((char)(payload[1])).ToString());
                         }
-                        valueToInsert = VIN;
+                        ValueToInsert = VIN;
                     }
                     break;
                 case 0x75:
-                    descriptionToInsert = "A/C HIGH SIDE PRESSURE";
+                    DescriptionToInsert = "A/C HIGH-SIDE PRESSURE | FLEX FUEL ETHANOL PERCENT";
 
                     if (message.Length >= 4)
                     {
+                        double ACHSPressurePSI = payload[0] * 1.961;
+                        double ACHSPressureKPA = payload[0] * 1.961 * 6.894757;
+                        double EthanolPercent = ((((ushort)(payload[1] * 326.0) << 1) & 0xFF00) >> 8) / 2.0;
+
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            valueToInsert = Math.Round(payload[0] * 1.961, 1).ToString("0.0").Replace(",", ".");
-                            unitToInsert = "PSI";
+                            ValueToInsert = Math.Round(ACHSPressurePSI, 1).ToString("0.0").Replace(",", ".") + " | " + Math.Round(EthanolPercent, 1).ToString("0.0").Replace(",", ".");
+                            UnitToInsert = "PSI | %";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            valueToInsert = Math.Round(payload[0] * 1.961 * 6.894757, 1).ToString("0.0").Replace(",", ".");
-                            unitToInsert = "KPA";
+                            ValueToInsert = Math.Round(ACHSPressureKPA, 1).ToString("0.0").Replace(",", ".") + " | " + Math.Round(EthanolPercent, 1).ToString("0.0").Replace(",", ".");
+                            UnitToInsert = "KPA | %";
                         }
                     }
                     break;
                 case 0x76:
-                    descriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
 
                     if (message.Length >= 4)
                     {
@@ -609,95 +625,106 @@ namespace ChryslerScanner
                     break;
                 case 0x7B:
                 case 0x83:
-                    descriptionToInsert = "OUTSIDE AIR TEMPERATURE";
+                    DescriptionToInsert = "OUTSIDE AIR TEMPERATURE";
 
                     if (message.Length >= 4)
                     {
+                        double OutsideAirTemperatureF = payload[0] - 70.0;
+                        double OutsideAirTemperatureC = (OutsideAirTemperatureF - 32.0) / 1.8;
+
                         if (Properties.Settings.Default.Units == "imperial") // default unit for this message
                         {
-                            valueToInsert = Math.Round(payload[0] - 70.0).ToString("0");
-                            unitToInsert = "°F";
+                            ValueToInsert = Math.Round(OutsideAirTemperatureF).ToString("0");
+                            UnitToInsert = "°F";
                         }
                         else if (Properties.Settings.Default.Units == "metric") // manual conversion
                         {
-                            valueToInsert = Math.Round(((payload[0] - 70.0) - 32.0) / 1.8).ToString("0");
-                            unitToInsert = "°C";
+                            ValueToInsert = Math.Round(OutsideAirTemperatureC).ToString("0");
+                            UnitToInsert = "°C";
                         }
                     }
                     break;
                 case 0x7C:
-                    descriptionToInsert = "TRANSMISSION TEMPERATURE";
+                    DescriptionToInsert = "TRANSMISSION TEMPERATURE";
 
                     if (message.Length >= 4)
                     {
-                        double TemperatureF = Math.Round(1.8 * payload[0] - 83.2);
                         double TemperatureC = payload[0] - 64.0;
-                        
+                        double TemperatureF = 1.8 * TemperatureC + 32.0;
+
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            valueToInsert = TemperatureF.ToString("0");
-                            unitToInsert = "°F";
+                            ValueToInsert = TemperatureF.ToString("0");
+                            UnitToInsert = "°F";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            valueToInsert = TemperatureC.ToString("0");
-                            unitToInsert = "°C";
+                            ValueToInsert = TemperatureC.ToString("0");
+                            UnitToInsert = "°C";
                         }
                     }
                     break;
                 case 0x7E:
-                    descriptionToInsert = "A/C CLUTCH RELAY STATE";
+                    DescriptionToInsert = "A/C CLUTCH RELAY STATE";
 
                     if (message.Length >= 3)
                     {
-                        if (Util.IsBitSet(payload[0], 0)) valueToInsert = "ON";
-                        else valueToInsert = "OFF";
+                        if (Util.IsBitSet(payload[0], 0)) ValueToInsert = "ON";
+                        else ValueToInsert = "OFF";
                     }
                     break;
                 case 0x84:
-                    descriptionToInsert = "PCM TO BCM MESSAGE | MILEAGE INCREMENT";
+                    DescriptionToInsert = "PCM TO BCM MESSAGE | MILEAGE INCREMENT";
 
                     if (message.Length >= 4)
                     {
+                        double MileageIncrementMi = payload[1] * 0.000125;
+                        double MileageIncrementKm = payload[1] * 0.000125 * 1.609344;
+
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            valueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | " + Math.Round(payload[1] * 0.000125, 6).ToString("0.000000").Replace(",", ".");
-                            unitToInsert = "N/A | MI";
+                            ValueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | " + Math.Round(MileageIncrementMi, 6).ToString("0.000000").Replace(",", ".");
+                            UnitToInsert = "N/A | MI";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            valueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | " + Math.Round(payload[1] * 0.000125 * 1.609344, 6).ToString("0.000000").Replace(",", ".");
-                            unitToInsert = "N/A | KM";
+                            ValueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | " + Math.Round(MileageIncrementKm, 6).ToString("0.000000").Replace(",", ".");
+                            UnitToInsert = "N/A | KM";
                         }
                     }
                     break;
                 case 0x89:
-                    descriptionToInsert = "FUEL EFFICIENCY";
+                    DescriptionToInsert = "FUEL EFFICIENCY";
 
                     if (message.Length >= 4)
                     {
-                        valueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " MPG | " + payload[1].ToString("0") + " L/100KM";
+                        ValueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " MPG | " + payload[1].ToString("0") + " L/100KM";
                     }
                     break;
                 case 0x8C:
-                    descriptionToInsert = "ENGINE COOLANT TEMPERATURE | AMB/BAT TEMPERATURE";
+                    DescriptionToInsert = "ENGINE COOLANT TEMPERATURE | AMBIENT TEMPERATURE";
 
                     if (message.Length >= 4)
                     {
+                        double CoolantTemperatureC = payload[0] - 128;
+                        double CoolantTemperatureF = 1.8 * CoolantTemperatureC + 32.0;
+                        double AmbientTemperatureC = payload[1] - 128;
+                        double AmbientTemperatureF = 1.8 * AmbientTemperatureC + 32.0;
+
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            valueToInsert = Math.Round((payload[0] * 1.8) - 198.4).ToString("0") + " | " + Math.Round((payload[1] * 1.8) - 198.4).ToString("0");
-                            unitToInsert = "°F | °F";
+                            ValueToInsert = Math.Round(CoolantTemperatureF).ToString("0") + " | " + Math.Round(AmbientTemperatureF).ToString("0");
+                            UnitToInsert = "°F | °F";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            valueToInsert = (payload[0] - 128).ToString("0") + " | " + (payload[1] - 128).ToString("0");
-                            unitToInsert = "°C | °C";
+                            ValueToInsert = CoolantTemperatureC.ToString("0") + " | " + AmbientTemperatureC.ToString("0");
+                            UnitToInsert = "°C | °C";
                         }
                     }
                     break;
                 case 0x8D:
-                    descriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
 
                     if (message.Length >= 4)
                     {
@@ -705,7 +732,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x8E:
-                    descriptionToInsert = "STATUS 21";
+                    DescriptionToInsert = "STATUS 21";
 
                     if (message.Length >= 4)
                     {
@@ -713,7 +740,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x93:
-                    descriptionToInsert = "SEND CALIBRATION AND VARIANCE DATA";
+                    DescriptionToInsert = "SEND CALIBRATION AND VARIANCE DATA";
 
                     if (message.Length >= 4)
                     {
@@ -721,25 +748,25 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x94:
-                    descriptionToInsert = "MIC GAUGE/LAMP STATE";
+                    DescriptionToInsert = "MIC GAUGE/LAMP STATE";
 
                     if (message.Length >= 4)
                     {
                         switch (payload[1])
                         {
                             case 0x00: // fuel gauge
-                                descriptionToInsert = "MIC GAUGE POSITION: FUEL LEVEL";
-                                valueToInsert = Util.ByteToHexString(payload, 0, 1);
+                                DescriptionToInsert = "MIC GAUGE POSITION: FUEL LEVEL";
+                                ValueToInsert = Util.ByteToHexString(payload, 0, 1);
                                 break;
                             case 0x01: // coolant temperature gauge
-                                descriptionToInsert = "MIC GAUGE POSITION: COOLANT TEMPERATURE";
-                                valueToInsert = Util.ByteToHexString(payload, 0, 1);
+                                DescriptionToInsert = "MIC GAUGE POSITION: COOLANT TEMPERATURE";
+                                ValueToInsert = Util.ByteToHexString(payload, 0, 1);
                                 break;
                             case 0x02: // speedometer
                             case 0x22:
                             case 0x32:
-                                descriptionToInsert = "MIC GAUGE POSITION: SPEEDOMETER";
-                                valueToInsert = Util.ByteToHexString(payload, 0, 1);
+                                DescriptionToInsert = "MIC GAUGE POSITION: SPEEDOMETER";
+                                ValueToInsert = Util.ByteToHexString(payload, 0, 1);
                                 break;
                             case 0x03: // tachometer
                             case 0x23:
@@ -747,39 +774,39 @@ namespace ChryslerScanner
                             case 0x07:
                             case 0x27:
                             case 0x37:
-                                descriptionToInsert = "MIC GAUGE POSITION: TACHOMETER";
-                                valueToInsert = Util.ByteToHexString(payload, 0, 1);
+                                DescriptionToInsert = "MIC GAUGE POSITION: TACHOMETER";
+                                ValueToInsert = Util.ByteToHexString(payload, 0, 1);
                                 break;
                             default:
-                                descriptionToInsert = "MIC GAUGE/LAMP STATE";
-                                valueToInsert = Convert.ToString(payload[0], 2).PadLeft(8, '0');
+                                DescriptionToInsert = "MIC GAUGE/LAMP STATE";
+                                ValueToInsert = Convert.ToString(payload[0], 2).PadLeft(8, '0');
                                 break;
                         }
                     }
                     break;
                 case 0x95:
-                    descriptionToInsert = "FUEL LEVEL SENSOR VOLTAGE | FUEL LEVEL";
+                    DescriptionToInsert = "FUEL LEVEL SENSOR VOLTAGE | FUEL LEVEL";
 
                     if (message.Length >= 4)
                     {
-                        double FuelLevelSensorVolts = payload[0] * 0.0191;
+                        double FuelLevelSensorVoltage = payload[0] * 0.0191;
                         double FuelLevelG = payload[1] * 0.125;
                         double FuelLevelL = payload[1] * 0.125 * 3.785412;
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            valueToInsert = Math.Round(FuelLevelSensorVolts, 3).ToString("0.000").Replace(",", ".") + " | " + Math.Round(FuelLevelG, 1).ToString("0.0").Replace(",", ".");
-                            unitToInsert = "V | GALLON";
+                            ValueToInsert = Math.Round(FuelLevelSensorVoltage, 3).ToString("0.000").Replace(",", ".") + " | " + Math.Round(FuelLevelG, 1).ToString("0.0").Replace(",", ".");
+                            UnitToInsert = "V | GALLON";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            valueToInsert = Math.Round(FuelLevelSensorVolts, 3).ToString("0.000").Replace(",", ".") + " | " + Math.Round(FuelLevelL, 1).ToString("0.0").Replace(",", ".");
-                            unitToInsert = "V | LITER";
+                            ValueToInsert = Math.Round(FuelLevelSensorVoltage, 3).ToString("0.000").Replace(",", ".") + " | " + Math.Round(FuelLevelL, 1).ToString("0.0").Replace(",", ".");
+                            UnitToInsert = "V | LITER";
                         }
                     }
                     break;
                 case 0x99:
-                    descriptionToInsert = "COMPASS CALIBRATION AND VARIANCE DATA RECEIVED";
+                    DescriptionToInsert = "COMPASS CALIBRATION AND VARIANCE DATA RECEIVED";
 
                     if (message.Length >= 4)
                     {
@@ -787,62 +814,62 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xA4:
-                    descriptionToInsert = "MIC LAMP STATE";
+                    DescriptionToInsert = "MIC LAMP STATE";
 
                     if (message.Length >= 4)
                     {
-                        valueToInsert = string.Empty;
+                        ValueToInsert = string.Empty;
 
-                        if (Util.IsBitSet(payload[0], 1)) valueToInsert += "CRUISE ";
-                        if (Util.IsBitSet(payload[0], 2)) valueToInsert += "BRAKE ";
-                        if (Util.IsBitSet(payload[0], 5)) valueToInsert += "MIL ";
+                        if (Util.IsBitSet(payload[0], 1)) ValueToInsert += "CRUISE ";
+                        if (Util.IsBitSet(payload[0], 2)) ValueToInsert += "BRAKE ";
+                        if (Util.IsBitSet(payload[0], 5)) ValueToInsert += "MIL ";
                     }
                     break;
                 case 0xA9:
-                    descriptionToInsert = "LAST ENGINE SHUTDOWN";
+                    DescriptionToInsert = "LAST ENGINE SHUTDOWN";
 
                     if (message.Length >= 3)
                     {
-                        valueToInsert = payload[0].ToString("0");
-                        unitToInsert = "MINUTE";
+                        ValueToInsert = payload[0].ToString("0");
+                        UnitToInsert = "MINUTE";
                     }
                     break;
                 case 0xAA:
-                    descriptionToInsert = "VEHICLE THEFT SECURITY STATE";
+                    DescriptionToInsert = "VEHICLE THEFT SECURITY STATE";
 
                     if (message.Length >= 4)
                     {
                         switch (payload[0])
                         {
                             case 0x00:
-                                valueToInsert = "DISARMED";
+                                ValueToInsert = "DISARMED";
                                 break;
                             case 0x01:
-                                valueToInsert = "TIMING OUT";
+                                ValueToInsert = "TIMING OUT";
                                 break;
                             case 0x02:
-                                valueToInsert = "ARMED";
+                                ValueToInsert = "ARMED";
                                 break;
                             case 0x04:
-                                valueToInsert = "HORN AND LIGHTS";
+                                ValueToInsert = "HORN AND LIGHTS";
                                 break;
                             case 0x08:
-                                valueToInsert = "LIGHTS ONLY";
+                                ValueToInsert = "LIGHTS ONLY";
                                 break;
                             case 0x10:
-                                valueToInsert = "TIMED OUT";
+                                ValueToInsert = "TIMED OUT";
                                 break;
                             case 0x20:
-                                valueToInsert = "SELF DIAGS";
+                                ValueToInsert = "SELF DIAGS";
                                 break;
                             default:
-                                valueToInsert = "NONE";
+                                ValueToInsert = "NONE";
                                 break;
                         }
                     }
                     break;
                 case 0xAC:
-                    descriptionToInsert = "VEHICLE INFORMATION";
+                    DescriptionToInsert = "VEHICLE INFORMATION";
 
                     if (message.Length >= 4)
                     {
@@ -850,37 +877,37 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xB1:
-                    descriptionToInsert = "WARNING";
+                    DescriptionToInsert = "WARNING";
 
                     if (message.Length >= 3)
                     {
-                        List<string> warningList = new List<string>();
-                        warningList.Clear();
+                        List<string> WarningList = new List<string>();
+                        WarningList.Clear();
 
                         if (payload[0] == 0)
                         {
-                            descriptionToInsert = "NO WARNING";
+                            DescriptionToInsert = "NO WARNING";
                         }
                         else
                         {
-                            if (Util.IsBitSet(payload[0], 0)) warningList.Add("KEY IN IGNITION");
-                            if (Util.IsBitSet(payload[0], 1)) warningList.Add("SEAT BELT");
-                            if (Util.IsBitSet(payload[0], 2)) valueToInsert = "EXTERIOR LAMP";
-                            if (Util.IsBitSet(payload[0], 4)) warningList.Add("OVERSPEED ");
+                            if (Util.IsBitSet(payload[0], 0)) WarningList.Add("KEY IN IGNITION");
+                            if (Util.IsBitSet(payload[0], 1)) WarningList.Add("SEAT BELT");
+                            if (Util.IsBitSet(payload[0], 2)) ValueToInsert = "EXTERIOR LAMP";
+                            if (Util.IsBitSet(payload[0], 4)) WarningList.Add("OVERSPEED ");
 
-                            descriptionToInsert = "WARNING: ";
+                            DescriptionToInsert = "WARNING: ";
 
-                            foreach (string s in warningList)
+                            foreach (string s in WarningList)
                             {
-                                descriptionToInsert += s + " | ";
+                                DescriptionToInsert += s + " | ";
                             }
 
-                            if (descriptionToInsert.Length > 2) descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
+                            if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
                         }
                     }
                     break;
                 case 0xB2:
-                    descriptionToInsert = "REQUEST  |";
+                    DescriptionToInsert = "REQUEST  |";
 
                     if (message.Length >= 6)
                     {
@@ -890,129 +917,148 @@ namespace ChryslerScanner
                                 switch (payload[1])
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "REQUEST  | VEHICLE INFO CENTER | RESET";
+                                        DescriptionToInsert = "REQUEST  | VEHICLE INFO CENTER | RESET";
                                         break;
                                     case 0x10: // actuator tests
-                                        descriptionToInsert = "REQUEST  | VIC | ACTUATOR TEST";
+                                        DescriptionToInsert = "REQUEST  | VIC | ACTUATOR TEST";
 
                                         switch (payload[2])
                                         {
                                             case 0x10:
-                                                valueToInsert = "DISPLAY";
+                                                ValueToInsert = "DISPLAY";
+                                                break;
+                                            default:
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 1);
                                                 break;
                                         }
 
+                                        UnitToInsert = Util.ByteToHexString(payload, 3, 1);
                                         break;
                                     case 0x12: // read digital parameters
-                                        descriptionToInsert = "REQUEST  | VIC | DIGITAL READ";
+                                        DescriptionToInsert = "REQUEST  | VIC | DIGITAL READ";
 
                                         switch (payload[2])
                                         {
                                             case 0x00:
-                                                valueToInsert = "TRANSFER CASE POSITION";
+                                                ValueToInsert = "TRANSFER CASE POSITION";
+                                                break;
+                                            default:
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
-
                                         break;
                                     case 0x14: // read analog parameters
-                                        descriptionToInsert = "REQUEST  | VIC | ANALOG READ";
+                                        DescriptionToInsert = "REQUEST  | VIC | ANALOG READ";
 
                                         switch (payload[2])
                                         {
                                             case 0x00:
-                                                valueToInsert = "WASHER LEVEL";
+                                                ValueToInsert = "WASHER LEVEL";
                                                 break;
                                             case 0x01:
-                                                valueToInsert = "COOLANT LEVEL";
+                                                ValueToInsert = "COOLANT LEVEL";
                                                 break;
                                             case 0x02:
-                                                valueToInsert = "IGNITION VOLTAGE";
+                                                ValueToInsert = "IGNITION VOLTAGE";
+                                                break;
+                                            default:
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
-
                                         break;
                                     case 0x16: // read fault codes
-                                        descriptionToInsert = "REQUEST  | VIC | FAULT CODES";
-                                        valueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
+                                        DescriptionToInsert = "REQUEST  | VIC | FAULT CODES";
+                                        ValueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
                                         break;
                                     case 0x24: // software version
-                                        descriptionToInsert = "REQUEST  | VIC | SOFTWARE VERSION";
+                                        DescriptionToInsert = "REQUEST  | VIC | SOFTWARE VERSION";
                                         break;
                                     case 0x40: // erase fault codes
-                                        descriptionToInsert = "REQUEST  | VIC | ERASE FAULT CODES";
-                                        valueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
+                                        DescriptionToInsert = "REQUEST  | VIC | ERASE FAULT CODES";
+                                        ValueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
                                         break;
                                     default:
-                                        descriptionToInsert = "REQUEST  | VIC";
+                                        DescriptionToInsert = "REQUEST  | VIC | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
                             case 0x18: // VTS - Vehicle Theft Security
                             case 0x1B:
-                                descriptionToInsert = "REQUEST  | VTS";
+                                DescriptionToInsert = "REQUEST  | VTS | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                 break;
                             case 0x19: // CMT - Compass Mini-Trip
                                 switch (payload[1]) // command
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "REQUEST  | COMPASS MINI-TRIP | RESET";
+                                        DescriptionToInsert = "REQUEST  | COMPASS MINI-TRIP | RESET";
                                         break;
                                     case 0x10: // actuator test
-                                        descriptionToInsert = "REQUEST  | CMT | ACTUATOR TEST";
+                                        DescriptionToInsert = "REQUEST  | CMT | ACTUATOR TEST";
 
                                         switch (payload[2])
                                         {
                                             case 0x00: // self test
-                                                valueToInsert = "SELF TEST";
+                                                ValueToInsert = "SELF TEST";
+                                                break;
+                                            default:
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
-
                                         break;
                                     case 0x11: // test status
-                                        descriptionToInsert = "REQUEST  | CMT | ACTUATOR TEST STATUS";
+                                        DescriptionToInsert = "REQUEST  | CMT | ACTUATOR TEST STATUS";
 
                                         switch (payload[2])
                                         {
                                             case 0x00: // self test
-                                                valueToInsert = "SELF TEST";
+                                                ValueToInsert = "SELF TEST";
+                                                break;
+                                            default:
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
-
                                         break;
                                     case 0x12: // read digital parameters
-                                        descriptionToInsert = "REQUEST  | CMT | DIGITAL READ";
+                                        DescriptionToInsert = "REQUEST  | CMT | DIGITAL READ";
 
                                         switch (payload[2])
                                         {
                                             case 0x00:
-                                                valueToInsert = "STEP SWITCH";
+                                                ValueToInsert = "STEP SWITCH";
+                                                break;
+                                            default:
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
-
                                         break;
                                     case 0x16: // read fault codes
-                                        descriptionToInsert = "REQUEST  | CMT | FAULT CODES";
-                                        valueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
+                                        DescriptionToInsert = "REQUEST  | CMT | FAULT CODES";
+                                        ValueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
                                         break;
                                     case 0x20: // diagnostic data
-                                        descriptionToInsert = "REQUEST  | CMT | DIAGNOSTIC DATA";
+                                        DescriptionToInsert = "REQUEST  | CMT | DIAGNOSTIC DATA";
 
                                         switch (payload[2])
                                         {
                                             case 0x00:
-                                                valueToInsert = "TEMPERATURE";
+                                                ValueToInsert = "TEMPERATURE";
+                                                break;
+                                            default:
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
-
                                         break;
                                     case 0x22: // read ROM
                                         switch (payload[2])
                                         {
                                             case 0xC2: // MIC and PCM messages received
-                                                descriptionToInsert = "REQUEST  | CMT | MIC AND PCM MESSAGES RECEIVED";
+                                                DescriptionToInsert = "REQUEST  | CMT | MIC AND PCM MESSAGES RECEIVED";
                                                 break;
                                             default:
-                                                descriptionToInsert = "REQUEST  | CMT | ROM DATA";
+                                                DescriptionToInsert = "REQUEST  | CMT | ROM DATA";
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
                                         break;
@@ -1020,19 +1066,23 @@ namespace ChryslerScanner
                                         switch (payload[2])
                                         {
                                             case 0x00:
-                                                descriptionToInsert = "REQUEST  | CMT | SOFTWARE VERSION";
+                                                DescriptionToInsert = "REQUEST  | CMT | SOFTWARE VERSION";
                                                 break;
                                             case 0x01:
-                                                descriptionToInsert = "REQUEST  | CMT | EEPROM VERSION";
+                                                DescriptionToInsert = "REQUEST  | CMT | EEPROM VERSION";
+                                                break;
+                                            default:
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
                                         break;
                                     case 0x40: // erase fault codes
-                                        descriptionToInsert = "REQUEST  | CMT | ERASE FAULT CODES";
-                                        valueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
+                                        DescriptionToInsert = "REQUEST  | CMT | ERASE FAULT CODES";
+                                        ValueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
                                         break;
                                     default:
-                                        descriptionToInsert = "REQUEST  | CMT";
+                                        DescriptionToInsert = "REQUEST  | CMT | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -1040,21 +1090,22 @@ namespace ChryslerScanner
                                 switch (payload[1]) // command
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "REQUEST  | AIRBAG CONTROL MODULE | RESET";
+                                        DescriptionToInsert = "REQUEST  | AIRBAG CONTROL MODULE | RESET";
                                         break;
                                     case 0x16: // read fault codes
-                                        descriptionToInsert = "REQUEST  | ACM | FAULT CODES";
-                                        valueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
+                                        DescriptionToInsert = "REQUEST  | ACM | FAULT CODES";
+                                        ValueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
                                         break;
                                     case 0x24: // software version
-                                        descriptionToInsert = "REQUEST  | ACM | SOFTWARE VERSION";
+                                        DescriptionToInsert = "REQUEST  | ACM | SOFTWARE VERSION";
                                         break;
                                     case 0x40: // erase fault codes
-                                        descriptionToInsert = "REQUEST  | ACM | ERASE FAULT CODES";
-                                        valueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
+                                        DescriptionToInsert = "REQUEST  | ACM | ERASE FAULT CODES";
+                                        ValueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
                                         break;
                                     default:
-                                        descriptionToInsert = "REQUEST  | ACM";
+                                        DescriptionToInsert = "REQUEST  | ACM | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -1062,10 +1113,10 @@ namespace ChryslerScanner
                                 switch (payload[1]) // command
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "REQUEST  | BODY CONTROL MODULE | RESET";
+                                        DescriptionToInsert = "REQUEST  | BODY CONTROL MODULE | RESET";
                                         break;
                                     case 0x10: // actuator tests
-                                        descriptionToInsert = "REQUEST  | BCM | ACTUATOR TEST";
+                                        DescriptionToInsert = "REQUEST  | BCM | ACTUATOR TEST";
 
                                         switch (payload[2])
                                         {
@@ -1073,13 +1124,13 @@ namespace ChryslerScanner
                                                 switch (payload[3])
                                                 {
                                                     case 0x08:
-                                                        valueToInsert = "CHIME";
+                                                        ValueToInsert = "CHIME";
                                                         break;
                                                     case 0x20:
-                                                        valueToInsert = "COURTESY LAMPS";
+                                                        ValueToInsert = "COURTESY LAMPS";
                                                         break;
                                                     default:
-                                                        valueToInsert = "UNKNOWN";
+                                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                         break;
                                                 }
                                                 break;
@@ -1087,25 +1138,25 @@ namespace ChryslerScanner
                                                 switch (payload[3])
                                                 {
                                                     case 0x04:
-                                                        valueToInsert = "HEADLAMP RELAY";
+                                                        ValueToInsert = "HEADLAMP RELAY";
                                                         break;
                                                     case 0x08:
-                                                        valueToInsert = "HORN RELAY";
+                                                        ValueToInsert = "HORN RELAY";
                                                         break;
                                                     case 0x10:
-                                                        valueToInsert = "DOOR LOCK";
+                                                        ValueToInsert = "DOOR LOCK";
                                                         break;
                                                     case 0x20:
-                                                        valueToInsert = "DOOR UNLOCK";
+                                                        ValueToInsert = "DOOR UNLOCK";
                                                         break;
                                                     case 0x40:
-                                                        valueToInsert = "DR DOOR UNLOCK";
+                                                        ValueToInsert = "DR DOOR UNLOCK";
                                                         break;
                                                     case 0x80:
-                                                        valueToInsert = "EBL RELAY";
+                                                        ValueToInsert = "EBL RELAY";
                                                         break;
                                                     default:
-                                                        valueToInsert = "UNKNOWN";
+                                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                         break;
                                                 }
                                                 break;
@@ -1113,16 +1164,16 @@ namespace ChryslerScanner
                                                 switch (payload[3])
                                                 {
                                                     case 0x20:
-                                                        valueToInsert = "VTSS LAMP";
+                                                        ValueToInsert = "VTSS LAMP";
                                                         break;
                                                     case 0x40:
-                                                        valueToInsert = "WIPERS LOW";
+                                                        ValueToInsert = "WIPERS LOW";
                                                         break;
                                                     case 0xC0:
-                                                        valueToInsert = "WIPERS HIGH";
+                                                        ValueToInsert = "WIPERS HIGH";
                                                         break;
                                                     default:
-                                                        valueToInsert = "UNKNOWN";
+                                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                         break;
                                                 }
                                                 break;
@@ -1130,7 +1181,7 @@ namespace ChryslerScanner
                                                 switch (payload[3])
                                                 {
                                                     default:
-                                                        valueToInsert = "UNKNOWN";
+                                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                         break;
                                                 }
                                                 break;
@@ -1138,10 +1189,10 @@ namespace ChryslerScanner
                                                 switch (payload[3])
                                                 {
                                                     case 0x00:
-                                                        valueToInsert = "RECAL ATC";
+                                                        ValueToInsert = "RECAL ATC";
                                                         break;
                                                     default:
-                                                        valueToInsert = "UNKNOWN";
+                                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                         break;
                                                 }
                                                 break;
@@ -1149,7 +1200,7 @@ namespace ChryslerScanner
                                                 switch (payload[3])
                                                 {
                                                     default:
-                                                        valueToInsert = "UNKNOWN";
+                                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                         break;
                                                 }
                                                 break;
@@ -1157,7 +1208,7 @@ namespace ChryslerScanner
                                                 switch (payload[3])
                                                 {
                                                     default:
-                                                        valueToInsert = "UNKNOWN";
+                                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                         break;
                                                 }
                                                 break;
@@ -1165,7 +1216,7 @@ namespace ChryslerScanner
                                                 switch (payload[3])
                                                 {
                                                     default:
-                                                        valueToInsert = "UNKNOWN";
+                                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                         break;
                                                 }
                                                 break;
@@ -1173,7 +1224,7 @@ namespace ChryslerScanner
                                                 switch (payload[3])
                                                 {
                                                     default:
-                                                        valueToInsert = "UNKNOWN";
+                                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                         break;
                                                 }
                                                 break;
@@ -1181,10 +1232,10 @@ namespace ChryslerScanner
                                                 switch (payload[3])
                                                 {
                                                     case 0x00:
-                                                        valueToInsert = "ENABLE VTSS";
+                                                        ValueToInsert = "ENABLE VTSS";
                                                         break;
                                                     default:
-                                                        valueToInsert = "UNKNOWN";
+                                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                         break;
                                                 }
                                                 break;
@@ -1192,7 +1243,7 @@ namespace ChryslerScanner
                                                 switch (payload[3])
                                                 {
                                                     default:
-                                                        valueToInsert = "UNKNOWN";
+                                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                         break;
                                                 }
                                                 break;
@@ -1200,7 +1251,7 @@ namespace ChryslerScanner
                                                 switch (payload[3])
                                                 {
                                                     default:
-                                                        valueToInsert = "UNKNOWN";
+                                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                         break;
                                                 }
                                                 break;
@@ -1208,10 +1259,10 @@ namespace ChryslerScanner
                                                 switch (payload[3])
                                                 {
                                                     case 0x10:
-                                                        valueToInsert = "ENABLE DOOR LOCK";
+                                                        ValueToInsert = "ENABLE DOOR LOCK";
                                                         break;
                                                     default:
-                                                        valueToInsert = "UNKNOWN";
+                                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                         break;
                                                 }
                                                 break;
@@ -1219,109 +1270,111 @@ namespace ChryslerScanner
                                                 switch (payload[3])
                                                 {
                                                     case 0x10:
-                                                        valueToInsert = "DISABLE DOOR LOCK";
+                                                        ValueToInsert = "DISABLE DOOR LOCK";
                                                         break;
                                                     default:
-                                                        valueToInsert = "UNKNOWN";
+                                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                         break;
                                                 }
                                                 break;
                                             default:
-                                                valueToInsert = "UNKNOWN";
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
 
                                         }
 
                                         break;
                                     case 0x12: // read digital parameters
-                                        descriptionToInsert = "REQUEST  | BCM | DIGITAL READ";
-                                        valueToInsert = Util.ByteToHexString(payload, 2, 1);
+                                        DescriptionToInsert = "REQUEST  | BCM | DIGITAL READ";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x14: // read analog parameters
                                         switch (payload[2])
                                         {
                                             case 0x00:
-                                                descriptionToInsert = "REQUEST  | BCM | ANALOG READ: PASSENGER DOOR DISARM";
+                                                DescriptionToInsert = "REQUEST  | BCM | ANALOG READ: PASSENGER DOOR DISARM";
                                                 break;
                                             case 0x01:
-                                                descriptionToInsert = "REQUEST  | BCM | ANALOG READ: PANEL LAMPS";
+                                                DescriptionToInsert = "REQUEST  | BCM | ANALOG READ: PANEL LAMPS";
                                                 break;
                                             case 0x02:
-                                                descriptionToInsert = "REQUEST  | BCM | ANALOG READ: DRDOOR DISARM";
+                                                DescriptionToInsert = "REQUEST  | BCM | ANALOG READ: DRDOOR DISARM";
                                                 break;
                                             case 0x03:
-                                                descriptionToInsert = "REQUEST  | BCM | ANALOG READ: HVAC CONTROL HEAD VOLTAGE";
+                                                DescriptionToInsert = "REQUEST  | BCM | ANALOG READ: HVAC CONTROL HEAD VOLTAGE";
                                                 break;
                                             case 0x04:
-                                                descriptionToInsert = "REQUEST  | BCM | ANALOG READ: CONVERT SELECT";
+                                                DescriptionToInsert = "REQUEST  | BCM | ANALOG READ: CONVERT SELECT";
                                                 break;
                                             case 0x05:
-                                                descriptionToInsert = "REQUEST  | BCM | ANALOG READ: MODE DOOR";
+                                                DescriptionToInsert = "REQUEST  | BCM | ANALOG READ: MODE DOOR";
                                                 break;
                                             case 0x06:
-                                                descriptionToInsert = "REQUEST  | BCM | ANALOG READ: DOOR STALL";
+                                                DescriptionToInsert = "REQUEST  | BCM | ANALOG READ: DOOR STALL";
                                                 break;
                                             case 0x07:
-                                                descriptionToInsert = "REQUEST  | BCM | ANALOG READ: A/C SWITCH";
+                                                DescriptionToInsert = "REQUEST  | BCM | ANALOG READ: A/C SWITCH";
                                                 break;
                                             case 0x08:
-                                                descriptionToInsert = "REQUEST  | BCM | ANALOG READ: DOOR LOCK SWITCH VOLTAGE";
+                                                DescriptionToInsert = "REQUEST  | BCM | ANALOG READ: DOOR LOCK SWITCH VOLTAGE";
                                                 break;
                                             case 0x09:
-                                                descriptionToInsert = "REQUEST  | BCM | ANALOG READ: BATTERY VOLTAGE";
+                                                DescriptionToInsert = "REQUEST  | BCM | ANALOG READ: BATTERY VOLTAGE";
                                                 break;
                                             case 0x0B:
-                                                descriptionToInsert = "REQUEST  | BCM | ANALOG READ: FUEL LEVEL";
+                                                DescriptionToInsert = "REQUEST  | BCM | ANALOG READ: FUEL LEVEL";
                                                 break;
                                             case 0x0C:
-                                                descriptionToInsert = "REQUEST  | BCM | ANALOG READ: EVAP TEMP VOLTAGE";
+                                                DescriptionToInsert = "REQUEST  | BCM | ANALOG READ: EVAP TEMP VOLTAGE";
                                                 break;
                                             case 0x0A:
-                                                descriptionToInsert = "REQUEST  | BCM | ANALOG READ: IGNITION VOLTAGE";
+                                                DescriptionToInsert = "REQUEST  | BCM | ANALOG READ: IGNITION VOLTAGE";
                                                 break;
                                             case 0x0D:
-                                                descriptionToInsert = "REQUEST  | BCM | ANALOG READ: INTERMITTENT WIPER VOLTAGE";
+                                                DescriptionToInsert = "REQUEST  | BCM | ANALOG READ: INTERMITTENT WIPER VOLTAGE";
                                                 break;
                                             default:
-                                                descriptionToInsert = "REQUEST  | BCM | ANALOG READ";
+                                                DescriptionToInsert = "REQUEST  | BCM | ANALOG READ";
                                                 break;
                                         }
 
-                                        valueToInsert = Util.ByteToHexString(payload, 2, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x16: // read fault codes
-                                        descriptionToInsert = "REQUEST  | BCM | FAULT CODES";
-                                        valueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
+                                        DescriptionToInsert = "REQUEST  | BCM | FAULT CODES";
+                                        ValueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x22: // read ROM
-                                        descriptionToInsert = "REQUEST  | BCM | ROM DATA";
+                                        DescriptionToInsert = "REQUEST  | BCM | ROM DATA";
                                         int address = (payload[2] << 8) + payload[3];
                                         int addressNext = address + 1;
                                         byte[] addressNextArray = { (byte)((addressNext >> 8) & 0xFF), (byte)(addressNext & 0xFF) };
-                                        valueToInsert = "OFFSET: " + Util.ByteToHexString(message, 3, 2) + " | " + Util.ByteToHexStringSimple(addressNextArray);
+                                        ValueToInsert = "OFFSET: " + Util.ByteToHexString(message, 3, 2) + " | " + Util.ByteToHexStringSimple(addressNextArray);
                                         break;
                                     case 0x24: // read module id
-                                        descriptionToInsert = "REQUEST  | BCM | MODULE ID";
+                                        DescriptionToInsert = "REQUEST  | BCM | MODULE ID";
                                         break;
                                     case 0x2A: // read vehicle identification number (vin)
-                                        descriptionToInsert = "REQUEST  | BCM | READ VIN";
+                                        DescriptionToInsert = "REQUEST  | BCM | READ VIN";
                                         break;
                                     case 0x2C: // write vehicle identification number (vin)
-                                        descriptionToInsert = "REQUEST  | BCM | WRITE VIN";
+                                        DescriptionToInsert = "REQUEST  | BCM | WRITE VIN";
                                         break;
                                     case 0x40: // erase fault codes
-                                        descriptionToInsert = "REQUEST  | BCM | ERASE FAULT CODES";
+                                        DescriptionToInsert = "REQUEST  | BCM | ERASE FAULT CODES";
                                         break;
                                     case 0x60: // write EEPROM
-                                        descriptionToInsert = "REQUEST  | BCM | WRITE EEPROM | OFFSET: " + Util.ByteToHexStringSimple(new byte[2] { payload[2], payload[3] });
+                                        DescriptionToInsert = "REQUEST  | BCM | WRITE EEPROM | OFFSET: " + Util.ByteToHexStringSimple(new byte[2] { payload[2], payload[3] });
                                         break;
                                     case 0xB0: // write settings
-                                        descriptionToInsert = "REQUEST  | BCM | WRITE SETTINGS";
+                                        DescriptionToInsert = "REQUEST  | BCM | WRITE SETTINGS";
                                         break;
                                     case 0xB1: // read settings
-                                        descriptionToInsert = "REQUEST  | BCM | READ SETTINGS";
+                                        DescriptionToInsert = "REQUEST  | BCM | READ SETTINGS";
                                         break;
                                     default:
+                                        DescriptionToInsert = "REQUEST  | BCM | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -1330,58 +1383,62 @@ namespace ChryslerScanner
                                 switch (payload[1]) // command
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "REQUEST  | MECHANICAL INSTRUMENT CLUSTER | RESET";
+                                        DescriptionToInsert = "REQUEST  | MECHANICAL INSTRUMENT CLUSTER | RESET";
                                         break;
                                     case 0x10: // actuator test
-                                        descriptionToInsert = "REQUEST  | MIC | ACTUATOR TEST";
+                                        DescriptionToInsert = "REQUEST  | MIC | ACTUATOR TEST";
 
                                         switch (payload[2])
                                         {
                                             case 0x00:
-                                                valueToInsert = "ALL GAUGES";
+                                                ValueToInsert = "ALL GAUGES";
                                                 break;
                                             case 0x01:
-                                                valueToInsert = "ALL LAMPS";
+                                                ValueToInsert = "ALL LAMPS";
                                                 break;
                                             case 0x02:
-                                                valueToInsert = "ODO/TRIP/PRND3L";
+                                                ValueToInsert = "ODO/TRIP/PRND3L";
                                                 break;
                                             case 0x03:
-                                                valueToInsert = "PRND3L SEGMENTS";
+                                                ValueToInsert = "PRND3L SEGMENTS";
                                                 break;
                                             default:
-                                                valueToInsert = "UNDEFINED";
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
 
                                         break;
                                     case 0x12: // read digital parameters
-                                        descriptionToInsert = "REQUEST  | MIC | DIGITAL READ";
+                                        DescriptionToInsert = "REQUEST  | MIC | DIGITAL READ";
 
                                         switch (payload[2])
                                         {
                                             case 0x00:
-                                                valueToInsert = "ALL SWITCHES";
+                                                ValueToInsert = "ALL SWITCHES";
+                                                break;
+                                            default:
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
 
                                         break;
                                     case 0x16: // read fault codes
-                                        descriptionToInsert = "REQUEST  | MIC | FAULT CODES";
-                                        valueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
+                                        DescriptionToInsert = "REQUEST  | MIC | FAULT CODES";
+                                        ValueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
                                         break;
                                     case 0x24: // software version
-                                        descriptionToInsert = "REQUEST  | MIC | SOFTWARE VERSION";
+                                        DescriptionToInsert = "REQUEST  | MIC | SOFTWARE VERSION";
                                         break;
                                     case 0x40: // erase fault codes
-                                        descriptionToInsert = "REQUEST  | MIC | ERASE FAULT CODES";
-                                        valueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
+                                        DescriptionToInsert = "REQUEST  | MIC | ERASE FAULT CODES";
+                                        ValueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
                                         break;
                                     case 0xE0: // self test
-                                        descriptionToInsert = "REQUEST  | MIC | SELF TEST";
+                                        DescriptionToInsert = "REQUEST  | MIC | SELF TEST";
                                         break;
                                     default:
-                                        descriptionToInsert = "REQUEST  | MIC";
+                                        DescriptionToInsert = "REQUEST  | MIC | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -1390,38 +1447,42 @@ namespace ChryslerScanner
                                 switch (payload[1])
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "REQUEST  | TRANSMISSION CONTROL MODULE | RESET";
+                                        DescriptionToInsert = "REQUEST  | TRANSMISSION CONTROL MODULE | RESET";
                                         break;
                                     case 0x24: // read analog parameters
-                                        descriptionToInsert = "REQUEST  | TCM | READ ANALOG PARAMETER";
+                                        DescriptionToInsert = "REQUEST  | TCM | READ ANALOG PARAMETER";
 
                                         switch (payload[2])
                                         {
                                             case 0x0B: // LR Clutch Volume Index (CVI)
-                                                transmissionLRCVIRequested = true;
-                                                descriptionToInsert = "REQUEST  | TCM | LR CLUTCH VOLUME INDEX (CVI)";
+                                                TransmissionLRCVIRequested = true;
+                                                DescriptionToInsert = "REQUEST  | TCM | LR CLUTCH VOLUME INDEX (CVI)";
                                                 break;
                                             case 0x0C: // 24 CVI
-                                                transmission24CVIRequested = true;
-                                                descriptionToInsert = "REQUEST  | TCM | 24 CLUTCH VOLUME INDEX (CVI)";
+                                                Transmission24CVIRequested = true;
+                                                DescriptionToInsert = "REQUEST  | TCM | 24 CLUTCH VOLUME INDEX (CVI)";
                                                 break;
                                             case 0x0D: // OD CVI
-                                                transmissionODCVIRequested = true;
-                                                descriptionToInsert = "REQUEST  | TCM | OD CLUTCH VOLUME INDEX (CVI)";
+                                                TransmissionODCVIRequested = true;
+                                                DescriptionToInsert = "REQUEST  | TCM | OD CLUTCH VOLUME INDEX (CVI)";
                                                 break;
                                             case 0x0E: // UD CVI
-                                                transmissionUDCVIRequested = true;
-                                                descriptionToInsert = "REQUEST  | TCM | UD CLUTCH VOLUME INDEX (CVI)";
+                                                TransmissionUDCVIRequested = true;
+                                                DescriptionToInsert = "REQUEST  | TCM | UD CLUTCH VOLUME INDEX (CVI)";
                                                 break;
                                             case 0x10: // transmission temperature
-                                                transmissionTemperatureRequested = true;
-                                                descriptionToInsert = "REQUEST  | TCM | TRANSMISSION TEMPERATURE";
+                                                TransmissionTemperatureRequested = true;
+                                                DescriptionToInsert = "REQUEST  | TCM | TRANSMISSION TEMPERATURE";
+                                                break;
+                                            default:
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
 
                                         break;
                                     default:
-                                        descriptionToInsert = "REQUEST  | TCM";
+                                        DescriptionToInsert = "REQUEST  | TCM | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -1429,10 +1490,11 @@ namespace ChryslerScanner
                                 switch (payload[1])
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "REQUEST  | ANTILOCK BRAKE SYSTEM | RESET";
+                                        DescriptionToInsert = "REQUEST  | ANTILOCK BRAKE SYSTEM | RESET";
                                         break;
                                     default:
-                                        descriptionToInsert = "REQUEST  | ABS";
+                                        DescriptionToInsert = "REQUEST  | ABS | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -1440,10 +1502,11 @@ namespace ChryslerScanner
                                 switch (payload[1])
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "REQUEST  | HVAC | RESET";
+                                        DescriptionToInsert = "REQUEST  | HVAC | RESET";
                                         break;
                                     default:
-                                        descriptionToInsert = "REQUEST  | HVAC";
+                                        DescriptionToInsert = "REQUEST  | HVAC | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -1451,10 +1514,11 @@ namespace ChryslerScanner
                                 switch (payload[1])
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "REQUEST  | DRIVER DOOR MODULE | RESET";
+                                        DescriptionToInsert = "REQUEST  | DRIVER DOOR MODULE | RESET";
                                         break;
                                     default:
-                                        descriptionToInsert = "REQUEST  | DDM";
+                                        DescriptionToInsert = "REQUEST  | DDM | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -1462,10 +1526,11 @@ namespace ChryslerScanner
                                 switch (payload[1])
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "REQUEST  | PASSENGER DOOR MODULE | RESET";
+                                        DescriptionToInsert = "REQUEST  | PASSENGER DOOR MODULE | RESET";
                                         break;
                                     default:
-                                        descriptionToInsert = "REQUEST  | PDM";
+                                        DescriptionToInsert = "REQUEST  | PDM | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -1473,10 +1538,11 @@ namespace ChryslerScanner
                                 switch (payload[1])
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "REQUEST  | MEMORY SEAT MODULE | RESET";
+                                        DescriptionToInsert = "REQUEST  | MEMORY SEAT MODULE | RESET";
                                         break;
                                     default:
-                                        descriptionToInsert = "REQUEST  | MSM";
+                                        DescriptionToInsert = "REQUEST  | MSM | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -1484,10 +1550,11 @@ namespace ChryslerScanner
                                 switch (payload[1])
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "REQUEST  | AUDIO SYSTEM MODULE | RESET";
+                                        DescriptionToInsert = "REQUEST  | AUDIO SYSTEM MODULE | RESET";
                                         break;
                                     default:
-                                        descriptionToInsert = "REQUEST  | ASM";
+                                        DescriptionToInsert = "REQUEST  | ASM | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -1495,10 +1562,11 @@ namespace ChryslerScanner
                                 switch (payload[1])
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "REQUEST  | SKIM | RESET";
+                                        DescriptionToInsert = "REQUEST  | SKIM | RESET";
                                         break;
                                     default:
-                                        descriptionToInsert = "REQUEST  | SKIM";
+                                        DescriptionToInsert = "REQUEST  | SKIM | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -1506,15 +1574,16 @@ namespace ChryslerScanner
                                 switch (payload[1]) // command
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "REQUEST  | RESET ALL CCD-BUS MODULES";
+                                        DescriptionToInsert = "REQUEST  | RESET ALL CCD-BUS MODULES";
                                         break;
                                     default:
-                                        descriptionToInsert = "REQUEST  | ALL CCD-BUS MODULES";
+                                        DescriptionToInsert = "REQUEST  | ALL CCD-BUS MODULES | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
                             default:
-                                descriptionToInsert = "REQUEST  | MODULE: " + Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | COMMAND: " + Util.ByteToHexStringSimple(new byte[1] { payload[1] }) + " | PARAMS: " + Util.ByteToHexStringSimple(new byte[2] { payload[2], payload[3] });
+                                DescriptionToInsert = "REQUEST  | MODULE: " + Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | COMMAND: " + Util.ByteToHexStringSimple(new byte[1] { payload[1] }) + " | PARAMS: " + Util.ByteToHexStringSimple(new byte[2] { payload[2], payload[3] });
                                 break;
                         }
                     }
@@ -1531,40 +1600,46 @@ namespace ChryslerScanner
                     break;
                 case 0xB4:
                 case 0xC4:
-                    descriptionToInsert = "VEHICLE SPEED SENSOR";
+                    DescriptionToInsert = "VEHICLE SPEED SENSOR";
 
                     if (message.Length >= 4)
                     {
+                        ushort DistancePulse = (ushort)((payload[0] << 8) + payload[1]);
+                        double VehicleSpeedMPH = 28800.0 / DistancePulse; // 8000 * 3.6 = 28800
+                        double VehicleSpeedKMH = 28800.0 / DistancePulse * 1.609344;
+                        //double MileageIncrementMi = 22016.0 / DistancePulse; // 64 * 344 = 22016, already received in CCD ID 84
+                        //double MileageIncrementKm = MileageIncrementMi * 1.609344;
+
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            if ((payload[0] != 0xFF) && (payload[1] != 0xFF))
+                            if (DistancePulse != 0xFFFF)
                             {
-                                valueToInsert = Math.Round(28800.0 / ((payload[0] << 8) | payload[1]), 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(VehicleSpeedMPH, 1).ToString("0.0").Replace(",", ".");
                             }
                             else
                             {
-                                valueToInsert = "0.0";
+                                ValueToInsert = "0.0";
                             }
 
-                            unitToInsert = "MPH";
+                            UnitToInsert = "MPH";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            if ((payload[0] != 0xFF) && (payload[1] != 0xFF))
+                            if (DistancePulse != 0xFFFF)
                             {
-                                valueToInsert = Math.Round(28800.0 / ((payload[0] << 8) | payload[1]) * 1.609344, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(VehicleSpeedKMH, 1).ToString("0.0").Replace(",", ".");
                             }
                             else
                             {
-                                valueToInsert = "0.0";
+                                ValueToInsert = "0.0";
                             }
 
-                            unitToInsert = "KM/H";
+                            UnitToInsert = "KM/H";
                         }
                     }
                     break;
                 case 0xB6:
-                    descriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
 
                     if (message.Length >= 4)
                     {
@@ -1572,7 +1647,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xBA:
-                    descriptionToInsert = "REQUEST COMPASS CALIBRATION OR VARIANCE";
+                    DescriptionToInsert = "REQUEST COMPASS CALIBRATION OR VARIANCE";
 
                     if (message.Length >= 4)
                     {
@@ -1580,49 +1655,49 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xBE:
-                    descriptionToInsert = "IGNITION SWITCH POSITION";
+                    DescriptionToInsert = "IGNITION SWITCH POSITION";
 
                     if (message.Length >= 3)
                     {
-                        if (Util.IsBitSet(payload[0], 4)) valueToInsert = "ON";
-                        else valueToInsert = "OFF";
+                        if (Util.IsBitSet(payload[0], 4)) ValueToInsert = "ON";
+                        else ValueToInsert = "OFF";
                     }
                     break;
                 case 0xC2:
-                    descriptionToInsert = "SKIM SECRET KEY";
+                    DescriptionToInsert = "SKIM SECRET KEY";
 
                     if (message.Length >= 6)
                     {
-                        valueToInsert = Util.ByteToHexStringSimple(payload);
+                        ValueToInsert = Util.ByteToHexStringSimple(payload);
                     }
                     break;
                 case 0xCA:
-                    descriptionToInsert = "WRITE EEPROM";
+                    DescriptionToInsert = "WRITE EEPROM";
 
                     if (message.Length >= 6)
                     {
                         switch (payload[0])
                         {
                             case 0x1B: // VTS
-                                descriptionToInsert = "WRITE EEPROM | VTS | ";
+                                DescriptionToInsert = "WRITE EEPROM | VTS | ";
                                 break;
                             case 0x20: // BCM
-                                descriptionToInsert = "WRITE EEPROM | BCM | ";
+                                DescriptionToInsert = "WRITE EEPROM | BCM | ";
                                 break;
                             case 0x43: // ABS
-                                descriptionToInsert = "WRITE EEPROM | ABS | ";
+                                DescriptionToInsert = "WRITE EEPROM | ABS | ";
                                 break;
                             default:
-                                descriptionToInsert = "WRITE EEPROM | MODULE ID: " + Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | ";
+                                DescriptionToInsert = "WRITE EEPROM | MODULE ID: " + Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | ";
                                 break;
                         }
 
-                        descriptionToInsert += "OFFSET: " + Util.ByteToHexStringSimple(new byte[2] { payload[1], payload[2] });
-                        valueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[3] });
+                        DescriptionToInsert += "OFFSET: " + Util.ByteToHexStringSimple(new byte[2] { payload[1], payload[2] });
+                        ValueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[3] });
                     }
                     break;
                 case 0xCB:
-                    descriptionToInsert = "SEND COMPASS AND LAST OUTSIDE AIR TEMPERATURE DATA";
+                    DescriptionToInsert = "SEND COMPASS AND LAST OUTSIDE AIR TEMPERATURE DATA";
 
                     if (message.Length >= 4)
                     {
@@ -1630,15 +1705,15 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xCC:
-                    descriptionToInsert = "ACCUMULATED MILEAGE";
+                    DescriptionToInsert = "ACCUMULATED MILEAGE";
 
                     if (message.Length >= 4)
                     {
-                        valueToInsert = Util.ByteToHexStringSimple(payload);
+                        ValueToInsert = Util.ByteToHexStringSimple(payload);
                     }
                     break;
                 case 0xCD:
-                    descriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
 
                     if (message.Length >= 4)
                     {
@@ -1646,24 +1721,27 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xCE:
-                    descriptionToInsert = "VEHICLE DISTANCE / ODOMETER";
+                    DescriptionToInsert = "VEHICLE DISTANCE / ODOMETER";
 
                     if (message.Length >= 6)
                     {
+                        double OdometerMi = (uint)(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]) * 0.000125;
+                        double OdometerKm = (uint)(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]) * 0.000125 * 1.609344;
+
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            valueToInsert = Math.Round((uint)(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]) * 0.000125, 3).ToString("0.000").Replace(",", ".");
-                            unitToInsert = "MILE";
+                            ValueToInsert = Math.Round(OdometerMi, 3).ToString("0.000").Replace(",", ".");
+                            UnitToInsert = "MILE";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            valueToInsert = Math.Round((uint)(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]) * 0.000125 * 1.609344, 3).ToString("0.000").Replace(",", ".");
-                            unitToInsert = "KILOMETER";
+                            ValueToInsert = Math.Round(OdometerKm, 3).ToString("0.000").Replace(",", ".");
+                            UnitToInsert = "KILOMETER";
                         }
                     }
                     break;
                 case 0xD3:
-                    descriptionToInsert = "COMPASS DISPLAY";
+                    DescriptionToInsert = "COMPASS DISPLAY";
 
                     if (message.Length >= 4)
                     {
@@ -1671,25 +1749,28 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xD4:
-                    descriptionToInsert = "BATTERY VOLTAGE | CHARGING VOLTAGE";
+                    DescriptionToInsert = "BATTERY VOLTAGE | CHARGING VOLTAGE";
 
                     if (message.Length >= 4)
                     {
-                        valueToInsert = Math.Round(payload[0] * 0.0625, 1).ToString("0.0").Replace(",", ".") + " | " + Math.Round(payload[1] * 0.0625, 1).ToString("0.0").Replace(",", ".");
-                        unitToInsert = "V | V";
+                        double BatteryVoltage = payload[0] * 0.0625;
+                        double ChargingVoltage = payload[1] * 0.0625;
+
+                        ValueToInsert = Math.Round(BatteryVoltage, 1).ToString("0.0").Replace(",", ".") + " | " + Math.Round(ChargingVoltage, 1).ToString("0.0").Replace(",", ".");
+                        UnitToInsert = "V | V";
                     }
                     break;
                 case 0xDA:
-                    descriptionToInsert = "MIC SWITCH/LAMP STATE";
+                    DescriptionToInsert = "MIC SWITCH/LAMP STATE";
 
                     if (message.Length >= 3)
                     {
-                        if (Util.IsBitSet(payload[0], 6)) valueToInsert = "MIL LAMP ON";
-                        else valueToInsert = "MIL LAMP OFF";
+                        if (Util.IsBitSet(payload[0], 6)) ValueToInsert = "MIL LAMP ON";
+                        else ValueToInsert = "MIL LAMP OFF";
                     }
                     break;
                 case 0xDB:
-                    descriptionToInsert = "COMPASS CALL DATA | A/C CLUTCH ON";
+                    DescriptionToInsert = "COMPASS CALL DATA | A/C CLUTCH ON";
 
                     if (message.Length >= 4)
                     {
@@ -1697,157 +1778,165 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xDC:
-                    descriptionToInsert = "TRANSMISSION STATUS / SELECTED GEAR";
+                    DescriptionToInsert = "TRANSMISSION STATUS / SELECTED GEAR";
 
                     if (message.Length >= 3)
                     {
-                        valueToInsert = string.Empty;
+                        ValueToInsert = string.Empty;
 
-                        if (Util.IsBitSet(payload[0], 0)) valueToInsert += "NEUTRAL ";
-                        else if (Util.IsBitSet(payload[0], 1)) valueToInsert += "REVERSE ";
-                        else if (Util.IsBitSet(payload[0], 2)) valueToInsert += "1 ";
-                        else if (Util.IsBitSet(payload[0], 3)) valueToInsert += "2 ";
-                        else if (Util.IsBitSet(payload[0], 4)) valueToInsert += "3 ";
-                        else if (Util.IsBitSet(payload[0], 5)) valueToInsert += "4 ";
-                        else valueToInsert += "N/A ";
+                        if (Util.IsBitSet(payload[0], 0)) ValueToInsert += "NEUTRAL ";
+                        else if (Util.IsBitSet(payload[0], 1)) ValueToInsert += "REVERSE ";
+                        else if (Util.IsBitSet(payload[0], 2)) ValueToInsert += "1 ";
+                        else if (Util.IsBitSet(payload[0], 3)) ValueToInsert += "2 ";
+                        else if (Util.IsBitSet(payload[0], 4)) ValueToInsert += "3 ";
+                        else if (Util.IsBitSet(payload[0], 5)) ValueToInsert += "4 ";
+                        else ValueToInsert += "N/A ";
 
                         switch ((payload[0] >> 6) & 0x03)
                         {
                             case 1:
-                                valueToInsert += "| LOCK: PART";
+                                ValueToInsert += "| LOCK: PART";
                                 break;
                             case 2:
-                                valueToInsert += "| LOCK: FULL";
+                                ValueToInsert += "| LOCK: FULL";
                                 break;
                             default:
-                                valueToInsert += "| LOCK: N/A";
+                                ValueToInsert += "| LOCK: N/A";
                                 break;
                         }
                     }
                     break;
                 case 0xE4:
-                    descriptionToInsert = "ENGINE SPEED | INTAKE MANIFOLD ABSOLUTE PRESSURE";
+                    DescriptionToInsert = "ENGINE SPEED | INTAKE MANIFOLD ABSOLUTE PRESSURE";
 
                     if (message.Length >= 4)
                     {
+                        double EngineSpeed = payload[0] * 32.0;
+                        double MAPPSI = payload[1] * 0.1217 * 0.49109778;
+                        double MAPKPA = payload[1] * 0.1217 * 25.4 * 0.133322368;
+
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            valueToInsert = (payload[0] * 32).ToString("0") + " | " + Math.Round(payload[1] * 0.1217 * 0.49109778, 1).ToString("0.0").Replace(",", ".");
-                            unitToInsert = "RPM | PSI";
+                            ValueToInsert = Math.Round(EngineSpeed).ToString("0") + " | " + Math.Round(MAPPSI, 1).ToString("0.0").Replace(",", ".");
+                            UnitToInsert = "RPM | PSI";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            valueToInsert = (payload[0] * 32).ToString("0") + " | " + Math.Round(payload[1] * 0.1217 * 25.4 * 0.133322368, 1).ToString("0.0").Replace(",", ".");
-                            unitToInsert = "RPM | KPA";
+                            ValueToInsert = Math.Round(EngineSpeed).ToString("0") + " | " + Math.Round(MAPKPA, 1).ToString("0.0").Replace(",", ".");
+                            UnitToInsert = "RPM | KPA";
                         }
                     }
                     break;
                 case 0xEC:
-                    descriptionToInsert = "VEHICLE INFORMATION";
+                    DescriptionToInsert = "VEHICLE INFORMATION";
 
                     if (message.Length >= 4)
                     {
-                        List<string> limpStates = new List<string>();
-                        limpStates.Clear();
+                        List<string> LimpStates = new List<string>();
+                        LimpStates.Clear();
 
-                        if (Util.IsBitSet(payload[0], 0)) limpStates.Add("ECT");
-                        if (Util.IsBitSet(payload[0], 1)) limpStates.Add("TPS");
-                        if (Util.IsBitSet(payload[0], 2)) limpStates.Add("CHARGING");
-                        if (Util.IsBitSet(payload[0], 4)) limpStates.Add("A/C PRESSURE");
-                        if (Util.IsBitSet(payload[0], 6)) limpStates.Add("IAT");
+                        if (Util.IsBitSet(payload[0], 0)) LimpStates.Add("ECT"); // Engine coolant temperature
+                        if (Util.IsBitSet(payload[0], 1)) LimpStates.Add("TPS"); // Throttle position sensor
+                        if (Util.IsBitSet(payload[0], 2)) LimpStates.Add("CHG"); // Battery charging voltage
+                        if (Util.IsBitSet(payload[0], 4)) LimpStates.Add("ACP"); // A/C high-side pressure
+                        if (Util.IsBitSet(payload[0], 6)) LimpStates.Add("IAT"); // Intake air temperature
+                        if (Util.IsBitSet(payload[0], 7)) LimpStates.Add("ATS"); // Ambient temperature sensor
 
-                        if (limpStates.Count > 0)
+                        if (LimpStates.Count > 0)
                         {
-                            descriptionToInsert = "LIMP: ";
+                            DescriptionToInsert = "LIMP: ";
 
-                            foreach (string s in limpStates)
+                            foreach (string s in LimpStates)
                             {
-                                descriptionToInsert += s + " | ";
+                                DescriptionToInsert += s + " | ";
                             }
 
-                            if (descriptionToInsert.Length > 2) descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
+                            if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
                         }
                         else
                         {
-                            descriptionToInsert = "VEHICLE INFORMATION | NO LIMP STATE";
+                            DescriptionToInsert = "VEHICLE INFORMATION | NO LIMP STATE";
                         }
 
-                        switch (payload[1] & 0x1F) // analyze the lower 5 bits only
+                        switch (payload[1] & 0x1C) // analyze relevant bits only
                         {
                             case 0x00:
-                                valueToInsert = "FUEL: CNG";
+                                ValueToInsert = "FUEL: CNG";
                                 break;
                             case 0x04:
-                                valueToInsert = "FUEL: NO LEAD";
+                                ValueToInsert = "FUEL: UNLEADED GAS";
                                 break;
                             case 0x08:
-                                valueToInsert = "FUEL: LEADED FUEL";
+                                ValueToInsert = "FUEL: LEADED GAS";
                                 break;
                             case 0x0C:
-                                valueToInsert = "FUEL: FLEX";
+                                ValueToInsert = "FUEL: FLEX";
                                 break;
                             case 0x10:
-                                valueToInsert = "FUEL: DIESEL";
+                                ValueToInsert = "FUEL: DIESEL";
                                 break;
                             default:
-                                valueToInsert = "FUEL: UNKNOWN";
+                                ValueToInsert = "FUEL: UNKNOWN";
                                 break;
                         }
                     }
                     break;
                 case 0xEE:
-                    descriptionToInsert = "TRIP DISTANCE / TRIPMETER";
+                    DescriptionToInsert = "TRIP DISTANCE / TRIPMETER";
 
                     if (message.Length >= 5)
                     {
+                        double TripmeterMi = (uint)(payload[0] << 16 | payload[1] << 8 | payload[2]) * 0.016;
+                        double TripmeterKm = (uint)(payload[0] << 16 | payload[1] << 8 | payload[2]) * 0.016 * 1.609344;
+
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            valueToInsert = Math.Round((uint)(payload[0] << 16 | payload[1] << 8 | payload[2]) * 0.016, 3).ToString("0.000").Replace(",", ".");
-                            unitToInsert = "MILE";
+                            ValueToInsert = Math.Round(TripmeterMi, 3).ToString("0.000").Replace(",", ".");
+                            UnitToInsert = "MILE";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            valueToInsert = Math.Round((uint)(payload[0] << 16 | payload[1] << 8 | payload[2]) * 0.016 * 1.609344, 3).ToString("0.000").Replace(",", ".");
-                            unitToInsert = "KILOMETER";
+                            ValueToInsert = Math.Round(TripmeterKm, 3).ToString("0.000").Replace(",", ".");
+                            UnitToInsert = "KILOMETER";
                         }
                     }
                     break;
                 case 0xF1:
-                    descriptionToInsert = "WARNING";
+                    DescriptionToInsert = "WARNING";
 
                     if (message.Length >= 3)
                     {
-                        List<string> warningList = new List<string>();
-                        warningList.Clear();
+                        List<string> WarningList = new List<string>();
+                        WarningList.Clear();
 
                         if (payload[0] == 0)
                         {
-                            descriptionToInsert = "NO WARNING";
-                            valueToInsert = string.Empty;
-                            unitToInsert = string.Empty;
+                            DescriptionToInsert = "NO WARNING";
+                            ValueToInsert = string.Empty;
+                            UnitToInsert = string.Empty;
                         }
                         else
                         {
-                            if (Util.IsBitSet(payload[0], 0)) warningList.Add("LOW FUEL");
-                            if (Util.IsBitSet(payload[0], 1)) warningList.Add("LOW OIL");
-                            if (Util.IsBitSet(payload[0], 2)) warningList.Add("HI TEMP");
-                            if (Util.IsBitSet(payload[0], 3)) valueToInsert = "CRITICAL TEMP";
-                            if (Util.IsBitSet(payload[0], 4)) warningList.Add("BRAKE PRESS");
+                            if (Util.IsBitSet(payload[0], 0)) WarningList.Add("LOW FUEL");
+                            if (Util.IsBitSet(payload[0], 1)) WarningList.Add("LOW OIL");
+                            if (Util.IsBitSet(payload[0], 2)) WarningList.Add("HI TEMP");
+                            if (Util.IsBitSet(payload[0], 3)) ValueToInsert = "CRITICAL TEMP";
+                            if (Util.IsBitSet(payload[0], 4)) WarningList.Add("BRAKE PRESS");
 
-                            descriptionToInsert = "WARNING: ";
+                            DescriptionToInsert = "WARNING: ";
 
-                            foreach (string s in warningList)
+                            foreach (string s in WarningList)
                             {
-                                descriptionToInsert += s + " | ";
+                                DescriptionToInsert += s + " | ";
                             }
 
-                            if (descriptionToInsert.Length > 2) descriptionToInsert = descriptionToInsert.Remove(descriptionToInsert.Length - 3); // remove last "|" character
-                            unitToInsert = string.Empty;
+                            if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
+                            UnitToInsert = string.Empty;
                         }
                     }
                     break;
                 case 0xF2:
-                    descriptionToInsert = "RESPONSE |";
+                    DescriptionToInsert = "RESPONSE |";
 
                     if (message.Length >= 6)
                     {
@@ -1857,49 +1946,48 @@ namespace ChryslerScanner
                                 switch (payload[1])
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "RESPONSE | VEHICLE INFO CENTER | RESET COMPLETE";
+                                        DescriptionToInsert = "RESPONSE | VEHICLE INFO CENTER | RESET COMPLETE";
                                         break;
                                     case 0x10: // actuator tests
                                         switch (payload[2])
                                         {
                                             case 0x10:
-                                                descriptionToInsert = "RESPONSE | VIC | DISPLAY TEST";
+                                                DescriptionToInsert = "RESPONSE | VIC | DISPLAY TEST";
                                                 break;
                                             default:
-                                                descriptionToInsert = "RESPONSE | VIC | ACTUATOR TEST";
+                                                DescriptionToInsert = "RESPONSE | VIC | ACTUATOR TEST";
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
-
-                                        valueToInsert = "RUNNING";
                                         break;
                                     case 0x12: // read digital parameters
                                         switch (payload[2])
                                         {
                                             case 0x00:
-                                                descriptionToInsert = "RESPONSE | VIC | TRANSFER CASE POSITION";
+                                                DescriptionToInsert = "RESPONSE | VIC | TRANSFER CASE POSITION";
 
                                                 switch (payload[3] & 0x1F)
                                                 {
                                                     case 0x06:
-                                                        unitToInsert = "4WD LO";
+                                                        UnitToInsert = "4WD LO";
                                                         break;
                                                     case 0x07:
-                                                        unitToInsert = "ALL 4WD";
+                                                        UnitToInsert = "ALL 4WD";
                                                         break;
                                                     case 0x0B:
-                                                        unitToInsert = "PART 4WD";
+                                                        UnitToInsert = "PART 4WD";
                                                         break;
                                                     case 0x0D:
-                                                        unitToInsert = "FULL 4WD";
+                                                        UnitToInsert = "FULL 4WD";
                                                         break;
                                                     case 0x0F:
-                                                        unitToInsert = "2WD";
+                                                        UnitToInsert = "2WD";
                                                         break;
                                                     case 0x1F:
-                                                        unitToInsert = "NEUTRAL";
+                                                        UnitToInsert = "NEUTRAL";
                                                         break;
                                                     default:
-                                                        unitToInsert = "UNDEFINED";
+                                                        UnitToInsert = "UNDEFINED";
                                                         break;
                                                 }
 
@@ -1913,16 +2001,17 @@ namespace ChryslerScanner
                                                 {
                                                     foreach (string s in flags)
                                                     {
-                                                        valueToInsert += s + " | ";
+                                                        ValueToInsert += s + " | ";
                                                     }
 
-                                                    if (valueToInsert.Length > 2) valueToInsert = valueToInsert.Remove(valueToInsert.Length - 3); // remove last "|" character
-                                                    valueToInsert += " LAMP";
+                                                    if (ValueToInsert.Length > 2) ValueToInsert = ValueToInsert.Remove(ValueToInsert.Length - 3); // remove last "|" character
+                                                    ValueToInsert += " LAMP";
                                                 }
 
                                                 break;
                                             default:
-                                                descriptionToInsert = "RESPONSE | VIC | DIGITAL READ";
+                                                DescriptionToInsert = "RESPONSE | VIC | DIGITAL READ";
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
                                         break;
@@ -1930,81 +2019,97 @@ namespace ChryslerScanner
                                         switch (payload[2])
                                         {
                                             case 0x00:
-                                                descriptionToInsert = "RESPONSE | VIC | WASHER LEVEL SENSOR VOLTAGE";
-                                                valueToInsert = Math.Round(payload[3] * 0.019607843, 3).ToString("0.000").Replace(",", ".");
-                                                unitToInsert = "V";
+                                                double WasherLevelSensorVoltage = payload[3] * 0.0196;
+                                                DescriptionToInsert = "RESPONSE | VIC | WASHER LEVEL SENSOR VOLTAGE";
+                                                ValueToInsert = Math.Round(WasherLevelSensorVoltage, 3).ToString("0.000").Replace(",", ".");
+                                                UnitToInsert = "V";
                                                 break;
                                             case 0x01:
-                                                descriptionToInsert = "RESPONSE | VIC | COOLANT LEVEL SENSOR VOLTAGE";
-                                                valueToInsert = Math.Round(payload[3] * 0.019607843, 3).ToString("0.000").Replace(",", ".");
-                                                unitToInsert = "V";
+                                                double CoolantLevelSensorVoltage = payload[3] * 0.0196;
+                                                DescriptionToInsert = "RESPONSE | VIC | COOLANT LEVEL SENSOR VOLTAGE";
+                                                ValueToInsert = Math.Round(CoolantLevelSensorVoltage, 3).ToString("0.000").Replace(",", ".");
+                                                UnitToInsert = "V";
                                                 break;
                                             case 0x02:
-                                                descriptionToInsert = "RESPONSE | VIC | IGNITION VOLTAGE";
-                                                valueToInsert = Math.Round(payload[3] * 0.099, 3).ToString("0.000").Replace(",", ".");
-                                                unitToInsert = "V";
+                                                double IgnitionVoltage = payload[3] * 0.099;
+                                                DescriptionToInsert = "RESPONSE | VIC | IGNITION VOLTAGE";
+                                                ValueToInsert = Math.Round(IgnitionVoltage, 3).ToString("0.000").Replace(",", ".");
+                                                UnitToInsert = "V";
                                                 break;
                                             default:
-                                                descriptionToInsert = "RESPONSE | VIC | ANALOG READ";
-                                                valueToInsert = Util.ByteToHexString(payload, 3, 1);
-                                                unitToInsert = "HEX";
+                                                DescriptionToInsert = "RESPONSE | VIC | ANALOG READ";
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
                                         break;
                                     case 0x16: // read fault codes
-                                        descriptionToInsert = "RESPONSE | VIC | FAULT CODES";
-                                        if (payload[3] == 0x00) valueToInsert = "NO FAULT CODE";
-                                        else valueToInsert = "CODE: " + Util.ByteToHexString(payload, 3, 1);
+                                        DescriptionToInsert = "RESPONSE | VIC | FAULT CODES";
+                                        if (payload[3] == 0x00) ValueToInsert = "NO FAULT CODE";
+                                        else ValueToInsert = "CODE: " + Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x24: // software version
-                                        descriptionToInsert = "RESPONSE | VIC | SOFTWARE VERSION";
-                                        valueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        DescriptionToInsert = "RESPONSE | VIC | SOFTWARE VERSION";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x40: // erase fault codes
-                                        descriptionToInsert = "RESPONSE | VIC | ERASE FAULT CODES";
-                                        if (payload[3] == 0x00) valueToInsert = "ERASED";
-                                        else valueToInsert = "FAILED";
+                                        DescriptionToInsert = "RESPONSE | VIC | ERASE FAULT CODES";
+                                        if (payload[3] == 0x00) ValueToInsert = "ERASED";
+                                        else ValueToInsert = "FAILED";
                                         break;
                                     case 0xFF: // command error
-                                        descriptionToInsert = "RESPONSE | VIC | COMMAND ERROR";
+                                        DescriptionToInsert = "RESPONSE | VIC | COMMAND ERROR";
+                                        Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     default:
-                                        descriptionToInsert = "RESPONSE | VIC";
+                                        DescriptionToInsert = "RESPONSE | VIC";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
                             case 0x18: // VTS - Vehicle Theft Security
                             case 0x1B:
-                                descriptionToInsert = "RESPONSE | VTS";
+                                switch (payload[1])
+                                {
+                                    case 0x00:
+                                        DescriptionToInsert = "RESPONSE | VTS | RESET COMPLETE";
+                                        break;
+                                    default:
+                                        DescriptionToInsert = "RESPONSE | VTS";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        break;
+                                }
                                 break;
                             case 0x19: // CMT - Compass Mini-Trip
                                 switch (payload[1]) // command
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "RESPONSE | COMPASS MINI-TRIP | RESET COMPLETE";
+                                        DescriptionToInsert = "RESPONSE | COMPASS MINI-TRIP | RESET COMPLETE";
                                         break;
                                     case 0x10: // actuator test
                                         switch (payload[2])
                                         {
                                             case 0x00: // self test
-                                                descriptionToInsert = "RESPONSE | CMT | SELF TEST";
-                                                if (payload[3] == 0x01) valueToInsert = "RUNNING";
-                                                else valueToInsert = "DENIED";
+                                                DescriptionToInsert = "RESPONSE | CMT | SELF TEST";
+                                                if (payload[3] == 0x01) ValueToInsert = "RUNNING";
+                                                else ValueToInsert = "DENIED";
                                                 break;
                                             default:
-                                                descriptionToInsert = "RESPONSE | CMT | ACTUATOR TEST";
+                                                DescriptionToInsert = "RESPONSE | CMT | ACTUATOR TEST";
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
-
                                         break;
                                     case 0x11: // test status
-                                        descriptionToInsert = "RESPONSE | CMT | ACTUATOR TEST STATUS";
+                                        DescriptionToInsert = "RESPONSE | CMT | ACTUATOR TEST STATUS";
 
                                         switch (payload[2])
                                         {
                                             case 0x00: // self test
-                                                if (payload[3] == 0x01) valueToInsert = "RUNNING";
-                                                else valueToInsert = "DENIED";
+                                                if (payload[3] == 0x01) ValueToInsert = "RUNNING";
+                                                else ValueToInsert = "DENIED";
+                                                break;
+                                            default:
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
 
@@ -2013,83 +2118,85 @@ namespace ChryslerScanner
                                         switch (payload[2])
                                         {
                                             case 0x00:
-                                                descriptionToInsert = "RESPONSE | CMT | STEP SWITCH";
+                                                DescriptionToInsert = "RESPONSE | CMT | STEP SWITCH";
 
-                                                if (Util.IsBitSet(payload[3], 4)) valueToInsert = "PRESSED";
-                                                else valueToInsert = "RELEASED";
+                                                if (Util.IsBitSet(payload[3], 4)) ValueToInsert = "PRESSED";
+                                                else ValueToInsert = "RELEASED";
 
                                                 break;
                                             default:
-                                                descriptionToInsert = "RESPONSE | CMT | DIGITAL READ";
+                                                DescriptionToInsert = "RESPONSE | CMT | DIGITAL READ";
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
                                         break;
                                     case 0x16: // read fault codes
-                                        descriptionToInsert = "RESPONSE | CMT | FAULT CODES";
+                                        DescriptionToInsert = "RESPONSE | CMT | FAULT CODES";
 
-                                        if (payload[3] == 0x00) valueToInsert = "NO FAULT CODE";
-                                        else valueToInsert = "CODE: " + Util.ByteToHexString(payload, 3, 1);
+                                        if (payload[3] == 0x00) ValueToInsert = "NO FAULT CODE";
+                                        else ValueToInsert = "CODE: " + Util.ByteToHexString(payload, 2, 2);
 
                                         break;
                                     case 0x20: // diagnostic data
                                         switch (payload[2])
                                         {
                                             case 0x00:
-                                                descriptionToInsert = "RESPONSE | CMT | TEMPERATURE";
+                                                double TemperatureF = payload[3] - 40;
+                                                double TemperatureC = TemperatureF * 0.555556 - 17.77778;
 
-                                                string temperature = string.Empty;
+                                                DescriptionToInsert = "RESPONSE | CMT | TEMPERATURE";
 
                                                 if (Properties.Settings.Default.Units == "imperial")
                                                 {
-                                                    temperature = (payload[3] - 40).ToString("0");
-                                                    unitToInsert = "°F";
+                                                    ValueToInsert = TemperatureF.ToString("0");
+                                                    UnitToInsert = "°F";
                                                 }
                                                 else if (Properties.Settings.Default.Units == "metric")
                                                 {
-                                                    temperature = Math.Round(((payload[3] - 40) * 0.555556) - 17.77778).ToString("0");
-                                                    unitToInsert = "°C";
+                                                    ValueToInsert = Math.Round(TemperatureC).ToString("0");
+                                                    UnitToInsert = "°C";
                                                 }
-
-                                                valueToInsert = temperature;
                                                 break;
                                             default:
-                                                descriptionToInsert = "RESPONSE | CMT | DIAGNOSTIC DATA";
-                                                valueToInsert = Util.ByteToHexString(payload, 3, 1);
+                                                DescriptionToInsert = "RESPONSE | CMT | DIAGNOSTIC DATA";
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
 
                                         }
                                         break;
                                     case 0x22: // read ROM
-                                        descriptionToInsert = "RESPONSE | CMT | ROM DATA";
-                                        valueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        DescriptionToInsert = "RESPONSE | CMT | ROM DATA";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x24: // software version
                                         switch (payload[2])
                                         {
                                             case 0x00: // software version
-                                                descriptionToInsert = "RESPONSE | CMT | SOFTWARE VERSION";
-                                                valueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                                DescriptionToInsert = "RESPONSE | CMT | SOFTWARE VERSION";
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                             case 0x01: // EEPROM version
-                                                descriptionToInsert = "RESPONSE | CMT | EEPROM VERSION";
-                                                valueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                                DescriptionToInsert = "RESPONSE | CMT | EEPROM VERSION";
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                             default:
-                                                descriptionToInsert = "RESPONSE | CMT";
-                                                valueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                                DescriptionToInsert = "RESPONSE | CMT";
+                                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                                 break;
                                         }
                                         break;
                                     case 0x40: // erase fault codes
-                                        descriptionToInsert = "RESPONSE | CMT | ERASE FAULT CODES";
-                                        if (payload[3] == 0x00) valueToInsert = "ERASED";
-                                        else valueToInsert = "FAILED";
+                                        DescriptionToInsert = "RESPONSE | CMT | ERASE FAULT CODES";
+                                        if (payload[3] == 0x00) ValueToInsert = "ERASED";
+                                        else ValueToInsert = "FAILED";
                                         break;
                                     case 0xFF: // command error
-                                        descriptionToInsert = "RESPONSE | CMT | COMMAND ERROR";
+                                        DescriptionToInsert = "RESPONSE | CMT | COMMAND ERROR";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     default:
-                                        descriptionToInsert = "RESPONSE | CMT";
+                                        DescriptionToInsert = "RESPONSE | CMT | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -2097,96 +2204,97 @@ namespace ChryslerScanner
                                 switch (payload[1])
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "RESPONSE | AIRBAG CONTROL MODULE | RESET COMPLETE";
+                                        DescriptionToInsert = "RESPONSE | AIRBAG CONTROL MODULE | RESET COMPLETE";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x16: // read fault codes
-                                        descriptionToInsert = "RESPONSE | ACM | FAULT CODES";
-                                        if (payload[3] == 0x00) valueToInsert = "NO FAULT CODE";
-                                        else valueToInsert = "CODE: " + Util.ByteToHexString(payload, 3, 1);
+                                        DescriptionToInsert = "RESPONSE | ACM | FAULT CODES";
+                                        if (payload[3] == 0x00) ValueToInsert = "NO FAULT CODE";
+                                        else ValueToInsert = "CODE: " + Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x24: // software version
-                                        descriptionToInsert = "RESPONSE | ACM | SOFTWARE VERSION";
-                                        valueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        DescriptionToInsert = "RESPONSE | ACM | SOFTWARE VERSION";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x40: // erase fault codes
-                                        descriptionToInsert = "RESPONSE | ACM | ERASE FAULT CODES";
-                                        if (payload[3] == 0x00) valueToInsert = "ERASED";
-                                        else valueToInsert = "FAILED";
+                                        DescriptionToInsert = "RESPONSE | ACM | ERASE FAULT CODES";
+                                        if (payload[3] == 0x00) ValueToInsert = "ERASED";
+                                        else ValueToInsert = "FAILED";
                                         break;
                                     case 0xFF: // command error
-                                        descriptionToInsert = "RESPONSE | ACM | COMMAND ERROR";
+                                        DescriptionToInsert = "RESPONSE | ACM | COMMAND ERROR";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     default:
-                                        descriptionToInsert = "RESPONSE | ACM";
+                                        DescriptionToInsert = "RESPONSE | ACM | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
-
-                                unitToInsert = string.Empty;
                                 break;
                             case 0x20: // BCM - Body Control Module
                                 switch (payload[1]) // command
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "RESPONSE | BODY CONTROL MODULE | RESET COMPLETE";
+                                        DescriptionToInsert = "RESPONSE | BODY CONTROL MODULE | RESET COMPLETE";
                                         break;
                                     case 0x10: // actuator tests
-                                        descriptionToInsert = "RESPONSE | BCM | ACTUATOR TEST";
-                                        valueToInsert = "RUNNING";
+                                        DescriptionToInsert = "RESPONSE | BCM | ACTUATOR TEST";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x12: // read digital parameters
-                                        descriptionToInsert = "RESPONSE | BCM | DIGITAL READ";
-                                        valueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        DescriptionToInsert = "RESPONSE | BCM | DIGITAL READ";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x14: // read analog parameters
-                                        descriptionToInsert = "RESPONSE | BCM | ANALOG READ";
-                                        valueToInsert = Util.ByteToHexString(payload, 3, 1);
-                                        unitToInsert = "HEX";
+                                        DescriptionToInsert = "RESPONSE | BCM | ANALOG READ";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x16: // read fault codes
-                                        descriptionToInsert = "RESPONSE | BCM | FAULT CODES";
-                                        if (payload[3] == 0x00) valueToInsert = "NO FAULT CODE";
-                                        else valueToInsert = "CODE: " + Util.ByteToHexString(payload, 3, 1);
+                                        DescriptionToInsert = "RESPONSE | BCM | FAULT CODES";
+                                        if (payload[3] == 0x00) ValueToInsert = "NO FAULT CODE";
+                                        else ValueToInsert = "CODE: " + Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x22: // read ROM
-                                        descriptionToInsert = "RESPONSE | BCM | ROM DATA";
-                                        valueToInsert = "VALUE:     " + Util.ByteToHexString(payload, 2, 1) + " |    " + Util.ByteToHexString(payload, 3, 1);
+                                        DescriptionToInsert = "RESPONSE | BCM | ROM DATA";
+                                        ValueToInsert = "VALUE:     " + Util.ByteToHexString(payload, 2, 1) + " |    " + Util.ByteToHexString(payload, 3, 1);
                                         break;
                                     case 0x24: // read module id
-                                        descriptionToInsert = "RESPONSE | BCM | MODULE ID";
-                                        valueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        DescriptionToInsert = "RESPONSE | BCM | MODULE ID";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x2A: // read vehicle identification number (vin)
-                                        descriptionToInsert = "RESPONSE | BCM | READ VIN";
-                                        valueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        DescriptionToInsert = "RESPONSE | BCM | READ VIN";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x2C: // write vehicle identification number (vin)
-                                        descriptionToInsert = "RESPONSE | BCM | WRITE VIN";
-                                        valueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        DescriptionToInsert = "RESPONSE | BCM | WRITE VIN";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x40: // erase fault codes
-                                        descriptionToInsert = "RESPONSE | BCM | ERASE FAULT CODES";
-                                        if (payload[3] == 0x00) valueToInsert = "ERASED";
-                                        else valueToInsert = "FAILED";
+                                        DescriptionToInsert = "RESPONSE | BCM | ERASE FAULT CODES";
+                                        if (payload[3] == 0x00) ValueToInsert = "ERASED";
+                                        else ValueToInsert = "FAILED";
                                         break;
                                     case 0x60: // write EEPROM
-                                        descriptionToInsert = "RESPONSE | BCM | WRITE EEPROM OFFSET";
-                                        valueToInsert = Util.ByteToHexStringSimple(new byte[2] { payload[2], payload[3] });
-                                        unitToInsert = "OK";
+                                        DescriptionToInsert = "RESPONSE | BCM | WRITE EEPROM OFFSET";
+                                        ValueToInsert = Util.ByteToHexStringSimple(new byte[2] { payload[2], payload[3] });
+                                        UnitToInsert = "OK";
                                         break;
                                     case 0xB0: // write settings
-                                        descriptionToInsert = "RESPONSE | BCM | WRITE SETTINGS";
-                                        valueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        DescriptionToInsert = "RESPONSE | BCM | WRITE SETTINGS";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0xB1: // read settings
-                                        descriptionToInsert = "RESPONSE | BCM | READ SETTINGS";
-                                        valueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        DescriptionToInsert = "RESPONSE | BCM | READ SETTINGS";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0xFF: // command error
-                                        descriptionToInsert = "RESPONSE | BCM | COMMAND ERROR";
+                                        DescriptionToInsert = "RESPONSE | BCM | COMMAND ERROR";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     default:
-                                        descriptionToInsert = "RESPONSE | BCM";
-                                        valueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        DescriptionToInsert = "RESPONSE | BCM | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -2195,75 +2303,78 @@ namespace ChryslerScanner
                                 switch (payload[1]) // command
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "RESPONSE | MIC | RESET COMPLETE";
+                                        DescriptionToInsert = "RESPONSE | MIC | RESET COMPLETE";
                                         break;
                                     case 0x10: // actuator test
                                         switch (payload[2])
                                         {
                                             case 0x00:
-                                                descriptionToInsert = "RESPONSE | MIC | ALL GAUGES TEST";
+                                                DescriptionToInsert = "RESPONSE | MIC | ALL GAUGES TEST";
                                                 break;
                                             case 0x01:
-                                                descriptionToInsert = "RESPONSE | MIC | ALL LAMPS TEST";
+                                                DescriptionToInsert = "RESPONSE | MIC | ALL LAMPS TEST";
                                                 break;
                                             case 0x02:
-                                                descriptionToInsert = "RESPONSE | MIC | ODO/TRIP/PRND3L TEST";
+                                                DescriptionToInsert = "RESPONSE | MIC | ODO/TRIP/PRND3L TEST";
                                                 break;
                                             case 0x03:
-                                                descriptionToInsert = "RESPONSE | MIC | PRND3L SEGMENTS TEST";
+                                                DescriptionToInsert = "RESPONSE | MIC | PRND3L SEGMENTS TEST";
                                                 break;
                                             default:
-                                                descriptionToInsert = "RESPONSE | MIC | ACTUATOR TEST";
+                                                DescriptionToInsert = "RESPONSE | MIC | ACTUATOR TEST";
                                                 break;
                                         }
 
-                                        valueToInsert = "RUNNING";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2); // running or stopped
                                         break;
                                     case 0x12: // read digital parameters
-                                        descriptionToInsert = "RESPONSE | MIC | DIGITAL READ";
-                                        valueToInsert = Util.ByteToHexString(payload, 3, 1);
+                                        DescriptionToInsert = "RESPONSE | MIC | DIGITAL READ";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x16: // read fault codes
-                                        descriptionToInsert = "RESPONSE | MIC | FAULT CODES";
+                                        DescriptionToInsert = "RESPONSE | MIC | FAULT CODES";
 
-                                        if (payload[3] == 0x00) valueToInsert = "NO FAULT CODE";
+                                        if (payload[3] == 0x00) ValueToInsert = "NO FAULT CODE";
                                         else
                                         {
-                                            List<string> faultCodes = new List<string>();
-                                            faultCodes.Clear();
+                                            List<string> FaultCodes = new List<string>();
+                                            FaultCodes.Clear();
 
-                                            if (Util.IsBitSet(payload[3], 1)) faultCodes.Add("NO BCM MSG");
-                                            if (Util.IsBitSet(payload[3], 2)) faultCodes.Add("NO PCM MSG");
-                                            if (Util.IsBitSet(payload[3], 4)) faultCodes.Add("BCM FAILURE");
-                                            if (Util.IsBitSet(payload[3], 6)) faultCodes.Add("RAM FAILURE");
-                                            if (Util.IsBitSet(payload[3], 7)) faultCodes.Add("ROM FAILURE");
+                                            if (Util.IsBitSet(payload[3], 1)) FaultCodes.Add("NO BCM MSG");
+                                            if (Util.IsBitSet(payload[3], 2)) FaultCodes.Add("NO PCM MSG");
+                                            if (Util.IsBitSet(payload[3], 4)) FaultCodes.Add("BCM FAILURE");
+                                            if (Util.IsBitSet(payload[3], 6)) FaultCodes.Add("RAM FAILURE");
+                                            if (Util.IsBitSet(payload[3], 7)) FaultCodes.Add("ROM FAILURE");
 
-                                            foreach (string s in faultCodes)
+                                            foreach (string s in FaultCodes)
                                             {
-                                                valueToInsert += s + " | ";
+                                                ValueToInsert += s + " | ";
                                             }
 
-                                            if (valueToInsert.Length > 2) valueToInsert = valueToInsert.Remove(valueToInsert.Length - 3); // remove last "|" character
+                                            if (ValueToInsert.Length > 2) ValueToInsert = ValueToInsert.Remove(ValueToInsert.Length - 3); // remove last "|" character
                                         }
 
                                         break;
                                     case 0x24: // software version
-                                        descriptionToInsert = "RESPONSE | MIC | SOFTWARE VERSION";
-                                        valueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        DescriptionToInsert = "RESPONSE | MIC | SOFTWARE VERSION";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0x40: // erase fault codes
-                                        descriptionToInsert = "RESPONSE | MIC | ERASE FAULT CODES";
-                                        if (payload[3] == 0x00) valueToInsert = "ERASED";
-                                        else valueToInsert = "FAILED";
+                                        DescriptionToInsert = "RESPONSE | MIC | ERASE FAULT CODES";
+                                        if (payload[3] == 0x00) ValueToInsert = "ERASED";
+                                        else ValueToInsert = "FAILED";
                                         break;
                                     case 0xE0: // self test
-                                        descriptionToInsert = "RESPONSE | MIC | SELF TEST";
+                                        DescriptionToInsert = "RESPONSE | MIC | SELF TEST";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0xFF: // command error
-                                        descriptionToInsert = "RESPONSE | MIC | COMMAND ERROR";
+                                        DescriptionToInsert = "RESPONSE | MIC | COMMAND ERROR";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     default:
-                                        descriptionToInsert = "RESPONSE | MIC";
+                                        DescriptionToInsert = "RESPONSE | MIC | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -2272,137 +2383,150 @@ namespace ChryslerScanner
                                 switch (payload[1]) // command
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "RESPONSE | TCM | RESET COMPLETE";
+                                        DescriptionToInsert = "RESPONSE | TCM | RESET COMPLETE";
                                         break;
                                     case 0x24: // read analog parameter
-                                        descriptionToInsert = "RESPONSE | TCM | READ ANALOG PARAMETER";
+                                        DescriptionToInsert = "RESPONSE | TCM | READ ANALOG PARAMETER";
 
-                                        if (transmissionLRCVIRequested)
+                                        if (TransmissionLRCVIRequested)
                                         {
-                                            transmissionLRCVIRequested = false;
-                                            descriptionToInsert = "RESPONSE | TCM | LR CLUTCH VOLUME INDEX (CVI)";
+                                            TransmissionLRCVIRequested = false;
+                                            double CVI_LR_I = payload[2] / 64.0;
+                                            double CVI_LR_M = payload[2] / 64.0 * 16.387064;
+                                            DescriptionToInsert = "RESPONSE | TCM | LR CLUTCH VOLUME INDEX (CVI)";
 
                                             if (payload[2] != 0xFF)
                                             {
                                                 if (Properties.Settings.Default.Units == "imperial")
                                                 {
-                                                    valueToInsert = payload[2].ToString("0") + " = " + Math.Round(payload[2] / 64.0, 3).ToString("0.000").Replace(",", ".");
-                                                    unitToInsert = "IN^3";
+                                                    ValueToInsert = payload[2].ToString("0") + Math.Round(CVI_LR_I, 3).ToString("0.000").Replace(",", ".");
+                                                    UnitToInsert = "IN^3";
                                                 }
                                                 else if (Properties.Settings.Default.Units == "metric")
                                                 {
-                                                    valueToInsert = payload[2].ToString("0") + " = " + Math.Round(payload[2] / 64.0 * 16.387064, 3).ToString("0.000").Replace(",", ".");
-                                                    unitToInsert = "CM^3";
+                                                    ValueToInsert = payload[2].ToString("0") + " = " + Math.Round(CVI_LR_M, 3).ToString("0.000").Replace(",", ".");
+                                                    UnitToInsert = "CM^3";
                                                 }
                                             }
                                             else
                                             {
-                                                valueToInsert = "ERROR";
+                                                ValueToInsert = "ERROR";
                                             }
                                         }
 
-                                        if (transmission24CVIRequested)
+                                        if (Transmission24CVIRequested)
                                         {
-                                            transmission24CVIRequested = false;
-                                            descriptionToInsert = "RESPONSE | TCM | 24 CLUTCH VOLUME INDEX (CVI)";
+                                            Transmission24CVIRequested = false;
+                                            double CVI_24_I = payload[2] / 64.0;
+                                            double CVI_24_M = payload[2] / 64.0 * 16.387064;
+                                            DescriptionToInsert = "RESPONSE | TCM | 24 CLUTCH VOLUME INDEX (CVI)";
 
                                             if (payload[2] != 0xFF)
                                             {
                                                 if (Properties.Settings.Default.Units == "imperial")
                                                 {
-                                                    valueToInsert = payload[2].ToString("0") + " = " + Math.Round(payload[2] / 64.0, 3).ToString("0.000").Replace(",", ".");
-                                                    unitToInsert = "IN^3";
+                                                    ValueToInsert = payload[2].ToString("0") + " = " + Math.Round(CVI_24_I, 3).ToString("0.000").Replace(",", ".");
+                                                    UnitToInsert = "IN^3";
                                                 }
                                                 else if (Properties.Settings.Default.Units == "metric")
                                                 {
-                                                    valueToInsert = payload[2].ToString("0") + " = " + Math.Round(payload[2] / 64.0 * 16.387064, 3).ToString("0.000").Replace(",", ".");
-                                                    unitToInsert = "CM^3";
+                                                    ValueToInsert = payload[2].ToString("0") + " = " + Math.Round(CVI_24_M, 3).ToString("0.000").Replace(",", ".");
+                                                    UnitToInsert = "CM^3";
                                                 }
                                             }
                                             else
                                             {
-                                                valueToInsert = "ERROR";
+                                                ValueToInsert = "ERROR";
                                             }
                                         }
 
-                                        if (transmissionODCVIRequested)
+                                        if (TransmissionODCVIRequested)
                                         {
-                                            transmissionODCVIRequested = false;
-                                            descriptionToInsert = "RESPONSE | TCM | OD CLUTCH VOLUME INDEX (CVI)";
+                                            TransmissionODCVIRequested = false;
+                                            double CVI_OD_I = payload[2] / 64.0;
+                                            double CVI_OD_M = payload[2] / 64.0 * 16.387064;
+                                            DescriptionToInsert = "RESPONSE | TCM | OD CLUTCH VOLUME INDEX (CVI)";
 
                                             if (payload[2] != 0xFF)
                                             {
                                                 if (Properties.Settings.Default.Units == "imperial")
                                                 {
-                                                    valueToInsert = payload[2].ToString("0") + " = " + Math.Round(payload[2] / 64.0, 3).ToString("0.000").Replace(",", ".");
-                                                    unitToInsert = "IN^3";
+                                                    ValueToInsert = payload[2].ToString("0") + " = " + Math.Round(CVI_OD_I, 3).ToString("0.000").Replace(",", ".");
+                                                    UnitToInsert = "IN^3";
                                                 }
                                                 else if (Properties.Settings.Default.Units == "metric")
                                                 {
-                                                    valueToInsert = payload[2].ToString("0") + " = " + Math.Round(payload[2] / 64.0 * 16.387064, 3).ToString("0.000").Replace(",", ".");
-                                                    unitToInsert = "CM^3";
+                                                    ValueToInsert = payload[2].ToString("0") + " = " + Math.Round(CVI_OD_M, 3).ToString("0.000").Replace(",", ".");
+                                                    UnitToInsert = "CM^3";
                                                 }
                                             }
                                             else
                                             {
-                                                valueToInsert = "ERROR";
+                                                ValueToInsert = "ERROR";
                                             }
                                         }
 
-                                        if (transmissionUDCVIRequested)
+                                        if (TransmissionUDCVIRequested)
                                         {
-                                            transmissionUDCVIRequested = false;
-                                            descriptionToInsert = "RESPONSE | TCM | UD CLUTCH VOLUME INDEX (CVI)";
+                                            TransmissionUDCVIRequested = false;
+                                            double CVI_UD_I = payload[2] / 64.0;
+                                            double CVI_UD_M = payload[2] / 64.0 * 16.387064;
+                                            DescriptionToInsert = "RESPONSE | TCM | UD CLUTCH VOLUME INDEX (CVI)";
 
                                             if (payload[2] != 0xFF)
                                             {
                                                 if (Properties.Settings.Default.Units == "imperial")
                                                 {
-                                                    valueToInsert = payload[2].ToString("0") + " = " + Math.Round(payload[2] / 64.0, 3).ToString("0.000").Replace(",", ".");
-                                                    unitToInsert = "IN^3";
+                                                    ValueToInsert = payload[2].ToString("0") + " = " + Math.Round(CVI_UD_I, 3).ToString("0.000").Replace(",", ".");
+                                                    UnitToInsert = "IN^3";
                                                 }
                                                 else if (Properties.Settings.Default.Units == "metric")
                                                 {
-                                                    valueToInsert = payload[2].ToString("0") + " = " + Math.Round(payload[2] / 64.0 * 16.387064, 3).ToString("0.000").Replace(",", ".");
-                                                    unitToInsert = "CM^3";
+                                                    ValueToInsert = payload[2].ToString("0") + " = " + Math.Round(CVI_UD_M, 3).ToString("0.000").Replace(",", ".");
+                                                    UnitToInsert = "CM^3";
                                                 }
                                             }
                                             else
                                             {
-                                                valueToInsert = "ERROR";
+                                                ValueToInsert = "ERROR";
                                             }
                                         }
 
-                                        if (transmissionTemperatureRequested)
+                                        if (TransmissionTemperatureRequested)
                                         {
-                                            transmissionTemperatureRequested = false;
-                                            descriptionToInsert = "RESPONSE | TCM | TRANSMISSION TEMPERATURE";
+                                            TransmissionTemperatureRequested = false;
+                                            DescriptionToInsert = "RESPONSE | TCM | TRANSMISSION TEMPERATURE";
 
                                             if (payload[2] != 0xFF)
                                             {
+                                                double TransmissionTemperatureF = ((payload[2] << 8) + payload[3]) * 0.0156;
+                                                double TransmissionTemperatureC = (((payload[2] << 8) + payload[3]) * 0.0156 * 0.555556) - 17.77778;
+
                                                 if (Properties.Settings.Default.Units == "imperial")
                                                 {
-                                                    valueToInsert = Math.Round(((payload[2] << 8) + payload[3]) * 0.0156, 1).ToString("0.0").Replace(",", ".");
-                                                    unitToInsert = "°F";
+                                                    ValueToInsert = Math.Round(TransmissionTemperatureF, 1).ToString("0.0").Replace(",", ".");
+                                                    UnitToInsert = "°F";
                                                 }
                                                 else if (Properties.Settings.Default.Units == "metric")
                                                 {
-                                                    valueToInsert = Math.Round((((payload[2] << 8) + payload[3]) * 0.0156 * 0.555556) - 17.77778, 1).ToString("0.0").Replace(",", ".");
-                                                    unitToInsert = "°C";
+                                                    ValueToInsert = Math.Round(TransmissionTemperatureC, 1).ToString("0.0").Replace(",", ".");
+                                                    UnitToInsert = "°C";
                                                 }
                                             }
                                             else
                                             {
-                                                valueToInsert = "ERROR";
+                                                ValueToInsert = "ERROR";
                                             }
                                         }
 
                                         break;
                                     case 0xFF: // command error
-                                        descriptionToInsert = "RESPONSE | TCM | COMMAND ERROR";
+                                        DescriptionToInsert = "RESPONSE | TCM | COMMAND ERROR";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     default:
-                                        descriptionToInsert = "RESPONSE | TCM";
+                                        DescriptionToInsert = "RESPONSE | TCM | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -2410,13 +2534,15 @@ namespace ChryslerScanner
                                 switch (payload[1]) // command
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "RESPONSE | ANTILOCK BRAKE SYSTEM | RESET COMPLETE";
+                                        DescriptionToInsert = "RESPONSE | ANTILOCK BRAKE SYSTEM | RESET COMPLETE";
                                         break;
                                     case 0xFF: // command error
-                                        descriptionToInsert = "RESPONSE | ABS | COMMAND ERROR";
+                                        DescriptionToInsert = "RESPONSE | ABS | COMMAND ERROR";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     default:
-                                        descriptionToInsert = "RESPONSE | ABS";
+                                        DescriptionToInsert = "RESPONSE | ABS | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -2424,13 +2550,16 @@ namespace ChryslerScanner
                                 switch (payload[1]) // command
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "RESPONSE | HVAC | RESET COMPLETE";
+                                        DescriptionToInsert = "RESPONSE | HVAC | RESET COMPLETE";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     case 0xFF: // command error
-                                        descriptionToInsert = "RESPONSE | HVAC | COMMAND ERROR";
+                                        DescriptionToInsert = "RESPONSE | HVAC | COMMAND ERROR";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     default:
-                                        descriptionToInsert = "RESPONSE | HVAC";
+                                        DescriptionToInsert = "RESPONSE | HVAC | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -2438,13 +2567,15 @@ namespace ChryslerScanner
                                 switch (payload[1]) // command
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "RESPONSE | DRIVER DOOR MODULE | RESET COMPLETE";
+                                        DescriptionToInsert = "RESPONSE | DRIVER DOOR MODULE | RESET COMPLETE";
                                         break;
                                     case 0xFF: // command error
-                                        descriptionToInsert = "RESPONSE | DDM | COMMAND ERROR";
+                                        DescriptionToInsert = "RESPONSE | DDM | COMMAND ERROR";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     default:
-                                        descriptionToInsert = "RESPONSE | DDM";
+                                        DescriptionToInsert = "RESPONSE | DDM | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -2452,13 +2583,15 @@ namespace ChryslerScanner
                                 switch (payload[1]) // command
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "RESPONSE | PASSENGER DOOR MODULE | RESET COMPLETE";
+                                        DescriptionToInsert = "RESPONSE | PASSENGER DOOR MODULE | RESET COMPLETE";
                                         break;
                                     case 0xFF: // command error
-                                        descriptionToInsert = "RESPONSE | PDM | COMMAND ERROR";
+                                        DescriptionToInsert = "RESPONSE | PDM | COMMAND ERROR";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     default:
-                                        descriptionToInsert = "RESPONSE | PDM";
+                                        DescriptionToInsert = "RESPONSE | PDM | COMMAND " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -2466,13 +2599,15 @@ namespace ChryslerScanner
                                 switch (payload[1]) // command
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "RESPONSE | MEMORY SEAT MODULE | RESET COMPLETE";
+                                        DescriptionToInsert = "RESPONSE | MEMORY SEAT MODULE | RESET COMPLETE";
                                         break;
                                     case 0xFF: // command error
-                                        descriptionToInsert = "RESPONSE | MSM | COMMAND ERROR";
+                                        DescriptionToInsert = "RESPONSE | MSM | COMMAND ERROR";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     default:
-                                        descriptionToInsert = "RESPONSE | MSM";
+                                        DescriptionToInsert = "RESPONSE | MSM | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -2480,13 +2615,15 @@ namespace ChryslerScanner
                                 switch (payload[1]) // command
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "RESPONSE | AUDIO SYSTEM MODULE | RESET COMPLETE";
+                                        DescriptionToInsert = "RESPONSE | AUDIO SYSTEM MODULE | RESET COMPLETE";
                                         break;
                                     case 0xFF: // command error
-                                        descriptionToInsert = "RESPONSE | ASM | COMMAND ERROR";
+                                        DescriptionToInsert = "RESPONSE | ASM | COMMAND ERROR";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     default:
-                                        descriptionToInsert = "RESPONSE | ASM";
+                                        DescriptionToInsert = "RESPONSE | ASM | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
@@ -2494,19 +2631,20 @@ namespace ChryslerScanner
                                 switch (payload[1]) // command
                                 {
                                     case 0x00: // reset
-                                        descriptionToInsert = "RESPONSE | SKIM | RESET COMPLETE";
+                                        DescriptionToInsert = "RESPONSE | SKIM | RESET COMPLETE";
                                         break;
                                     case 0xFF: // command error
-                                        descriptionToInsert = "RESPONSE | SKIM | COMMAND ERROR";
+                                        DescriptionToInsert = "RESPONSE | SKIM | COMMAND ERROR";
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                     default:
-                                        descriptionToInsert = "RESPONSE | SKIM";
+                                        DescriptionToInsert = "RESPONSE | SKIM | COMMAND: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                                         break;
                                 }
                                 break;
                             default:
-                                descriptionToInsert = "RESPONSE | MODULE: " + Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | COMMAND: " + Util.ByteToHexStringSimple(new byte[1] { payload[1] }) + " | PARAMS: " + Util.ByteToHexStringSimple(new byte[2] { payload[2], payload[3] });
- 
+                                DescriptionToInsert = "RESPONSE | MODULE: " + Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | COMMAND: " + Util.ByteToHexStringSimple(new byte[1] { payload[1] }) + " | PARAMS: " + Util.ByteToHexStringSimple(new byte[2] { payload[2], payload[3] });
                                 break;
                         }
                     }
@@ -2522,7 +2660,7 @@ namespace ChryslerScanner
                     File.AppendAllText(MainForm.CCDB2F2LogFilename, Util.ByteToHexStringSimple(message) + Environment.NewLine);
                     break;
                 case 0xF3:
-                    descriptionToInsert = "SWITCH MESSAGE";
+                    DescriptionToInsert = "SWITCH MESSAGE";
 
                     if (message.Length >= 4)
                     {
@@ -2530,7 +2668,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xF5:
-                    descriptionToInsert = "ENGINE LAMP CTRL";
+                    DescriptionToInsert = "ENGINE LAMP CTRL";
 
                     if (message.Length >= 4)
                     {
@@ -2538,7 +2676,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xF6:
-                    descriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
 
                     if (message.Length >= 4)
                     {
@@ -2546,7 +2684,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xFD:
-                    descriptionToInsert = "COMPASS COMP. AND TEMPERATURE DATA RECEIVED";
+                    DescriptionToInsert = "COMPASS COMP. AND TEMPERATURE DATA RECEIVED";
 
                     if (message.Length >= 4)
                     {
@@ -2554,19 +2692,20 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xFE:
-                    descriptionToInsert = "INTERIOR LAMP DIMMING";
+                    DescriptionToInsert = "INTERIOR LAMP DIMMING";
 
                     if (message.Length >= 3)
                     {
-                        valueToInsert = Math.Round(payload[0] * 0.392).ToString("0");
-                        unitToInsert = "PERCENT";
+                        double DimmingPercentage = payload[0] * 0.392;
+                        ValueToInsert = Math.Round(DimmingPercentage).ToString("0");
+                        UnitToInsert = "PERCENT";
                     }
                     break;
                 case 0xFF:
-                    descriptionToInsert = "CCD-BUS WAKE UP";
+                    DescriptionToInsert = "CCD-BUS WAKE UP";
                     break;
                 default:
-                    descriptionToInsert = string.Empty;
+                    DescriptionToInsert = string.Empty;
                     break;
             }
 
@@ -2581,21 +2720,23 @@ namespace ChryslerScanner
                 hexBytesToInsert = Util.ByteToHexString(message, 0, 7) + " .. ";
             }
 
-            if (descriptionToInsert.Length > 51) descriptionToInsert = Util.TruncateString(descriptionToInsert, 48) + "...";
-            if (valueToInsert.Length > 23) valueToInsert = Util.TruncateString(valueToInsert, 20) + "...";
-            if (unitToInsert.Length > 11) unitToInsert = Util.TruncateString(unitToInsert, 8) + "...";
+            if (DescriptionToInsert.Length > 51) DescriptionToInsert = Util.TruncateString(DescriptionToInsert, 48) + "...";
+            if (ValueToInsert.Length > 23) ValueToInsert = Util.TruncateString(ValueToInsert, 20) + "...";
+            if (UnitToInsert.Length > 11) UnitToInsert = Util.TruncateString(UnitToInsert, 8) + "...";
 
-            rowToAdd.Remove(hexBytesColumnStart, hexBytesToInsert.Length);
-            rowToAdd.Insert(hexBytesColumnStart, hexBytesToInsert);
+            StringBuilder rowToAdd = new StringBuilder(EmptyLine); // add empty line first
 
-            rowToAdd.Remove(descriptionColumnStart, descriptionToInsert.Length);
-            rowToAdd.Insert(descriptionColumnStart, descriptionToInsert);
+            rowToAdd.Remove(HexBytesColumnStart, hexBytesToInsert.Length);
+            rowToAdd.Insert(HexBytesColumnStart, hexBytesToInsert);
 
-            rowToAdd.Remove(valueColumnStart, valueToInsert.Length);
-            rowToAdd.Insert(valueColumnStart, valueToInsert);
+            rowToAdd.Remove(DescriptionColumnStart, DescriptionToInsert.Length);
+            rowToAdd.Insert(DescriptionColumnStart, DescriptionToInsert);
 
-            rowToAdd.Remove(unitColumnStart, unitToInsert.Length);
-            rowToAdd.Insert(unitColumnStart, unitToInsert);
+            rowToAdd.Remove(ValueColumnStart, ValueToInsert.Length);
+            rowToAdd.Insert(ValueColumnStart, ValueToInsert);
+
+            rowToAdd.Remove(UnitColumnStart, UnitToInsert.Length);
+            rowToAdd.Insert(UnitColumnStart, UnitToInsert);
 
             Diagnostics.AddRow(modifiedID, rowToAdd.ToString());
 

@@ -19,8 +19,8 @@ namespace ChryslerScanner
         public int _26Row = 6; // PCI response
         public int _48Row = 7; // OBD2 response
         public int _68Row = 8; // OBD2 request
-        public const int listStart = 10;
-        public int lastUpdatedLine = 1;
+        public const int ListStart = 10;
+        public int LastUpdatedLine = 1;
 
         public PCIDiagnosticsTable()
         {
@@ -62,27 +62,29 @@ namespace ChryslerScanner
                 if (!UniqueIDByteList.Contains(uniqueID)) UniqueIDByteList.Add(uniqueID);
 
                 IDByteList.Add(modifiedID);
-                IDByteList.Sort();
+
+                if (Properties.Settings.Default.SortByID == true) IDByteList.Sort();
+
                 location = IDByteList.FindIndex(x => x == modifiedID);
 
                 if (IDByteList.Count == 1)
                 {
-                    Table.RemoveAt(listStart);
-                    Table.Insert(listStart, row);
+                    Table.RemoveAt(ListStart);
+                    Table.Insert(ListStart, row);
                 }
                 else
                 {
-                    Table.Insert(listStart + location, row);
+                    Table.Insert(ListStart + location, row);
                 }
 
-                lastUpdatedLine = listStart + location;
+                LastUpdatedLine = ListStart + location;
             }
             else if (IDByteList.Contains(modifiedID) && ((modifiedID >> 8) != 0x24) && ((modifiedID >> 8) != 0x26) && ((modifiedID >> 8) != 0x48) && ((modifiedID >> 8) != 0x68)) // if it's not diagnostic request or response message
             {
                 location = IDByteList.FindIndex(x => x == modifiedID);
-                Table.RemoveAt(listStart + location);
-                Table.Insert(listStart + location, row);
-                lastUpdatedLine = listStart + location;
+                Table.RemoveAt(ListStart + location);
+                Table.Insert(ListStart + location, row);
+                LastUpdatedLine = ListStart + location;
             }
 
             switch (modifiedID >> 8)
@@ -92,28 +94,28 @@ namespace ChryslerScanner
                     _2426IDByteList.Sort();
                     Table.RemoveAt(_24Row);
                     Table.Insert(_24Row, row);
-                    lastUpdatedLine = _24Row;
+                    LastUpdatedLine = _24Row;
                     break;
                 case 0x26:
                     if (!_2426IDByteList.Contains(0x26)) _2426IDByteList.Add(0x26);
                     _2426IDByteList.Sort();
                     Table.RemoveAt(_26Row);
                     Table.Insert(_26Row, row);
-                    lastUpdatedLine = _26Row;
+                    LastUpdatedLine = _26Row;
                     break;
                 case 0x48:
                     if (!_2426IDByteList.Contains(0x48)) _2426IDByteList.Add(0x48);
                     _2426IDByteList.Sort();
                     Table.RemoveAt(_48Row);
                     Table.Insert(_48Row, row);
-                    lastUpdatedLine = _48Row;
+                    LastUpdatedLine = _48Row;
                     break;
                 case 0x68:
                     if (!_2426IDByteList.Contains(0x68)) _2426IDByteList.Add(0x68);
                     _2426IDByteList.Sort();
                     Table.RemoveAt(_68Row);
                     Table.Insert(_68Row, row);
-                    lastUpdatedLine = _68Row;
+                    LastUpdatedLine = _68Row;
                     break;
                 default:
                     break;

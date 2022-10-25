@@ -70,5 +70,17 @@ namespace ChryslerScanner.Properties {
                 this["PCIBusOnDemand"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool SortByID {
+            get {
+                return ((bool)(this["SortByID"]));
+            }
+            set {
+                this["SortByID"] = value;
+            }
+        }
     }
 }
