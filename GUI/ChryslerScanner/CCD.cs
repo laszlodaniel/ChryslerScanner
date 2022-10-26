@@ -789,7 +789,7 @@ namespace ChryslerScanner
 
                     if (message.Length >= 4)
                     {
-                        double FuelLevelSensorVoltage = payload[0] * 0.0191;
+                        double FuelLevelSensorVoltage = payload[0] * 0.0196;
                         double FuelLevelG = payload[1] * 0.125;
                         double FuelLevelL = payload[1] * 0.125 * 3.785412;
 

@@ -162,7 +162,7 @@ namespace ChryslerScanner
 
                     if (message.Length >= 6)
                     {
-                        double TPSVolts = payload[0] * 0.0191;
+                        double TPSVolts = payload[0] * 0.0196;
                         byte CruiseSpeedKMH = payload[1];
                         double CruiseSpeedMPH = (byte)(payload[1] * 1.609344);
                         double TargetIdle = payload[3] * 0.25 * 32.0;
@@ -363,7 +363,7 @@ namespace ChryslerScanner
 
                     if (message.Length >= 4)
                     {
-                        double FuelLevelSensorVolts = payload[0] * 0.0191;
+                        double FuelLevelSensorVolts = payload[0] * 0.0196;
                         double FuelLevelG = payload[1] * 0.125;
                         double FuelLevelL = payload[1] * 0.125 * 3.785412;
 
