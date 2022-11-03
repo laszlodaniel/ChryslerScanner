@@ -499,15 +499,10 @@ namespace ChryslerScanner
                         List<string> LampList = new List<string>();
                         LampList.Clear();
 
-                        if (payload[0] == 0)
-                        {
-                            ValueToInsert = string.Empty;
-                        }
-                        else
+                        if (payload[0] != 0)
                         {
                             if (Util.IsBitSet(payload[0], 0)) LampList.Add("AIRBAG");
                             if (Util.IsBitSet(payload[0], 2)) LampList.Add("SEATBELT");
-                            ValueToInsert = string.Empty;
 
                             foreach (string s in LampList)
                             {
@@ -665,12 +660,28 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x7E:
-                    DescriptionToInsert = "A/C CLUTCH RELAY STATE";
+                    DescriptionToInsert = "A/C RELAY STATES | ";
 
                     if (message.Length >= 3)
                     {
-                        if (Util.IsBitSet(payload[0], 0)) ValueToInsert = "ON";
-                        else ValueToInsert = "OFF";
+                        List<string> RelayList = new List<string>();
+                        RelayList.Clear();
+
+                        if (payload[0] != 0)
+                        {
+                            if (Util.IsBitSet(payload[0], 0)) RelayList.Add("CLUTCH");
+                            if (Util.IsBitSet(payload[0], 2)) RelayList.Add("BLOWER FAN");
+                            if (Util.IsBitSet(payload[0], 4)) RelayList.Add("DEFROST");
+
+                            foreach (string s in RelayList)
+                            {
+                                DescriptionToInsert += s + " | ";
+                            }
+
+                            if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
+                        }
+
+                        ValueToInsert = Convert.ToString(payload[0], 2).PadLeft(8, '0');
                     }
                     break;
                 case 0x84:
@@ -755,17 +766,17 @@ namespace ChryslerScanner
                         switch (payload[1])
                         {
                             case 0x00: // fuel gauge
-                                DescriptionToInsert = "MIC GAUGE POSITION: FUEL LEVEL";
+                                DescriptionToInsert = "MIC GAUGE POSITION | FUEL LEVEL";
                                 ValueToInsert = Util.ByteToHexString(payload, 0, 1);
                                 break;
                             case 0x01: // coolant temperature gauge
-                                DescriptionToInsert = "MIC GAUGE POSITION: COOLANT TEMPERATURE";
+                                DescriptionToInsert = "MIC GAUGE POSITION | COOLANT TEMPERATURE";
                                 ValueToInsert = Util.ByteToHexString(payload, 0, 1);
                                 break;
                             case 0x02: // speedometer
                             case 0x22:
                             case 0x32:
-                                DescriptionToInsert = "MIC GAUGE POSITION: SPEEDOMETER";
+                                DescriptionToInsert = "MIC GAUGE POSITION | SPEEDOMETER";
                                 ValueToInsert = Util.ByteToHexString(payload, 0, 1);
                                 break;
                             case 0x03: // tachometer
@@ -774,11 +785,10 @@ namespace ChryslerScanner
                             case 0x07:
                             case 0x27:
                             case 0x37:
-                                DescriptionToInsert = "MIC GAUGE POSITION: TACHOMETER";
+                                DescriptionToInsert = "MIC GAUGE POSITION | TACHOMETER";
                                 ValueToInsert = Util.ByteToHexString(payload, 0, 1);
                                 break;
                             default:
-                                DescriptionToInsert = "MIC GAUGE/LAMP STATE";
                                 ValueToInsert = Convert.ToString(payload[0], 2).PadLeft(8, '0');
                                 break;
                         }
@@ -1342,7 +1352,7 @@ namespace ChryslerScanner
                                         break;
                                     case 0x16: // read fault codes
                                         DescriptionToInsert = "REQUEST  | BCM | FAULT CODES";
-                                        ValueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 2);
+                                        ValueToInsert = "PAGE: " + Util.ByteToHexString(payload, 2, 1);
                                         break;
                                     case 0x22: // read ROM
                                         DescriptionToInsert = "REQUEST  | BCM | ROM DATA";
@@ -2252,7 +2262,7 @@ namespace ChryslerScanner
                                     case 0x16: // read fault codes
                                         DescriptionToInsert = "RESPONSE | BCM | FAULT CODES";
                                         if (payload[3] == 0x00) ValueToInsert = "NO FAULT CODE";
-                                        else ValueToInsert = "CODE: " + Util.ByteToHexString(payload, 2, 2);
+                                        else ValueToInsert = "CODE: " + Util.ByteToHexString(payload, 3, 1);
                                         break;
                                     case 0x22: // read ROM
                                         DescriptionToInsert = "RESPONSE | BCM | ROM DATA";

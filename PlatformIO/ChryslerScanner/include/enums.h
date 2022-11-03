@@ -98,7 +98,8 @@ enum Bootloader {
     Bootloader_Empty             = 0x00,
     Bootloader_128k_SBEC3        = 0x01,
     Bootloader_256k_SBEC3        = 0x02,
-    Bootloader_256k_SBEC3_custom = 0x03
+    Bootloader_256k_SBEC3_custom = 0x03,
+    Bootloader_256k_JTEC         = 0x04
 };
 
 enum WorkerFunction {
@@ -109,8 +110,10 @@ enum WorkerFunction {
     WorkerFunction_FlashErase          = 0x04,
     WorkerFunction_FlashWrite          = 0x05,
     WorkerFunction_VerifyFlashChecksum = 0x06,
-    WorkerFunction_EEPROMRead          = 0x07,
-    WorkerFunction_EEPROMWrite         = 0x08
+    WorkerFunction_EEPROMReadSPI       = 0x07, // SBEC3
+    WorkerFunction_EEPROMWriteSPI      = 0x08, // SBEC3
+    WorkerFunction_EEPROMReadParallel  = 0x09, // JTEC
+    WorkerFunction_EEPROMWriteParallel = 0x0A, // JTEC
 };
 
 enum FlashMemoryManufacturer

@@ -248,6 +248,41 @@ namespace ChryslerScanner
                         }
                     }
                     break;
+                case 0x3A:
+                    DescriptionToInsert = "SELECTED GEAR";
+
+                    if (message.Length >= 3)
+                    {
+                        switch (payload[0])
+                        {
+                            case 0x01:
+                            case 0x10:
+                            case 0x20:
+                            case 0x21:
+                            case 0x22:
+                            case 0x23:
+
+                            default:
+                                ValueToInsert = "UNDEFINED";
+                                break;
+                        }
+                    }
+                    break;
+                case 0x42:
+                    DescriptionToInsert = "LAST ENGINE SHUTDOWN";
+
+                    if (message.Length >= 4)
+                    {
+                        byte TimerHours = payload[0];
+                        byte TimerMinutes = payload[1];
+
+                        if (TimerHours < 10) ValueToInsert = "0";
+                        ValueToInsert += TimerHours.ToString("0") + ":";
+                        if (TimerMinutes < 10) ValueToInsert += "0";
+                        ValueToInsert += TimerMinutes.ToString("0");
+                        UnitToInsert = "HOUR:MINUTE";
+                    }
+                    break;
                 case 0x4F:
                     DescriptionToInsert = "VEHICLE THEFT ALARM STATUS";
 
@@ -257,7 +292,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x52:
-                    DescriptionToInsert = "A/C RELAY STATE";
+                    DescriptionToInsert = "A/C RELAY STATES | ";
 
                     if (message.Length >= 3)
                     {
@@ -269,7 +304,7 @@ namespace ChryslerScanner
 
                     if (message.Length >= 5)
                     {
-                        Util.ByteToHexString(payload, 0, 3);
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 3);
                     }
                     break;
                 case 0x5D:
@@ -297,7 +332,15 @@ namespace ChryslerScanner
 
                     if (message.Length >= 4)
                     {
-                        Util.ByteToHexString(payload, 0, 2);
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 2);
+                    }
+                    break;
+                case 0x6C:
+                    DescriptionToInsert = "TCM FAULTS PRESENT";
+
+                    if (message.Length >= 7)
+                    {
+                        ValueToInsert = Util.ByteToHexString(payload, 1, 4);
                     }
                     break;
                 case 0x72:
@@ -325,7 +368,7 @@ namespace ChryslerScanner
 
                     if (message.Length >= 4)
                     {
-                        Util.ByteToHexString(payload, 0, 2);
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 2);
                     }
                     break;
                 case 0xA0:
@@ -384,7 +427,7 @@ namespace ChryslerScanner
 
                     if (message.Length >= 4)
                     {
-                        Util.ByteToHexString(payload, 0, 2);
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 2);
                     }
                     break;
                 case 0xB0:
@@ -433,7 +476,7 @@ namespace ChryslerScanner
 
                     if (message.Length >= 4)
                     {
-                        Util.ByteToHexString(payload, 0, 2);
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 2);
                     }
                     break;
                 case 0xC0:
@@ -536,7 +579,7 @@ namespace ChryslerScanner
 
                     if (message.Length >= 4)
                     {
-                        Util.ByteToHexString(payload, 0, 2);
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 2);
                     }
                     break;
                 case 0xEA:

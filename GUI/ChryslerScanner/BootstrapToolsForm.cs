@@ -46,6 +46,8 @@ namespace ChryslerScanner
         private string OldPartNumberString = string.Empty;
         private string NewPartNumberString = string.Empty;
 
+        private bool SwitchBackToLSWhenExit = false;
+
         private System.Timers.Timer SCIBusNextRequestTimer = new System.Timers.Timer();
         private System.Timers.Timer SCIBusRxTimeoutTimer = new System.Timers.Timer();
         private System.Timers.Timer SCIBusTxTimeoutTimer = new System.Timers.Timer();
@@ -633,6 +635,8 @@ namespace ChryslerScanner
 
         private void BootstrapButton_Click(object sender, EventArgs e)
         {
+            string LastPCMSpeed = OriginalForm.PCM.speed;
+
             UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "User is instructed to turn key to OFF position.");
 
             if (MessageBox.Show("Turn key to OFF position and wait at least 10 seconds." + Environment.NewLine + "Click OK when done.", "Information", MessageBoxButtons.OKCancel, MessageBoxIcon.Information, MessageBoxDefaultButton.Button2) == DialogResult.OK)
@@ -688,6 +692,8 @@ namespace ChryslerScanner
                             OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: empty.");
                             break;
                     }
+
+                    SwitchBackToLSWhenExit = true;
                 }
                 else
                 {
@@ -700,7 +706,7 @@ namespace ChryslerScanner
 
                     UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "ECU bootstrapping is cancelled.");
 
-                    if (OriginalForm.PCM.speed == "62500 baud")
+                    if (LastPCMSpeed != "62500 baud")
                     {
                         UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Scanner SCI-bus speed is set to 7812.5 baud.");
                         OriginalForm.SelectSCIBusPCMLSMode();
@@ -711,7 +717,7 @@ namespace ChryslerScanner
             {
                 UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "ECU bootstrapping is cancelled.");
 
-                if (OriginalForm.PCM.speed == "62500 baud")
+                if (LastPCMSpeed != "62500 baud")
                 {
                     UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Scanner SCI-bus speed is set to 7812.5 baud.");
                     OriginalForm.SelectSCIBusPCMLSMode();
@@ -1253,7 +1259,17 @@ namespace ChryslerScanner
 
                                         if (SCIBusBootstrapWorker.IsBusy)
                                         {
-                                            CurrentTask = Task.ReadPartNumber;
+                                            switch (BootloaderComboBox.SelectedIndex)
+                                            {
+                                                case (byte)Bootloader.JTEC_256k:
+                                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 2. Read old part number." + Environment.NewLine + Environment.NewLine + "Skip part number read.");
+                                                    CurrentTask = Task.DetectFlashMemoryType;
+                                                    break;
+                                                default:
+                                                    CurrentTask = Task.ReadPartNumber;
+                                                    break;
+                                            }
+
                                             SCIBusResponse = true;
                                         }
                                     }
@@ -1586,8 +1602,8 @@ namespace ChryslerScanner
                                             {
                                                 FlashChipComboBox.SelectedIndex = 0;
                                                 UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory type could not be determined.");
-                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Add request for flash memory chip support at:");
-                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "https://github.com/laszlodaniel/ChryslerScanner/discussions/8");
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Add request for flash memory chip support at:");
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "https://github.com/laszlodaniel/ChryslerScanner/discussions/8" + Environment.NewLine);
 
                                                 if (SCIBusBootstrapWorker.IsBusy)
                                                 {
@@ -2197,7 +2213,7 @@ namespace ChryslerScanner
         {
             if (SCIBusBootstrapWorker.IsBusy) SCIBusBootstrapWorker.CancelAsync();
 
-            if (OriginalForm.PCM.speed == "62500 baud")
+            if (SwitchBackToLSWhenExit && (OriginalForm.PCM.speed == "62500 baud"))
             {
                 UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Scanner SCI-bus speed is set to 7812.5 baud.");
                 OriginalForm.SelectSCIBusPCMLSMode();

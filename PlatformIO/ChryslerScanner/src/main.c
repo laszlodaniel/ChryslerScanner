@@ -117,7 +117,7 @@ uint8_t pci_tx_buf[256];
 uint16_t pci_tx_ptr = 0;
 
 uint8_t sci_hi_speed_memarea[16] = { 0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF };
-uint8_t sci_lo_speed_cmd_filter[5] = { 0x14, 0x15, 0x26, 0x27, 0x28 };
+uint8_t sci_lo_speed_cmd_filter[6] = { 0x14, 0x15, 0x26, 0x27, 0x28, 0x2A };
 
 uint8_t ack[1] = { 0x00 }; // acknowledge payload array
 uint8_t err[1] = { 0xFF }; // error payload array
@@ -2917,7 +2917,7 @@ void sci_msg_task(void *pvParameters)
                         }
                         else
                         {
-                            if (sci.bootstrap.worker_function_src == WorkerFunction_EEPROMWrite)
+                            if (sci.bootstrap.worker_function_src == WorkerFunction_EEPROMWriteSPI)
                             {
                                 sci_set_timeout(5 * SCI_LS_T1_DELAY); // apply generous timeout because EEPROM block is not echoed back right away (100 ms for 512 bytes)
                                 sci.msg.byte_received = false;
@@ -3229,6 +3229,28 @@ void sci_boot_task(void *pvParameters)
                     for (uint16_t i = 0; i < sizeof(LdBoot_256k_SBEC3_custom); i++)
                     {
                         buff[0] = LdBoot_256k_SBEC3_custom[i];
+                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                        sci.msg.byte_received = false;
+                    }
+                    break;
+                }
+                case Bootloader_256k_JTEC:
+                {
+                    bl_header[3] = ((0x0100 + sizeof(LdBoot_256k_JTEC) - 1) >> 8) & 0xFF;
+                    bl_header[4] = (0x0100 + sizeof(LdBoot_256k_JTEC) - 1) & 0xFF;
+
+                    for (uint8_t i = 0; i < sizeof(bl_header); i++)
+                    {
+                        buff[0] = bl_header[i];
+                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                        sci.msg.byte_received = false;
+                    }
+
+                    for (uint16_t i = 0; i < sizeof(LdBoot_256k_JTEC); i++)
+                    {
+                        buff[0] = LdBoot_256k_JTEC[i];
                         uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
                         while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
                         sci.msg.byte_received = false;
@@ -3576,7 +3598,7 @@ void sci_boot_task(void *pvParameters)
                     break;
                 }
                 
-                case WorkerFunction_EEPROMRead:
+                case WorkerFunction_EEPROMReadSPI:
                 {
                     wf_header[1] = (sizeof(LdEEPROMRead_SBEC3) >> 8) & 0xFF;
                     wf_header[2] = sizeof(LdEEPROMRead_SBEC3) & 0xFF;
@@ -3598,7 +3620,7 @@ void sci_boot_task(void *pvParameters)
                     }
                     break;
                 }
-                case WorkerFunction_EEPROMWrite:
+                case WorkerFunction_EEPROMWriteSPI:
                 {
                     wf_header[1] = (sizeof(LdEEPROMWrite_SBEC3) >> 8) & 0xFF;
                     wf_header[2] = sizeof(LdEEPROMWrite_SBEC3) & 0xFF;
@@ -3707,10 +3729,10 @@ void sci_boot_task(void *pvParameters)
                 }
                 case WorkerFunction_PartNumberRead:
                 case WorkerFunction_FlashRead:
-                case WorkerFunction_EEPROMRead:
+                case WorkerFunction_EEPROMReadSPI:
                 case WorkerFunction_FlashWrite:
                 case WorkerFunction_VerifyFlashChecksum:
-                case WorkerFunction_EEPROMWrite:
+                case WorkerFunction_EEPROMWriteSPI:
                 case WorkerFunction_Empty:
                 default:
                 {
@@ -3742,13 +3764,13 @@ void sci_boot_task(void *pvParameters)
                     uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
                     break;
                 }
-                case WorkerFunction_EEPROMRead:
+                case WorkerFunction_EEPROMReadSPI:
                 {
                     uart_write_bytes(UART_SCI, (const uint8_t *)stop_eeprom_read_cmd, sizeof(stop_eeprom_read_cmd));
                     uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
                     break;
                 }
-                case WorkerFunction_EEPROMWrite:
+                case WorkerFunction_EEPROMWriteSPI:
                 {
                     uart_write_bytes(UART_SCI, (const uint8_t *)stop_eeprom_write_cmd, sizeof(stop_eeprom_write_cmd));
                     uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred

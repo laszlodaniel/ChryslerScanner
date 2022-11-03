@@ -77,6 +77,7 @@ namespace ChryslerScanner
         private SecurityKeyCalculatorForm SecuritySeedCalculator;
         private BootstrapToolsForm BootstrapTools;
         private EngineToolsForm EngineTools;
+        private ABSToolsForm ABSTools;
         private AboutForm About;
         public static Packet Packet = new Packet();
         public CCD CCD = new CCD();
@@ -106,6 +107,7 @@ namespace ChryslerScanner
             Text += "  |  GUI " + GUIVersion;
 
             if (!Directory.Exists("LOG")) Directory.CreateDirectory("LOG");
+            if (!Directory.Exists("LOG/ABS")) Directory.CreateDirectory("LOG/ABS");
             if (!Directory.Exists("LOG/CCD")) Directory.CreateDirectory("LOG/CCD");
             if (!Directory.Exists("LOG/PCI")) Directory.CreateDirectory("LOG/PCI");
             if (!Directory.Exists("LOG/SCI")) Directory.CreateDirectory("LOG/SCI");
@@ -3023,6 +3025,7 @@ namespace ChryslerScanner
                                         WriteMemoryToolStripMenuItem.Enabled = true;
                                         BootstrapToolsToolStripMenuItem.Enabled = true;
                                         EngineToolsToolStripMenuItem.Enabled = true;
+                                        ABSToolsToolStripMenuItem.Enabled = true;
                                         Packet.PacketReceived += AnalyzePacket; // subscribe to the OnPacketReceived event
                                         CCD.Diagnostics.TableUpdated += UpdateCCDTable; // subscribe to the CCD-bus OnTableUpdated event
                                         PCI.Diagnostics.TableUpdated += UpdatePCITable; // subscribe to the PCI-bus OnTableUpdated event
@@ -3085,6 +3088,7 @@ namespace ChryslerScanner
                         WriteMemoryToolStripMenuItem.Enabled = false;
                         BootstrapToolsToolStripMenuItem.Enabled = false;
                         EngineToolsToolStripMenuItem.Enabled = false;
+                        ABSToolsToolStripMenuItem.Enabled = false;
                         DeviceFound = false;
                         timeout = false;
                         Util.UpdateTextBox(USBTextBox, "[INFO] Device disconnected (" + Packet.Serial.PortName + ").");
@@ -5918,6 +5922,32 @@ namespace ChryslerScanner
             }
         }
 
+        private void ABSToolsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (ABSTools == null)
+            {
+                ABSTools = new ABSToolsForm(this)
+                {
+                    StartPosition = FormStartPosition.CenterParent
+                };
+
+                ABSTools.FormClosed += delegate { ABSTools = null; };
+                ABSTools.Show(this);
+
+                if (ABSTools.StartPosition == FormStartPosition.CenterParent)
+                {
+                    var x = Location.X + (Width - ABSTools.Width) / 2;
+                    var y = Location.Y + (Height - ABSTools.Height) / 2;
+                    ABSTools.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
+                }
+            }
+            else
+            {
+                BootstrapTools.WindowState = FormWindowState.Normal;
+                BootstrapTools.Focus();
+            }
+        }
+
         private void MetricUnitsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             ImperialUnitsToolStripMenuItem.Checked = false;
@@ -6021,6 +6051,11 @@ namespace ChryslerScanner
                 if (e.Control && e.KeyCode == Keys.E) // Ctrl+E shortcut
                 {
                     EngineToolsToolStripMenuItem_Click(this, EventArgs.Empty);
+                }
+
+                if (e.Control && e.KeyCode == Keys.W) // Ctrl+A shortcut
+                {
+                    ABSToolsToolStripMenuItem_Click(this, EventArgs.Empty);
                 }
             }
         }

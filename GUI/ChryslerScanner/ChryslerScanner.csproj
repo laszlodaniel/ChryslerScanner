@@ -56,6 +56,12 @@
     <Compile Include="AboutForm.Designer.cs">
       <DependentUpon>AboutForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ABSToolsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ABSToolsForm.Designer.cs">
+      <DependentUpon>ABSToolsForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="BootstrapToolsForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -140,6 +146,9 @@
     </Compile>
     <EmbeddedResource Include="AboutForm.resx">
       <DependentUpon>AboutForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ABSToolsForm.resx">
+      <DependentUpon>ABSToolsForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="BootstrapToolsForm.resx">
       <DependentUpon>BootstrapToolsForm.cs</DependentUpon>

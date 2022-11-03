@@ -1658,8 +1658,10 @@ namespace ChryslerScanner
                                     ValueToInsert = payload[1].ToString("0");
                                     break;
                                 case 0x0E:
+                                    double LTFT1 = payload[1] * 0.196;
                                     DescriptionToInsert = "LONG TERM FUEL TRIM 1";
-                                    ValueToInsert = payload[1].ToString("0");
+                                    ValueToInsert = Math.Round(LTFT1, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "PERCENT";
                                     break;
                                 case 0x0F:
                                     double BarometricPressurePSI = payload[1] * 0.059756;
@@ -1984,8 +1986,10 @@ namespace ChryslerScanner
                                     UnitToInsert = "V";
                                     break;
                                 case 0x31:
+                                    double LTFT2 = payload[1] * 0.196;
                                     DescriptionToInsert = "LONG TERM FUEL TRIM 2";
-                                    ValueToInsert = payload[1].ToString("0");
+                                    ValueToInsert = Math.Round(LTFT2, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "PERCENT";
                                     break;
                                 case 0x32:
                                     double ACHSPSVoltage = payload[1] * 0.0196;
@@ -5145,6 +5149,10 @@ namespace ChryslerScanner
                                 case 0x57:
                                     DescriptionToInsert = "RPM/VSS RATIO";
                                     ValueToInsert = payload[1].ToString("0");
+                                    break;
+                                case 0x58:
+                                    DescriptionToInsert = "TRANSMISSION SELECTED GEAR 2";
+                                    ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                     break;
                                 case 0x5A:
                                     double DwellCoil1 = payload[1] * 0.008;

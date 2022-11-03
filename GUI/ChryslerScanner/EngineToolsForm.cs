@@ -1081,7 +1081,7 @@ namespace ChryslerScanner
                     "F455 |",
                     "F456 |",
                     "F457 | RPM/VSS ratio",
-                    "F458 |",
+                    "F458 | Transmission selected gear 2",
                     "F459 |",
                     "F45A | Dwell coil 1 (cylinders 1 & 4)",
                     "F45B | Dwell coil 2 (cylinders 2 & 3)",
