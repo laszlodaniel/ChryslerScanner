@@ -443,17 +443,17 @@ namespace ChryslerScanner
                     if (message.Length >= 4)
                     {
                         double TPS = payload[0] * 0.65;
-                        double CruiseSetSpeedMPH = payload[1];
-                        double CruiseSetSpeedKMH = payload[1] * 1.609344;
+                        double CruiseSetSpeedMPH = payload[1] * 0.5;
+                        double CruiseSetSpeedKMH = CruiseSetSpeedMPH * 1.609344;
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            ValueToInsert = Math.Round(TPS).ToString("0") + " | " + CruiseSetSpeedMPH.ToString("0");
+                            ValueToInsert = Math.Round(TPS).ToString("0") + " | " + Math.Round(CruiseSetSpeedMPH, 1).ToString("0.0").Replace(",", ".");
                             UnitToInsert = "% | MPH";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            ValueToInsert = Math.Round(TPS).ToString("0") + " | " + Math.Round(CruiseSetSpeedKMH).ToString("0");
+                            ValueToInsert = Math.Round(TPS).ToString("0") + " | " + Math.Round(CruiseSetSpeedKMH, 1).ToString("0.0").Replace(",", ".");
                             UnitToInsert = "% | KM/H";
                         }
                     }

@@ -163,18 +163,18 @@ namespace ChryslerScanner
                     if (message.Length >= 6)
                     {
                         double TPSVolts = payload[0] * 0.0196;
-                        byte CruiseSpeedKMH = payload[1];
-                        double CruiseSpeedMPH = (byte)(payload[1] * 1.609344);
+                        double CruiseSetSpeedMPH = payload[1] * 0.5;
+                        double CruiseSetSpeedKMH = CruiseSetSpeedMPH * 1.609344;
                         double TargetIdle = payload[3] * 0.25 * 32.0;
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            DescriptionToInsert = "TPS: " + Math.Round(TPSVolts, 3).ToString("0.000").Replace(",", ".") + " V | CRUISE SPEED: " + Math.Round(CruiseSpeedMPH).ToString("0") + " MPH | " + "N/A: " + Util.ByteToHexString(payload, 2, 1);
+                            DescriptionToInsert = "TPS: " + Math.Round(TPSVolts, 3).ToString("0.000").Replace(",", ".") + " V | CRUISE SPEED: " + Math.Round(CruiseSetSpeedMPH, 1).ToString("0.0").Replace(",", ".") + " MPH | " + "N/A: " + Util.ByteToHexString(payload, 2, 1);
                             ValueToInsert = "TARGET IDLE: " + Math.Round(TargetIdle).ToString("0") + " RPM";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            DescriptionToInsert = "TPS: " + Math.Round(TPSVolts, 3).ToString("0.000").Replace(",", ".") + " V | CRUISE SPEED: " + CruiseSpeedKMH.ToString("0") + " KM/H | " + "N/A: " + Util.ByteToHexString(payload, 2, 1);
+                            DescriptionToInsert = "TPS: " + Math.Round(TPSVolts, 3).ToString("0.000").Replace(",", ".") + " V | CRUISE SPEED: " + Math.Round(CruiseSetSpeedKMH, 1).ToString("0.0").Replace(",", ".") + " KM/H | " + "N/A: " + Util.ByteToHexString(payload, 2, 1);
                             ValueToInsert = "TARGET IDLE: " + Math.Round(TargetIdle).ToString("0") + " RPM";
                         }
                     }
@@ -261,7 +261,6 @@ namespace ChryslerScanner
                             case 0x21:
                             case 0x22:
                             case 0x23:
-
                             default:
                                 ValueToInsert = "UNDEFINED";
                                 break;
@@ -486,7 +485,7 @@ namespace ChryslerScanner
                     {
                         double BatteryVoltage = payload[0] * 0.0625;
                         double OilPressurePSI = payload[1] * 0.5;
-                        double OilPressureKPA = payload[1] * 0.5 * 6.894757;
+                        double OilPressureKPA = OilPressurePSI * 6.894757;
                         double CoolantTemperatureC = payload[2] - 40;
                         double CoolantTemperatureF = 1.8 * CoolantTemperatureC + 32.0;
                         double AmbientTemperatureC = payload[3] - 40;
