@@ -478,7 +478,7 @@ namespace ChryslerScanner
 
                     if (message.Length >= 4)
                     {
-                        ValueToInsert = Util.ByteToHexString(payload, 0, 2);
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 1) + ":" + Util.ByteToHexString(payload, 1, 1);
                     }
                     break;
                 case 0xB0:

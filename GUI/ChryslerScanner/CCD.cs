@@ -682,6 +682,14 @@ namespace ChryslerScanner
                         ValueToInsert = Convert.ToString(payload[0], 2).PadLeft(8, '0');
                     }
                     break;
+                case 0x81:
+                    DescriptionToInsert = "RADIO CLOCK DISPLAY";
+
+                    if (message.Length >= 4)
+                    {
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 1) + ":" + Util.ByteToHexString(payload, 1, 1);
+                    }
+                    break;
                 case 0x84:
                     DescriptionToInsert = "INJECTOR PULSE WIDTH | MILEAGE INCREMENT";
 
