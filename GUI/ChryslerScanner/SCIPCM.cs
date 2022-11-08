@@ -2859,20 +2859,26 @@ namespace ChryslerScanner
                                 case 0x01:
                                     double EngineSpeed2 = ((payload[1] << 8) + payload[2]) * 0.125;
                                     DescriptionToInsert = "ENGINE SPEED";
-                                    ValueToInsert = EngineSpeed2.ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(EngineSpeed2, 3).ToString("0.000").Replace(",", ".");
                                     UnitToInsert = "RPM";
                                     break;
                                 case 0x02:
-                                    double InjectorPulseWidth = (payload[1] << 8) + payload[2];
-                                    DescriptionToInsert = "INJECTOR PULSE WIDTH";
-                                    ValueToInsert = InjectorPulseWidth.ToString("0");
-                                    UnitToInsert = "USEC"; // microseconds
+                                    double InjectorPulseWidth1 = ((payload[1] << 8) + payload[2]) * 0.00390625;
+                                    DescriptionToInsert = "INJECTOR PULSE WIDTH 1";
+                                    ValueToInsert = Math.Round(InjectorPulseWidth1, 3).ToString("0.000");
+                                    UnitToInsert = "MS"; // milliseconds
                                     break;
                                 case 0x03:
                                     double TargetIdleSpeed = ((payload[1] << 8) + payload[2]) * 0.125;
                                     DescriptionToInsert = "TARGET IDLE SPEED";
-                                    ValueToInsert = TargetIdleSpeed.ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TargetIdleSpeed, 3).ToString("0.000").Replace(",", ".");
                                     UnitToInsert = "RPM";
+                                    break;
+                                case 0x04:
+                                    double InjectorPulseWidth2 = ((payload[1] << 8) + payload[2]) * 0.00390625;
+                                    DescriptionToInsert = "INJECTOR PULSE WIDTH 2";
+                                    ValueToInsert = Math.Round(InjectorPulseWidth2, 3).ToString("0.000");
+                                    UnitToInsert = "MS"; // milliseconds
                                     break;
                                 default:
                                     DescriptionToInsert = "SEND ENGINE PARAMETER | OFFSET: " + Util.ByteToHexString(payload, 0, 1);
@@ -5183,21 +5189,21 @@ namespace ChryslerScanner
                                     ValueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0');
                                     break;
                                 case 0x73:
-                                    List<string> LimpStates = new List<string>();
-                                    LimpStates.Clear();
+                                    List<string> LimpInStates = new List<string>();
+                                    LimpInStates.Clear();
 
-                                    if (Util.IsBitSet(payload[1], 0)) LimpStates.Add("ATS"); // Ambient temperature sensor
-                                    if (Util.IsBitSet(payload[1], 3)) LimpStates.Add("IAT"); // Intake air temperature
-                                    if (Util.IsBitSet(payload[1], 4)) LimpStates.Add("TPS"); // Throttle position sensor
-                                    if (Util.IsBitSet(payload[1], 5)) LimpStates.Add("MAPEL"); // Intake manifold absolute pressure
-                                    if (Util.IsBitSet(payload[1], 6)) LimpStates.Add("MAPVA"); // Intake manifold vacuum
-                                    if (Util.IsBitSet(payload[1], 7)) LimpStates.Add("ECT"); // Engine coolant temperature
+                                    if (Util.IsBitSet(payload[1], 0)) LimpInStates.Add("ATS"); // Ambient temperature sensor
+                                    if (Util.IsBitSet(payload[1], 3)) LimpInStates.Add("IAT"); // Intake air temperature
+                                    if (Util.IsBitSet(payload[1], 4)) LimpInStates.Add("TPS"); // Throttle position sensor
+                                    if (Util.IsBitSet(payload[1], 5)) LimpInStates.Add("MAPEL"); // Intake manifold absolute pressure
+                                    if (Util.IsBitSet(payload[1], 6)) LimpInStates.Add("MAPVA"); // Intake manifold vacuum
+                                    if (Util.IsBitSet(payload[1], 7)) LimpInStates.Add("ECT"); // Engine coolant temperature
 
-                                    if (LimpStates.Count > 0)
+                                    if (LimpInStates.Count > 0)
                                     {
-                                        DescriptionToInsert = "LIMP: ";
+                                        DescriptionToInsert = "LIMP-IN: ";
 
-                                        foreach (string s in LimpStates)
+                                        foreach (string s in LimpInStates)
                                         {
                                             DescriptionToInsert += s + " | ";
                                         }
@@ -5206,7 +5212,7 @@ namespace ChryslerScanner
                                     }
                                     else
                                     {
-                                        DescriptionToInsert = "NO LIMP STATE";
+                                        DescriptionToInsert = "NO LIMP-IN STATE";
                                     }
                                     break;
                                 case 0x74:

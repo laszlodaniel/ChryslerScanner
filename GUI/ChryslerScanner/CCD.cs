@@ -154,7 +154,7 @@ namespace ChryslerScanner
                     {
                         double BatteryVoltage = payload[0] * 0.125;
                         double OilPressurePSI = payload[1] * 0.5;
-                        double OilPressureKPA = payload[1] * 0.5 * 6.894757;
+                        double OilPressureKPA = OilPressurePSI * 6.894757;
                         double CoolantTemperatureC = payload[2] - 64;
                         double CoolantTemperatureF = 1.8 * CoolantTemperatureC + 32.0;
                         double AmbientTemperatureC = payload[3] - 64;
@@ -173,7 +173,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x0D:
-                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "PCM BEACON 0D";
 
                     if (message.Length >= 4)
                     {
@@ -189,7 +189,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x11:
-                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "PCM BEACON 11";
 
                     if (message.Length >= 4)
                     {
@@ -303,16 +303,8 @@ namespace ChryslerScanner
 
                     if (message.Length >= 4)
                     {
-                        if (Properties.Settings.Default.Units == "imperial")
-                        {
-                            ValueToInsert = payload[0].ToString("0");
-                            UnitToInsert = "MPH";
-                        }
-                        else if (Properties.Settings.Default.Units == "metric")
-                        {
-                            ValueToInsert = payload[1].ToString("0");
-                            UnitToInsert = "KM/H";
-                        }
+                        ValueToInsert = payload[0].ToString("0") + " | " + payload[1].ToString("0");
+                        UnitToInsert = "MPH | KM/H";
                     }
                     break;
                 case 0x25:
@@ -341,7 +333,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x2A:
-                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "PCM BEACON 2A";
 
                     if (message.Length >= 4)
                     {
@@ -400,7 +392,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x36:
-                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "PCM BEACON 36";
 
                     if (message.Length >= 4)
                     {
@@ -438,23 +430,23 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x42:
-                    DescriptionToInsert = "THROTTLE POSITION SENSOR | CRUISE SET SPEED";
+                    DescriptionToInsert = "THROTTLE POSITION SENSOR (REL) | CRUISE SET SPEED";
 
                     if (message.Length >= 4)
                     {
-                        double TPS = payload[0] * 0.65;
+                        double TPSVolts = payload[0] * 0.0196;
                         double CruiseSetSpeedMPH = payload[1] * 0.5;
                         double CruiseSetSpeedKMH = CruiseSetSpeedMPH * 1.609344;
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            ValueToInsert = Math.Round(TPS).ToString("0") + " | " + Math.Round(CruiseSetSpeedMPH, 1).ToString("0.0").Replace(",", ".");
-                            UnitToInsert = "% | MPH";
+                            ValueToInsert = Math.Round(TPSVolts, 3).ToString("0.000").Replace(",", ".") + " | " + Math.Round(CruiseSetSpeedMPH, 1).ToString("0.0").Replace(",", ".");
+                            UnitToInsert = "V | MPH";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            ValueToInsert = Math.Round(TPS).ToString("0") + " | " + Math.Round(CruiseSetSpeedKMH, 1).ToString("0.0").Replace(",", ".");
-                            UnitToInsert = "% | KM/H";
+                            ValueToInsert = Math.Round(TPSVolts, 3).ToString("0.000").Replace(",", ".") + " | " + Math.Round(CruiseSetSpeedKMH, 1).ToString("0.0").Replace(",", ".");
+                            UnitToInsert = "V | KM/H";
                         }
                     }
                     break;
@@ -484,7 +476,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x4D:
-                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "PCM BEACON 4D";
 
                     if (message.Length >= 4)
                     {
@@ -492,7 +484,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x50:
-                    DescriptionToInsert = "MIC LAMP STATE (AIRBAG | SEATBELT)";
+                    DescriptionToInsert = "AIRBAG AND SEATBELT LAMP STATE";
 
                     if (message.Length >= 3)
                     {
@@ -510,6 +502,10 @@ namespace ChryslerScanner
                             }
 
                             if (ValueToInsert.Length > 2) ValueToInsert = ValueToInsert.Remove(ValueToInsert.Length - 3); // remove last "|" character
+                        }
+                        else
+                        {
+                            ValueToInsert = "BOTH OFF";
                         }
                     }
                     break;
@@ -611,7 +607,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x76:
-                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "PCM BEACON 76";
 
                     if (message.Length >= 4)
                     {
@@ -644,8 +640,8 @@ namespace ChryslerScanner
 
                     if (message.Length >= 4)
                     {
-                        double TemperatureC = payload[0] - 64.0;
-                        double TemperatureF = 1.8 * TemperatureC + 32.0;
+                        double TemperatureF = payload[0] * 4.0;
+                        double TemperatureC = (TemperatureF - 32.0) * 0.555556;
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
@@ -660,7 +656,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x7E:
-                    DescriptionToInsert = "A/C RELAY STATES | ";
+                    DescriptionToInsert = "A/C RELAY STATES";
 
                     if (message.Length >= 3)
                     {
@@ -669,6 +665,8 @@ namespace ChryslerScanner
 
                         if (payload[0] != 0)
                         {
+                            DescriptionToInsert += " | ";
+
                             if (Util.IsBitSet(payload[0], 0)) RelayList.Add("CLUTCH");
                             if (Util.IsBitSet(payload[0], 2)) RelayList.Add("BLOWER FAN");
                             if (Util.IsBitSet(payload[0], 4)) RelayList.Add("DEFROST");
@@ -685,22 +683,23 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x84:
-                    DescriptionToInsert = "PCM TO BCM MESSAGE | MILEAGE INCREMENT";
+                    DescriptionToInsert = "INJECTOR PULSE WIDTH | MILEAGE INCREMENT";
 
                     if (message.Length >= 4)
                     {
-                        double MileageIncrementMi = payload[1] * 0.000125;
-                        double MileageIncrementKm = payload[1] * 0.000125 * 1.609344;
+                        double InjectorPulseWidth = payload[0];
+                        double MileageIncrement = payload[1] * 0.000125;
+                        double KilometerageIncrement = MileageIncrement * 1.609344;
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            ValueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | " + Math.Round(MileageIncrementMi, 6).ToString("0.000000").Replace(",", ".");
-                            UnitToInsert = "N/A | MI";
+                            ValueToInsert = InjectorPulseWidth.ToString("0") + " | " + Math.Round(MileageIncrement, 6).ToString("0.000000").Replace(",", ".");
+                            UnitToInsert = "MS | MI";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            ValueToInsert = Util.ByteToHexStringSimple(new byte[1] { payload[0] }) + " | " + Math.Round(MileageIncrementKm, 6).ToString("0.000000").Replace(",", ".");
-                            UnitToInsert = "N/A | KM";
+                            ValueToInsert = InjectorPulseWidth.ToString("0") + " | " + Math.Round(KilometerageIncrement, 6).ToString("0.000000").Replace(",", ".");
+                            UnitToInsert = "MS | KM";
                         }
                     }
                     break;
@@ -735,7 +734,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x8D:
-                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "PCM BEACON 8D";
 
                     if (message.Length >= 4)
                     {
@@ -824,15 +823,48 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xA4:
-                    DescriptionToInsert = "MIC LAMP STATE";
+                    DescriptionToInsert = "MIC LAMP ON: ";
 
                     if (message.Length >= 4)
                     {
-                        ValueToInsert = string.Empty;
+                        List<string> LampList = new List<string>();
+                        LampList.Clear();
 
-                        if (Util.IsBitSet(payload[0], 1)) ValueToInsert += "CRUISE ";
-                        if (Util.IsBitSet(payload[0], 2)) ValueToInsert += "BRAKE ";
-                        if (Util.IsBitSet(payload[0], 5)) ValueToInsert += "MIL ";
+                        if (payload[0] != 0)
+                        {
+                            if (Util.IsBitSet(payload[0], 0)) LampList.Add("CRUISE");
+                            if (Util.IsBitSet(payload[0], 2)) LampList.Add("BRAKE");
+                            if (Util.IsBitSet(payload[0], 5)) LampList.Add("MIL");
+
+                            foreach (string s in LampList)
+                            {
+                                DescriptionToInsert += s + " | ";
+                            }
+
+                            if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
+                        }
+                        else
+                        {
+                            DescriptionToInsert = "MIC LAMP OFF";
+                        }
+
+                        if (Util.IsBitSet(payload[0], 7))
+                        {
+                            ValueToInsert += "TRANSMISSION TYPE: MTX";
+                        }
+                        else
+                        {
+                            ValueToInsert += "TRANSMISSION TYPE: ATX";
+                        }
+                    }
+                    break;
+                case 0xA5:
+                    DescriptionToInsert = "PWM FAN DUTY CYCLE | N/A";
+
+                    if (message.Length >= 4)
+                    {
+                        ValueToInsert = payload[0].ToString("0") + " | " + Convert.ToString(payload[1], 2).PadLeft(8, '0');
+                        UnitToInsert = "% | N/A";
                     }
                     break;
                 case 0xA9:
@@ -883,7 +915,7 @@ namespace ChryslerScanner
 
                     if (message.Length >= 4)
                     {
-                        // Empty.
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 2);
                     }
                     break;
                 case 0xB1:
@@ -1616,7 +1648,7 @@ namespace ChryslerScanner
                     {
                         ushort DistancePulse = (ushort)((payload[0] << 8) + payload[1]);
                         double VehicleSpeedMPH = 28800.0 / DistancePulse; // 8000 * 3.6 = 28800
-                        double VehicleSpeedKMH = 28800.0 / DistancePulse * 1.609344;
+                        double VehicleSpeedKMH = VehicleSpeedMPH * 1.609344;
                         //double MileageIncrementMi = 22016.0 / DistancePulse; // 64 * 344 = 22016, already received in CCD ID 84
                         //double MileageIncrementKm = MileageIncrementMi * 1.609344;
 
@@ -1649,7 +1681,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xB6:
-                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "PCM BEACON B6";
 
                     if (message.Length >= 4)
                     {
@@ -1715,15 +1747,28 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xCC:
-                    DescriptionToInsert = "ACCUMULATED MILEAGE";
+                    DescriptionToInsert = "PCM MILEAGE | TARGET ENGINE IDLE SPEED";
 
                     if (message.Length >= 4)
                     {
-                        ValueToInsert = Util.ByteToHexStringSimple(payload);
+                        double Mileage = payload[0] * 256 * 8.192 * 0.25; // miles
+                        double Kilometerage = Mileage * 1.609344; // kilometers
+                        double TargetIdle = payload[1] * 32.0 * 0.25; // rpm
+                        
+                        if (Properties.Settings.Default.Units == "imperial")
+                        {
+                            ValueToInsert = Math.Round(Mileage).ToString("0") + " | " + Math.Round(TargetIdle).ToString("0");
+                            UnitToInsert = "MI | RPM";
+                        }
+                        else if (Properties.Settings.Default.Units == "metric")
+                        {
+                            ValueToInsert = Math.Round(Kilometerage).ToString("0") + " | " + Math.Round(TargetIdle).ToString("0");
+                            UnitToInsert = "KM | RPM";
+                        }
                     }
                     break;
                 case 0xCD:
-                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "PCM BEACON CD";
 
                     if (message.Length >= 4)
                     {
@@ -1731,21 +1776,21 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xCE:
-                    DescriptionToInsert = "VEHICLE DISTANCE / ODOMETER";
+                    DescriptionToInsert = "BCM MILEAGE";
 
                     if (message.Length >= 6)
                     {
-                        double OdometerMi = (uint)(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]) * 0.000125;
-                        double OdometerKm = (uint)(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]) * 0.000125 * 1.609344;
+                        double BCMMileage = (uint)(payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]) * 0.000125;
+                        double BCMKilometerage = BCMMileage * 1.609344;
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            ValueToInsert = Math.Round(OdometerMi, 3).ToString("0.000").Replace(",", ".");
+                            ValueToInsert = Math.Round(BCMMileage, 3).ToString("0.000").Replace(",", ".");
                             UnitToInsert = "MILE";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            ValueToInsert = Math.Round(OdometerKm, 3).ToString("0.000").Replace(",", ".");
+                            ValueToInsert = Math.Round(BCMKilometerage, 3).ToString("0.000").Replace(",", ".");
                             UnitToInsert = "KILOMETER";
                         }
                     }
@@ -1838,7 +1883,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xEC:
-                    DescriptionToInsert = "VEHICLE INFORMATION";
+                    DescriptionToInsert = "LIMP-IN STATE | VEHICLE INFORMATION";
 
                     if (message.Length >= 4)
                     {
@@ -1854,7 +1899,7 @@ namespace ChryslerScanner
 
                         if (LimpStates.Count > 0)
                         {
-                            DescriptionToInsert = "LIMP: ";
+                            DescriptionToInsert = "LIMP-IN: ";
 
                             foreach (string s in LimpStates)
                             {
@@ -1865,7 +1910,7 @@ namespace ChryslerScanner
                         }
                         else
                         {
-                            DescriptionToInsert = "VEHICLE INFORMATION | NO LIMP STATE";
+                            DescriptionToInsert = "NO LIMP-IN STATE | VEHICLE INFORMATION";
                         }
 
                         switch (payload[1] & 0x1C) // analyze relevant bits only
@@ -1892,21 +1937,21 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xEE:
-                    DescriptionToInsert = "TRIP DISTANCE / TRIPMETER";
+                    DescriptionToInsert = "BCM TRIP DISTANCE";
 
                     if (message.Length >= 5)
                     {
-                        double TripmeterMi = (uint)(payload[0] << 16 | payload[1] << 8 | payload[2]) * 0.016;
-                        double TripmeterKm = (uint)(payload[0] << 16 | payload[1] << 8 | payload[2]) * 0.016 * 1.609344;
+                        double BCMTripDistanceMi = (uint)(payload[0] << 16 | payload[1] << 8 | payload[2]) * 0.016;
+                        double BCMTripDistanceKm = BCMTripDistanceMi * 1.609344;
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            ValueToInsert = Math.Round(TripmeterMi, 3).ToString("0.000").Replace(",", ".");
+                            ValueToInsert = Math.Round(BCMTripDistanceMi, 3).ToString("0.000").Replace(",", ".");
                             UnitToInsert = "MILE";
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            ValueToInsert = Math.Round(TripmeterKm, 3).ToString("0.000").Replace(",", ".");
+                            ValueToInsert = Math.Round(BCMTripDistanceKm, 3).ToString("0.000").Replace(",", ".");
                             UnitToInsert = "KILOMETER";
                         }
                     }
@@ -2686,7 +2731,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xF6:
-                    DescriptionToInsert = "UNKNOWN FEATURE PRESENT";
+                    DescriptionToInsert = "PCM BEACON F6";
 
                     if (message.Length >= 4)
                     {
