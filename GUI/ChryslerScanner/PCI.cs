@@ -157,6 +157,21 @@ namespace ChryslerScanner
                         }
                     }
                     break;
+                case 0x16:
+                    DescriptionToInsert = "TORQUE MANAGEMENT | CRUISE STATE";
+
+                    if (message.Length >= 5)
+                    {
+                        byte TorqueManagement = payload[0];
+                        byte CruiseState = payload[1];
+
+                        if (Util.IsBitSet(TorqueManagement, 4)) ValueToInsert = "ON | ";
+                        else ValueToInsert = "OFF | ";
+
+                        if (Util.IsBitSet(CruiseState, 4)) ValueToInsert += "ENGAGED";
+                        else ValueToInsert += "DISENGAGED";
+                    }
+                    break;
                 case 0x1A:
                     DescriptionToInsert = "TPS | CRUISE SET SPEED | CRUISE STATE | TARGET IDLE";
 
@@ -777,7 +792,7 @@ namespace ChryslerScanner
                 File.AppendAllText(MainForm.PCILogFilename, TimestampString); // no newline is appended!
             }
 
-            File.AppendAllText(MainForm.PCILogFilename, Util.ByteToHexStringSimple(message) + Environment.NewLine);
+            File.AppendAllText(MainForm.PCILogFilename, "PCI: " + Util.ByteToHexStringSimple(message) + Environment.NewLine);
         }
     }
 }

@@ -887,9 +887,9 @@ namespace ChryslerScanner
                 case 0xAA:
                     DescriptionToInsert = "VEHICLE THEFT SECURITY STATE";
 
-                    if (message.Length >= 4)
+                    if (message.Length >= 5)
                     {
-                        switch (payload[0])
+                        switch (payload[2])
                         {
                             case 0x00:
                                 ValueToInsert = "DISARMED";
@@ -913,7 +913,7 @@ namespace ChryslerScanner
                                 ValueToInsert = "SELF DIAGS";
                                 break;
                             default:
-                                ValueToInsert = "NONE";
+                                ValueToInsert = "INVALID";
                                 break;
                         }
                     }
@@ -1646,7 +1646,7 @@ namespace ChryslerScanner
                         File.AppendAllText(MainForm.CCDB2F2LogFilename, TimestampString); // no newline is appended!
                     }
 
-                    File.AppendAllText(MainForm.CCDB2F2LogFilename, Util.ByteToHexStringSimple(message) + Environment.NewLine);
+                    File.AppendAllText(MainForm.CCDB2F2LogFilename, "CCD: " + Util.ByteToHexStringSimple(message) + Environment.NewLine);
                     break;
                 case 0xB4:
                 case 0xC4:
@@ -2720,7 +2720,7 @@ namespace ChryslerScanner
                         File.AppendAllText(MainForm.CCDB2F2LogFilename, TimestampString); // no newline is appended!
                     }
 
-                    File.AppendAllText(MainForm.CCDB2F2LogFilename, Util.ByteToHexStringSimple(message) + Environment.NewLine);
+                    File.AppendAllText(MainForm.CCDB2F2LogFilename, "CCD: " + Util.ByteToHexStringSimple(message) + Environment.NewLine);
                     break;
                 case 0xF3:
                     DescriptionToInsert = "SWITCH MESSAGE";
@@ -2813,7 +2813,7 @@ namespace ChryslerScanner
                 File.AppendAllText(MainForm.CCDLogFilename, TimestampString); // no newline is appended!
             }
 
-            File.AppendAllText(MainForm.CCDLogFilename, Util.ByteToHexStringSimple(message) + Environment.NewLine);
+            File.AppendAllText(MainForm.CCDLogFilename, "CCD: " + Util.ByteToHexStringSimple(message) + Environment.NewLine);
         }
     }
 }

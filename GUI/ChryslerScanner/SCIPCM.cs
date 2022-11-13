@@ -5895,7 +5895,7 @@ namespace ChryslerScanner
                 File.AppendAllText(MainForm.PCMLogFilename, TimestampString); // no newline is appended!
             }
 
-            File.AppendAllText(MainForm.PCMLogFilename, Util.ByteToHexStringSimple(message) + Environment.NewLine);
+            File.AppendAllText(MainForm.PCMLogFilename, "PCM: " + Util.ByteToHexStringSimple(message) + Environment.NewLine);
 
             if (!EngineFaultCodesSaved)
             {

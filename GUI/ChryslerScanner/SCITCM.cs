@@ -193,7 +193,7 @@ namespace ChryslerScanner
                 File.AppendAllText(MainForm.TCMLogFilename, TimestampString); // no newline is appended!
             }
 
-            File.AppendAllText(MainForm.TCMLogFilename, Util.ByteToHexStringSimple(message) + Environment.NewLine);
+            File.AppendAllText(MainForm.TCMLogFilename, "TCM: " + Util.ByteToHexStringSimple(message) + Environment.NewLine);
         }
     }
 }
