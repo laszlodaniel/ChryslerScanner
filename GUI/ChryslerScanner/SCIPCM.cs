@@ -5188,6 +5188,23 @@ namespace ChryslerScanner
                                     DescriptionToInsert = "A/C RELAY STATE";
                                     ValueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0');
                                     break;
+                                case 0x61:
+                                    DescriptionToInsert = "DISTANCE TRAVELED UP TO 4.2 MILES";
+
+                                    double DistanceMi = payload[1] * 0.032;
+                                    double DistanceKm = DistanceMi * 1.609344;
+
+                                    if (Properties.Settings.Default.Units == "imperial")
+                                    {
+                                        ValueToInsert = Math.Round(DistanceMi, 3).ToString("0.000").Replace(",", ".");
+                                        UnitToInsert = "MILE";
+                                    }
+                                    else if (Properties.Settings.Default.Units == "metric")
+                                    {
+                                        ValueToInsert = Math.Round(DistanceKm, 3).ToString("0.000").Replace(",", ".");
+                                        UnitToInsert = "KILOMETER";
+                                    }
+                                    break;
                                 case 0x73:
                                     List<string> LimpInStates = new List<string>();
                                     LimpInStates.Clear();

@@ -5917,8 +5917,8 @@ namespace ChryslerScanner
             }
             else
             {
-                BootstrapTools.WindowState = FormWindowState.Normal;
-                BootstrapTools.Focus();
+                EngineTools.WindowState = FormWindowState.Normal;
+                EngineTools.Focus();
             }
         }
 
@@ -5943,8 +5943,8 @@ namespace ChryslerScanner
             }
             else
             {
-                BootstrapTools.WindowState = FormWindowState.Normal;
-                BootstrapTools.Focus();
+                ABSTools.WindowState = FormWindowState.Normal;
+                ABSTools.Focus();
             }
         }
 

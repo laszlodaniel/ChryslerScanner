@@ -843,6 +843,7 @@ namespace ChryslerScanner
                             if (Util.IsBitSet(payload[0], 2)) LampList.Add("BRAKE");
                             if (Util.IsBitSet(payload[0], 5)) LampList.Add("MIL");
                             if (Util.IsBitSet(payload[1], 2)) LampList.Add("CRUISE");
+                            if (Util.IsBitSet(payload[1], 4)) LampList.Add("TRANS FAN");
 
                             foreach (string s in LampList)
                             {

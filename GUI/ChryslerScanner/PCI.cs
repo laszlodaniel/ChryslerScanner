@@ -158,17 +158,14 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x16:
-                    DescriptionToInsert = "TORQUE MANAGEMENT | CRUISE STATE";
+                    DescriptionToInsert = "TRANSMISSION FAN | CRUISE STATE";
 
                     if (message.Length >= 5)
                     {
-                        byte TorqueManagement = payload[0];
-                        byte CruiseState = payload[1];
-
-                        if (Util.IsBitSet(TorqueManagement, 4)) ValueToInsert = "ON | ";
+                        if (Util.IsBitSet(payload[0], 4)) ValueToInsert = "ON | ";
                         else ValueToInsert = "OFF | ";
 
-                        if (Util.IsBitSet(CruiseState, 4)) ValueToInsert += "ENGAGED";
+                        if (Util.IsBitSet(payload[1], 4)) ValueToInsert += "ENGAGED";
                         else ValueToInsert += "DISENGAGED";
                     }
                     break;

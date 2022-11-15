@@ -1090,7 +1090,7 @@ namespace ChryslerScanner
                     "F45E |",
                     "F45F |",
                     "F460 | A/C relay state",
-                    "F461 |",
+                    "F461 | Distance traveled up to 4.2 miles",
                     "F462 |",
                     "F463 |",
                     "F464 |",
