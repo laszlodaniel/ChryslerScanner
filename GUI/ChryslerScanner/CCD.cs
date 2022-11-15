@@ -123,7 +123,7 @@ namespace ChryslerScanner
                                 ValueToInsert = "DRIVE";
                                 break;
                             case 0x06:
-                                ValueToInsert = "AUTOSHIFT";
+                                ValueToInsert = "AUTOSTICK";
                                 break;
                             default:
                                 ValueToInsert = "UNDEFINED";
@@ -831,7 +831,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xA4:
-                    DescriptionToInsert = "MIC LAMP ON: ";
+                    DescriptionToInsert = "MIC LAMP: ";
 
                     if (message.Length >= 4)
                     {
@@ -840,9 +840,9 @@ namespace ChryslerScanner
 
                         if (payload[0] != 0)
                         {
-                            if (Util.IsBitSet(payload[0], 0)) LampList.Add("CRUISE");
                             if (Util.IsBitSet(payload[0], 2)) LampList.Add("BRAKE");
                             if (Util.IsBitSet(payload[0], 5)) LampList.Add("MIL");
+                            if (Util.IsBitSet(payload[1], 2)) LampList.Add("CRUISE");
 
                             foreach (string s in LampList)
                             {
