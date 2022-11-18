@@ -26,10 +26,12 @@ namespace ChryslerScanner
 
         private enum SCI_ID
         {
+            SCIHiSpeed = 0x12,
             DiagnosticData = 0x14,
             GetSecuritySeedLegacy = 0x2B,
             GetSecuritySeed = 0x35,
-            SendSecurityKey = 0x2C
+            SendSecurityKey = 0x2C,
+            SCILoSpeed = 0xFE
         }
 
         public EngineToolsForm(MainForm IncomingForm)
@@ -48,10 +50,12 @@ namespace ChryslerScanner
             if (OriginalForm.PCM.speed == "7812.5 baud")
             {
                 LowSpeedLayout();
+                ReadFaultCodeFreezeFrameButton.Enabled = false;
             }
             else if (OriginalForm.PCM.speed == "62500 baud")
             {
                 HighSpeedLayout();
+                ReadFaultCodeFreezeFrameButton.Enabled = true;
                 AddHighSpeedDiagnosticData((byte)(0xF0 + RAMTableComboBox.SelectedIndex));
             }
 
@@ -64,8 +68,8 @@ namespace ChryslerScanner
             {
                 MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
                 MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                MainForm.Packet.tx.payload = new byte[1] { 0x10 };
+                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.list;
+                MainForm.Packet.tx.payload = new byte[7] { 0x03, 0x01, 0x10, 0x01, 0x11, 0x01, 0x2E }; // request stored, pending and one-trip fault codes
             }
             else if (OriginalForm.PCM.speed == "62500 baud")
             {
@@ -127,16 +131,43 @@ namespace ChryslerScanner
             }
         }
 
-        private void Baud976Button_Click(object sender, EventArgs e)
+        private void ReadFaultCodeFreezeFrameButton_Click(object sender, EventArgs e)
         {
-            // TODO
+            bool success = int.TryParse(DiagnosticDataRepeatIntervalTextBox.Text, out int repeatInterval);
+
+            if (!success || (repeatInterval == 0))
+            {
+                repeatInterval = 50;
+                DiagnosticDataRepeatIntervalTextBox.Text = "50";
+            }
+
+            List<byte> payloadList = new List<byte>();
+            byte[] repeatIntervalArray = new byte[2];
+
+            repeatIntervalArray[0] = (byte)((repeatInterval >> 8) & 0xFF);
+            repeatIntervalArray[1] = (byte)(repeatInterval & 0xFF);
+
+            payloadList.Add((byte)Packet.Bus.pcm);
+            payloadList.AddRange(repeatIntervalArray);
+
+            MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
+            MainForm.Packet.tx.command = (byte)Packet.Command.settings;
+            MainForm.Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
+            MainForm.Packet.tx.payload = payloadList.ToArray();
+            MainForm.Packet.GeneratePacket();
+            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:");
+
+            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.list;
+            MainForm.Packet.tx.payload = new byte[47] { 0x0F, 0x03, 0xF5, 0xCB, 0xCC, 0x02, 0xF4, 0xA7, 0x02, 0xF4, 0xA8, 0x02, 0xF4, 0xA9, 0x02, 0xF4, 0xAA, 0x02, 0xF4, 0xAB, 0x02, 0xF4, 0xAC, 0x02, 0xF4, 0xAD, 0x02, 0xF4, 0xAE, 0x02, 0xF4, 0xAF, 0x02, 0xF4, 0xB0, 0x02, 0xF4, 0xB1, 0x02, 0xF4, 0xB2, 0x02, 0xF4, 0xB3, 0x02, 0xF4, 0xB4 };
+
+            MainForm.Packet.GeneratePacket();
+            OriginalForm.TransmitUSBPacket("[<-TX] PCM freeze frame request:");
         }
 
         private void Baud7812Button_Click(object sender, EventArgs e)
         {
-            LowSpeedLayout();
-            AddLowSpeedDiagnosticData();
-
             MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
             MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
             MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
@@ -149,9 +180,6 @@ namespace ChryslerScanner
         {
             if (OriginalForm.PCM.speed == "7812.5 baud")
             {
-                HighSpeedLayout();
-                AddHighSpeedDiagnosticData((byte)(0xF0 + RAMTableComboBox.SelectedIndex));
-
                 MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
                 MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
                 MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
@@ -159,11 +187,6 @@ namespace ChryslerScanner
                 MainForm.Packet.GeneratePacket();
                 OriginalForm.TransmitUSBPacket("[<-TX] Select SCI-bus high-speed mode:");
             }
-        }
-
-        private void Baud125000Button_Click(object sender, EventArgs e)
-        {
-            // TODO
         }
 
         private void ActuatorTestStartButton_Click(object sender, EventArgs e)
@@ -619,6 +642,10 @@ namespace ChryslerScanner
 
                             switch (SCIBusResponseBytes[0])
                             {
+                                case (byte)SCI_ID.SCIHiSpeed:
+                                    HighSpeedLayout();
+                                    AddHighSpeedDiagnosticData((byte)(0xF0 + RAMTableComboBox.SelectedIndex));
+                                    break;
                                 case (byte)SCI_ID.DiagnosticData:
                                     if (SCIBusResponseBytes.Length >= 3)
                                     {
@@ -786,6 +813,11 @@ namespace ChryslerScanner
                                     }
                                 }
                             }
+                            else if (SCIBusResponseBytes[0] == (byte)SCI_ID.SCILoSpeed)
+                            {
+                                LowSpeedLayout();
+                                AddLowSpeedDiagnosticData();
+                            }
                         }
                     }
                     break;
@@ -794,12 +826,12 @@ namespace ChryslerScanner
 
         private void LowSpeedLayout()
         {
-            //Baud7812Button.Enabled = false;
+            EraseFaultCodesButton.Enabled = true;
+            ReadFaultCodeFreezeFrameButton.Enabled = false;
             Baud7812Button.BackColor = Color.RoyalBlue;
             Baud7812Button.ForeColor = Color.White;
             Baud7812Button.FlatAppearance.BorderColor = Color.RoyalBlue;
             Baud7812Button.FlatAppearance.BorderSize = 1;
-            //Baud62500Button.Enabled = true;
             Baud62500Button.BackColor = SystemColors.ControlLight;
             Baud62500Button.ForeColor = SystemColors.ControlText;
             Baud62500Button.FlatAppearance.BorderColor = SystemColors.ActiveBorder;
@@ -950,12 +982,12 @@ namespace ChryslerScanner
 
         private void HighSpeedLayout()
         {
-            //Baud7812Button.Enabled = true;
+            EraseFaultCodesButton.Enabled = false;
+            ReadFaultCodeFreezeFrameButton.Enabled = true;
             Baud7812Button.BackColor = SystemColors.ControlLight;
             Baud7812Button.ForeColor = SystemColors.ControlText;
             Baud7812Button.FlatAppearance.BorderColor = SystemColors.ActiveBorder;
             Baud7812Button.FlatAppearance.BorderSize = 1;
-            //Baud62500Button.Enabled = false;
             Baud62500Button.BackColor = Color.IndianRed;
             Baud62500Button.ForeColor = Color.White;
             Baud62500Button.FlatAppearance.BorderColor = Color.IndianRed;
@@ -1108,7 +1140,7 @@ namespace ChryslerScanner
                     "F470 |",
                     "F471 |",
                     "F472 |",
-                    "F473 | Limp states",
+                    "F473 | Limp-in status",
                     "F474 | DTC 2",
                     "F475 | DTC 3",
                     "F476 | DTC 4",
@@ -1160,16 +1192,16 @@ namespace ChryslerScanner
                     "F4A4 | Engine good trip counter",
                     "F4A5 | Engine warm-up cycle counter",
                     "F4A6 | OBD2 monitor test results 1",
-                    "F4A7 |",
-                    "F4A8 |",
+                    "F4A7 | Freeze frame priority level",
+                    "F4A8 | Freeze frame DTC",
                     "F4A9 | Fuel system status 1",
                     "F4AA | Fuel system status 2",
                     "F4AB | Engine load",
-                    "F4AC |",
-                    "F4AD | Short term fuel trim 1 A",
-                    "F4AE | Long term fuel trim 1 A",
-                    "F4AF | Short term fuel trim 2 A",
-                    "F4B0 | Long term fuel trum 2 A",
+                    "F4AC | Engine coolant temperature",
+                    "F4AD | Short term fuel trim 1",
+                    "F4AE | Long term fuel trim 1",
+                    "F4AF | Short term fuel trim 2",
+                    "F4B0 | Long term fuel trum 2",
                     "F4B1 | Intake manifold absolute pressure",
                     "F4B2 | Engine speed",
                     "F4B3 | Vehicle speed",

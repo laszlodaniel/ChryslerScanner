@@ -12,10 +12,12 @@ namespace ChryslerScanner
     {
         public SCIPCMDiagnosticsTable Diagnostics = new SCIPCMDiagnosticsTable();
         public DataTable EngineDTC = new DataTable("EngineDTC");
-        public List<byte> EngineFaultCodeList = new List<byte>();
-        public bool EngineFaultCodesSaved = true;
-        public List<byte> EngineFaultCode1TList = new List<byte>();
-        public bool EngineFaultCodes1TSaved = true;
+        public List<byte> StoredFaultCodeList = new List<byte>();
+        public bool StoredFaultCodesSaved = true;
+        public List<byte> PendingFaultCodeList = new List<byte>();
+        public bool PendingFaultCodesSaved = true;
+        public List<byte> FaultCode1TList = new List<byte>();
+        public bool FaultCodes1TSaved = true;
         public byte[] EngineDTCList;
         public DataColumn column;
         public DataRow row;
@@ -1256,8 +1258,9 @@ namespace ChryslerScanner
             byte[] timestamp = new byte[4];
             byte[] message = new byte[] { };
             byte[] payload = new byte[] { };
-            byte[] engineFaultCodePayload = new byte[] { }; // stored fault codes
-            byte[] engineFaultCode1TPayload = new byte[] { }; // one-trip fault codes
+            byte[] StoredFaultCodePayload = new byte[] { }; // stored fault codes
+            byte[] PendingFaultCodePayload = new byte[] { }; // pending fault codes
+            byte[] FaultCode1TPayload = new byte[] { }; // one-trip fault codes
 
             if (data.Length > 3)
             {
@@ -1280,13 +1283,18 @@ namespace ChryslerScanner
             {
                 if (message[0] == 0x10)
                 {
-                    engineFaultCodePayload = new byte[data.Length - 6];
-                    Array.Copy(data, 5, engineFaultCodePayload, 0, engineFaultCodePayload.Length); // copy payload from the input byte array (without ID and checksum byte)
+                    StoredFaultCodePayload = new byte[data.Length - 6];
+                    Array.Copy(data, 5, StoredFaultCodePayload, 0, StoredFaultCodePayload.Length); // copy payload from the input byte array (without ID and checksum byte)
+                }
+                if (message[0] == 0x11)
+                {
+                    PendingFaultCodePayload = new byte[data.Length - 6];
+                    Array.Copy(data, 5, PendingFaultCodePayload, 0, PendingFaultCodePayload.Length); // copy payload from the input byte array (without ID)
                 }
                 else if ((message[0] == 0x2E) || (message[0] == 0x32) || (message[0] == 0x33))
                 {
-                    engineFaultCode1TPayload = new byte[data.Length - 6];
-                    Array.Copy(data, 5, engineFaultCode1TPayload, 0, engineFaultCode1TPayload.Length); // copy payload from the input byte array (without ID and checksum byte)
+                    FaultCode1TPayload = new byte[data.Length - 6];
+                    Array.Copy(data, 5, FaultCode1TPayload, 0, FaultCode1TPayload.Length); // copy payload from the input byte array (without ID and checksum byte)
                 }
             }
 
@@ -1315,7 +1323,7 @@ namespace ChryslerScanner
                         DescriptionToInsert = "PCM WAKE UP";
                         break;
                     case 0x10:
-                        DescriptionToInsert = "ENGINE FAULT CODE LIST";
+                        DescriptionToInsert = "STORED FAULT CODE LIST";
 
                         if (message.Length >= 3)
                         {
@@ -1329,35 +1337,45 @@ namespace ChryslerScanner
 
                             if (checksum == message[checksumLocation])
                             {
-                                EngineFaultCodeList.Clear();
-                                EngineFaultCodeList.AddRange(engineFaultCodePayload);
-                                EngineFaultCodeList.Remove(0xFD); // not fault code related
-                                EngineFaultCodeList.Remove(0xFE); // end of fault code list signifier
+                                StoredFaultCodeList.Clear();
+                                StoredFaultCodeList.AddRange(StoredFaultCodePayload);
+                                StoredFaultCodeList.Remove(0xFD); // not fault code related
+                                StoredFaultCodeList.Remove(0xFE); // end of fault code list signifier
 
-                                if (EngineFaultCodeList.Count > 0)
+                                if (StoredFaultCodeList.Count > 0)
                                 {
-                                    ValueToInsert = Util.ByteToHexStringSimple(EngineFaultCodeList.ToArray());
-                                    EngineFaultCodesSaved = false;
+                                    ValueToInsert = Util.ByteToHexStringSimple(StoredFaultCodeList.ToArray());
+                                    StoredFaultCodesSaved = false;
                                 }
                                 else
                                 {
-                                    ValueToInsert = "NO FAULT CODES";
-                                    EngineFaultCodesSaved = false;
+                                    ValueToInsert = "NO FAULT CODE";
+                                    StoredFaultCodesSaved = false;
                                 }
                             }
                             else
                             {
                                 ValueToInsert = "CHECKSUM ERROR";
-                                EngineFaultCodesSaved = true;
+                                StoredFaultCodesSaved = true;
                             }
                         }
                         break;
                     case 0x11:
-                        DescriptionToInsert = "FAULT BIT LIST";
+                        DescriptionToInsert = "PENDING FAULT CODE LIST";
 
                         if (message.Length >= 2)
                         {
-                            ValueToInsert = Util.ByteToHexStringSimple(payload);
+                            if ((payload[0] == 0) && (payload[1] == 0))
+                            {
+                                ValueToInsert = "NO FAULT CODE";
+                                PendingFaultCodesSaved = false;
+                            }
+                            else
+                            {
+                                PendingFaultCodeList.AddRange(PendingFaultCodePayload);
+                                ValueToInsert = Util.ByteToHexString(payload, 0, 2);
+                                PendingFaultCodesSaved = false;
+                            }
                         }
                         break;
                     case 0x12:
@@ -1416,7 +1434,7 @@ namespace ChryslerScanner
                                     DescriptionToInsert = "ACTUATOR TEST | TACHOMETER OUTPUT";
                                     break;
                                 case 0x0F:
-                                    DescriptionToInsert = "ACTUATOR TEST | TORQUE CONVERTER CLUTCH";
+                                    DescriptionToInsert = "ACTUATOR TEST | TORQUE CONVERTER CLUTCH RELAY";
                                     break;
                                 case 0x10:
                                     DescriptionToInsert = "ACTUATOR TEST | EGR SOLENOID";
@@ -1525,6 +1543,12 @@ namespace ChryslerScanner
                                     break;
                                 case 0x49:
                                     DescriptionToInsert = "ACTUATOR TEST | WAIT TO START LAMP";
+                                    break;
+                                case 0x50:
+                                    DescriptionToInsert = "ACTUATOR TEST | TRANSMISSION FAN RELAY 1";
+                                    break;
+                                case 0x51:
+                                    DescriptionToInsert = "ACTUATOR TEST | TRANSMISSION FAN RELAY 2";
                                     break;
                                 case 0x52:
                                     DescriptionToInsert = "ACTUATOR TEST | O2 X/1 SENSOR HEATER RELAY";
@@ -3705,7 +3729,7 @@ namespace ChryslerScanner
                     case 0x2E:
                     case 0x32:
                     case 0x33:
-                        DescriptionToInsert = "ONE-TRIP ENGINE FAULT CODES";
+                        DescriptionToInsert = "ONE-TRIP FAULT CODE LIST";
 
                         if (message.Length >= 3)
                         {
@@ -3719,20 +3743,20 @@ namespace ChryslerScanner
 
                             //if (checksum == message[checksumLocation])
                             //{
-                                EngineFaultCode1TList.Clear();
-                                EngineFaultCode1TList.AddRange(engineFaultCode1TPayload);
-                                EngineFaultCode1TList.Remove(0xFD); // not fault code related
-                                EngineFaultCode1TList.Remove(0xFE); // end of fault code list signifier
+                                FaultCode1TList.Clear();
+                                FaultCode1TList.AddRange(FaultCode1TPayload);
+                                FaultCode1TList.Remove(0xFD); // not fault code related
+                                FaultCode1TList.Remove(0xFE); // end of fault code list signifier
 
-                                if (EngineFaultCode1TList.Count > 0)
+                                if (FaultCode1TList.Count > 0)
                                 {
-                                    ValueToInsert = Util.ByteToHexStringSimple(EngineFaultCode1TList.ToArray());
-                                    EngineFaultCodes1TSaved = false;
+                                    ValueToInsert = Util.ByteToHexStringSimple(FaultCode1TList.ToArray());
+                                    FaultCodes1TSaved = false;
                                 }
                                 else
                                 {
-                                    ValueToInsert = "NO FAULT CODES";
-                                    EngineFaultCodes1TSaved = false;
+                                    ValueToInsert = "NO FAULT CODE";
+                                    FaultCodes1TSaved = false;
                                 }
                             //}
                             //else
@@ -5206,20 +5230,20 @@ namespace ChryslerScanner
                                     }
                                     break;
                                 case 0x73:
+                                    DescriptionToInsert = "LIMP-IN: ";
+
                                     List<string> LimpInStates = new List<string>();
                                     LimpInStates.Clear();
 
                                     if (Util.IsBitSet(payload[1], 0)) LimpInStates.Add("ATS"); // Ambient temperature sensor
                                     if (Util.IsBitSet(payload[1], 3)) LimpInStates.Add("IAT"); // Intake air temperature
                                     if (Util.IsBitSet(payload[1], 4)) LimpInStates.Add("TPS"); // Throttle position sensor
-                                    if (Util.IsBitSet(payload[1], 5)) LimpInStates.Add("MAPEL"); // Intake manifold absolute pressure
-                                    if (Util.IsBitSet(payload[1], 6)) LimpInStates.Add("MAPVA"); // Intake manifold vacuum
+                                    if (Util.IsBitSet(payload[1], 5)) LimpInStates.Add("MPE"); // Intake manifold absolute pressure
+                                    if (Util.IsBitSet(payload[1], 6)) LimpInStates.Add("MPV"); // Intake manifold vacuum
                                     if (Util.IsBitSet(payload[1], 7)) LimpInStates.Add("ECT"); // Engine coolant temperature
 
                                     if (LimpInStates.Count > 0)
                                     {
-                                        DescriptionToInsert = "LIMP-IN: ";
-
                                         foreach (string s in LimpInStates)
                                         {
                                             DescriptionToInsert += s + " | ";
@@ -5399,8 +5423,35 @@ namespace ChryslerScanner
                                     DescriptionToInsert = "OBD2 MONITOR TEST RESULTS 1";
                                     ValueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0');
                                     break;
+                                case 0xA7:
+                                    DescriptionToInsert = "FREEZE FRAME PRIORITY LEVEL";
+                                    ValueToInsert = payload[1].ToString("0");
+                                    UnitToInsert = "0=LO 7=HI";
+                                    break;
+                                case 0xA8:
+                                    DescriptionToInsert = "FREEZE FRAME DTC: ";
+
+                                    int frzindex = EngineDTC.Rows.IndexOf(EngineDTC.Rows.Find(payload[1]));
+
+                                    if (frzindex > -1) // DTC description found
+                                    {
+                                        DescriptionToInsert += EngineDTC.Rows[frzindex]["description"];
+                                    }
+                                    else // no DTC description found
+                                    {
+                                        DescriptionToInsert += "UNRECOGNIZED DTC";
+                                    }
+
+                                    ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                    break;
                                 case 0xA9:
                                     DescriptionToInsert = "FUEL SYSTEM STATUS 1";
+
+                                    if (payload[1] == 0)
+                                    {
+                                        ValueToInsert = "N/A";
+                                        break;
+                                    }
 
                                     if (Util.IsBitSet(payload[1], 0)) ValueToInsert = "OPEN LOOP";
                                     if (Util.IsBitSet(payload[1], 1)) ValueToInsert = "CLOSED LOOP";
@@ -5410,6 +5461,12 @@ namespace ChryslerScanner
                                     break;
                                 case 0xAA:
                                     DescriptionToInsert = "FUEL SYSTEM STATUS 2";
+
+                                    if (payload[1] == 0)
+                                    {
+                                        ValueToInsert = "N/A";
+                                        break;
+                                    }
 
                                     if (Util.IsBitSet(payload[1], 0)) ValueToInsert = "OPEN LOOP";
                                     if (Util.IsBitSet(payload[1], 1)) ValueToInsert = "CLOSED LOOP";
@@ -5423,81 +5480,97 @@ namespace ChryslerScanner
                                     ValueToInsert = Math.Round(EngineLoad, 3).ToString("0.000").Replace(",", ".");
                                     UnitToInsert = "PERCENT";
                                     break;
+                                case 0xAC:
+                                    double ECTCF = payload[1] - 128;
+                                    double ECTFF = 1.8 * ECTCF + 32.0;
+                                    DescriptionToInsert = "ENGINE COOLANT TEMPERATURE";
+
+                                    if (Properties.Settings.Default.Units == "imperial")
+                                    {
+                                        ValueToInsert = Math.Round(ECTFF).ToString("0");
+                                        UnitToInsert = "°F";
+                                    }
+                                    else if (Properties.Settings.Default.Units == "metric")
+                                    {
+                                        ValueToInsert = ECTCF.ToString("0");
+                                        UnitToInsert = "°C";
+                                    }
+                                    break;
                                 case 0xAD:
-                                    double STFT1A = payload[1] * 0.196;
-                                    DescriptionToInsert = "SHORT TERM FUEL TRIM 1 A";
-                                    ValueToInsert = Math.Round(STFT1A, 3).ToString("0.000").Replace(",", ".");
+                                    double STFT1F = payload[1] * 0.196;
+                                    DescriptionToInsert = "SHORT TERM FUEL TRIM 1";
+                                    ValueToInsert = Math.Round(STFT1F, 3).ToString("0.000").Replace(",", ".");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 case 0xAE:
-                                    double LTFT1A = payload[1] * 0.196;
-                                    DescriptionToInsert = "LONG TERM FUEL TRIM 1 A";
-                                    ValueToInsert = Math.Round(LTFT1A, 3).ToString("0.000").Replace(",", ".");
+                                    double LTFT1F = payload[1] * 0.196;
+                                    DescriptionToInsert = "LONG TERM FUEL TRIM 1";
+                                    ValueToInsert = Math.Round(LTFT1F, 3).ToString("0.000").Replace(",", ".");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 case 0xAF:
-                                    double STFT2A = payload[1] * 0.196;
-                                    DescriptionToInsert = "SHORT TERM FUEL TRIM 2 A";
-                                    ValueToInsert = Math.Round(STFT2A, 3).ToString("0.000").Replace(",", ".");
+                                    double STFT2F = payload[1] * 0.196;
+                                    DescriptionToInsert = "SHORT TERM FUEL TRIM 2";
+                                    ValueToInsert = Math.Round(STFT2F, 3).ToString("0.000").Replace(",", ".");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 case 0xB0:
-                                    double LTFT2A = payload[1] * 0.196;
-                                    DescriptionToInsert = "LONG TERM FUEL TRIM 2 A";
-                                    ValueToInsert = Math.Round(LTFT2A, 3).ToString("0.000").Replace(",", ".");
+                                    double LTFT2F = payload[1] * 0.196;
+                                    DescriptionToInsert = "LONG TERM FUEL TRIM 2";
+                                    ValueToInsert = Math.Round(LTFT2F, 3).ToString("0.000").Replace(",", ".");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 case 0xB1:
-                                    double MAP6PSI = payload[1] * 0.059756;
-                                    double MAP6KPA = payload[1] * 0.059756 * 6.894757;
+                                    double MAPFPSI = payload[1] * 0.059756;
+                                    double MAPFKPA = MAPFPSI * 6.894757;
                                     DescriptionToInsert = "INTAKE MANIFOLD ABSOLUTE PRESSURE (MAP)";
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(MAP6PSI, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(MAPFPSI, 1).ToString("0.0").Replace(",", ".");
                                         UnitToInsert = "PSI";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(MAP6KPA, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(MAPFKPA, 1).ToString("0.0").Replace(",", ".");
                                         UnitToInsert = "KPA";
                                     }
                                     break;
                                 case 0xB2:
-                                    double EngineSpeed2 = payload[1] * 32.0;
+                                    double EngineSpeedF = payload[1] * 32.0;
                                     DescriptionToInsert = "ENGINE SPEED";
-                                    ValueToInsert = EngineSpeed2.ToString("0");
+                                    ValueToInsert = EngineSpeedF.ToString("0");
                                     UnitToInsert = "RPM";
                                     break;
                                 case 0xB3:
-                                    double VehicleSpeed2MPH = payload[1] * 0.5;
-                                    double VehicleSpeed2KMH = VehicleSpeed2MPH * 1.609344;
+                                    double VehicleSpeedFMPH = payload[1] * 0.5;
+                                    double VehicleSpeedFKMH = VehicleSpeedFMPH * 1.609344;
                                     DescriptionToInsert = "VEHICLE SPEED";
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(VehicleSpeed2MPH).ToString("0");
+                                        ValueToInsert = Math.Round(VehicleSpeedFMPH).ToString("0");
                                         UnitToInsert = "MPH";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(VehicleSpeed2KMH).ToString("0");
+                                        ValueToInsert = Math.Round(VehicleSpeedFKMH).ToString("0");
                                         UnitToInsert = "KM/H";
                                     }
                                     break;
                                 case 0xB4:
-                                    double MAPVacuum2PSI = payload[1] * 0.059756;
-                                    double MAPVacuum2KPA = MAPVacuum2PSI * 6.894757;
+                                    double MAPVacuumFPSI = payload[1] * 0.059756;
+                                    double MAPVacuumFKPA = MAPVacuumFPSI * 6.894757;
                                     DescriptionToInsert = "MAP VACUUM";
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(MAPVacuum2PSI, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(MAPVacuumFPSI, 1).ToString("0.0").Replace(",", ".");
                                         UnitToInsert = "PSI";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(MAPVacuum2KPA, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(MAPVacuumFKPA, 1).ToString("0.0").Replace(",", ".");
                                         UnitToInsert = "KPA";
                                     }
                                     break;
@@ -5673,20 +5746,48 @@ namespace ChryslerScanner
 
                         if (message.Length >= 3)
                         {
-                            ushort num = (ushort)(payload.Length / 2);
-                            List<byte> offsets = new List<byte>();
-                            List<byte> values = new List<byte>();
-                            offsets.Clear();
-                            values.Clear();
-
-                            for (int i = 0; i < num; i++)
+                            switch (payload[0])
                             {
-                                offsets.Add(payload[i * 2]);
-                                values.Add(payload[(i * 2) + 1]);
-                            }
+                                case 0xCB:
+                                    DescriptionToInsert = "TCM STATUS";
 
-                            DescriptionToInsert = "F5 RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(offsets.ToArray());
-                            ValueToInsert = Util.ByteToHexStringSimple(values.ToArray());
+                                    if (message.Length >= 5)
+                                    {
+                                        if (payload[2] == 0xCC)
+                                        {
+                                            if ((payload[1] == 0) && (payload[3] == 0))
+                                            {
+                                                ValueToInsert = "NO FAULT CODE";
+                                            }
+                                            else
+                                            {
+                                                DescriptionToInsert += " | FAULT CODES PRESENT";
+                                                ValueToInsert = Util.ByteToHexString(new byte[2] { payload[1], payload[3] }, 0, 2);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            DescriptionToInsert += " | ERROR: REQUEST F5 CB CC";
+                                        }
+                                    }
+                                    break;
+                                default:
+                                    ushort num = (ushort)(payload.Length / 2);
+                                    List<byte> offsets = new List<byte>();
+                                    List<byte> values = new List<byte>();
+                                    offsets.Clear();
+                                    values.Clear();
+
+                                    for (int i = 0; i < num; i++)
+                                    {
+                                        offsets.Add(payload[i * 2]);
+                                        values.Add(payload[(i * 2) + 1]);
+                                    }
+
+                                    DescriptionToInsert = "F5 RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(offsets.ToArray());
+                                    ValueToInsert = Util.ByteToHexStringSimple(values.ToArray());
+                                    break;
+                            }
                         }
                         break;
                     case 0xF6:
@@ -5914,15 +6015,15 @@ namespace ChryslerScanner
 
             File.AppendAllText(MainForm.PCMLogFilename, "PCM: " + Util.ByteToHexStringSimple(message) + Environment.NewLine);
 
-            if (!EngineFaultCodesSaved)
+            if (!StoredFaultCodesSaved)
             {
                 StringBuilder sb = new StringBuilder();
 
-                if (EngineFaultCodeList.Count > 0)
+                if (StoredFaultCodeList.Count > 0)
                 {
-                    sb.Append("ENGINE FAULT CODE LIST:" + Environment.NewLine);
+                    sb.Append("STORED FAULT CODE LIST:" + Environment.NewLine);
 
-                    foreach (byte code in EngineFaultCodeList)
+                    foreach (byte code in StoredFaultCodeList)
                     {
                         int index = EngineDTC.Rows.IndexOf(EngineDTC.Rows.Find(code));
                         byte[] temp = new byte[1] { code };
@@ -5933,7 +6034,7 @@ namespace ChryslerScanner
                         }
                         else // no DTC description found
                         {
-                            sb.Append(Util.ByteToHexStringSimple(temp) + ": -" + Environment.NewLine);
+                            sb.Append(Util.ByteToHexStringSimple(temp) + ": UNRECOGNIZED DTC" + Environment.NewLine);
                         }
                     }
 
@@ -5943,22 +6044,58 @@ namespace ChryslerScanner
                 }
                 else
                 {
-                    sb.Append("NO ENGINE FAULT CODES");
+                    sb.Append("NO STORED FAULT CODE");
                     File.AppendAllText(MainForm.PCMLogFilename, Environment.NewLine + sb.ToString() + Environment.NewLine + Environment.NewLine);
                 }
 
-                EngineFaultCodesSaved = true;
+                StoredFaultCodesSaved = true;
             }
 
-            if (!EngineFaultCodes1TSaved)
+            if (!PendingFaultCodesSaved)
             {
                 StringBuilder sb = new StringBuilder();
 
-                if (EngineFaultCode1TList.Count > 0)
+                if (PendingFaultCodeList.Count > 0)
                 {
-                    sb.Append("ONE-TRIP ENGINE FAULT CODE LIST:" + Environment.NewLine);
+                    sb.Append("PENDING FAULT CODE LIST:" + Environment.NewLine);
 
-                    foreach (byte code in EngineFaultCode1TList)
+                    foreach (byte code in PendingFaultCodeList)
+                    {
+                        int index = EngineDTC.Rows.IndexOf(EngineDTC.Rows.Find(code));
+                        byte[] temp = new byte[1] { code };
+
+                        if (index > -1) // DTC description found
+                        {
+                            sb.Append(Util.ByteToHexStringSimple(temp) + ": " + EngineDTC.Rows[index]["description"] + Environment.NewLine);
+                        }
+                        else // no DTC description found
+                        {
+                            sb.Append(Util.ByteToHexStringSimple(temp) + ": UNRECOGNIZED DTC" + Environment.NewLine);
+                        }
+                    }
+
+                    sb.Remove(sb.Length - 1, 1); // remove last newline character
+
+                    File.AppendAllText(MainForm.PCMLogFilename, Environment.NewLine + sb.ToString() + Environment.NewLine);
+                }
+                else
+                {
+                    sb.Append("NO PENDING FAULT CODE");
+                    File.AppendAllText(MainForm.PCMLogFilename, Environment.NewLine + sb.ToString() + Environment.NewLine + Environment.NewLine);
+                }
+
+                PendingFaultCodesSaved = true;
+            }
+
+            if (!FaultCodes1TSaved) // one-trip fault codes
+            {
+                StringBuilder sb = new StringBuilder();
+
+                if (FaultCode1TList.Count > 0)
+                {
+                    sb.Append("ONE-TRIP FAULT CODE LIST:" + Environment.NewLine);
+
+                    foreach (byte code in FaultCode1TList)
                     {
                         int index = EngineDTC.Rows.IndexOf(EngineDTC.Rows.Find(code));
                         byte[] temp = new byte[1] { code };
@@ -5979,11 +6116,11 @@ namespace ChryslerScanner
                 }
                 else
                 {
-                    sb.Append("NO ENGINE ONE-TRIP FAULT CODES");
+                    sb.Append("NO ONE-TRIP FAULT CODE");
                     File.AppendAllText(MainForm.PCMLogFilename, Environment.NewLine + sb.ToString() + Environment.NewLine + Environment.NewLine);
                 }
 
-                EngineFaultCodes1TSaved = true;
+                FaultCodes1TSaved = true;
             }
         }
     }

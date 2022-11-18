@@ -635,7 +635,7 @@ namespace ChryslerScanner
                                 {
                                     if ((ABSFaultCodes[0] == 0) && (ABSFaultCodes[1] == 0))
                                     {
-                                        UpdateTextBox(ABSToolsInfoTextBox, Environment.NewLine + Environment.NewLine + "No fault codes.");
+                                        UpdateTextBox(ABSToolsInfoTextBox, Environment.NewLine + Environment.NewLine + "No fault code.");
                                     }
                                     else
                                     {
@@ -667,7 +667,7 @@ namespace ChryslerScanner
                                 {
                                     if ((ABSFaultCodes[0] == 0) && (ABSFaultCodes[1] == 0))
                                     {
-                                        UpdateTextBox(ABSToolsInfoTextBox, Environment.NewLine + Environment.NewLine + "No fault codes.");
+                                        UpdateTextBox(ABSToolsInfoTextBox, Environment.NewLine + Environment.NewLine + "No fault code.");
                                     }
                                     else
                                     {
@@ -699,7 +699,7 @@ namespace ChryslerScanner
                                 {
                                     if ((ABSFaultCodes[0] == 0) && (ABSFaultCodes[1] == 0) && (ABSFaultCodes[2] == 0) && (ABSFaultCodes[3] == 0) && (ABSFaultCodes[4] == 0))
                                     {
-                                        UpdateTextBox(ABSToolsInfoTextBox, Environment.NewLine + Environment.NewLine + "No fault codes.");
+                                        UpdateTextBox(ABSToolsInfoTextBox, Environment.NewLine + Environment.NewLine + "No fault code.");
                                     }
                                     else
                                     {

@@ -2668,53 +2668,51 @@ namespace ChryslerScanner
                             {
                                 switch (Packet.rx.payload[4]) // ID byte
                                 {
-                                    case 0x10: // fault code list request
+                                    case 0x10: // stored fault code list request
                                         if (Packet.rx.payload.Length > 6)
                                         {
                                             byte checksum = 0;
-                                            int checksumLocation = Packet.rx.payload.Length - 1;
+                                            int ChecksumLocation = Packet.rx.payload.Length - 1;
 
-                                            for (int i = 4; i < checksumLocation; i++)
+                                            for (int i = 4; i < ChecksumLocation; i++)
                                             {
                                                 checksum += Packet.rx.payload[i];
                                             }
 
-                                            if (checksum == Packet.rx.payload[checksumLocation])
+                                            if (checksum == Packet.rx.payload[ChecksumLocation])
                                             {
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) fault code list:", Packet.rx.buffer);
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) stored fault code list:", Packet.rx.buffer);
 
-                                                List<byte> faultCodeList = new List<byte>();
-                                                faultCodeList.AddRange(Packet.rx.payload.Skip(4).Take(Packet.rx.payload.Length - 5)); // skip first 4 bytes (timestamp)
-                                                faultCodeList.Remove(0x10); // message ID byte is not part of the fault code list
-                                                faultCodeList.Remove(0xFD); // not fault code related
-                                                faultCodeList.Remove(0xFE); // end of fault code list signifier
+                                                List<byte> StoredFaultCodeList = new List<byte>();
+                                                StoredFaultCodeList.AddRange(Packet.rx.payload.Skip(5).Take(Packet.rx.payload.Length - 6)); // skip first 5 bytes (timestamp and ID)
+                                                StoredFaultCodeList.Remove(0xFD); // not fault code related
+                                                StoredFaultCodeList.Remove(0xFE); // end of fault code list signifier
 
-                                                if (faultCodeList.Count > 0)
+                                                if (StoredFaultCodeList.Count > 0)
                                                 {
                                                     StringBuilder sb = new StringBuilder();
 
-                                                    foreach (byte code in faultCodeList)
+                                                    foreach (byte code in StoredFaultCodeList)
                                                     {
                                                         int index = PCM.EngineDTC.Rows.IndexOf(PCM.EngineDTC.Rows.Find(code));
-                                                        byte[] temp = new byte[1] { code };
 
                                                         if (index > -1) // DTC description found
                                                         {
-                                                            sb.Append(Util.ByteToHexStringSimple(temp) + ": " + PCM.EngineDTC.Rows[index]["description"] + Environment.NewLine);
+                                                            sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": " + PCM.EngineDTC.Rows[index]["description"] + Environment.NewLine);
                                                         }
                                                         else // no DTC description found
                                                         {
-                                                            sb.Append(Util.ByteToHexStringSimple(temp) + ": -" + Environment.NewLine);
+                                                            sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": UNRECOGNIZED DTC" + Environment.NewLine);
                                                         }
                                                     }
 
                                                     sb.Remove(sb.Length - 2, 2); // remove last newline character
 
-                                                    Util.UpdateTextBox(USBTextBox, "[INFO] PCM fault code(s) found:" + Environment.NewLine + sb.ToString());
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Stored PCM fault codes found:" + Environment.NewLine + sb.ToString());
                                                 }
                                                 else
                                                 {
-                                                    Util.UpdateTextBox(USBTextBox, "[INFO] No PCM fault code found.");
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] No stored PCM fault code found.");
                                                 }
                                             }
                                             else
@@ -2724,7 +2722,108 @@ namespace ChryslerScanner
                                         }
                                         else // error
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) fault code list:", Packet.rx.buffer);
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) stored fault code list:", Packet.rx.buffer);
+                                        }
+                                        break;
+                                    case 0x11: // pending fault code list request
+                                        if (Packet.rx.payload.Length > 2)
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) pending fault code list:", Packet.rx.buffer);
+
+                                            List<byte> PendingFaultCodeList = new List<byte>();
+                                            PendingFaultCodeList.AddRange(Packet.rx.payload.Skip(5).Take(Packet.rx.payload.Length - 2)); // skip first 5 bytes (timestamp and ID)
+
+                                            if ((PendingFaultCodeList[0] == 0) && (PendingFaultCodeList[1] == 0))
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] No pending PCM fault code found.");
+                                            }
+                                            else
+                                            {
+                                                StringBuilder sb = new StringBuilder();
+
+                                                foreach (byte code in PendingFaultCodeList)
+                                                {
+                                                    if (code == 0) continue; // skip zero code, empty slot
+
+                                                    int index = PCM.EngineDTC.Rows.IndexOf(PCM.EngineDTC.Rows.Find(code));
+
+                                                    if (index > -1) // DTC description found
+                                                    {
+                                                        sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": " + PCM.EngineDTC.Rows[index]["description"] + Environment.NewLine);
+                                                    }
+                                                    else // no DTC description found
+                                                    {
+                                                        sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": EMPTY DTC SLOT" + Environment.NewLine);
+                                                    }
+                                                }
+
+                                                sb.Remove(sb.Length - 2, 2); // remove last newline character
+
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Pending PCM fault codes found:" + Environment.NewLine + sb.ToString());
+                                            }
+                                        }
+                                        else // error
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) pending fault code list:", Packet.rx.buffer);
+                                        }
+                                        break;
+                                    case 0x2E: // one-trip fault code list request
+                                    case 0x32:
+                                    case 0x33:
+                                        if (Packet.rx.payload.Length > 6)
+                                        {
+                                            //byte checksum = 0;
+                                            //int ChecksumLocation = Packet.rx.payload.Length - 1;
+
+                                            //for (int i = 4; i < ChecksumLocation; i++)
+                                            //{
+                                            //    checksum += Packet.rx.payload[i];
+                                            //}
+
+                                            //if (checksum == Packet.rx.payload[ChecksumLocation])
+                                            //{
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) one-trip fault code list:", Packet.rx.buffer);
+
+                                                List<byte> FaultCode1TList = new List<byte>();
+                                                FaultCode1TList.AddRange(Packet.rx.payload.Skip(5).Take(Packet.rx.payload.Length - 6)); // skip first 5 bytes (timestamp and ID)
+                                                FaultCode1TList.Remove(0xFD); // not fault code related
+                                                FaultCode1TList.Remove(0xFE); // end of fault code list signifier
+
+                                                if (FaultCode1TList.Count > 0)
+                                                {
+                                                    StringBuilder sb = new StringBuilder();
+
+                                                    foreach (byte code in FaultCode1TList)
+                                                    {
+                                                        int index = PCM.EngineDTC.Rows.IndexOf(PCM.EngineDTC.Rows.Find(code));
+
+                                                        if (index > -1) // DTC description found
+                                                        {
+                                                            sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": " + PCM.EngineDTC.Rows[index]["description"] + Environment.NewLine);
+                                                        }
+                                                        else // no DTC description found
+                                                        {
+                                                            sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": UNRECOGNIZED DTC" + Environment.NewLine);
+                                                        }
+                                                    }
+
+                                                    sb.Remove(sb.Length - 2, 2); // remove last newline character
+
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] One-trip PCM fault codes found:" + Environment.NewLine + sb.ToString());
+                                                }
+                                                else
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] No one-trip PCM fault code found.");
+                                                }
+                                            //}
+                                            //else
+                                            //{
+                                            //    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) fault code checksum error:", Packet.rx.buffer);
+                                            //}
+                                        }
+                                        else // error
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) stored fault code list:", Packet.rx.buffer);
                                         }
                                         break;
                                     case 0x17: // erase fault codes

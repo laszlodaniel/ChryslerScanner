@@ -404,20 +404,26 @@ namespace ChryslerScanner
 
                     if (message.Length >= 4)
                     {
-                        switch (payload[0])
+                        List<string> LampList = new List<string>();
+                        LampList.Clear();
+
+                        if (payload[0] != 0)
                         {
-                            case 0x08:
-                                ValueToInsert = "ACM LAMP";
-                                break;
-                            case 0x10:
-                                ValueToInsert = "AIRBAG LAMP";
-                                break;
-                            case 0x80:
-                                ValueToInsert = "SEATBELT LAMP";
-                                break;
-                            default:
-                                ValueToInsert = "UNKNOWN";
-                                break;
+                            if (Util.IsBitSet(payload[0], 7)) LampList.Add("STBELT"); // seat belt
+                            if (Util.IsBitSet(payload[0], 6)) LampList.Add("-6-");
+                            if (Util.IsBitSet(payload[0], 5)) LampList.Add("-5-");
+                            if (Util.IsBitSet(payload[0], 4)) LampList.Add("AIRBAG");
+                            if (Util.IsBitSet(payload[0], 3)) LampList.Add("AIRBAG");
+                            if (Util.IsBitSet(payload[0], 2)) LampList.Add("-2-");
+                            if (Util.IsBitSet(payload[0], 1)) LampList.Add("-1-");
+                            if (Util.IsBitSet(payload[0], 0)) LampList.Add("-0-");
+
+                            foreach (string s in LampList)
+                            {
+                                ValueToInsert += s + " | ";
+                            }
+
+                            if (ValueToInsert.Length > 2) ValueToInsert = ValueToInsert.Remove(ValueToInsert.Length - 3); // remove last "|" character
                         }
                     }
                     break;
@@ -484,7 +490,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x50:
-                    DescriptionToInsert = "AIRBAG AND SEATBELT LAMP STATE";
+                    DescriptionToInsert = "AIRBAG LAMP REQUEST";
 
                     if (message.Length >= 3)
                     {
@@ -493,8 +499,14 @@ namespace ChryslerScanner
 
                         if (payload[0] != 0)
                         {
+                            if (Util.IsBitSet(payload[0], 7)) LampList.Add("-7-");
+                            if (Util.IsBitSet(payload[0], 6)) LampList.Add("-6-");
+                            if (Util.IsBitSet(payload[0], 5)) LampList.Add("-5-");
+                            if (Util.IsBitSet(payload[0], 4)) LampList.Add("-4-");
+                            if (Util.IsBitSet(payload[0], 3)) LampList.Add("-3-");
+                            if (Util.IsBitSet(payload[0], 2)) LampList.Add("STBELT"); // seat belt
+                            if (Util.IsBitSet(payload[0], 1)) LampList.Add("-1-");
                             if (Util.IsBitSet(payload[0], 0)) LampList.Add("AIRBAG");
-                            if (Util.IsBitSet(payload[0], 2)) LampList.Add("SEATBELT");
 
                             foreach (string s in LampList)
                             {
@@ -502,10 +514,6 @@ namespace ChryslerScanner
                             }
 
                             if (ValueToInsert.Length > 2) ValueToInsert = ValueToInsert.Remove(ValueToInsert.Length - 3); // remove last "|" character
-                        }
-                        else
-                        {
-                            ValueToInsert = "BOTH OFF";
                         }
                     }
                     break;
@@ -557,7 +565,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x56:
-                    DescriptionToInsert = "REQUESTED MIL STATE - TRANSMISSION";
+                    DescriptionToInsert = "REQUESTED CEL STATE - TRANSMISSION";
 
                     if (message.Length >= 4)
                     {
@@ -566,6 +574,14 @@ namespace ChryslerScanner
                     break;
                 case 0x6B:
                     DescriptionToInsert = "COMPASS COMP. AND CHECKSUM DATA RECEIVED";
+
+                    if (message.Length >= 4)
+                    {
+                        // Empty.
+                    }
+                    break;
+                case 0x6C:
+                    DescriptionToInsert = "CRUISE STATUS";
 
                     if (message.Length >= 4)
                     {
@@ -667,9 +683,14 @@ namespace ChryslerScanner
                         {
                             DescriptionToInsert += " | ";
 
-                            if (Util.IsBitSet(payload[0], 0)) RelayList.Add("CLUTCH");
-                            if (Util.IsBitSet(payload[0], 2)) RelayList.Add("BLOWER FAN");
-                            if (Util.IsBitSet(payload[0], 4)) RelayList.Add("DEFROST");
+                            if (Util.IsBitSet(payload[0], 7)) RelayList.Add("-7-");
+                            if (Util.IsBitSet(payload[0], 6)) RelayList.Add("-6-");
+                            if (Util.IsBitSet(payload[0], 5)) RelayList.Add("-5-");
+                            if (Util.IsBitSet(payload[0], 4)) RelayList.Add("DEFRST"); // defrost relay
+                            if (Util.IsBitSet(payload[0], 3)) RelayList.Add("-3-");
+                            if (Util.IsBitSet(payload[0], 2)) RelayList.Add("BLOWER"); // blower fan relay
+                            if (Util.IsBitSet(payload[0], 1)) RelayList.Add("-1-");
+                            if (Util.IsBitSet(payload[0], 0)) RelayList.Add("CLUTCH"); // clutch relay
 
                             foreach (string s in RelayList)
                             {
@@ -831,39 +852,50 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xA4:
-                    DescriptionToInsert = "MIC LAMP: ";
+                    DescriptionToInsert = "STATUS: ";
 
                     if (message.Length >= 4)
                     {
-                        List<string> LampList = new List<string>();
-                        LampList.Clear();
+                        List<string> Status = new List<string>();
+                        Status.Clear();
 
-                        if (payload[0] != 0)
+                        if ((payload[0] == 0) && (payload[1] == 0))
                         {
-                            if (Util.IsBitSet(payload[0], 2)) LampList.Add("BRAKE");
-                            if (Util.IsBitSet(payload[0], 5)) LampList.Add("MIL");
-                            if (Util.IsBitSet(payload[1], 2)) LampList.Add("CRUISE");
-                            if (Util.IsBitSet(payload[1], 4)) LampList.Add("TRANS FAN");
+                            DescriptionToInsert = "STATUS EMPTY";
+                        }
+                        else
+                        {
+                            if (Util.IsBitSet(payload[0], 7)) Status.Add("MTX"); // manual transmission
+                            else Status.Add("ATX"); // automatic transmission
 
-                            foreach (string s in LampList)
+                            if (Util.IsBitSet(payload[0], 6)) Status.Add("-6-");
+                            if (Util.IsBitSet(payload[0], 5)) Status.Add("CEL"); // chech engine lamp
+                            if (Util.IsBitSet(payload[0], 4)) Status.Add("-4-");
+                            if (Util.IsBitSet(payload[0], 3)) Status.Add("ACT"); // A/C clutch
+                            if (Util.IsBitSet(payload[0], 2)) Status.Add("BPP"); // brake pedal pressed
+                            if (Util.IsBitSet(payload[0], 1)) Status.Add("TPP"); // throttle pedal pressed
+                            if (Util.IsBitSet(payload[0], 0)) Status.Add("CCE"); // cruise control engaged
+
+                            if (Util.IsBitSet(payload[1], 7)) Status.Add("-7-");
+                            if (Util.IsBitSet(payload[1], 6)) Status.Add("-6-");
+                            if (Util.IsBitSet(payload[1], 5)) Status.Add("-5-");
+                            if (Util.IsBitSet(payload[1], 4)) Status.Add("TFR"); // transmission fan relay
+                            if (Util.IsBitSet(payload[1], 3)) Status.Add("-3-");
+                            if (Util.IsBitSet(payload[1], 2)) Status.Add("CCL"); // cruise control lamp
+
+                            if (Util.IsBitSet(payload[1], 1) && Util.IsBitSet(payload[1], 0)) Status.Add("TMR"); // torque management response
+                            else
+                            {
+                                if (Util.IsBitSet(payload[1], 1)) Status.Add("TM1"); // torque management response 1
+                                if (Util.IsBitSet(payload[1], 0)) Status.Add("TM0"); // torque management response 0
+                            }
+
+                            foreach (string s in Status)
                             {
                                 DescriptionToInsert += s + " | ";
                             }
 
                             if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
-                        }
-                        else
-                        {
-                            DescriptionToInsert = "MIC LAMP OFF";
-                        }
-
-                        if (Util.IsBitSet(payload[0], 7))
-                        {
-                            ValueToInsert += "TRANSMISSION TYPE: MTX";
-                        }
-                        else
-                        {
-                            ValueToInsert += "TRANSMISSION TYPE: ATX";
                         }
                     }
                     break;
@@ -928,7 +960,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xB1:
-                    DescriptionToInsert = "WARNING";
+                    DescriptionToInsert = "WARNING: ";
 
                     if (message.Length >= 3)
                     {
@@ -941,12 +973,14 @@ namespace ChryslerScanner
                         }
                         else
                         {
-                            if (Util.IsBitSet(payload[0], 0)) WarningList.Add("KEY IN IGNITION");
-                            if (Util.IsBitSet(payload[0], 1)) WarningList.Add("SEAT BELT");
-                            if (Util.IsBitSet(payload[0], 2)) ValueToInsert = "EXTERIOR LAMP";
-                            if (Util.IsBitSet(payload[0], 4)) WarningList.Add("OVERSPEED ");
-
-                            DescriptionToInsert = "WARNING: ";
+                            if (Util.IsBitSet(payload[0], 7)) WarningList.Add("-7-");
+                            if (Util.IsBitSet(payload[0], 6)) WarningList.Add("-6-");
+                            if (Util.IsBitSet(payload[0], 5)) WarningList.Add("-5-");
+                            if (Util.IsBitSet(payload[0], 4)) WarningList.Add("OVRSPD"); // overspeed
+                            if (Util.IsBitSet(payload[0], 3)) WarningList.Add("-3-");
+                            if (Util.IsBitSet(payload[0], 2)) WarningList.Add("EXTLMP"); // external lights
+                            if (Util.IsBitSet(payload[0], 1)) WarningList.Add("STBELT"); // seat belt
+                            if (Util.IsBitSet(payload[0], 0)) WarningList.Add("KYNIGN"); // key in ignition
 
                             foreach (string s in WarningList)
                             {
@@ -1829,8 +1863,8 @@ namespace ChryslerScanner
 
                     if (message.Length >= 3)
                     {
-                        if (Util.IsBitSet(payload[0], 6)) ValueToInsert = "MIL LAMP ON";
-                        else ValueToInsert = "MIL LAMP OFF";
+                        if (Util.IsBitSet(payload[0], 6)) ValueToInsert = "CEL ON";
+                        else ValueToInsert = "CEL OFF";
                     }
                     break;
                 case 0xDB:
@@ -1842,7 +1876,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xDC:
-                    DescriptionToInsert = "TRANSMISSION STATUS / SELECTED GEAR";
+                    DescriptionToInsert = "SELECTED GEAR";
 
                     if (message.Length >= 3)
                     {
@@ -1892,23 +1926,25 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xEC:
-                    DescriptionToInsert = "LIMP-IN STATE | VEHICLE INFORMATION";
+                    DescriptionToInsert = "LIMP-IN STATE";
 
                     if (message.Length >= 4)
                     {
                         List<string> LimpStates = new List<string>();
                         LimpStates.Clear();
 
-                        if (Util.IsBitSet(payload[0], 0)) LimpStates.Add("ECT"); // Engine coolant temperature
-                        if (Util.IsBitSet(payload[0], 1)) LimpStates.Add("TPS"); // Throttle position sensor
-                        if (Util.IsBitSet(payload[0], 2)) LimpStates.Add("CHG"); // Battery charging voltage
-                        if (Util.IsBitSet(payload[0], 4)) LimpStates.Add("ACP"); // A/C high-side pressure
-                        if (Util.IsBitSet(payload[0], 6)) LimpStates.Add("IAT"); // Intake air temperature
                         if (Util.IsBitSet(payload[0], 7)) LimpStates.Add("ATS"); // Ambient temperature sensor
+                        if (Util.IsBitSet(payload[0], 6)) LimpStates.Add("IAT"); // Intake air temperature
+                        if (Util.IsBitSet(payload[0], 5)) LimpStates.Add("FSM"); // Fuel system?
+                        if (Util.IsBitSet(payload[0], 4)) LimpStates.Add("ACP"); // A/C high-side pressure
+                        if (Util.IsBitSet(payload[0], 3)) LimpStates.Add("CHG"); // Charging system
+                        if (Util.IsBitSet(payload[0], 2)) LimpStates.Add("CHB"); // Battery charging voltage
+                        if (Util.IsBitSet(payload[0], 1)) LimpStates.Add("TPS"); // Throttle position sensor
+                        if (Util.IsBitSet(payload[0], 0)) LimpStates.Add("ECT"); // Engine coolant temperature
 
                         if (LimpStates.Count > 0)
                         {
-                            DescriptionToInsert = "LIMP-IN: ";
+                            DescriptionToInsert = "LIMP: ";
 
                             foreach (string s in LimpStates)
                             {
@@ -1919,7 +1955,7 @@ namespace ChryslerScanner
                         }
                         else
                         {
-                            DescriptionToInsert = "NO LIMP-IN STATE | VEHICLE INFORMATION";
+                            DescriptionToInsert = "NO LIMP-IN STATE";
                         }
 
                         switch (payload[1] & 0x1C) // analyze relevant bits only
@@ -1966,7 +2002,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0xF1:
-                    DescriptionToInsert = "WARNING";
+                    DescriptionToInsert = "WARNING: ";
 
                     if (message.Length >= 3)
                     {
@@ -1976,18 +2012,17 @@ namespace ChryslerScanner
                         if (payload[0] == 0)
                         {
                             DescriptionToInsert = "NO WARNING";
-                            ValueToInsert = string.Empty;
-                            UnitToInsert = string.Empty;
                         }
                         else
                         {
-                            if (Util.IsBitSet(payload[0], 0)) WarningList.Add("LOW FUEL");
-                            if (Util.IsBitSet(payload[0], 1)) WarningList.Add("LOW OIL");
-                            if (Util.IsBitSet(payload[0], 2)) WarningList.Add("HI TEMP");
-                            if (Util.IsBitSet(payload[0], 3)) ValueToInsert = "CRITICAL TEMP";
-                            if (Util.IsBitSet(payload[0], 4)) WarningList.Add("BRAKE PRESS");
-
-                            DescriptionToInsert = "WARNING: ";
+                            if (Util.IsBitSet(payload[0], 7)) WarningList.Add("-7-");
+                            if (Util.IsBitSet(payload[0], 6)) WarningList.Add("-6-");
+                            if (Util.IsBitSet(payload[0], 5)) WarningList.Add("-5-");
+                            if (Util.IsBitSet(payload[0], 4)) WarningList.Add("BRK"); // brake pedal pressed
+                            if (Util.IsBitSet(payload[0], 3)) WarningList.Add("CRT"); // critical temperature
+                            if (Util.IsBitSet(payload[0], 2)) WarningList.Add("HIT"); // high temperature
+                            if (Util.IsBitSet(payload[0], 1)) WarningList.Add("LWO"); // low oil
+                            if (Util.IsBitSet(payload[0], 0)) WarningList.Add("LWF"); // low fuel
 
                             foreach (string s in WarningList)
                             {
@@ -1995,7 +2030,6 @@ namespace ChryslerScanner
                             }
 
                             if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
-                            UnitToInsert = string.Empty;
                         }
                     }
                     break;

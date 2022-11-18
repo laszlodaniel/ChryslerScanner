@@ -32,8 +32,6 @@
             this.EraseFaultCodesButton = new System.Windows.Forms.Button();
             this.ReadFaultCodesButton = new System.Windows.Forms.Button();
             this.BaudrateGroupBox = new System.Windows.Forms.GroupBox();
-            this.Baud976Button = new System.Windows.Forms.Button();
-            this.Baud125000Button = new System.Windows.Forms.Button();
             this.Baud62500Button = new System.Windows.Forms.Button();
             this.Baud7812Button = new System.Windows.Forms.Button();
             this.ActuatorTestGroupBox = new System.Windows.Forms.GroupBox();
@@ -71,6 +69,7 @@
             this.RAMTableGroupBox = new System.Windows.Forms.GroupBox();
             this.RAMTableComboBox = new System.Windows.Forms.ComboBox();
             this.RAMTableSelectButton = new System.Windows.Forms.Button();
+            this.ReadFaultCodeFreezeFrameButton = new System.Windows.Forms.Button();
             this.FaultCodeGroupBox.SuspendLayout();
             this.BaudrateGroupBox.SuspendLayout();
             this.ActuatorTestGroupBox.SuspendLayout();
@@ -85,11 +84,12 @@
             // 
             // FaultCodeGroupBox
             // 
+            this.FaultCodeGroupBox.Controls.Add(this.ReadFaultCodeFreezeFrameButton);
             this.FaultCodeGroupBox.Controls.Add(this.EraseFaultCodesButton);
             this.FaultCodeGroupBox.Controls.Add(this.ReadFaultCodesButton);
             this.FaultCodeGroupBox.Location = new System.Drawing.Point(9, 7);
             this.FaultCodeGroupBox.Name = "FaultCodeGroupBox";
-            this.FaultCodeGroupBox.Size = new System.Drawing.Size(126, 46);
+            this.FaultCodeGroupBox.Size = new System.Drawing.Size(215, 46);
             this.FaultCodeGroupBox.TabIndex = 0;
             this.FaultCodeGroupBox.TabStop = false;
             this.FaultCodeGroupBox.Text = "Fault code";
@@ -116,45 +116,19 @@
             // 
             // BaudrateGroupBox
             // 
-            this.BaudrateGroupBox.Controls.Add(this.Baud976Button);
-            this.BaudrateGroupBox.Controls.Add(this.Baud125000Button);
             this.BaudrateGroupBox.Controls.Add(this.Baud62500Button);
             this.BaudrateGroupBox.Controls.Add(this.Baud7812Button);
-            this.BaudrateGroupBox.Location = new System.Drawing.Point(142, 7);
+            this.BaudrateGroupBox.Location = new System.Drawing.Point(258, 7);
             this.BaudrateGroupBox.Name = "BaudrateGroupBox";
-            this.BaudrateGroupBox.Size = new System.Drawing.Size(246, 46);
+            this.BaudrateGroupBox.Size = new System.Drawing.Size(130, 46);
             this.BaudrateGroupBox.TabIndex = 1;
             this.BaudrateGroupBox.TabStop = false;
             this.BaudrateGroupBox.Text = "Baudrate";
             // 
-            // Baud976Button
-            // 
-            this.Baud976Button.Enabled = false;
-            this.Baud976Button.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.Baud976Button.Location = new System.Drawing.Point(7, 16);
-            this.Baud976Button.Name = "Baud976Button";
-            this.Baud976Button.Size = new System.Drawing.Size(55, 23);
-            this.Baud976Button.TabIndex = 20;
-            this.Baud976Button.Text = "976.5";
-            this.Baud976Button.UseVisualStyleBackColor = true;
-            this.Baud976Button.Click += new System.EventHandler(this.Baud976Button_Click);
-            // 
-            // Baud125000Button
-            // 
-            this.Baud125000Button.Enabled = false;
-            this.Baud125000Button.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.Baud125000Button.Location = new System.Drawing.Point(184, 16);
-            this.Baud125000Button.Name = "Baud125000Button";
-            this.Baud125000Button.Size = new System.Drawing.Size(55, 23);
-            this.Baud125000Button.TabIndex = 19;
-            this.Baud125000Button.Text = "125000";
-            this.Baud125000Button.UseVisualStyleBackColor = true;
-            this.Baud125000Button.Click += new System.EventHandler(this.Baud125000Button_Click);
-            // 
             // Baud62500Button
             // 
             this.Baud62500Button.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.Baud62500Button.Location = new System.Drawing.Point(125, 16);
+            this.Baud62500Button.Location = new System.Drawing.Point(68, 16);
             this.Baud62500Button.Name = "Baud62500Button";
             this.Baud62500Button.Size = new System.Drawing.Size(55, 23);
             this.Baud62500Button.TabIndex = 18;
@@ -165,7 +139,7 @@
             // Baud7812Button
             // 
             this.Baud7812Button.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.Baud7812Button.Location = new System.Drawing.Point(66, 16);
+            this.Baud7812Button.Location = new System.Drawing.Point(7, 16);
             this.Baud7812Button.Name = "Baud7812Button";
             this.Baud7812Button.Size = new System.Drawing.Size(55, 23);
             this.Baud7812Button.TabIndex = 17;
@@ -208,7 +182,7 @@
             "130C | Cruise control solenoids",
             "130D | Alternator field",
             "130E | Tachometer output",
-            "130F | Torque converter clutch",
+            "130F | Torque converter clutch relay",
             "1310 | EGR solenoid",
             "1311 | Wastegate solenoid",
             "1312 | Barometer solenoid",
@@ -220,7 +194,7 @@
             "1318 |",
             "1319 | Surge valve solenoid",
             "131A | Cruise control vent solenoid",
-            "131B | Cruise control vacuum solenoid",
+            "131B | Cruise control vac solenoid",
             "131C | ASD fuel system",
             "131D | Fuel injector bank #4",
             "131E | Fuel injector bank #5",
@@ -273,8 +247,8 @@
             "134D |",
             "134E |",
             "134F |",
-            "1350 | Transmission fan relay",
-            "1351 | Transmission PTU solenoid",
+            "1350 | Transmission fan relay 1",
+            "1351 | Transmission fan relay 2",
             "1352 | O2 X/1 sensor heater relay",
             "1353 | O2 X/2 sensor heater relay",
             "1354 |",
@@ -897,20 +871,30 @@
             "FB",
             "FC",
             "FD"});
-            this.RAMTableComboBox.Location = new System.Drawing.Point(8, 16);
+            this.RAMTableComboBox.Location = new System.Drawing.Point(7, 16);
             this.RAMTableComboBox.Name = "RAMTableComboBox";
             this.RAMTableComboBox.Size = new System.Drawing.Size(53, 22);
             this.RAMTableComboBox.TabIndex = 30;
             // 
             // RAMTableSelectButton
             // 
-            this.RAMTableSelectButton.Location = new System.Drawing.Point(7, 43);
+            this.RAMTableSelectButton.Location = new System.Drawing.Point(6, 43);
             this.RAMTableSelectButton.Name = "RAMTableSelectButton";
             this.RAMTableSelectButton.Size = new System.Drawing.Size(55, 23);
             this.RAMTableSelectButton.TabIndex = 20;
             this.RAMTableSelectButton.Text = "Select";
             this.RAMTableSelectButton.UseVisualStyleBackColor = true;
             this.RAMTableSelectButton.Click += new System.EventHandler(this.RAMTableSelectButton_Click);
+            // 
+            // ReadFaultCodeFreezeFrameButton
+            // 
+            this.ReadFaultCodeFreezeFrameButton.Location = new System.Drawing.Point(124, 16);
+            this.ReadFaultCodeFreezeFrameButton.Name = "ReadFaultCodeFreezeFrameButton";
+            this.ReadFaultCodeFreezeFrameButton.Size = new System.Drawing.Size(85, 23);
+            this.ReadFaultCodeFreezeFrameButton.TabIndex = 17;
+            this.ReadFaultCodeFreezeFrameButton.Text = "Freeze Frame";
+            this.ReadFaultCodeFreezeFrameButton.UseVisualStyleBackColor = true;
+            this.ReadFaultCodeFreezeFrameButton.Click += new System.EventHandler(this.ReadFaultCodeFreezeFrameButton_Click);
             // 
             // EngineToolsForm
             // 
@@ -959,10 +943,8 @@
         private System.Windows.Forms.ListBox DiagnosticDataListBox;
         private System.Windows.Forms.Button ActuatorTestStopButton;
         private System.Windows.Forms.Button ActuatorTestStartButton;
-        private System.Windows.Forms.Button Baud125000Button;
         private System.Windows.Forms.Button DiagnosticDataStopButton;
         private System.Windows.Forms.Button DiagnosticDataReadButton;
-        private System.Windows.Forms.Button Baud976Button;
         private System.Windows.Forms.Button DiagnosticDataClearButton;
         private System.Windows.Forms.Label MillisecondsLabel01;
         private System.Windows.Forms.TextBox DiagnosticDataRepeatIntervalTextBox;
@@ -991,5 +973,6 @@
         private System.Windows.Forms.GroupBox RAMTableGroupBox;
         private System.Windows.Forms.Button RAMTableSelectButton;
         private System.Windows.Forms.ComboBox RAMTableComboBox;
+        private System.Windows.Forms.Button ReadFaultCodeFreezeFrameButton;
     }
 }
