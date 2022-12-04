@@ -46,6 +46,7 @@ namespace ChryslerScanner
         private double SRIMileageNewMi = 0;
         private double SRIMileageNewKm = 0;
         private byte SKIMVTSS = 0;
+        private byte SKIMVTSSNew = 0;
         private byte[] VIN = new byte[VINLength];
         private string VINString;
         private byte[] PartNumberBuffer = new byte[18];
@@ -306,7 +307,6 @@ namespace ChryslerScanner
                 SCIBusPCMWriteMemoryWorker.RunWorkerAsync();
                 SCIBusPCMWriteMemorySRIMileageWriteButton.Enabled = false;
             }
-            
         }
 
         private void SCIBusPCMWriteMemorySRIMileageTextBox_KeyPress(object sender, KeyPressEventArgs e)
@@ -321,13 +321,13 @@ namespace ChryslerScanner
 
         private void SCIBusPCMWriteMemorySKIMVTSSComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (SCIBusPCMWriteMemorySKIMVTSSComboBox.SelectedIndex < 2)
+            if (SCIBusPCMWriteMemorySKIMVTSSComboBox.SelectedIndex == 2)
             {
-                SCIBusPCMWriteMemorySKIMVTSSWriteButton.Enabled = true;
+                SCIBusPCMWriteMemorySKIMVTSSWriteButton.Enabled = false;
             }
             else
             {
-                SCIBusPCMWriteMemorySKIMVTSSWriteButton.Enabled = false;
+                SCIBusPCMWriteMemorySKIMVTSSWriteButton.Enabled = true;
             }
         }
 
@@ -335,7 +335,7 @@ namespace ChryslerScanner
         {
             if (!SCIBusPCMReadMemoryWorker.IsBusy && !SCIBusPCMWriteMemoryWorker.IsBusy)
             {
-                UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Read SKIM/VTSS Status.");
+                UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Read SKIM status.");
 
                 SCIBusPCMMemoryOffsetStart = (uint)SKIMVTSSOffset;
                 SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(SKIMVTSSOffset >> 8);
@@ -363,7 +363,44 @@ namespace ChryslerScanner
         {
             if (!SCIBusPCMReadMemoryWorker.IsBusy && !SCIBusPCMWriteMemoryWorker.IsBusy)
             {
-                UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "SKIM/VTSS write is not yet supported. Please write desired byte at 00 08 EEPROM offset manually.");
+                //UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "SKIM/VTSS write is not yet supported. Please write desired byte at 00 08 EEPROM offset manually.");
+
+                UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Write SKIM status.");
+
+                SCIBusPCMMemoryOffsetStart = (uint)SKIMVTSSOffset;
+                SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(SKIMVTSSOffset >> 8);
+                SCIBusPCMMemoryOffsetStartBytes[1] = (byte)SKIMVTSSOffset;
+
+                SCIBusPCMMemoryOffsetEnd = (uint)(SKIMVTSSOffset);
+                SCIBusPCMMemoryOffsetEndBytes[0] = (byte)(SKIMVTSSOffset >> 8);
+                SCIBusPCMMemoryOffsetEndBytes[1] = (byte)SKIMVTSSOffset;
+
+                SCIBusPCMCurrentMemoryOffset = SCIBusPCMMemoryOffsetStart;
+                SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
+                SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
+
+                byte NewSKIMStatus = 0xFF;
+
+                switch (SCIBusPCMWriteMemorySKIMVTSSComboBox.SelectedIndex)
+                {
+                    case 0:
+                    case 3:
+                        NewSKIMStatus = 0xFF;
+                        break;
+                    case 1:
+                        NewSKIMStatus = 0x00;
+                        break;
+                    default:
+                        break;
+                }
+
+                SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID.WriteEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1], NewSKIMStatus };
+
+                SCIBusPCMWriteMemoryFinished = false;
+                SCIBusPCMNextRequest = true;
+                CurrentTask = Task.WriteSKIMVTSS;
+                SCIBusPCMWriteMemoryWorker.RunWorkerAsync();
+                SCIBusPCMWriteMemorySKIMVTSSWriteButton.Enabled = false;
             }
         }
 
@@ -1205,7 +1242,7 @@ namespace ChryslerScanner
             UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "------------HELP------------");
             UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + "Welcome to the SBEC3 PCM memory manipulator.");
             UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "SRI Mileage:" + Environment.NewLine + "Low-resolution mileage. When entered manually it is rounded to the nearest multiple of 8.192 miles. If the scanner receives mileage from BCM via CCD-bus then the GUI offers an option to copy it.");
-            UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "SKIM/VTSS:"  + Environment.NewLine + "Security related setting currently not understood.");
+            UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "SKIM:"  + Environment.NewLine + "Fuel shutoff settings.");
             UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "VIN:" + Environment.NewLine + "Vehicle identification number.");
             UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Part Number:" + Environment.NewLine + "Redundant flash part number. Its value does not seem to affect the PCM.");
             UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "EEPROM Offset/n/Value(s):" + Environment.NewLine + "Advanced option to read and write at arbitrary positions in the EEPROM. Be sure to backup EEPROM with the \"BAK\" button to avoid damage. The binary backup file is saved to the \"ROMs\" folder. Cycle ignition key for changes in EEPROM to take effect.");
@@ -1361,20 +1398,27 @@ namespace ChryslerScanner
                         SCIBusPCMWriteMemorySRIMileageReadButton.Enabled = true;
                         break;
                     case Task.ReadSKIMVTSS:
+                        UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, " Done." + Environment.NewLine + "SKIM status: ");
+
                         switch (SKIMVTSS)
                         {
-                            case 0x00:
-                                SCIBusPCMWriteMemorySKIMVTSSComboBox.SelectedIndex = 1; // enabled
-                                break;
                             case 0xFF:
-                                SCIBusPCMWriteMemorySKIMVTSSComboBox.SelectedIndex = 0; // disabled
+                                UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, "Fuel enabled.");
+                                SCIBusPCMWriteMemorySKIMVTSSComboBox.SelectedIndex = 0; // fuel enabled
                                 break;
+                            case 0x00:
+                                UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, "Fuel disabled.");
+                                SCIBusPCMWriteMemorySKIMVTSSComboBox.SelectedIndex = 1; // fuel disabled
+                                break;
+                            case 0x40:
+                            case 0x80:
+                            case 0xE1:
                             default:
-                                SCIBusPCMWriteMemorySKIMVTSSComboBox.SelectedIndex = 2; // N/A
+                                UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, "Unknown.");
+                                SCIBusPCMWriteMemorySKIMVTSSComboBox.SelectedIndex = 2; // unknown
                                 break;
                         }
 
-                        UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, " Done." + Environment.NewLine + "SKIM/VTSS Status: " + Util.ByteToHexStringSimple(new byte[1] { SKIMVTSS }));
                         SCIBusPCMWriteMemorySKIMVTSSReadButton.Enabled = true;
                         break;
                     case Task.ReadVIN:
@@ -1597,7 +1641,8 @@ namespace ChryslerScanner
                         SCIBusPCMWriteMemorySRIMileageTextBox_TextChanged(this, EventArgs.Empty);
                         break;
                     case Task.WriteSKIMVTSS:
-                        SCIBusPCMWriteMemorySKIMVTSSComboBox_SelectedIndexChanged(this, EventArgs.Empty);
+                        UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Write SKIM status. Cancelled.");
+                        SCIBusPCMWriteMemorySKIMVTSSComboBox_SelectedIndexChanged(this, EventArgs.Empty); // re-enable write button here
                         break;
                     case Task.WriteVIN:
                         UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Write VIN. Cancelled.");
@@ -1641,6 +1686,7 @@ namespace ChryslerScanner
                         SCIBusPCMWriteMemorySRIMileageTextBox_TextChanged(this, EventArgs.Empty);
                         break;
                     case Task.WriteSKIMVTSS:
+                        UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Write SKIM status. Done.");
                         SCIBusPCMWriteMemorySKIMVTSSComboBox_SelectedIndexChanged(this, EventArgs.Empty);
                         break;
                     case Task.WriteVIN:

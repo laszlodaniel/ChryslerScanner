@@ -1247,9 +1247,9 @@
             this.SCIBusNGCModeCheckBox.AutoSize = true;
             this.SCIBusNGCModeCheckBox.Location = new System.Drawing.Point(273, 195);
             this.SCIBusNGCModeCheckBox.Name = "SCIBusNGCModeCheckBox";
-            this.SCIBusNGCModeCheckBox.Size = new System.Drawing.Size(78, 17);
+            this.SCIBusNGCModeCheckBox.Size = new System.Drawing.Size(82, 17);
             this.SCIBusNGCModeCheckBox.TabIndex = 20;
-            this.SCIBusNGCModeCheckBox.Text = "NGC mode";
+            this.SCIBusNGCModeCheckBox.Text = "NGC debug";
             this.SCIBusNGCModeCheckBox.UseVisualStyleBackColor = true;
             // 
             // SCIBusOBDConfigurationComboBox
@@ -1278,9 +1278,9 @@
             this.SCIBusInvertedLogicCheckBox.AutoSize = true;
             this.SCIBusInvertedLogicCheckBox.Location = new System.Drawing.Point(161, 195);
             this.SCIBusInvertedLogicCheckBox.Name = "SCIBusInvertedLogicCheckBox";
-            this.SCIBusInvertedLogicCheckBox.Size = new System.Drawing.Size(90, 17);
+            this.SCIBusInvertedLogicCheckBox.Size = new System.Drawing.Size(85, 17);
             this.SCIBusInvertedLogicCheckBox.TabIndex = 18;
-            this.SCIBusInvertedLogicCheckBox.Text = "Inverted logic";
+            this.SCIBusInvertedLogicCheckBox.Text = "SBEC2 logic";
             this.SCIBusInvertedLogicCheckBox.UseVisualStyleBackColor = true;
             // 
             // SCIBusModuleConfigSpeedApplyButton
@@ -1825,7 +1825,7 @@
             this.SCIBusPCMDiagnosticsTabPage.Padding = new System.Windows.Forms.Padding(3);
             this.SCIBusPCMDiagnosticsTabPage.Size = new System.Drawing.Size(877, 495);
             this.SCIBusPCMDiagnosticsTabPage.TabIndex = 1;
-            this.SCIBusPCMDiagnosticsTabPage.Text = "SCI-bus (PCM)";
+            this.SCIBusPCMDiagnosticsTabPage.Text = "SCI-bus (Engine)";
             // 
             // SCIBusPCMDiagnosticsListBox
             // 
@@ -1848,7 +1848,7 @@
             this.SCIBusTCMDiagnosticsTabPage.Padding = new System.Windows.Forms.Padding(3);
             this.SCIBusTCMDiagnosticsTabPage.Size = new System.Drawing.Size(877, 495);
             this.SCIBusTCMDiagnosticsTabPage.TabIndex = 2;
-            this.SCIBusTCMDiagnosticsTabPage.Text = "SCI-bus (TCM)";
+            this.SCIBusTCMDiagnosticsTabPage.Text = "SCI-bus (Transmission)";
             // 
             // SCIBusTCMDiagnosticsListBox
             // 

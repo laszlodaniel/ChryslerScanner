@@ -338,7 +338,7 @@ namespace ChryslerScanner
             this.SCIBusPCMTabPage.Padding = new System.Windows.Forms.Padding(3);
             this.SCIBusPCMTabPage.Size = new System.Drawing.Size(516, 271);
             this.SCIBusPCMTabPage.TabIndex = 1;
-            this.SCIBusPCMTabPage.Text = "SCI-bus (PCM)";
+            this.SCIBusPCMTabPage.Text = "SCI-bus (Engine)";
             // 
             // SCIBusPCMReadMemoryPresetComboBox
             // 

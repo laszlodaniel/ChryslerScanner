@@ -32,7 +32,7 @@ namespace ChryslerScanner
         {
             Table.Clear();
             Table.Add("┌─────────────────────────┐                                                                                              ");
-            Table.Add("│ PCI-BUS MODULES         │ STATE: N/A                                                                                   ");
+            Table.Add("│ PCI-BUS (SAE J1850 VPW) │ STATE: N/A                                                                                   ");
             Table.Add("├─────────────────────────┼─────────────────────────────────────────────────────┬─────────────────────────┬─────────────┐");
             Table.Add("│ MESSAGE [HEX]           │ DESCRIPTION                                         │ VALUE                   │ UNIT        │");
             Table.Add("╞═════════════════════════╪═════════════════════════════════════════════════════╪═════════════════════════╪═════════════╡");

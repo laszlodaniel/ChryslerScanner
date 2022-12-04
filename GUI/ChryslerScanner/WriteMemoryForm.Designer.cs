@@ -277,7 +277,7 @@ namespace ChryslerScanner
             this.SCIBusPCMTabPage.Padding = new System.Windows.Forms.Padding(3);
             this.SCIBusPCMTabPage.Size = new System.Drawing.Size(516, 271);
             this.SCIBusPCMTabPage.TabIndex = 1;
-            this.SCIBusPCMTabPage.Text = "SCI-bus (PCM)";
+            this.SCIBusPCMTabPage.Text = "SCI-bus (Engine)";
             // 
             // SCIBusPCMWriteMemoryCopyBCMMileageButton
             // 
@@ -450,11 +450,11 @@ namespace ChryslerScanner
             // SCIBusPCMWriteMemorySKIMVTSSLabel
             // 
             this.SCIBusPCMWriteMemorySKIMVTSSLabel.AutoSize = true;
-            this.SCIBusPCMWriteMemorySKIMVTSSLabel.Location = new System.Drawing.Point(9, 44);
+            this.SCIBusPCMWriteMemorySKIMVTSSLabel.Location = new System.Drawing.Point(18, 44);
             this.SCIBusPCMWriteMemorySKIMVTSSLabel.Name = "SCIBusPCMWriteMemorySKIMVTSSLabel";
-            this.SCIBusPCMWriteMemorySKIMVTSSLabel.Size = new System.Drawing.Size(69, 13);
+            this.SCIBusPCMWriteMemorySKIMVTSSLabel.Size = new System.Drawing.Size(36, 13);
             this.SCIBusPCMWriteMemorySKIMVTSSLabel.TabIndex = 6;
-            this.SCIBusPCMWriteMemorySKIMVTSSLabel.Text = "SKIM/VTSS:";
+            this.SCIBusPCMWriteMemorySKIMVTSSLabel.Text = "SKIM:";
             // 
             // SCIBusPCMWriteMemorySRIMileageUnitLabel
             // 
@@ -519,12 +519,13 @@ namespace ChryslerScanner
             this.SCIBusPCMWriteMemorySKIMVTSSComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.SCIBusPCMWriteMemorySKIMVTSSComboBox.FormattingEnabled = true;
             this.SCIBusPCMWriteMemorySKIMVTSSComboBox.Items.AddRange(new object[] {
-            "disabled",
-            "enabled",
-            "N/A"});
-            this.SCIBusPCMWriteMemorySKIMVTSSComboBox.Location = new System.Drawing.Point(79, 40);
+            "Fuel enabled",
+            "Fuel disabled",
+            "Unknown",
+            "Reset to OK"});
+            this.SCIBusPCMWriteMemorySKIMVTSSComboBox.Location = new System.Drawing.Point(55, 40);
             this.SCIBusPCMWriteMemorySKIMVTSSComboBox.Name = "SCIBusPCMWriteMemorySKIMVTSSComboBox";
-            this.SCIBusPCMWriteMemorySKIMVTSSComboBox.Size = new System.Drawing.Size(80, 21);
+            this.SCIBusPCMWriteMemorySKIMVTSSComboBox.Size = new System.Drawing.Size(104, 21);
             this.SCIBusPCMWriteMemorySKIMVTSSComboBox.TabIndex = 7;
             this.SCIBusPCMWriteMemorySKIMVTSSComboBox.SelectedIndexChanged += new System.EventHandler(this.SCIBusPCMWriteMemorySKIMVTSSComboBox_SelectedIndexChanged);
             // 

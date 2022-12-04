@@ -27,9 +27,9 @@ namespace ChryslerScanner
         public string logic = null;
         public string configuration = null;
 
-        public string HeaderUnknown  = "│ SCI-BUS TRANSMISSION    │ STATE: N/A                                                                                   ";
-        public string HeaderDisabled = "│ SCI-BUS TRANSMISSION    │ STATE: DISABLED                                                                              ";
-        public string HeaderEnabled  = "│ SCI-BUS TRANSMISSION    │ STATE: ENABLED @ BAUD | LOGIC: | CONFIGURATION:                                              ";
+        public string HeaderUnknown  = "│ SCI-BUS (SAE J2610) TCM │ STATE: N/A                                                                                   ";
+        public string HeaderDisabled = "│ SCI-BUS (SAE J2610) TCM │ STATE: DISABLED                                                                              ";
+        public string HeaderEnabled  = "│ SCI-BUS (SAE J2610) TCM │ STATE: ENABLED @ BAUD | LOGIC: | CONFIGURATION:                                              ";
         public string EmptyLine      = "│                         │                                                     │                         │             │";
         public string HeaderModified = string.Empty;
 
@@ -116,22 +116,10 @@ namespace ChryslerScanner
                 Array.Copy(data, 5, payload, 0, payload.Length); // copy payload from the input byte array (without ID)
             }
 
-            byte ID = message[0];
-            ushort modifiedID;
-
-            if (ID == 0x14)
-            {
-                if (payload.Length > 0) modifiedID = (ushort)(((ID << 8) & 0xFF00) + payload[0]);
-                else modifiedID = (ushort)((ID << 8) & 0xFF00);
-            }
-            else
-            {
-                modifiedID = (ushort)((ID << 8) & 0xFF00);
-            }
-
             string DescriptionToInsert = string.Empty;
             string ValueToInsert = string.Empty;
             string UnitToInsert = string.Empty;
+            byte ID = message[0];
 
             if ((speed == "976.5 baud") || (speed == "7812.5 baud"))
             {
@@ -152,36 +140,48 @@ namespace ChryslerScanner
                 }
             }
 
-            string hexBytesToInsert;
+            string HexBytesToInsert;
 
             if (message.Length < 9) // max 8 message byte fits the message column
             {
-                hexBytesToInsert = Util.ByteToHexString(message, 0, message.Length) + " ";
+                HexBytesToInsert = Util.ByteToHexString(message, 0, message.Length) + " ";
             }
             else // trim message (display 7 bytes only) and insert two dots at the end indicating there's more to it
             {
-                hexBytesToInsert = Util.ByteToHexString(message, 0, 7) + " .. ";
+                HexBytesToInsert = Util.ByteToHexString(message, 0, 7) + " .. ";
             }
 
             if (DescriptionToInsert.Length > 51) DescriptionToInsert = Util.TruncateString(DescriptionToInsert, 48) + "...";
             if (ValueToInsert.Length > 23) ValueToInsert = Util.TruncateString(ValueToInsert, 20) + "...";
             if (UnitToInsert.Length > 11) UnitToInsert = Util.TruncateString(UnitToInsert, 8) + "...";
 
-            StringBuilder rowToAdd = new StringBuilder(EmptyLine); // add empty line first
+            StringBuilder RowToAdd = new StringBuilder(EmptyLine); // add empty line first
 
-            rowToAdd.Remove(HexBytesColumnStart, hexBytesToInsert.Length);
-            rowToAdd.Insert(HexBytesColumnStart, hexBytesToInsert);
+            RowToAdd.Remove(HexBytesColumnStart, HexBytesToInsert.Length);
+            RowToAdd.Insert(HexBytesColumnStart, HexBytesToInsert);
 
-            rowToAdd.Remove(DescriptionColumnStart, DescriptionToInsert.Length);
-            rowToAdd.Insert(DescriptionColumnStart, DescriptionToInsert);
+            RowToAdd.Remove(DescriptionColumnStart, DescriptionToInsert.Length);
+            RowToAdd.Insert(DescriptionColumnStart, DescriptionToInsert);
 
-            rowToAdd.Remove(ValueColumnStart, ValueToInsert.Length);
-            rowToAdd.Insert(ValueColumnStart, ValueToInsert);
+            RowToAdd.Remove(ValueColumnStart, ValueToInsert.Length);
+            RowToAdd.Insert(ValueColumnStart, ValueToInsert);
 
-            rowToAdd.Remove(UnitColumnStart, UnitToInsert.Length);
-            rowToAdd.Insert(UnitColumnStart, UnitToInsert);
+            RowToAdd.Remove(UnitColumnStart, UnitToInsert.Length);
+            RowToAdd.Insert(UnitColumnStart, UnitToInsert);
 
-            Diagnostics.AddRow(modifiedID, rowToAdd.ToString());
+            ushort modifiedID;
+
+            if (ID == 0x14)
+            {
+                if (payload.Length > 0) modifiedID = (ushort)(((ID << 8) & 0xFF00) + payload[0]);
+                else modifiedID = (ushort)((ID << 8) & 0xFF00);
+            }
+            else
+            {
+                modifiedID = (ushort)((ID << 8) & 0xFF00);
+            }
+
+            Diagnostics.AddRow(modifiedID, RowToAdd.ToString());
 
             UpdateHeader();
 

@@ -28,7 +28,7 @@ namespace ChryslerScanner
         {
             Table.Clear();
             Table.Add("┌─────────────────────────┐                                                                                              ");
-            Table.Add("│ SCI-BUS ENGINE          │ STATE: N/A                                                                                   ");
+            Table.Add("│ SCI-BUS (SAE J2610) PCM │ STATE: N/A                                                                                   ");
             Table.Add("├─────────────────────────┼─────────────────────────────────────────────────────┬─────────────────────────┬─────────────┐");
             Table.Add("│ MESSAGE [HEX]           │ DESCRIPTION                                         │ VALUE                   │ UNIT        │");
             Table.Add("╞═════════════════════════╪═════════════════════════════════════════════════════╪═════════════════════════╪═════════════╡");

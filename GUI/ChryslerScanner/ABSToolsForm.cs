@@ -526,6 +526,7 @@ namespace ChryslerScanner
                                     case 0xBF:
                                     case 0xBD:
                                     case 0xB1: // MK20
+                                    default:
                                         ABSMK20Type = true;
                                         ABSPartNumber = new byte[10];
                                         ABSPartNumberStart = 0x79; // start offset
@@ -541,7 +542,7 @@ namespace ChryslerScanner
                             {
                                 ABSPartNumberRequested = false;
 
-                                byte character;
+                                byte character = 0;
 
                                 if (ABSMK20Type) character = CCDBusResponseBytes[3]; // first payload byte
                                 else character = CCDBusResponseBytes[4]; // second payload byte

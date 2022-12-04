@@ -277,5 +277,61 @@ namespace ChryslerScanner
 
             return (byte)~crc_reg;
         }
+
+        public static byte[] GetSKIMUnlockKey(byte[] seed, string VIN)
+        {
+            byte[] result = new byte[3];
+
+            if (seed.Length == 2) // CCD
+            {
+                result[0] = seed[1];
+                result[1] = seed[1];
+                result[2] = seed[0];
+            }
+            else if (seed.Length == 4) // PCI
+            {
+                result[0] = seed[1];
+                result[1] = seed[2];
+                result[2] = seed[3];
+            }
+            else
+            {
+                return null;
+            }
+
+            byte temp = Encoding.ASCII.GetBytes(VIN)[16]; // start with 17th VIN character
+
+            result[2] += temp;
+            result[2] ^= temp;
+            result[1] += result[2];
+            result[0] += result[1];
+            result[0] ^= temp;
+
+            temp = Encoding.ASCII.GetBytes(VIN)[15]; // continue with 16th VIN character
+
+            result[2] += temp;
+            result[2] ^= temp;
+            result[1] += result[2];
+            result[0] += result[1];
+            result[0] ^= temp;
+
+            temp = Encoding.ASCII.GetBytes(VIN)[13]; // continue with 14th VIN character
+
+            result[2] += temp;
+            result[2] ^= temp;
+            result[1] += result[2];
+            result[0] += result[1];
+            result[0] ^= temp;
+
+            temp = Encoding.ASCII.GetBytes(VIN)[8]; // finish with 9th VIN character (also known as security field)
+
+            result[2] += temp;
+            result[2] ^= temp;
+            result[1] += result[2];
+            result[0] += result[1];
+            result[0] ^= temp;
+
+            return result;
+        }
     }
 }

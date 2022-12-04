@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.FaultCodeGroupBox = new System.Windows.Forms.GroupBox();
+            this.ReadFaultCodeFreezeFrameButton = new System.Windows.Forms.Button();
             this.EraseFaultCodesButton = new System.Windows.Forms.Button();
             this.ReadFaultCodesButton = new System.Windows.Forms.Button();
             this.BaudrateGroupBox = new System.Windows.Forms.GroupBox();
@@ -69,7 +70,6 @@
             this.RAMTableGroupBox = new System.Windows.Forms.GroupBox();
             this.RAMTableComboBox = new System.Windows.Forms.ComboBox();
             this.RAMTableSelectButton = new System.Windows.Forms.Button();
-            this.ReadFaultCodeFreezeFrameButton = new System.Windows.Forms.Button();
             this.FaultCodeGroupBox.SuspendLayout();
             this.BaudrateGroupBox.SuspendLayout();
             this.ActuatorTestGroupBox.SuspendLayout();
@@ -93,6 +93,16 @@
             this.FaultCodeGroupBox.TabIndex = 0;
             this.FaultCodeGroupBox.TabStop = false;
             this.FaultCodeGroupBox.Text = "Fault code";
+            // 
+            // ReadFaultCodeFreezeFrameButton
+            // 
+            this.ReadFaultCodeFreezeFrameButton.Location = new System.Drawing.Point(124, 16);
+            this.ReadFaultCodeFreezeFrameButton.Name = "ReadFaultCodeFreezeFrameButton";
+            this.ReadFaultCodeFreezeFrameButton.Size = new System.Drawing.Size(85, 23);
+            this.ReadFaultCodeFreezeFrameButton.TabIndex = 17;
+            this.ReadFaultCodeFreezeFrameButton.Text = "Freeze Frame";
+            this.ReadFaultCodeFreezeFrameButton.UseVisualStyleBackColor = true;
+            this.ReadFaultCodeFreezeFrameButton.Click += new System.EventHandler(this.ReadFaultCodeFreezeFrameButton_Click);
             // 
             // EraseFaultCodesButton
             // 
@@ -229,7 +239,7 @@
             "133B | IAC motor step up",
             "133C | IAC motor step down",
             "133D | LD pump solenoid",
-            "133E |",
+            "133E | All radiator fan relays",
             "133F |",
             "1340 | O2 sensor heater relay",
             "1341 | Overdrive lamp",
@@ -247,8 +257,8 @@
             "134D |",
             "134E |",
             "134F |",
-            "1350 | Transmission fan relay 1",
-            "1351 | Transmission fan relay 2",
+            "1350 | Transmission fan relay",
+            "1351 | Transmission PTU solenoid",
             "1352 | O2 X/1 sensor heater relay",
             "1353 | O2 X/2 sensor heater relay",
             "1354 |",
@@ -496,7 +506,7 @@
             "1459 | Cruise control status 2",
             "145A | Output shaft speed",
             "145B | Governor pressure duty cycle",
-            "145C | Calculated engine load",
+            "145C | Engine load",
             "145D |",
             "145E |",
             "145F | EGR position sensor voltage",
@@ -646,7 +656,7 @@
             this.ResetMemoryComboBox.IntegralHeight = false;
             this.ResetMemoryComboBox.Items.AddRange(new object[] {
             "2300 |",
-            "2301 | Engine fault codes",
+            "2301 | All fault code related data",
             "2302 | Adaptive fuel factor",
             "2303 | IAC counter",
             "2304 | Minimum TPS volts",
@@ -664,7 +674,7 @@
             "2310 | PS fault enable",
             "2311 | PS fault disable",
             "2312 | EEPROM / Adaptive numerator",
-            "2313 | SKIM F4",
+            "2313 | SKIM",
             "2314 | Duty cycle monitor",
             "2315 | Trip/idle/cruise/injector/O/D off/water in fuel",
             "2316 |",
@@ -885,16 +895,6 @@
             this.RAMTableSelectButton.Text = "Select";
             this.RAMTableSelectButton.UseVisualStyleBackColor = true;
             this.RAMTableSelectButton.Click += new System.EventHandler(this.RAMTableSelectButton_Click);
-            // 
-            // ReadFaultCodeFreezeFrameButton
-            // 
-            this.ReadFaultCodeFreezeFrameButton.Location = new System.Drawing.Point(124, 16);
-            this.ReadFaultCodeFreezeFrameButton.Name = "ReadFaultCodeFreezeFrameButton";
-            this.ReadFaultCodeFreezeFrameButton.Size = new System.Drawing.Size(85, 23);
-            this.ReadFaultCodeFreezeFrameButton.TabIndex = 17;
-            this.ReadFaultCodeFreezeFrameButton.Text = "Freeze Frame";
-            this.ReadFaultCodeFreezeFrameButton.UseVisualStyleBackColor = true;
-            this.ReadFaultCodeFreezeFrameButton.Click += new System.EventHandler(this.ReadFaultCodeFreezeFrameButton_Click);
             // 
             // EngineToolsForm
             // 
