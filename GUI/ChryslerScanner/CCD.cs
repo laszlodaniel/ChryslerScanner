@@ -878,42 +878,41 @@ namespace ChryslerScanner
 
                     if ((payload[0] == 0) && (payload[1] == 0))
                     {
-                        DescriptionToInsert = "STATUS EMPTY";
+                        DescriptionToInsert += "ATX";
+                        break;
                     }
+
+                    if (Util.IsBitSet(payload[0], 7)) Status.Add("MTX"); // manual transmission
+                    else Status.Add("ATX"); // automatic transmission
+
+                    if (Util.IsBitSet(payload[0], 6)) Status.Add("-6-");
+                    if (Util.IsBitSet(payload[0], 5)) Status.Add("CEL"); // chech engine lamp
+                    if (Util.IsBitSet(payload[0], 4)) Status.Add("-4-");
+                    if (Util.IsBitSet(payload[0], 3)) Status.Add("ACT"); // A/C clutch
+                    if (Util.IsBitSet(payload[0], 2)) Status.Add("BPP"); // brake pedal pressed
+                    if (Util.IsBitSet(payload[0], 1)) Status.Add("TPP"); // throttle pedal pressed
+                    if (Util.IsBitSet(payload[0], 0)) Status.Add("CCE"); // cruise control engaged
+
+                    if (Util.IsBitSet(payload[1], 7)) Status.Add("-7-");
+                    if (Util.IsBitSet(payload[1], 6)) Status.Add("-6-");
+                    if (Util.IsBitSet(payload[1], 5)) Status.Add("-5-");
+                    if (Util.IsBitSet(payload[1], 4)) Status.Add("TFR"); // transmission fan relay
+                    if (Util.IsBitSet(payload[1], 3)) Status.Add("-3-");
+                    if (Util.IsBitSet(payload[1], 2)) Status.Add("CCL"); // cruise control lamp
+
+                    if (Util.IsBitSet(payload[1], 1) && Util.IsBitSet(payload[1], 0)) Status.Add("TMR"); // torque management response
                     else
                     {
-                        if (Util.IsBitSet(payload[0], 7)) Status.Add("MTX"); // manual transmission
-                        else Status.Add("ATX"); // automatic transmission
-
-                        if (Util.IsBitSet(payload[0], 6)) Status.Add("-6-");
-                        if (Util.IsBitSet(payload[0], 5)) Status.Add("CEL"); // chech engine lamp
-                        if (Util.IsBitSet(payload[0], 4)) Status.Add("-4-");
-                        if (Util.IsBitSet(payload[0], 3)) Status.Add("ACT"); // A/C clutch
-                        if (Util.IsBitSet(payload[0], 2)) Status.Add("BPP"); // brake pedal pressed
-                        if (Util.IsBitSet(payload[0], 1)) Status.Add("TPP"); // throttle pedal pressed
-                        if (Util.IsBitSet(payload[0], 0)) Status.Add("CCE"); // cruise control engaged
-
-                        if (Util.IsBitSet(payload[1], 7)) Status.Add("-7-");
-                        if (Util.IsBitSet(payload[1], 6)) Status.Add("-6-");
-                        if (Util.IsBitSet(payload[1], 5)) Status.Add("-5-");
-                        if (Util.IsBitSet(payload[1], 4)) Status.Add("TFR"); // transmission fan relay
-                        if (Util.IsBitSet(payload[1], 3)) Status.Add("-3-");
-                        if (Util.IsBitSet(payload[1], 2)) Status.Add("CCL"); // cruise control lamp
-
-                        if (Util.IsBitSet(payload[1], 1) && Util.IsBitSet(payload[1], 0)) Status.Add("TMR"); // torque management response
-                        else
-                        {
-                            if (Util.IsBitSet(payload[1], 1)) Status.Add("TM1"); // torque management response 1
-                            if (Util.IsBitSet(payload[1], 0)) Status.Add("TM0"); // torque management response 0
-                        }
-
-                        foreach (string s in Status)
-                        {
-                            DescriptionToInsert += s + " | ";
-                        }
-
-                        if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
+                        if (Util.IsBitSet(payload[1], 1)) Status.Add("TM1"); // torque management response 1
+                        if (Util.IsBitSet(payload[1], 0)) Status.Add("TM0"); // torque management response 0
                     }
+
+                    foreach (string s in Status)
+                    {
+                        DescriptionToInsert += s + " | ";
+                    }
+
+                    if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
                     break;
                 case 0xA5:
                     DescriptionToInsert = "PWM FAN DUTY CYCLE";

@@ -288,37 +288,36 @@ namespace ChryslerScanner
                     
                     if ((payload[0] == 0) && (payload[1] == 0))
                     {
-                        DescriptionToInsert = "STATUS EMPTY";
+                        DescriptionToInsert += "ATX";
+                        break;
                     }
-                    else
+
+                    if (Util.IsBitSet(payload[1], 7)) Status.Add("MTX"); // manual transmission
+                    else Status.Add("ATX"); // automatic transmission
+
+                    if (Util.IsBitSet(payload[1], 6)) Status.Add("-6-");
+                    if (Util.IsBitSet(payload[1], 5)) Status.Add("-5-");
+                    if (Util.IsBitSet(payload[1], 4)) Status.Add("-4-");
+                    if (Util.IsBitSet(payload[1], 3)) Status.Add("ACT"); // A/C clutch
+                    if (Util.IsBitSet(payload[1], 2)) Status.Add("BPP"); // break pedal pressed
+                    if (Util.IsBitSet(payload[1], 1)) Status.Add("TPP"); // throttle pedal pressed
+                    if (Util.IsBitSet(payload[1], 0)) Status.Add("CCE"); // cruise control engaged
+
+                    if (Util.IsBitSet(payload[0], 7)) Status.Add("-7-");
+                    if (Util.IsBitSet(payload[0], 6)) Status.Add("-6-");
+                    if (Util.IsBitSet(payload[0], 5)) Status.Add("-5-");
+                    if (Util.IsBitSet(payload[0], 4)) Status.Add("-4-");
+                    if (Util.IsBitSet(payload[0], 3)) Status.Add("-3-");
+                    if (Util.IsBitSet(payload[0], 2)) Status.Add("CRL"); // cruise lamp
+                    if (Util.IsBitSet(payload[0], 1)) Status.Add("-1-");
+                    if (Util.IsBitSet(payload[0], 0)) Status.Add("SKF"); // SKIM found
+
+                    foreach (string s in Status)
                     {
-                        if (Util.IsBitSet(payload[1], 7)) Status.Add("MTX"); // manual transmission
-                        else Status.Add("ATX"); // automatic transmission
-
-                        if (Util.IsBitSet(payload[1], 6)) Status.Add("-6-");
-                        if (Util.IsBitSet(payload[1], 5)) Status.Add("-5-");
-                        if (Util.IsBitSet(payload[1], 4)) Status.Add("-4-");
-                        if (Util.IsBitSet(payload[1], 3)) Status.Add("ACT"); // A/C clutch
-                        if (Util.IsBitSet(payload[1], 2)) Status.Add("BKP"); // break pressed
-                        if (Util.IsBitSet(payload[1], 1)) Status.Add("TPP"); // throttle pedal pressed
-                        if (Util.IsBitSet(payload[1], 0)) Status.Add("CCE"); // cruise control engaged
-
-                        if (Util.IsBitSet(payload[0], 7)) Status.Add("-7-");
-                        if (Util.IsBitSet(payload[0], 6)) Status.Add("-6-");
-                        if (Util.IsBitSet(payload[0], 5)) Status.Add("-5-");
-                        if (Util.IsBitSet(payload[0], 4)) Status.Add("-4-");
-                        if (Util.IsBitSet(payload[0], 3)) Status.Add("-3-");
-                        if (Util.IsBitSet(payload[0], 2)) Status.Add("CRL"); // cruise lamp
-                        if (Util.IsBitSet(payload[0], 1)) Status.Add("-1-");
-                        if (Util.IsBitSet(payload[0], 0)) Status.Add("SKF"); // SKIM found
-
-                        foreach (string s in Status)
-                        {
-                            DescriptionToInsert += s + " | ";
-                        }
-
-                        if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
+                        DescriptionToInsert += s + " | ";
                     }
+
+                    if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
                     break;
                 case 0x37:
                     DescriptionToInsert = "SHIFT LEVER POSITION";
@@ -560,6 +559,20 @@ namespace ChryslerScanner
 
                     ValueToInsert = "OBD2 P" + Util.ByteToHexString(payload, 1, 2).Replace(" ", "");
                     break;
+                case 0x6E:
+                    DescriptionToInsert = "PCM BEACON PAYLOAD #1";
+
+                    if (message.Length < 7) break;
+
+                    ValueToInsert = Util.ByteToHexString(payload, 1, 5);
+                    break;
+                case 0x6F:
+                    DescriptionToInsert = "PCM BEACON PAYLOAD #2";
+
+                    if (message.Length < 7) break;
+
+                    ValueToInsert = Util.ByteToHexString(payload, 1, 5);
+                    break;
                 case 0x72:
                     DescriptionToInsert = "BCM MILEAGE";
 
@@ -679,15 +692,15 @@ namespace ChryslerScanner
 
                     if (message.Length < 3) break;
 
-                    List<string> WarningList = new List<string>();
-                    WarningList.Clear();
-
                     if (payload[0] == 0)
                     {
                         ValueToInsert = "NO WARNING";
                     }
                     else
                     {
+                        List<string> WarningList = new List<string>();
+                        WarningList.Clear();
+
                         if (Util.IsBitSet(payload[0], 2)) WarningList.Add("-7-");
                         if (Util.IsBitSet(payload[0], 6)) WarningList.Add("-6-");
                         if (Util.IsBitSet(payload[0], 5)) WarningList.Add("-5-");

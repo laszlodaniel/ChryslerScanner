@@ -460,7 +460,7 @@
             "142B |",
             "142C | Cruise switch voltage sense",
             "142D | Ambient/Battery temperature",
-            "142E |",
+            "142E | Fuel factor (not LH)",
             "142F | Upstream O2 2/1 sensor voltage",
             "1430 | Knock sensor 2 voltage",
             "1431 | Long term fuel trim 2",
@@ -656,8 +656,8 @@
             this.ResetMemoryComboBox.IntegralHeight = false;
             this.ResetMemoryComboBox.Items.AddRange(new object[] {
             "2300 |",
-            "2301 | All fault code related data",
-            "2302 | Adaptive fuel factor",
+            "2301 | All fault data",
+            "2302 | Adaptive fuel factor (LTFT)",
             "2303 | IAC counter",
             "2304 | Minimum TPS volts",
             "2305 | Flex fuel percent",
@@ -676,7 +676,7 @@
             "2312 | EEPROM / Adaptive numerator",
             "2313 | SKIM",
             "2314 | Duty cycle monitor",
-            "2315 | Trip/idle/cruise/injector/O/D off/water in fuel",
+            "2315 |",
             "2316 |",
             "2317 |",
             "2318 |",

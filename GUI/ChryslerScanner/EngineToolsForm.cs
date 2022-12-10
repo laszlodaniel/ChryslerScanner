@@ -21,7 +21,7 @@ namespace ChryslerScanner
         private byte DiagnosticItemCount = 0;
         private List<byte[]> DiagnosticItems = new List<byte[]>();
         private byte FirstDiagnosticItemID = 0;
-        private byte[] WordRequestFilter = new byte[6] { 0x0A, 0x0C, 0x27, 0x29, 0x35, 0x4B };
+        private byte[] WordRequestFilter = new byte[8] { 0x0A, 0x0C, 0x27, 0x29, 0x35, 0x3C, 0x4B, 0x7A };
         private byte WordRequestCount = 0;
 
         private enum SCI_ID
@@ -895,7 +895,7 @@ namespace ChryslerScanner
             "142B |",
             "142C | Cruise switch voltage sense",
             "142D | Ambient/Battery temperature",
-            "142E |",
+            "142E | Fuel factor (not LH)",
             "142F | Upstream O2 2/1 sensor voltage",
             "1430 | Knock sensor 2 voltage",
             "1431 | Long term fuel trim 2",
@@ -1085,8 +1085,8 @@ namespace ChryslerScanner
                     "F439 |",
                     "F43A | Charging voltage",
                     "F43B | Cruise set speed",
-                    "F43C | Bit state 5",
-                    "F43D | Bit state 6",
+                    "F43C3D | Bit state 5",
+                    "F43D | ",
                     "F43E | Idle air control motor steps",
                     "F43F | Cruise control status 1",
                     "F440 | Vehicle theft alarm status",
@@ -1147,7 +1147,7 @@ namespace ChryslerScanner
                     "F477 | DTC 5",
                     "F478 | DTC 6",
                     "F479 | DTC 7",
-                    "F47A |",
+                    "F47A7B | SPI transfer result",
                     "F47B |",
                     "F47C |",
                     "F47D |",

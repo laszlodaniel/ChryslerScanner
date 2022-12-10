@@ -1596,14 +1596,18 @@ namespace ChryslerScanner
                         switch (payload[0])
                         {
                             case 0x01:
-                                double BTSVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "BATTERY TEMPERATURE SENSOR VOLTAGE";
+
+                                double BTSVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(BTSVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x02:
-                                double O2S11Voltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "UPSTREAM O2 1/1 SENSOR VOLTAGE";
+
+                                double O2S11Voltage = payload[1] * 0.0196;
+
                                 ValueToInsert = Math.Round(O2S11Voltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
@@ -1625,39 +1629,50 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x06:
-                                double ECTSVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "ENGINE COOLANT TEMPERATURE SENSOR VOLTAGE";
+
+                                double ECTSVoltage = payload[1] * 0.0196;
+
                                 ValueToInsert = Math.Round(ECTSVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x07:
-                                double TPSVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "THROTTLE POSITION SENSOR VOLTAGE";
+
+                                double TPSVoltage = payload[1] * 0.0196;
+
                                 ValueToInsert = Math.Round(TPSVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x08:
-                                double MinTPSVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "MINIMUM TPS VOLTAGE";
+
+                                double MinTPSVoltage = payload[1] * 0.0196;
+
                                 ValueToInsert = Math.Round(MinTPSVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x09:
-                                double KnockSensorVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "KNOCK SENSOR 1 VOLTAGE";
+
+                                double KnockSensorVoltage = payload[1] * 0.0196;
+
                                 ValueToInsert = Math.Round(KnockSensorVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x0A:
-                                double BatteryVoltage = payload[1] * 0.0625;
                                 DescriptionToInsert = "BATTERY VOLTAGE";
+
+                                double BatteryVoltage = payload[1] * 0.0625;
+
                                 ValueToInsert = Math.Round(BatteryVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x0B:
+                                DescriptionToInsert = "INTAKE MANIFOLD ABSOLUTE PRESSURE (MAP)";
+
                                 double MAPPSI = payload[1] * 0.059756;
                                 double MAPKPA = MAPPSI * 6.894757;
-                                DescriptionToInsert = "INTAKE MANIFOLD ABSOLUTE PRESSURE (MAP)";
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
@@ -1675,15 +1690,20 @@ namespace ChryslerScanner
                                 ValueToInsert = payload[1].ToString("0");
                                 break;
                             case 0x0E:
-                                double LTFT1 = payload[1] * 0.196;
                                 DescriptionToInsert = "LONG TERM FUEL TRIM 1";
+
+                                double LTFT1 = payload[1] * 0.196;
+
+                                if (payload[1] >= 0x80) LTFT1 -= 50.0;
+
                                 ValueToInsert = Math.Round(LTFT1, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
                             case 0x0F:
+                                DescriptionToInsert = "BAROMETRIC PRESSURE";
+
                                 double BarometricPressurePSI = payload[1] * 0.059756;
                                 double BarometricPressureKPA = BarometricPressurePSI * 6.894757;
-                                DescriptionToInsert = "BAROMETRIC PRESSURE";
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
@@ -1698,12 +1718,15 @@ namespace ChryslerScanner
                                 break;
                             case 0x10:
                                 DescriptionToInsert = "MINIMUM AIR FLOW TEST";
+
                                 if (payload[1] == 0) ValueToInsert = "STOPPED";
                                 else ValueToInsert = "RUNNING";
                                 break;
                             case 0x11:
-                                double EngineSpeed = payload[1] * 32.0;
                                 DescriptionToInsert = "ENGINE SPEED";
+
+                                double EngineSpeed = payload[1] * 32.0;
+                                
                                 ValueToInsert = EngineSpeed.ToString("0");
                                 UnitToInsert = "RPM";
                                 break;
@@ -1718,41 +1741,52 @@ namespace ChryslerScanner
                                 ValueToInsert = payload[1].ToString("0");
                                 break;
                             case 0x15:
-                                double SparkAdvance = payload[1] * 0.5;
                                 DescriptionToInsert = "SPARK ADVANCE";
+
+                                double SparkAdvance = payload[1] * 0.5;
+                                
                                 ValueToInsert = Math.Round(SparkAdvance, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "DEG";
                                 break;
                             case 0x16:
                             case 0x21:
-                                double Cylinder1Retard = payload[1] * 0.5;
                                 DescriptionToInsert = "CYLINDER 1 RETARD";
+
+                                double Cylinder1Retard = payload[1] * 0.5;
+                                
                                 ValueToInsert = Math.Round(Cylinder1Retard, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "DEG";
                                 break;
                             case 0x17:
-                                double Cylinder2Retard = payload[1] * 0.5;
                                 DescriptionToInsert = "CYLINDER 2 RETARD";
+
+                                double Cylinder2Retard = payload[1] * 0.5;
+                                
                                 ValueToInsert = Math.Round(Cylinder2Retard, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "DEG";
                                 break;
                             case 0x18:
-                                double Cylinder3Retard = payload[1] * 0.5;
                                 DescriptionToInsert = "CYLINDER 3 RETARD";
+
+                                double Cylinder3Retard = payload[1] * 0.5;
+                                
                                 ValueToInsert = Math.Round(Cylinder3Retard, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "DEG";
                                 break;
                             case 0x19:
-                                double Cylinder4Retard = payload[1] * 0.5;
                                 DescriptionToInsert = "CYLINDER 4 RETARD";
+
+                                double Cylinder4Retard = payload[1] * 0.5;
+                                
                                 ValueToInsert = Math.Round(Cylinder4Retard, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "DEG";
                                 break;
                             case 0x1A:
-                                double TargetBoostPSI = payload[1] * 0.115294117;
-                                double TargetBoostKPA = TargetBoostPSI * 6.89475729;
                                 DescriptionToInsert = "TARGET BOOST";
 
+                                double TargetBoostPSI = payload[1] * 0.115294117;
+                                double TargetBoostKPA = TargetBoostPSI * 6.89475729;
+                                
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
                                     ValueToInsert = Math.Round(TargetBoostPSI, 1).ToString("0.0").Replace(",", ".");
@@ -1765,10 +1799,11 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x1B:
-                                double IntakeAirTemperatureC = payload[1] - 128;
-                                double IntakeAirTemperatureF = 1.8 * IntakeAirTemperatureC + 32.0;
                                 DescriptionToInsert = "INTAKE AIR TEMPERATURE";
 
+                                double IntakeAirTemperatureC = payload[1] - 128;
+                                double IntakeAirTemperatureF = 1.8 * IntakeAirTemperatureC + 32.0;
+                                
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
                                     ValueToInsert = Math.Round(IntakeAirTemperatureF).ToString("0");
@@ -1781,15 +1816,18 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x1C:
-                                double IATVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "INTAKE AIR TEMPERATURE SENSOR VOLTAGE";
+
+                                double IATVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(IATVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x1D:
+                                DescriptionToInsert = "CRUISE SET SPEED";
+
                                 double CruiseSetSpeedMPH = payload[1] * 0.5;
                                 double CruiseSetSpeedKMH = CruiseSetSpeedMPH * 1.609344;
-                                DescriptionToInsert = "CRUISE SET SPEED";
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
@@ -1941,8 +1979,10 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x24:
-                                double BatteryChargingVoltage = payload[1] * 0.0625;
                                 DescriptionToInsert = "BATTERY CHARGING VOLTAGE";
+
+                                double BatteryChargingVoltage = payload[1] * 0.0625;
+                                
                                 ValueToInsert = Math.Round(BatteryChargingVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
@@ -1951,8 +1991,10 @@ namespace ChryslerScanner
                                 ValueToInsert = payload[1].ToString("0");
                                 break;
                             case 0x28:
-                                double WDCPercent = payload[1] * 0.5;
                                 DescriptionToInsert = "WASTEGATE DUTY CYCLE";
+
+                                double WDCPercent = payload[1] * 0.5;
+                                
                                 ValueToInsert = Math.Round(WDCPercent, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
@@ -1969,15 +2011,18 @@ namespace ChryslerScanner
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                 break;
                             case 0x2C:
-                                double CSWVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "CRUISE SWITCH VOLTAGE SENSE";
+
+                                double CSWVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(CSWVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x2D:
+                                DescriptionToInsert = "AMBIENT/BATTERY TEMPERATURE";
+
                                 double AmbientTemperatureC = payload[1] - 128;
                                 double AmbientTemperatureF = 1.8 * AmbientTemperatureC + 32.0;
-                                DescriptionToInsert = "AMBIENT/BATTERY TEMPERATURE";
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
@@ -1990,35 +2035,50 @@ namespace ChryslerScanner
                                     UnitToInsert = "°C";
                                 }
                                 break;
+                            case 0x2E:
+                                DescriptionToInsert = "FUEL FACTOR (NOT LH)";
+                                ValueToInsert = payload[1].ToString("0");
+                                break;
                             case 0x2F:
-                                double O2S21Voltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "UPSTREAM O2 2/1 SENSOR VOLTAGE";
+
+                                double O2S21Voltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(O2S21Voltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x30:
-                                double KnockSensor2Voltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "KNOCK SENSOR 2 VOLTAGE";
+
+                                double KnockSensor2Voltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(KnockSensor2Voltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x31:
-                                double LTFT2 = payload[1] * 0.196;
                                 DescriptionToInsert = "LONG TERM FUEL TRIM 2";
+
+                                double LTFT2 = payload[1] * 0.196;
+
+                                if (payload[1] >= 0x80) LTFT2 -= 50.0;
+
                                 ValueToInsert = Math.Round(LTFT2, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
                             case 0x32:
-                                double ACHSPSVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "A/C HIGH-SIDE PRESSURE SENSOR VOLTAGE";
+
+                                double ACHSPSVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(ACHSPSVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x33:
-                                double ACHSPressurePSI = payload[1] * 1.961;
-                                double ACHSPressureKPA = ACHSPressurePSI * 6.894757;
                                 DescriptionToInsert = "A/C HIGH-SIDE PRESSURE";
 
+                                double ACHSPressurePSI = payload[1] * 1.961;
+                                double ACHSPressureKPA = ACHSPressurePSI * 6.894757;
+                                
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
                                     ValueToInsert = Math.Round(ACHSPressurePSI, 1).ToString("0.0").Replace(",", ".");
@@ -2031,8 +2091,10 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x34:
-                                double FlexFuelSensorVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "FLEX FUEL SENSOR VOLTAGE";
+
+                                double FlexFuelSensorVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(FlexFuelSensorVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
@@ -2051,27 +2113,34 @@ namespace ChryslerScanner
 
                                 break;
                             case 0x3E:
-                                double CalPotVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "CALPOT VOLTAGE";
+
+                                double CalPotVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(CalPotVoltage, 31).ToString("0.000").Replace(",", ".");
                                 break;
                             case 0x3F:
-                                double O2S12Voltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "DOWNSTREAM O2 1/2 SENSOR VOLTAGE";
+
+                                double O2S12Voltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(O2S12Voltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x40:
-                                double MAPSensorVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "MAP SENSOR VOLTAGE";
+
+                                double MAPSensorVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(MAPSensorVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x41:
-                                byte VehicleSpeedMPH = payload[1];
-                                double VehicleSpeedKMH = VehicleSpeedMPH * 1.609344;
                                 DescriptionToInsert = "VEHICLE SPEED";
 
+                                byte VehicleSpeedMPH = payload[1];
+                                double VehicleSpeedKMH = VehicleSpeedMPH * 1.609344;
+                                
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
                                     ValueToInsert = VehicleSpeedMPH.ToString("0");
@@ -2103,10 +2172,11 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x45:
-                                double MAPVacuumPSI = payload[1] * 0.059756;
-                                double MAPVacuumKPA = MAPVacuumPSI * 6.894757;
                                 DescriptionToInsert = "MAP VACUUM";
 
+                                double MAPVacuumPSI = payload[1] * 0.059756;
+                                double MAPVacuumKPA = MAPVacuumPSI * 6.894757;
+                                
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
                                     ValueToInsert = Math.Round(MAPVacuumPSI, 1).ToString("0.0").Replace(",", ".");
@@ -2119,14 +2189,18 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x46:
-                                double RelativeThrottlePosition = payload[1] * 0.0196;
-                                DescriptionToInsert = "RELATIVE THROTTLE POSITION";
-                                ValueToInsert = Math.Round(RelativeThrottlePosition, 3).ToString("0.000").Replace(",", ".");
+                                DescriptionToInsert = "DELTA THROTTLE POSITION";
+
+                                double DeltaThrottlePosition = payload[1] * 0.0196;
+                                
+                                ValueToInsert = Math.Round(DeltaThrottlePosition, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x47:
-                                double SparkAdvance2 = payload[1] * 0.5;
                                 DescriptionToInsert = "SPARK ADVANCE";
+
+                                double SparkAdvance2 = payload[1] * 0.5;
+                                
                                 ValueToInsert = Math.Round(SparkAdvance2, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "DEG";
                                 break;
@@ -2150,8 +2224,10 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x49:
-                                double O2S22Voltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "DOWNSTREAM O2 2/2 SENSOR VOLTAGE";
+
+                                double O2S22Voltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(O2S22Voltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
@@ -2194,16 +2270,19 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x4E:
-                                double FuelLevelSensorVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "FUEL LEVEL SENSOR VOLTAGE";
+
+                                double FuelLevelSensorVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(FuelLevelSensorVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x4F:
-                                double FuelLevelG = payload[1] * 0.125;
-                                double FuelLevelL = FuelLevelG * 3.785412;
                                 DescriptionToInsert = "FUEL LEVEL";
 
+                                double FuelLevelG = payload[1] * 0.125;
+                                double FuelLevelL = FuelLevelG * 3.785412;
+                                
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
                                     ValueToInsert = Math.Round(FuelLevelG, 1).ToString("0.0").Replace(",", ".");
@@ -2394,26 +2473,34 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x5A:
-                                double OutputShaftSpeed = payload[1] * 20.0;
                                 DescriptionToInsert = "OUTPUT SHAFT SPEED";
+
+                                double OutputShaftSpeed = payload[1] * 20.0;
+                                
                                 ValueToInsert = OutputShaftSpeed.ToString("0");
                                 UnitToInsert = "RPM";
                                 break;
                             case 0x5B:
-                                double GovPDC = payload[1] * 0.3921568627;
                                 DescriptionToInsert = "GOVERNOR PRESSURE DUTY CYCLE";
+
+                                double GovPDC = payload[1] * 0.3921568627;
+                                
                                 ValueToInsert = Math.Round(GovPDC, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
                             case 0x5C:
-                                double EngineLoadB = payload[1] * 0.3921568627;
                                 DescriptionToInsert = "ENGINE LOAD";
+
+                                double EngineLoadB = payload[1] * 0.3921568627;
+                                
                                 ValueToInsert = Math.Round(EngineLoadB, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
                             case 0x5F:
-                                double EGRSensorVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "EGR POSITION SENSOR VOLTAGE";
+
+                                double EGRSensorVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(EGRSensorVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
@@ -2422,21 +2509,26 @@ namespace ChryslerScanner
                                 ValueToInsert = payload[1].ToString("0");
                                 break;
                             case 0x64:
-                                double ActualPurgeCurrent = payload[1] * 0.0196;
                                 DescriptionToInsert = "ACTUAL PURGE CURRENT";
+
+                                double ActualPurgeCurrent = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(ActualPurgeCurrent, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "A";
                                 break;
                             case 0x65:
-                                double CTSVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "CATALYST TEMPERATURE SENSOR VOLTAGE";
+
+                                double CTSVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(CTSVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x66:
+                                DescriptionToInsert = "CATALYST TEMPERATURE";
+
                                 double CatalystTemperatureC = payload[1] - 128;
                                 double CatalystTemperatureF = 1.8 * CatalystTemperatureC + 32.0;
-                                DescriptionToInsert = "CATALYST TEMPERATURE";
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
@@ -2450,33 +2542,43 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x69:
-                                double ATSVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "AMBIENT TEMPERATURE SENSOR VOLTAGE";
+
+                                double ATSVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(ATSVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x6D:
-                                double TCSwVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "T-CASE SWITCH VOLTAGE";
+
+                                double TCSwVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(TCSwVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x7A:
-                                double FCACurrent = payload[1] * 0.0196;
                                 DescriptionToInsert = "FCA CURRENT";
+
+                                double FCACurrent = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(FCACurrent, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "A";
                                 break;
                             case 0x7C:
-                                double OTSVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "OIL TEMPERATURE SENSOR VOLTAGE";
+
+                                double OTSVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(OTSVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x7D:
+                                DescriptionToInsert = "OIL TEMPERATURE";
+
                                 double OilTemperatureC = payload[1] - 64;
                                 double OilTemperatureF = 1.8 * OilTemperatureC + 32.0;
-                                DescriptionToInsert = "OIL TEMPERATURE";
+                                
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
@@ -2766,98 +2868,45 @@ namespace ChryslerScanner
                         }
                         break;
                     case 0x21:
-                        DescriptionToInsert = "SET ENGINE PARAMETER";
+                        DescriptionToInsert = "IGNITION TIMING";
 
                         if (message.Length < 3) break;
 
                         switch (payload[0])
                         {
                             case 0x00:
-                                DescriptionToInsert = "UNKILL SPARK SCATTER";
-
-                                switch (payload[1])
-                                {
-                                    case 0x00:
-                                        ValueToInsert = "TIMING ABOLISHED";
-                                        break;
-                                    case 0x01:
-                                        ValueToInsert = "TIMING INITIATED";
-                                        break;
-                                    case 0x02:
-                                        ValueToInsert = "REJECTED (OPEN THROTTLE)";
-                                        break;
-                                    case 0x03:
-                                        ValueToInsert = "REJECTED (SLP)";
-                                        break;
-                                    case 0x10:
-                                        ValueToInsert = "SYNC INITIATED";
-                                        break;
-                                    default:
-                                        ValueToInsert = "UNDEFINED";
-                                        break;
-                                }
-
+                                DescriptionToInsert += " | UNKILL SPARK SCATTER";
                                 break;
                             case 0x01:
-                                DescriptionToInsert = "KILL SPARK SCATTER";
-
-                                switch (payload[1])
-                                {
-                                    case 0x00:
-                                        ValueToInsert = "TIMING ABOLISHED";
-                                        break;
-                                    case 0x01:
-                                        ValueToInsert = "TIMING INITIATED";
-                                        break;
-                                    case 0x02:
-                                        ValueToInsert = "REJECTED (OPEN THROTTLE)";
-                                        break;
-                                    case 0x03:
-                                        ValueToInsert = "REJECTED (SLP)";
-                                        break;
-                                    case 0x10:
-                                        ValueToInsert = "SYNC INITIATED";
-                                        break;
-                                    default:
-                                        ValueToInsert = "UNDEFINED";
-                                        break;
-                                }
-
-                                break;
-                            case 0x10:
-                                DescriptionToInsert = "SET SYNC MODE";
-
-                                switch (payload[1])
-                                {
-                                    case 0x00:
-                                        ValueToInsert = "TIMING ABOLISHED";
-                                        break;
-                                    case 0x01:
-                                        ValueToInsert = "TIMING INITIATED";
-                                        break;
-                                    case 0x02:
-                                        ValueToInsert = "REJECTED (OPEN THROTTLE)";
-                                        break;
-                                    case 0x03:
-                                        ValueToInsert = "REJECTED (SLP)";
-                                        break;
-                                    case 0x10:
-                                        ValueToInsert = "SYNC INITIATED";
-                                        break;
-                                    default:
-                                        ValueToInsert = "UNDEFINED";
-                                        break;
-                                }
-
+                                DescriptionToInsert += " | KILL SPARK SCATTER";
                                 break;
                             default:
-                                DescriptionToInsert = "SET ENGINE PARAMETER | OFFSET: " + Util.ByteToHexString(payload, 0, 1);
+                                DescriptionToInsert += " | MODE: " + Util.ByteToHexString(payload, 0, 1);
+                                break;
+                        }
+
+                        switch (payload[1])
+                        {
+                            case 0x00:
+                                ValueToInsert = "BASIC TIMING ABOLISHED";
+                                break;
+                            case 0x01:
+                                ValueToInsert = "BASIC TIMING INITIATED";
+                                break;
+                            case 0x02:
+                                ValueToInsert = "REJECTED (OPEN THR)";
+                                break;
+                            case 0x03:
+                                ValueToInsert = "REJECTED (IN DRIVE)";
+                                break;
+                            default:
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                UnitToInsert = "UNDEFINED";
                                 break;
                         }
                         break;
                     case 0x22:
-                        DescriptionToInsert = "SEND ENGINE PARAMETERS";
+                        DescriptionToInsert = "READ ENGINE PARAMETER";
 
                         if (message.Length < 4) break;
 
@@ -2961,7 +3010,7 @@ namespace ChryslerScanner
                                 DescriptionToInsert = "RESET DUTY CYCLE MONITOR";
                                 break;
                             case 0x15:
-                                DescriptionToInsert = "RESET TRIP/IDLE/CRUISE/INJ/O/D OFF/WATER IN FUEL";
+                                DescriptionToInsert = "RESET TRIP/IDLE/CRUISE/INJ";
                                 break;
                             case 0x20:
                                 DescriptionToInsert = "RESET TPS ADAPTATION FOR ETC";
@@ -3019,16 +3068,16 @@ namespace ChryslerScanner
                         switch (payload[0])
                         {
                             case 0x01:
-                                DescriptionToInsert += " | PURGE DUTY CYCLE";
+                                DescriptionToInsert += " | PPS DUTY CYCLE";
                                 break;
                             case 0x02:
-                                DescriptionToInsert += " | CALPOT MEX";
+                                DescriptionToInsert += " | ";
                                 break;
                             case 0x03:
                                 DescriptionToInsert += " | ";
                                 break;
                             case 0x04:
-                                DescriptionToInsert += " | EXHAUST GAS RECIRCULATION SYSTEM";
+                                DescriptionToInsert += " | LINEAR EGR STEPS";
                                 break;
                             case 0x05:
                                 DescriptionToInsert += " | FUEL INJECTOR #1";
@@ -3123,7 +3172,7 @@ namespace ChryslerScanner
                         switch (payload[2])
                         {
                             default:
-                                ValueToInsert = "ERROR ";
+                                ValueToInsert = "ERROR";
                                 UnitToInsert = Util.ByteToHexString(payload, 2, 1);
                                 break;
                         }
@@ -3337,7 +3386,7 @@ namespace ChryslerScanner
                             case 0x08:
                                 DescriptionToInsert = "CONFIGURATION | ASPIRATION TYPE";
 
-                                switch (payload[1]) // to be verified!
+                                switch (payload[1])
                                 {
                                     case 1:
                                         ValueToInsert = "NATURAL";
@@ -3350,19 +3399,10 @@ namespace ChryslerScanner
                             case 0x09:
                                 DescriptionToInsert = "CONFIGURATION | INJECTION TYPE";
 
-                                switch (payload[1]) // to be verified!
+                                switch (payload[1])
                                 {
-                                    case 1:
-                                        ValueToInsert = "DIRECT";
-                                        break;
-                                    case 2:
-                                        ValueToInsert = "SEQUENTIAL";
-                                        break;
-                                    case 3:
-                                        ValueToInsert = "SINGLE-POINT";
-                                        break;
                                     case 4:
-                                        ValueToInsert = "MULTI-POINT";
+                                        ValueToInsert = "SFI";
                                         break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);
@@ -3459,7 +3499,7 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x0C:
-                                DescriptionToInsert = "CONFIGURATION | ENGINE DISPLACEMENT | CONFIG";
+                                DescriptionToInsert = "CONFIGURATION | ENGINE DISPLACEMENT | CYL ORIEN";
 
                                 switch (payload[1])
                                 {
@@ -3558,19 +3598,32 @@ namespace ChryslerScanner
                                 break;
                             case 0x0E:
                                 DescriptionToInsert = "CONFIGURATION | ENGINE MANUFACTURER";
-                                ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+
+                                switch (payload[1])
+                                {
+                                    case 0x01:
+                                        ValueToInsert = "CHRYSLER";
+                                        break;
+                                    default:
+                                        break;
+                                }
                                 break;
                             case 0x0F:
                                 DescriptionToInsert = "CONFIGURATION | CONTROLLER HARDWARE TYPE";
 
-                                switch (payload[1]) // to be verified!
+                                switch (payload[1])
                                 {
+                                    case 0x05:
+                                        ValueToInsert = "SBEC3";
+                                        break;
+                                    case 0x07:
+                                        ValueToInsert = "SBEC3A";
+                                        break;
                                     case 0x0C:
                                         ValueToInsert = "JTEC";
                                         break;
-                                    case 0x07:
                                     case 0x12:
-                                        ValueToInsert = "SBEC3";
+                                        ValueToInsert = "SBEC3A+";
                                         break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);
@@ -3643,7 +3696,7 @@ namespace ChryslerScanner
                                         ValueToInsert = "ATX 3-SPEED";
                                         break;
                                     case 4:
-                                        ValueToInsert = "ATX ?-SPEED";
+                                        ValueToInsert = "ATX 4-SPEED";
                                         break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);
@@ -3663,28 +3716,52 @@ namespace ChryslerScanner
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                 break;
                             case 0x1A:
-                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION NUMBER 1";
-                                ValueToInsert = Util.ByteToHexString(payload, 1, 1) + " | " + Encoding.ASCII.GetString(payload, 1, 1);
+                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION ID 1";
+                                ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+
+                                if ((payload[1] < 0x20) || (payload[1] > 0x7E)) break;
+
+                                ValueToInsert += " | " + Encoding.ASCII.GetString(payload, 1, 1);
                                 break;
                             case 0x1B:
-                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION NUMBER 2";
-                                ValueToInsert = Util.ByteToHexString(payload, 1, 1) + " | " + Encoding.ASCII.GetString(payload, 1, 1);
+                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION ID 2";
+                                ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+
+                                if ((payload[1] < 0x20) || (payload[1] > 0x7E)) break;
+
+                                ValueToInsert += " | " + Encoding.ASCII.GetString(payload, 1, 1);
                                 break;
                             case 0x1C:
-                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION NUMBER 3";
-                                ValueToInsert = Util.ByteToHexString(payload, 1, 1) + " | " + Encoding.ASCII.GetString(payload, 1, 1);
+                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION ID 3";
+                                ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+
+                                if ((payload[1] < 0x20) || (payload[1] > 0x7E)) break;
+
+                                ValueToInsert += " | " + Encoding.ASCII.GetString(payload, 1, 1);
                                 break;
                             case 0x1D:
-                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION NUMBER 4";
-                                ValueToInsert = Util.ByteToHexString(payload, 1, 1) + " | " + Encoding.ASCII.GetString(payload, 1, 1);
+                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION ID 4";
+                                ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+
+                                if ((payload[1] < 0x20) || (payload[1] > 0x7E)) break;
+
+                                ValueToInsert += " | " + Encoding.ASCII.GetString(payload, 1, 1);
                                 break;
                             case 0x1E:
-                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION NUMBER 5";
-                                ValueToInsert = Util.ByteToHexString(payload, 1, 1) + " | " + Encoding.ASCII.GetString(payload, 1, 1);
+                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION ID 5";
+                                ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+
+                                if ((payload[1] < 0x20) || (payload[1] > 0x7E)) break;
+
+                                ValueToInsert += " | " + Encoding.ASCII.GetString(payload, 1, 1);
                                 break;
                             case 0x1F:
-                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION NUMBER 6";
-                                ValueToInsert = Util.ByteToHexString(payload, 1, 1) + " | " + Encoding.ASCII.GetString(payload, 1, 1);
+                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION ID 6";
+                                ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+
+                                if ((payload[1] < 0x20) || (payload[1] > 0x7E)) break;
+
+                                ValueToInsert += " | " + Encoding.ASCII.GetString(payload, 1, 1);
                                 break;
                             default:
                                 DescriptionToInsert = "CONFIGURATION | " + "OFFSET: " + Util.ByteToHexString(payload, 0, 1);
@@ -3774,6 +3851,11 @@ namespace ChryslerScanner
 
                         if ((checksum == message[ChecksumLocation]) || ((checksum - 0x1E) == message[ChecksumLocation]))
                         {
+                            if ((checksum - 0x1E) == message[ChecksumLocation])
+                            {
+                                DescriptionToInsert += " | CHECKSUM BUG";
+                            }
+
                             FaultCode1TList.Clear();
                             FaultCode1TList.AddRange(FaultCode1TPayload);
                             FaultCode1TList.Remove(0xFD); // not fault code related
@@ -4437,22 +4519,26 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x0F:
-                                double BatteryVoltage = payload[1] * 0.0625;
                                 DescriptionToInsert = "BATTERY VOLTAGE";
+
+                                double BatteryVoltage = payload[1] * 0.0625;
+                                
                                 ValueToInsert = Math.Round(BatteryVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x10:
-                                double ATSVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "AMBIENT TEMPERATURE SENSOR VOLTAGE";
+
+                                double ATSVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(ATSVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x11:
+                                DescriptionToInsert = "AMBIENT TEMPERATURE";
+
                                 double AmbientTemperatureC = payload[1] - 128;
                                 double AmbientTemperatureF = 1.8 * AmbientTemperatureC + 32.0;
-
-                                DescriptionToInsert = "AMBIENT TEMPERATURE";
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
@@ -4466,34 +4552,43 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x12:
-                                double TPSVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "THROTTLE POSITION SENSOR (TPS) VOLTAGE";
+
+                                double TPSVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(TPSVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x13:
-                                double MinTPSVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "MINIMUM TPS VOLTAGE";
+
+                                double MinTPSVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(MinTPSVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x14:
-                                double CalculatedTPSVoltageA = payload[1] * 0.0196;
                                 DescriptionToInsert = "CALCULATED TPS VOLTAGE";
+
+                                double CalculatedTPSVoltageA = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(CalculatedTPSVoltageA, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x15:
-                                double ECTSensorVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "ENGINE COOLANT TEMPERATURE SENSOR VOLTAGE";
+
+                                double ECTSensorVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(ECTSensorVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x16:
-                                double ECTC = payload[1] - 128;
-                                double ECTF = 1.8 * ECTC + 32.0;
                                 DescriptionToInsert = "ENGINE COOLANT TEMPERATURE";
 
+                                double ECTC = payload[1] - 128;
+                                double ECTF = 1.8 * ECTC + 32.0;
+                                
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
                                     ValueToInsert = Math.Round(ECTF).ToString("0");
@@ -4506,15 +4601,18 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x17:
-                                double MAPSensorVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "INTAKE MANIFOLD ABSOLUTE PRESSURE SENSOR VOLTAGE";
+
+                                double MAPSensorVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(MAPSensorVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x18:
+                                DescriptionToInsert = "INTAKE MANIFOLD ABSOLUTE PRESSURE";
+
                                 double MAPPSI = payload[1] * 0.059756;
                                 double MAPKPA = MAPPSI * 6.894757;
-                                DescriptionToInsert = "INTAKE MANIFOLD ABSOLUTE PRESSURE";
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
@@ -4528,9 +4626,10 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x19:
+                                DescriptionToInsert = "BAROMETRIC PRESSURE";
+
                                 double BarometricPressurePSI = payload[1] * 0.059756;
                                 double BarometricPressureKPA = BarometricPressurePSI * 6.894757;
-                                DescriptionToInsert = "BAROMETRIC PRESSURE";
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
@@ -4544,10 +4643,11 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x1A:
-                                double MAPVacuumPSI = payload[1] * 0.059756;
-                                double MAPVacuumKPA = MAPVacuumPSI * 6.894757;
                                 DescriptionToInsert = "MAP VACUUM";
 
+                                double MAPVacuumPSI = payload[1] * 0.059756;
+                                double MAPVacuumKPA = MAPVacuumPSI * 6.894757;
+                                
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
                                     ValueToInsert = Math.Round(MAPVacuumPSI, 1).ToString("0.0").Replace(",", ".");
@@ -4560,28 +4660,35 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x1B:
-                                double O2S11Voltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "UPSTREAM O2 1/1 SENSOR VOLTAGE";
+
+                                double O2S11Voltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(O2S11Voltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x1C:
-                                double O2S21Voltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "UPSTREAM O2 2/1 SENSOR VOLTAGE";
+
+                                double O2S21Voltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(O2S21Voltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x1D:
-                                double IATVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "INTAKE AIR TEMPERATURE SENSOR VOLTAGE";
+
+                                double IATVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(IATVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x1E:
-                                double IATC = payload[1] - 64;
-                                double IATF = 1.8 * IATC + 32.0;
                                 DescriptionToInsert = "INTAKE AIR TEMPERATURE";
 
+                                double IATC = payload[1] - 64;
+                                double IATF = 1.8 * IATC + 32.0;
+                                
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
                                     ValueToInsert = Math.Round(IATF).ToString("0");
@@ -4594,52 +4701,67 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x1F:
-                                double KnockSensor1Voltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "KNOCK SENSOR 1 VOLTAGE";
+
+                                double KnockSensor1Voltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(KnockSensor1Voltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x20:
-                                double KnockSensor2Voltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "KNOCK SENSOR 2 VOLTAGE";
+
+                                double KnockSensor2Voltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(KnockSensor2Voltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x21:
-                                double CruiseSwitchVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "CRUISE | SWITCH VOLTAGE";
+
+                                double CruiseSwitchVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(CruiseSwitchVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x22:
-                                double BatteryTemperatureVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "BATTERY TEMPERATURE SENSOR VOLTAGE";
+
+                                double BatteryTemperatureVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(BatteryTemperatureVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x23:
-                                double FlexFuelSensorVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "FLEX FUEL SENSOR VOLTAGE";
+
+                                double FlexFuelSensorVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(FlexFuelSensorVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x24:
-                                double FlexFuelEthanolPercent = payload[1] * 0.5;
                                 DescriptionToInsert = "FLEX FUEL ETHANOL PERCENT";
+
+                                double FlexFuelEthanolPercent = payload[1] * 0.5;
+                                
                                 ValueToInsert = Math.Round(FlexFuelEthanolPercent, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
                             case 0x25:
-                                double ACHSPressureVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "A/C HIGH-SIDE PRESSURE SENSOR VOLTAGE";
+
+                                double ACHSPressureVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(ACHSPressureVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x26:
-                                double ACHSPressurePSI = payload[1] * 1.961;
-                                double ACHSPressureKPA = ACHSPressurePSI * 6.894757;
                                 DescriptionToInsert = "A/C HIGH-SIDE PRESSURE";
 
+                                double ACHSPressurePSI = payload[1] * 1.961;
+                                double ACHSPressureKPA = ACHSPressurePSI * 6.894757;
+                                
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
                                     ValueToInsert = Math.Round(ACHSPressurePSI, 1).ToString("0.0").Replace(",", ".");
@@ -4690,22 +4812,31 @@ namespace ChryslerScanner
                                 DescriptionToInsert = "INJECTOR PULSE WIDTH 2 | ERROR: REQUEST F4 29 2A";
                                 break;
                             case 0x2B:
-                                double LTFT1 = payload[1] * 0.196;
                                 DescriptionToInsert = "LONG TERM FUEL TRIM 1";
+
+                                double LTFT1 = payload[1] * 0.196;
+
+                                if (payload[1] >= 0x80) LTFT1 -= 50.0;
+
                                 ValueToInsert = Math.Round(LTFT1, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
                             case 0x2C:
-                                double LTFT2 = payload[1] * 0.196;
                                 DescriptionToInsert = "LONG TERM FUEL TRIM 2";
+
+                                double LTFT2 = payload[1] * 0.196;
+
+                                if (payload[1] >= 0x80) LTFT2 -= 50.0;
+
                                 ValueToInsert = Math.Round(LTFT2, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
                             case 0x2D:
-                                double ECTC2 = payload[1] - 128;
-                                double ECTF2 = 1.8 * ECTC2 + 32.0;
                                 DescriptionToInsert = "ENGINE COOLANT TEMPERATURE 2";
 
+                                double ECTC2 = payload[1] - 128;
+                                double ECTF2 = 1.8 * ECTC2 + 32.0;
+                                
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
                                     ValueToInsert = Math.Round(ECTF2).ToString("0");
@@ -4718,10 +4849,11 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x2E:
-                                double ECTC3 = payload[1] - 128;
-                                double ECTF3 = 1.8 * ECTC3 + 32.0;
                                 DescriptionToInsert = "ENGINE COOLANT TEMPERATURE 3";
 
+                                double ECTC3 = payload[1] - 128;
+                                double ECTF3 = 1.8 * ECTC3 + 32.0;
+                                
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
                                     ValueToInsert = Math.Round(ECTF3).ToString("0");
@@ -4734,38 +4866,50 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x2F:
-                                double SparkAdvance = payload[1] * 0.5;
                                 DescriptionToInsert = "SPARK ADVANCE";
+
+                                double SparkAdvance = payload[1] * 0.5;
+                                
                                 ValueToInsert = Math.Round(SparkAdvance, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "DEG";
                                 break;
                             case 0x30:
-                                double TotalKnockRetard = payload[1] * 0.5;
                                 DescriptionToInsert = "TOTAL KNOCK RETARD";
+
+                                double TotalKnockRetard = payload[1] * 0.5;
+                                
                                 ValueToInsert = Math.Round(TotalKnockRetard, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "DEG";
                                 break;
                             case 0x31:
-                                double Cylinder1Retard = payload[1] * 0.5;
                                 DescriptionToInsert = "CYLINDER 1 RETARD";
+
+                                double Cylinder1Retard = payload[1] * 0.5;
+                                
                                 ValueToInsert = Math.Round(Cylinder1Retard, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "DEG";
                                 break;
                             case 0x32:
-                                double Cylinder2Retard = payload[1] * 0.5;
                                 DescriptionToInsert = "CYLINDER 2 RETARD";
+
+                                double Cylinder2Retard = payload[1] * 0.5;
+                                
                                 ValueToInsert = Math.Round(Cylinder2Retard, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "DEG";
                                 break;
                             case 0x33:
-                                double Cylinder3Retard = payload[1] * 0.5;
                                 DescriptionToInsert = "CYLINDER 3 RETARD";
+
+                                double Cylinder3Retard = payload[1] * 0.5;
+                                
                                 ValueToInsert = Math.Round(Cylinder3Retard, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "DEG";
                                 break;
                             case 0x34:
-                                double Cylinder4Retard = payload[1] * 0.5;
                                 DescriptionToInsert = "CYLINDER 4 RETARD";
+
+                                double Cylinder4Retard = payload[1] * 0.5;
+                                
                                 ValueToInsert = Math.Round(Cylinder4Retard, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "DEG";
                                 break;
@@ -4793,16 +4937,19 @@ namespace ChryslerScanner
                                 ValueToInsert = payload[1].ToString();
                                 break;
                             case 0x3A:
-                                double ChargingVoltage = payload[1] * 0.0625;
                                 DescriptionToInsert = "CHARGING VOLTAGE";
+
+                                double ChargingVoltage = payload[1] * 0.0625;
+                                
                                 ValueToInsert = Math.Round(ChargingVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x3B:
-                                double CruiseSetSpeedMPH = payload[1] * 0.5;
-                                double CruiseSetSpeedKMH = CruiseSetSpeedMPH * 1.609344;
                                 DescriptionToInsert = "CRUISE | SET SPEED";
 
+                                double CruiseSetSpeedMPH = payload[1] * 0.5;
+                                double CruiseSetSpeedKMH = CruiseSetSpeedMPH * 1.609344;
+                                
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
                                     ValueToInsert = Math.Round(CruiseSetSpeedMPH, 1).ToString("0.0").Replace(",", ".");
@@ -4816,11 +4963,20 @@ namespace ChryslerScanner
                                 break;
                             case 0x3C:
                                 DescriptionToInsert = "BIT STATE 5";
-                                ValueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0');
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] == 0x3D)
+                                {
+                                    ValueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0') + " " + Convert.ToString(payload[3], 2).PadLeft(8, '0');
+                                }
+                                else
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F4 3C 3D";
+                                }
                                 break;
                             case 0x3D:
-                                DescriptionToInsert = "BIT STATE 6";
-                                ValueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0');
+                                DescriptionToInsert = "BIT STATE 5 | ERROR: REQUEST F4 3C 3D";
                                 break;
                             case 0x3E:
                                 DescriptionToInsert = "IDLE AIR CONTROL MOTOR STEPS";
@@ -5000,14 +5156,22 @@ namespace ChryslerScanner
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                 break;
                             case 0x44:
-                                double STFT1 = payload[1] * 0.196;
                                 DescriptionToInsert = "SHORT TERM FUEL TRIM 1";
+
+                                double STFT1 = payload[1] * 0.196;
+
+                                if (payload[1] >= 0x80) STFT1 -= 50.0;
+
                                 ValueToInsert = Math.Round(STFT1, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
                             case 0x45:
-                                double STFT2 = payload[1] * 0.196;
                                 DescriptionToInsert = "SHORT TERM FUEL TRIM 2";
+
+                                double STFT2 = payload[1] * 0.196;
+
+                                if (payload[1] >= 0x80) STFT2 -= 50.0;
+
                                 ValueToInsert = Math.Round(STFT2, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
@@ -5020,20 +5184,26 @@ namespace ChryslerScanner
                                 ValueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0');
                                 break;
                             case 0x48:
-                                double O2S12Voltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "DOWNSTREAM O2 1/2 SENSOR VOLTAGE";
+
+                                double O2S12Voltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(O2S12Voltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x49:
-                                double O2S22Voltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "DOWNSTREAM O2 2/2 SENSOR VOLTAGE";
+
+                                double O2S22Voltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(O2S22Voltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x4A:
-                                double ClosedLoopTimer = payload[1] * 0.0535;
                                 DescriptionToInsert = "CLOSED LOOP TIMER";
+
+                                double ClosedLoopTimer = payload[1] * 0.0535;
+                                
                                 ValueToInsert = Math.Round(ClosedLoopTimer, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "MINUTES";
                                 break;
@@ -5057,8 +5227,10 @@ namespace ChryslerScanner
                                 DescriptionToInsert = "TIME FROM START/RUN | ERROR: REQUEST F4 4B 4C";
                                 break;
                             case 0x4D:
-                                double RuntimeAtStall = payload[1] * 0.0535;
                                 DescriptionToInsert = "RUNTIME AT STALL";
+
+                                double RuntimeAtStall = payload[1] * 0.0535;
+                                
                                 ValueToInsert = Math.Round(RuntimeAtStall, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "MINUTES";
                                 break;
@@ -5109,26 +5281,34 @@ namespace ChryslerScanner
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                 break;
                             case 0x5A:
-                                double DwellCoil1 = payload[1] * 0.008;
                                 DescriptionToInsert = "DWELL COIL 1 (CYL1_4)";
+
+                                double DwellCoil1 = payload[1] * 0.008;
+                                
                                 ValueToInsert = Math.Round(DwellCoil1, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "MS";
                                 break;
                             case 0x5B:
-                                double DwellCoil2 = payload[1] * 0.008;
                                 DescriptionToInsert = "DWELL COIL 2 (CYL2_3)";
+
+                                double DwellCoil2 = payload[1] * 0.008;
+                                
                                 ValueToInsert = Math.Round(DwellCoil2, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "MS";
                                 break;
                             case 0x5C:
-                                double DwellCoil3 = payload[1] * 0.008;
                                 DescriptionToInsert = "DWELL COIL 3 (CYL3_6)";
+
+                                double DwellCoil3 = payload[1] * 0.008;
+                                
                                 ValueToInsert = Math.Round(DwellCoil3, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "MS";
                                 break;
                             case 0x5D:
-                                double FanDutyCycle = payload[1] * 0.3921568627;
                                 DescriptionToInsert = "FAN DUTY CYCLE";
+
+                                double FanDutyCycle = payload[1] * 0.3921568627;
+                                
                                 ValueToInsert = Math.Round(FanDutyCycle, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
@@ -5288,6 +5468,23 @@ namespace ChryslerScanner
                                     }
                                 }
                                 break;
+                            case 0x7A:
+                                DescriptionToInsert = "SPI TRANSFER RESULT";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] == 0x7B)
+                                {
+                                    ValueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0') + " " + Convert.ToString(payload[3], 2).PadLeft(8, '0');
+                                }
+                                else
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F4 7A 7B";
+                                }
+                                break;
+                            case 0x7B:
+                                DescriptionToInsert = "SPI TRANSFER RESULT | ERROR: REQUEST F4 7A 7B";
+                                break;
                             case 0x8E:
                                 DescriptionToInsert = "BIT STATE 7";
                                 ValueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0');
@@ -5297,14 +5494,18 @@ namespace ChryslerScanner
                                 ValueToInsert = payload[1].ToString("0");
                                 break;
                             case 0x95:
-                                double EGRPosVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "EGR POSITION SENSOR VOLTAGE";
+
+                                double EGRPosVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(EGRPosVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x96:
-                                double ActualPurgeCurrent = payload[1] * 0.0196;
                                 DescriptionToInsert = "ACTUAL PURGE CURRENT";
+
+                                double ActualPurgeCurrent = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(ActualPurgeCurrent, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "A";
                                 break;
@@ -5330,8 +5531,10 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0xA3:
-                                double CamTimingPosition = payload[1] * 0.5;
                                 DescriptionToInsert = "CAM TIMING POSITION";
+
+                                double CamTimingPosition = payload[1] * 0.5;
+                                
                                 ValueToInsert = Math.Round(CamTimingPosition, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "DEG";
                                 break;
@@ -5404,15 +5607,18 @@ namespace ChryslerScanner
                                 if (Util.IsBitSet(payload[1], 4)) ValueToInsert = "CLOSED LOOP / DTC";
                                 break;
                             case 0xAB:
-                                double EngineLoadC = payload[1] * 0.3921568627;
                                 DescriptionToInsert = "ENGINE LOAD";
+
+                                double EngineLoadC = payload[1] * 0.3921568627;
+                                
                                 ValueToInsert = Math.Round(EngineLoadC, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
                             case 0xAC:
+                                DescriptionToInsert = "ENGINE COOLANT TEMPERATURE";
+
                                 double ECTCF = payload[1] - 128;
                                 double ECTFF = 1.8 * ECTCF + 32.0;
-                                DescriptionToInsert = "ENGINE COOLANT TEMPERATURE";
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
@@ -5426,33 +5632,50 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0xAD:
-                                double STFT1F = payload[1] * 0.196;
                                 DescriptionToInsert = "SHORT TERM FUEL TRIM 1";
+
+                                double STFT1F = payload[1] * 0.196;
+
+                                if (payload[1] >= 0x80) STFT1F -= 50.0;
+
                                 ValueToInsert = Math.Round(STFT1F, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
                             case 0xAE:
-                                double LTFT1F = payload[1] * 0.196;
                                 DescriptionToInsert = "LONG TERM FUEL TRIM 1";
+
+                                double LTFT1F = payload[1] * 0.196;
+
+                                if (payload[1] >= 0x80) LTFT1F -= 50.0;
+
                                 ValueToInsert = Math.Round(LTFT1F, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
                             case 0xAF:
-                                double STFT2F = payload[1] * 0.196;
                                 DescriptionToInsert = "SHORT TERM FUEL TRIM 2";
+
+                                double STFT2F = payload[1] * 0.196;
+
+                                if (payload[1] >= 0x80) STFT2F -= 50.0;
+
                                 ValueToInsert = Math.Round(STFT2F, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
                             case 0xB0:
-                                double LTFT2F = payload[1] * 0.196;
                                 DescriptionToInsert = "LONG TERM FUEL TRIM 2";
+
+                                double LTFT2F = payload[1] * 0.196;
+
+                                if (payload[1] >= 0x80) LTFT2F -= 50.0;
+
                                 ValueToInsert = Math.Round(LTFT2F, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
                             case 0xB1:
+                                DescriptionToInsert = "INTAKE MANIFOLD ABSOLUTE PRESSURE (MAP)";
+
                                 double MAPFPSI = payload[1] * 0.059756;
                                 double MAPFKPA = MAPFPSI * 6.894757;
-                                DescriptionToInsert = "INTAKE MANIFOLD ABSOLUTE PRESSURE (MAP)";
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
@@ -5466,16 +5689,19 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0xB2:
-                                double EngineSpeedF = payload[1] * 32.0;
                                 DescriptionToInsert = "ENGINE SPEED";
+
+                                double EngineSpeedF = payload[1] * 32.0;
+                                
                                 ValueToInsert = EngineSpeedF.ToString("0");
                                 UnitToInsert = "RPM";
                                 break;
                             case 0xB3:
-                                double VehicleSpeedFMPH = payload[1] * 0.5;
-                                double VehicleSpeedFKMH = VehicleSpeedFMPH * 1.609344;
                                 DescriptionToInsert = "VEHICLE SPEED";
 
+                                double VehicleSpeedFMPH = payload[1] * 0.5;
+                                double VehicleSpeedFKMH = VehicleSpeedFMPH * 1.609344;
+                                
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
                                     ValueToInsert = Math.Round(VehicleSpeedFMPH).ToString("0");
@@ -5488,9 +5714,10 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0xB4:
+                                DescriptionToInsert = "MAP VACUUM";
+
                                 double MAPVacuumFPSI = payload[1] * 0.059756;
                                 double MAPVacuumFKPA = MAPVacuumFPSI * 6.894757;
-                                DescriptionToInsert = "MAP VACUUM";
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
@@ -5522,14 +5749,18 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0xB6:
-                                double CTSVoltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "CATALYST TEMPERATURE SENSOR VOLTAGE";
+
+                                double CTSVoltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(CTSVoltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0xB7:
-                                double GovPDC = payload[1] * 0.3921568627;
                                 DescriptionToInsert = "PURGE DUTY CYCLE";
+
+                                double GovPDC = payload[1] * 0.3921568627;
+                                
                                 ValueToInsert = Math.Round(GovPDC, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
@@ -5546,9 +5777,10 @@ namespace ChryslerScanner
                                 ValueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0');
                                 break;
                             case 0xC0:
+                                DescriptionToInsert = "CATALYST TEMPERATURE";
+
                                 double CatalystTemperatureC = payload[1] - 128;
                                 double CatalystTemperatureF = 1.8 * CatalystTemperatureC + 32.0;
-                                DescriptionToInsert = "CATALYST TEMPERATURE";
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
@@ -5566,8 +5798,10 @@ namespace ChryslerScanner
                                 ValueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0');
                                 break;
                             case 0xC2:
-                                double FLS3Voltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "FUEL LEVEL SENSOR VOLTAGE 3";
+
+                                double FLS3Voltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(FLS3Voltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
@@ -5612,8 +5846,10 @@ namespace ChryslerScanner
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                 break;
                             case 0xDB:
-                                double FLS2Voltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "FUEL LEVEL SENSOR VOLTAGE 2";
+
+                                double FLS2Voltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(FLS2Voltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
@@ -5622,15 +5858,18 @@ namespace ChryslerScanner
                                 ValueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0');
                                 break;
                             case 0xDE:
-                                double FLS1Voltage = payload[1] * 0.0196;
                                 DescriptionToInsert = "FUEL LEVEL SENSOR VOLTAGE 1";
+
+                                double FLS1Voltage = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(FLS1Voltage, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0xDF:
+                                DescriptionToInsert = "FUEL LEVEL";
+
                                 double FuelLevelG = payload[1] * 0.125;
                                 double FuelLevelL = FuelLevelG * 3.785412;
-                                DescriptionToInsert = "FUEL LEVEL";
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
@@ -5644,10 +5883,11 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0xE0:
-                                double FuelUsedG = payload[1] * 0.125;
-                                double FuelUsedL = FuelUsedG * 3.785412;
                                 DescriptionToInsert = "FUEL USED";
 
+                                double FuelUsedG = payload[1] * 0.125;
+                                double FuelUsedL = FuelUsedG * 3.785412;
+                                
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
                                     ValueToInsert = Math.Round(FuelUsedG, 1).ToString("0.0").Replace(",", ".");
@@ -5660,8 +5900,10 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0xE3:
-                                double EngineLoadD = payload[1] * 0.3921568627;
                                 DescriptionToInsert = "ENGINE LOAD";
+
+                                double EngineLoadD = payload[1] * 0.3921568627;
+                                
                                 ValueToInsert = Math.Round(EngineLoadD, 1).ToString("0.0").Replace(",", ".");
                                 UnitToInsert = "PERCENT";
                                 break;
@@ -5718,8 +5960,10 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0xEF:
-                                double CalculatedTPSVoltageB = payload[1] * 0.0196;
                                 DescriptionToInsert = "CALCULATED TPS VOLTAGE";
+
+                                double CalculatedTPSVoltageB = payload[1] * 0.0196;
+                                
                                 ValueToInsert = Math.Round(CalculatedTPSVoltageB, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
