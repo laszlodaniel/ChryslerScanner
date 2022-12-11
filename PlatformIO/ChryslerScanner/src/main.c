@@ -3071,9 +3071,10 @@ void sci_boot_task(void *pvParameters)
             sci.msg.byte_received = false;
             sci.state.idle = false;
             sci.msg.tx_count = 1;
+            sci.msg.rx_ptr = 0;
             uart_flush_input(UART_SCI);
             uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
-            sci_set_timeout(SCI_LS_T1_DELAY);
+            sci_set_timeout(5 * SCI_LS_T1_DELAY);
             uart_write_bytes(UART_SCI, (const uint8_t *)sci_bootstrap_magic_byte, sizeof(sci_bootstrap_magic_byte));
             uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
             vTaskDelay(pdMS_TO_TICKS(1));
@@ -3083,20 +3084,18 @@ void sci_boot_task(void *pvParameters)
             if (!sci.msg.byte_received)
             {
                 ret[0] = BootloaderError_NoResponseToMagicByte;
-                send_usb_packet(Bus_USB, Command_Debug, Debug_InitBootstrapMode, ret, sizeof(ret));
                 goto stop_bl;
             }
 
             if (sci.msg.rx_buffer[0] != 0x06)
             {
                 ret[0] = BootloaderError_UnexpectedResponseToMagicByte;
-                send_usb_packet(Bus_USB, Command_Debug, Debug_InitBootstrapMode, ret, sizeof(ret));
                 goto stop_bl;
             }
 
             sci.state.idle = false;
 
-            sci_set_timeout(2 * SCI_LS_T1_DELAY);
+            sci_set_timeout(5 * SCI_LS_T1_DELAY);
             uart_write_bytes(UART_SCI, (const uint8_t *)req_seed_cmd, sizeof(req_seed_cmd));
             uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
 
@@ -3111,7 +3110,6 @@ void sci_boot_task(void *pvParameters)
                 else
                 {
                     ret[0] = BootloaderError_SecuritySeedResponseTimeout;
-                    send_usb_packet(Bus_USB, Command_Debug, Debug_InitBootstrapMode, ret, sizeof(ret));
                     goto stop_bl;
                 }
             }
@@ -3131,7 +3129,6 @@ void sci_boot_task(void *pvParameters)
                 else
                 {
                     ret[0] = BootloaderError_SecuritySeedChecksumError;
-                    send_usb_packet(Bus_USB, Command_Debug, Debug_InitBootstrapMode, ret, sizeof(ret));
                     goto stop_bl;
                 }
 
@@ -3141,7 +3138,7 @@ void sci_boot_task(void *pvParameters)
 
                 sci.state.idle = false;
                 
-                sci_set_timeout(2 * SCI_LS_T1_DELAY);
+                sci_set_timeout(5 * SCI_LS_T1_DELAY);
                 uart_write_bytes(UART_SCI, (const uint8_t *)send_key_cmd, sizeof(send_key_cmd));
                 uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
 
@@ -3150,14 +3147,12 @@ void sci_boot_task(void *pvParameters)
                 if (sci.msg.last_rx_length < 5)
                 {
                     ret[0] = BootloaderError_SecurityKeyStatusTimeout;
-                    send_usb_packet(Bus_USB, Command_Debug, Debug_InitBootstrapMode, ret, sizeof(ret));
                     goto stop_bl;
                 }
 
                 if (!((sci.msg.rx_buffer[0] == 0x26) && (sci.msg.rx_buffer[1] == 0xD0) && (sci.msg.rx_buffer[2] == 0x67) && (sci.msg.rx_buffer[3] == 0xC2) && (sci.msg.rx_buffer[4] == 0x1F)))
                 {
                     ret[0] = BootloaderError_SecurityKeyNotAccepted;
-                    send_usb_packet(Bus_USB, Command_Debug, Debug_InitBootstrapMode, ret, sizeof(ret));
                     goto stop_bl;
                 }
             }
@@ -3165,7 +3160,7 @@ void sci_boot_task(void *pvParameters)
             sci.msg.byte_received = false;
             sci.state.idle = false;
 
-            sci_set_timeout(SCI_LS_T1_DELAY);
+            sci_set_timeout(5 * SCI_LS_T1_DELAY);
 
             switch (sci.bootstrap.bootloader_src)
             {
@@ -3286,7 +3281,7 @@ void sci_boot_task(void *pvParameters)
 
             sci.state.idle = false;
 
-            sci_set_timeout(SCI_LS_T1_DELAY);
+            sci_set_timeout(5 * SCI_LS_T1_DELAY);
 
             for (uint8_t i = 0; i < sizeof(start_bootloader_cmd); i++)
             {
@@ -3298,25 +3293,22 @@ void sci_boot_task(void *pvParameters)
 
             while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
 
-            vTaskDelay(pdMS_TO_TICKS(10));
+            vTaskDelay(pdMS_TO_TICKS(100));
 
             if (!sci.msg.byte_received || (sci.msg.last_rx_length < 4))
             {
                 ret[0] = BootloaderError_StartBootloaderTimeout;
-                send_usb_packet(Bus_USB, Command_Debug, Debug_InitBootstrapMode, ret, sizeof(ret));
                 goto stop_bl;
             }
 
             if (sci.msg.rx_buffer[sci.msg.last_rx_length - 1] != 0x22)
             {
                 ret[0] = BootloaderError_UnexpectedBootloaderStatusByte;
-                send_usb_packet(Bus_USB, Command_Debug, Debug_InitBootstrapMode, ret, sizeof(ret));
                 goto stop_bl;
             }
 
-            send_usb_packet(Bus_USB, Command_Debug, Debug_InitBootstrapMode, ret, sizeof(ret));
-
             stop_bl:
+            send_usb_packet(Bus_USB, Command_Debug, Debug_InitBootstrapMode, ret, sizeof(ret));
             sci_set_timeout(SCI_LS_T3_DELAY);
         }
 
@@ -3335,14 +3327,13 @@ void sci_boot_task(void *pvParameters)
             sci.msg.tx_count = 1;
             uart_flush_input(UART_SCI);
             uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
-            sci_set_timeout(SCI_LS_T1_DELAY);
+            sci_set_timeout(5 * SCI_LS_T1_DELAY);
             uart_write_bytes(UART_SCI, (const uint8_t *)wf_header, 1); // ping with first byte of the header
-            vTaskDelay(pdMS_TO_TICKS(1));
+            vTaskDelay(pdMS_TO_TICKS(10));
 
             if (!sci.msg.byte_received)
             {
                 ret[0] = WorkerFunctionError_NoResponseToPing;
-                send_usb_packet(Bus_USB, Command_Debug, Debug_UploadWorkerFunction, ret, sizeof(ret));
                 goto stop_wf;
             }
 
@@ -3670,25 +3661,22 @@ void sci_boot_task(void *pvParameters)
 
             while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
 
-            vTaskDelay(pdMS_TO_TICKS(10));
+            vTaskDelay(pdMS_TO_TICKS(100));
 
             if (!sci.msg.byte_received)
             {
                 ret[0] = WorkerFunctionError_UploadInterrupted;
-                send_usb_packet(Bus_USB, Command_Debug, Debug_UploadWorkerFunction, ret, sizeof(ret));
                 goto stop_wf;
             }
 
             if (sci.msg.rx_buffer[sci.msg.last_rx_length - 1] != 0x14)
             {
                 ret[0] = WorkerFunctionError_UnexpectedUploadResult;
-                send_usb_packet(Bus_USB, Command_Debug, Debug_UploadWorkerFunction, ret, sizeof(ret));
                 goto stop_wf;
             }
 
-            send_usb_packet(Bus_USB, Command_Debug, Debug_UploadWorkerFunction, ret, sizeof(ret));
-
             stop_wf:
+            send_usb_packet(Bus_USB, Command_Debug, Debug_UploadWorkerFunction, ret, sizeof(ret));
             sci_set_timeout(SCI_LS_T3_DELAY);
         }
 
@@ -3697,7 +3685,7 @@ void sci_boot_task(void *pvParameters)
             sci.bootstrap.start_worker_function = false;
             sci.msg.tx_count = 1;
 
-            sci_set_timeout(SCI_LS_T1_DELAY);
+            sci_set_timeout(5 * SCI_LS_T1_DELAY);
 
             switch (sci.bootstrap.worker_function_src)
             {
@@ -3748,7 +3736,7 @@ void sci_boot_task(void *pvParameters)
             sci.bootstrap.exit_worker_function = false;
             sci.msg.tx_count = 1;
 
-            sci_set_timeout(SCI_LS_T1_DELAY);
+            sci_set_timeout(5 * SCI_LS_T1_DELAY);
 
             switch (sci.bootstrap.worker_function_src)
             {
