@@ -475,7 +475,7 @@ namespace ChryslerScanner
 
             row = EngineDTC.NewRow();
             row["id"] = 0x52;
-            row["description"] = "CRUISE CONTROL POWER RELAY; OR S/C 12V DRIVER CIRCUIT";
+            row["description"] = "CRUISE CONTROL POWER RELAY OR 12V DRIVER CIRCUIT";
             EngineDTC.Rows.Add(row);
 
             row = EngineDTC.NewRow();
@@ -1876,7 +1876,7 @@ namespace ChryslerScanner
                                         LastCruiseCutoutReasonA = "CLUTCH";
                                         break;
                                     case 0x70:
-                                        LastCruiseCutoutReasonA = "S/C DTC";
+                                        LastCruiseCutoutReasonA = "DTC PRESENT";
                                         break;
                                     case 0x80:
                                         LastCruiseCutoutReasonA = "KEY OFF";
@@ -1897,7 +1897,7 @@ namespace ChryslerScanner
                                         LastCruiseCutoutReasonA = "CANCEL SW";
                                         break;
                                     case 0xE0:
-                                        LastCruiseCutoutReasonA = "LIMP-IN";
+                                        LastCruiseCutoutReasonA = "TPS LIMP-IN";
                                         break;
                                     case 0xF0:
                                         LastCruiseCutoutReasonA = "12V DTC";
@@ -1931,7 +1931,7 @@ namespace ChryslerScanner
                                         CruiseDeniedReasonA = "CLUTCH";
                                         break;
                                     case 0x07:
-                                        CruiseDeniedReasonA = "S/C DTC";
+                                        CruiseDeniedReasonA = "DTC PRESENT";
                                         break;
                                     case 0x08:
                                         CruiseDeniedReasonA = "ALLOWED";
@@ -1952,7 +1952,7 @@ namespace ChryslerScanner
                                         CruiseDeniedReasonA = "CANCEL SW";
                                         break;
                                     case 0x0E:
-                                        CruiseDeniedReasonA = "LIMP-IN";
+                                        CruiseDeniedReasonA = "TPS LIMP-IN";
                                         break;
                                     case 0x0F:
                                         CruiseDeniedReasonA = "12V DTC";
@@ -2348,7 +2348,7 @@ namespace ChryslerScanner
                                         LastCruiseCutoutReasonB = "CLUTCH";
                                         break;
                                     case 0x70:
-                                        LastCruiseCutoutReasonB = "S/C DTC";
+                                        LastCruiseCutoutReasonB = "DTC PRESENT";
                                         break;
                                     case 0x80:
                                         LastCruiseCutoutReasonB = "KEY OFF";
@@ -2369,7 +2369,7 @@ namespace ChryslerScanner
                                         LastCruiseCutoutReasonB = "CANCEL";
                                         break;
                                     case 0xE0:
-                                        LastCruiseCutoutReasonB = "LIMP-IN";
+                                        LastCruiseCutoutReasonB = "TPS LIMP-IN";
                                         break;
                                     case 0xF0:
                                         LastCruiseCutoutReasonB = "12V DTC";
@@ -2403,7 +2403,7 @@ namespace ChryslerScanner
                                         CruiseDeniedReasonB = "CLUTCH";
                                         break;
                                     case 0x07:
-                                        CruiseDeniedReasonB = "S/C DTC";
+                                        CruiseDeniedReasonB = "DTC PRESENT";
                                         break;
                                     case 0x08:
                                         CruiseDeniedReasonB = "ALLOWED";
@@ -2424,7 +2424,7 @@ namespace ChryslerScanner
                                         CruiseDeniedReasonB = "CANCEL";
                                         break;
                                     case 0x0E:
-                                        CruiseDeniedReasonB = "LIMP-IN";
+                                        CruiseDeniedReasonB = "TPS LIMP-IN";
                                         break;
                                     case 0x0F:
                                         CruiseDeniedReasonB = "12V DTC";
@@ -2989,10 +2989,10 @@ namespace ChryslerScanner
                                 DescriptionToInsert = "A/C FAULT DISABLE";
                                 break;
                             case 0x0E:
-                                DescriptionToInsert = "S/C FAULT ENABLE";
+                                DescriptionToInsert = "CRUISE FAULT ENABLE";
                                 break;
                             case 0x0F:
-                                DescriptionToInsert = "S/C FAULT DISABLE";
+                                DescriptionToInsert = "CRUISE FAULT DISABLE";
                                 break;
                             case 0x10:
                                 DescriptionToInsert = "PS FAULT ENABLE";
@@ -5011,7 +5011,7 @@ namespace ChryslerScanner
                                         LastCruiseCutoutReasonD = "CLUTCH";
                                         break;
                                     case 0x70:
-                                        LastCruiseCutoutReasonD = "S/C DTC";
+                                        LastCruiseCutoutReasonD = "DTC PRESENT";
                                         break;
                                     case 0x80:
                                         LastCruiseCutoutReasonD = "KEY OFF";
@@ -5032,7 +5032,7 @@ namespace ChryslerScanner
                                         LastCruiseCutoutReasonD = "CANCEL";
                                         break;
                                     case 0xE0:
-                                        LastCruiseCutoutReasonD = "LIMP-IN";
+                                        LastCruiseCutoutReasonD = "TPS LIMP-IN";
                                         break;
                                     case 0xF0:
                                         LastCruiseCutoutReasonD = "12V DTC";
@@ -5066,7 +5066,7 @@ namespace ChryslerScanner
                                         CruiseDeniedReasonD = "CLUTCH";
                                         break;
                                     case 0x07:
-                                        CruiseDeniedReasonD = "S/C DTC";
+                                        CruiseDeniedReasonD = "DTC PRESENT";
                                         break;
                                     case 0x08:
                                         CruiseDeniedReasonD = "ALLOWED";
@@ -5087,7 +5087,7 @@ namespace ChryslerScanner
                                         CruiseDeniedReasonD = "CANCEL";
                                         break;
                                     case 0x0E:
-                                        CruiseDeniedReasonD = "LIMP-IN";
+                                        CruiseDeniedReasonD = "TPS LIMP-IN";
                                         break;
                                     case 0x0F:
                                         CruiseDeniedReasonD = "12V DTC";

@@ -953,9 +953,11 @@ namespace ChryslerScanner
                     UnitToInsert = "HH:MM";
                     break;
                 case 0xAA:
-                    DescriptionToInsert = "VEHICLE THEFT SECURITY STATUS | VERSION: " + Util.ByteToHexString(payload, 0, 2);
+                    DescriptionToInsert = "VEHICLE THEFT SECURITY STATUS";
 
                     if (message.Length < 5) break;
+
+                    DescriptionToInsert += " | VERSION: " + Util.ByteToHexString(payload, 0, 2);
 
                     switch (payload[2])
                     {

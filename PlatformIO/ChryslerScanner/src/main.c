@@ -3685,7 +3685,7 @@ void sci_boot_task(void *pvParameters)
             sci.bootstrap.start_worker_function = false;
             sci.msg.tx_count = 1;
 
-            sci_set_timeout(5 * SCI_LS_T1_DELAY);
+            sci_set_timeout(SCI_LS_T1_DELAY);
 
             switch (sci.bootstrap.worker_function_src)
             {
@@ -3736,7 +3736,7 @@ void sci_boot_task(void *pvParameters)
             sci.bootstrap.exit_worker_function = false;
             sci.msg.tx_count = 1;
 
-            sci_set_timeout(5 * SCI_LS_T1_DELAY);
+            sci_set_timeout(SCI_LS_T1_DELAY);
 
             switch (sci.bootstrap.worker_function_src)
             {
