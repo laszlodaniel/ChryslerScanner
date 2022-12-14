@@ -2911,7 +2911,7 @@ void sci_msg_task(void *pvParameters)
                             apply_progvolt(1 << SCI_VPP_EN_BIT);
                             sci.msg.byte_received = false;
                             while (!sci.msg.byte_received && !sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
-                            sci_set_timeout(SCI_LS_T1_DELAY);
+                            sci_set_timeout(SCI_LS_T3_DELAY);
                             while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
                             apply_progvolt(0);
                         }
@@ -3685,7 +3685,7 @@ void sci_boot_task(void *pvParameters)
             sci.bootstrap.start_worker_function = false;
             sci.msg.tx_count = 1;
 
-            sci_set_timeout(SCI_LS_T1_DELAY);
+            sci_set_timeout(SCI_LS_T3_DELAY);
 
             switch (sci.bootstrap.worker_function_src)
             {
@@ -3696,7 +3696,7 @@ void sci_boot_task(void *pvParameters)
                     uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
                     vTaskDelay(pdMS_TO_TICKS(1));
                     apply_progvolt(1 << SCI_VPP_EN_BIT);
-                    vTaskDelay(pdMS_TO_TICKS(200));
+                    vTaskDelay(pdMS_TO_TICKS(100));
                     apply_progvolt(0);
                     break;
                 }
@@ -3736,7 +3736,7 @@ void sci_boot_task(void *pvParameters)
             sci.bootstrap.exit_worker_function = false;
             sci.msg.tx_count = 1;
 
-            sci_set_timeout(SCI_LS_T1_DELAY);
+            sci_set_timeout(SCI_LS_T3_DELAY);
 
             switch (sci.bootstrap.worker_function_src)
             {

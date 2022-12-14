@@ -1039,7 +1039,7 @@ namespace ChryslerScanner
                     "F40B |",
                     "F40C0D | Vehicle speed",
                     "F40D |",
-                    "F40E | Cruise control button pressed",
+                    "F40E | Cruise button pressed",
                     "F40F | Battery voltage",
                     "F410 | Ambient temperature sensor voltage",
                     "F411 | Ambient temperature",

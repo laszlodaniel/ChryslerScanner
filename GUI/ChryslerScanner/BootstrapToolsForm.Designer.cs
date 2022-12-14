@@ -159,10 +159,10 @@ namespace ChryslerScanner
             "Flash erase",
             "Flash write",
             "Verify flash checksum",
-            "EEPROM read (SPI)",
-            "EEPROM write (SPI)",
-            "EEPROM read (Parallel)",
-            "EEPROM write (Parallel)"});
+            "EEPROM read (SBEC)",
+            "EEPROM write (SBEC)",
+            "EEPROM read (JTEC)",
+            "EEPROM write (JTEC)"});
             this.WorkerFunctionComboBox.Location = new System.Drawing.Point(67, 17);
             this.WorkerFunctionComboBox.Name = "WorkerFunctionComboBox";
             this.WorkerFunctionComboBox.Size = new System.Drawing.Size(152, 21);

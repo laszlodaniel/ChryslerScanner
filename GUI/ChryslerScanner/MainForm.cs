@@ -3162,7 +3162,6 @@ namespace ChryslerScanner
                         COMPortsRefreshButton.Enabled = true;
                         COMPortsComboBox.Enabled = true;
                     }
-
                 }
                 else if (ConnectButton.Text == "Disconnect")
                 {

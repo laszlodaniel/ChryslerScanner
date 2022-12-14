@@ -3656,6 +3656,9 @@ namespace ChryslerScanner
                                     case 7:
                                         ValueToInsert = "JX";
                                         break;
+                                    case 0x16:
+                                        ValueToInsert = "WJ";
+                                        break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                         break;
@@ -4496,7 +4499,7 @@ namespace ChryslerScanner
                                 DescriptionToInsert = "VEHICLE SPEED | ERROR: REQUEST F4 0C 0D";
                                 break;
                             case 0x0E:
-                                DescriptionToInsert = "CRUISE | CONTROL BUTTON PRESSED";
+                                DescriptionToInsert = "CRUISE | BUTTON PRESSED";
 
                                 List<string> SwitchList = new List<string>();
                                 SwitchList.Clear();
