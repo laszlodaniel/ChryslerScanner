@@ -1,6 +1,6 @@
 /*
  * ChryslerScanner (https://github.com/laszlodaniel/ChryslerScanner)
- * Copyright (C) 2018-2022, Daniel Laszlo
+ * Copyright (C) 2018-2022 Daniel Laszlo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -251,6 +251,9 @@ typedef struct bus {
 } bus_t;
 
 bus_t ccd, pci, sci;
+
+bool restore_pcm_eeprom = false;
+uint8_t pcm_eeprom_payload[512];
 
 void IRAM_ATTR ccd_startbit_sense_isr_handler(void *arg);
 bool IRAM_ATTR ccd_idle_timer_isr_callback(void *arg);
@@ -1460,6 +1463,22 @@ void parse_usb_command()
                             uint16_t random_number = get_random(min, max);
                             uint8_t ret[2] = { (random_number >> 8) & 0xFF, random_number & 0xFF };
                             send_usb_packet(Bus_USB, Command_Debug, Debug_GetRandomNumber, ret, sizeof(ret));
+                            break;
+                        }
+                        case Debug_RestorePCMEEPROM:
+                        {
+                            if (usb_packet.payload_length < 512)
+                            {
+                                send_usb_packet(Bus_USB, Command_Error, Error_Payload, err, sizeof(err));
+                                break;
+                            }
+
+                            for (int i = 0; i < 512; i++)
+                            {
+                                pcm_eeprom_payload[i] = usb_packet.payload[i];
+                            }
+                            
+                            restore_pcm_eeprom = true;
                             break;
                         }
                         default:
@@ -3006,11 +3025,11 @@ void sci_msg_task(void *pvParameters)
 }
 
 /**
- * @brief Calculate secret bootstrap key from seed value sent by the controller.
+ * @brief Calculate bootstrap key from seed value sent by the controller.
  * 
  * @param seed Seed value sent by the controller.
  * 
- * @param return Key to unlock controller.
+ * @param return Key to unlock bootstrap mode.
  */
 uint16_t get_sbec3_bootstrap_key(uint16_t seed)
 {
@@ -3308,6 +3327,7 @@ void sci_boot_task(void *pvParameters)
             }
 
             stop_bl:
+            while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
             send_usb_packet(Bus_USB, Command_Debug, Debug_InitBootstrapMode, ret, sizeof(ret));
             sci_set_timeout(SCI_LS_T3_DELAY);
         }
@@ -3325,6 +3345,7 @@ void sci_boot_task(void *pvParameters)
             sci.msg.byte_received = false;
             sci.state.idle = false;
             sci.msg.tx_count = 1;
+            sci.msg.rx_ptr = 0;
             uart_flush_input(UART_SCI);
             uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
             sci_set_timeout(5 * SCI_LS_T1_DELAY);
@@ -3676,6 +3697,7 @@ void sci_boot_task(void *pvParameters)
             }
 
             stop_wf:
+            while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
             send_usb_packet(Bus_USB, Command_Debug, Debug_UploadWorkerFunction, ret, sizeof(ret));
             sci_set_timeout(SCI_LS_T3_DELAY);
         }
@@ -3684,6 +3706,7 @@ void sci_boot_task(void *pvParameters)
         {
             sci.bootstrap.start_worker_function = false;
             sci.msg.tx_count = 1;
+            sci.msg.rx_ptr = 0;
 
             sci_set_timeout(SCI_LS_T3_DELAY);
 
@@ -3735,6 +3758,7 @@ void sci_boot_task(void *pvParameters)
         {
             sci.bootstrap.exit_worker_function = false;
             sci.msg.tx_count = 1;
+            sci.msg.rx_ptr = 0;
 
             sci_set_timeout(SCI_LS_T3_DELAY);
 
@@ -3771,6 +3795,248 @@ void sci_boot_task(void *pvParameters)
             }
         }
 
+        vTaskDelay(1);
+    }
+
+    vTaskDelete(NULL);
+}
+
+/**
+ * @brief Calculate level 1 key from seed value sent by the controller.
+ * 
+ * @param seed Seed value sent by the controller.
+ * 
+ * @param return Key to unlock level 1 access.
+ */
+uint16_t get_sbec3_level1_key(uint16_t seed)
+{
+    return ((seed << 2) + 0x9018);
+}
+
+/**
+ * @brief Calculate level 2 key from seed value sent by the controller.
+ * 
+ * @param seed Seed value sent by the controller.
+ * 
+ * @param return Key to unlock level 2 access.
+ */
+uint16_t get_sbec3_level2_key(uint16_t seed)
+{
+    uint16_t key = seed & 0xFF00;
+    key |= key >> 8;
+    uint16_t mask = seed & 0xFF;
+    mask |= mask << 8;
+    key ^= 0x9340; // polinom
+    key += 0x1010;
+    key ^= mask;
+    key += 0x1911;
+    uint16_t tmp = (key << 16) | key;
+    key += tmp >> 3;
+    return key;
+}
+
+/**
+ * @brief Task to handle EEPROM restore via SCI-bus.
+ * 
+ * @param pvParameters Unused parameters.
+ */
+void sci_eeprom_task(void *pvParameters)
+{
+    // Status bytes:
+    // 0 = ok
+    // 1 = no response to security seed request
+    // 2 = checksum error
+    // 3 = no response to key message
+    // 4 = key not accepted
+    // 5 = read EEPROM command not returning a value
+    // 6 = write EEPROM command not returning a result
+    // 7 = write EEPROM command failed
+    
+    uint8_t ret[1] = { 0 };
+    uint8_t buff[16];
+    uint8_t checksum = 0;
+    bool key_required = true;
+    uint8_t req_seed_cmd[1] = { 0x2B };
+    uint8_t send_key_cmd[4] = { 0x2C, 0, 0, 0 };
+    uint8_t read_eeprom_cmd[3] = { 0x28, 0, 0};
+    uint8_t write_eeprom_cmd[4] = { 0x27, 0, 0, 0};
+    uint8_t offset[2] = { 0, 0 };
+    uint8_t attempts = 0;
+    bool valid_response = false;
+    
+    for (EVER)
+    {
+        if (restore_pcm_eeprom)
+        {
+            ret[0] = 0; // ok
+            restore_pcm_eeprom = false;
+            checksum = 0;
+            key_required = true;
+            sci.msg.byte_received = false;
+            sci.state.idle = false;
+            sci.msg.tx_count = 1;
+            sci.msg.rx_ptr = 0;
+            uart_flush_input(UART_SCI);
+            uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
+            sci_set_timeout(2 * SCI_LS_T3_DELAY);
+            uart_write_bytes(UART_SCI, (const uint8_t *)req_seed_cmd, sizeof(req_seed_cmd));
+            uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
+            vTaskDelay(pdMS_TO_TICKS(1));
+
+            while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+
+            if (!sci.msg.byte_received || (sci.msg.last_rx_length < 4))
+            {
+                ret[0] = 1; // no response to security seed request
+                goto stop_er;
+            }
+
+            checksum = sci.msg.rx_buffer[0] + sci.msg.rx_buffer[1] + sci.msg.rx_buffer[2];
+
+            if (checksum != sci.msg.rx_buffer[3])
+            {
+                ret[0] = 2; // checksum error
+                goto stop_er;
+            }
+
+            uint16_t seed = to_uint16(sci.msg.rx_buffer[1], sci.msg.rx_buffer[2]);
+
+            if (seed == 0)
+            {
+                key_required = false;
+            }
+
+            if (key_required)
+            {
+                uint16_t key = get_sbec3_level1_key(seed);
+
+                send_key_cmd[1] = (key >> 8) & 0xFF;
+                send_key_cmd[2] = key & 0xFF;
+                send_key_cmd[3] = calculate_checksum(send_key_cmd, 0, sizeof(send_key_cmd) - 1);
+
+                sci.msg.byte_received = false;
+                sci.state.idle = false;
+                sci_set_timeout(2 * SCI_LS_T3_DELAY);
+
+                for (uint8_t i = 0; i < sizeof(send_key_cmd); i++)
+                {
+                    buff[0] = send_key_cmd[i];
+                    uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                    while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                    sci.msg.byte_received = false;
+                }
+
+                while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+
+                if (sci.msg.last_rx_length < 5)
+                {
+                    ret[0] = 3;
+                    goto stop_er;
+                }
+
+                if (sci.msg.rx_buffer[4] != 0)
+                {
+                    ret[0] = 4;
+                    goto stop_er;
+                }
+            }
+
+            for (int i = 0; i < 512; i++)
+            {
+                offset[0] = (i >> 8) & 0xFF;
+                offset[1] = i & 0xFF;
+                read_eeprom_cmd[1] = offset[0];
+                read_eeprom_cmd[2] = offset[1];
+                valid_response = false;
+                attempts = 0;
+
+                sci.msg.byte_received = false;
+                sci.state.idle = false;
+                sci_set_timeout(2 * SCI_LS_T3_DELAY);
+
+                for (uint8_t i = 0; i < sizeof(read_eeprom_cmd); i++)
+                {
+                    buff[0] = read_eeprom_cmd[i];
+                    uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                    while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                    sci.msg.byte_received = false;
+                }
+
+                while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+
+                if (sci.msg.byte_received)
+                {
+                    valid_response = true;
+                }
+                else
+                {
+                    attempts++;
+
+                    if (attempts >= 10)
+                    {
+                        ret[0] = 5;
+                        goto stop_er;
+                    }
+
+                    vTaskDelay(100);
+                }
+
+                if (sci.msg.rx_buffer[3] != pcm_eeprom_payload[i]) // write new EEPROM byte
+                {
+                    write_eeprom_cmd[1] = offset[0];
+                    write_eeprom_cmd[2] = offset[1];
+                    write_eeprom_cmd[3] = pcm_eeprom_payload[i];
+                    valid_response = false;
+                    attempts = 0;
+
+                    while (!valid_response)
+                    {
+                        sci.msg.byte_received = false;
+                        sci.state.idle = false;
+                        sci_set_timeout(2 * SCI_LS_T3_DELAY);
+
+                        for (uint8_t i = 0; i < sizeof(write_eeprom_cmd); i++)
+                        {
+                            buff[0] = write_eeprom_cmd[i];
+                            uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                            while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                            sci.msg.byte_received = false;
+                        }
+
+                        while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+
+                        if (sci.msg.byte_received)
+                        {
+                            valid_response = true;
+                        }
+                        else
+                        {
+                            attempts++;
+
+                            if (attempts >= 10)
+                            {
+                                ret[0] = 6;
+                                goto stop_er;
+                            }
+
+                            vTaskDelay(100);
+                        }
+                    }
+
+                    if (sci.msg.rx_buffer[4] != 0xE2)
+                    {
+                        ret[0] = 7;
+                        goto stop_er;
+                    }
+                }
+            }
+
+            stop_er:
+            while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+            send_usb_packet(Bus_USB, Command_Debug, Debug_RestorePCMEEPROM, ret, sizeof(ret));
+            sci_set_timeout(SCI_LS_T3_DELAY);
+        }
+        
         vTaskDelay(1);
     }
 
@@ -4557,5 +4823,6 @@ void app_main()
     xTaskCreate(sci_event_task, "sci_event_task", 8192, NULL, 8, NULL); // create a task to handle SCI-bus communication
     xTaskCreate(sci_msg_task, "sci_msg_task", 8192, NULL, 9, NULL); // create a task to handle SCI-bus messages
     xTaskCreate(sci_boot_task, "sci_boot_task", 8192, NULL, 10, NULL); // create a task to handle SCI-bus bootstrap mode
-    //xTaskCreate(debug_task, "debug_task", 8192, NULL, 12, NULL); // create a task to do debug stuff
+    xTaskCreate(sci_eeprom_task, "sci_eeprom_task", 8192, NULL, 12, NULL); // create a task to handle EEPROM restore via SCI-bus
+    //xTaskCreate(debug_task, "debug_task", 8192, NULL, 13, NULL); // create a task to do debug stuff
 }
