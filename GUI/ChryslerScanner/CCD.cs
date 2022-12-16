@@ -532,10 +532,11 @@ namespace ChryslerScanner
 
                     if (message.Length < 4) break;
 
-                    if (Util.IsBitSet(payload[1], 7)) // Autostick equipped
+                    if (Util.IsBitSet(payload[1], 7) && ((payload[1] & 0x70) != 0)) // Autostick equipped
                     {
                         ValueToInsert += "AUTOSTICK | ";
                     }
+
                     switch (payload[1] & 0x70)
                     {
                         case 0x10:
