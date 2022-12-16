@@ -797,7 +797,7 @@ namespace ChryslerScanner
 
                     if (message.Length < 4) break;
 
-                    double OutsideAirTemperatureC = payload[0] - 40.0;
+                    double OutsideAirTemperatureC = payload[0] - 70.0;
                     double OutsideAirTemperatureF = 1.8 * OutsideAirTemperatureC + 32.0;
 
                     if (Properties.Settings.Default.Units == "imperial")
