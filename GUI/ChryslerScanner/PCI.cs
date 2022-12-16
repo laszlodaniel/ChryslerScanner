@@ -191,8 +191,8 @@ namespace ChryslerScanner
                     if (message.Length < 6) break;
 
                     double TPSVolts = payload[0] * 0.0196; // current volts - minimum volts
-                    double CruiseSetSpeedMPH = payload[1] * 0.5 * 1.25;
-                    double CruiseSetSpeedKMH = CruiseSetSpeedMPH * 1.609344;
+                    double CruiseSetSpeedKMH = payload[1];
+                    double CruiseSetSpeedMPH = CruiseSetSpeedKMH / 1.609344;
                     byte CruiseState = payload[2];
                     double TargetIdle = payload[3] * 32.0 * 0.25;
 
@@ -754,7 +754,7 @@ namespace ChryslerScanner
 
                     if (message.Length < 4) break;
 
-                    double OutsideAirTemperatureC = payload[0] - 70.0;
+                    double OutsideAirTemperatureC = payload[0] - 40.0;
                     double OutsideAirTemperatureF = 1.8 * OutsideAirTemperatureC + 32.0;
 
                     if (Properties.Settings.Default.Units == "imperial")
