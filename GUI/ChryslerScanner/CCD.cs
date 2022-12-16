@@ -528,26 +528,29 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x52:
-                    DescriptionToInsert = "TRANSMISSION STATUS / SELECTED GEAR";
+                    DescriptionToInsert = "TRANSMISSION GEAR REQUEST";
 
                     if (message.Length < 4) break;
 
-                    switch (payload[0])
+                    if (Util.IsBitSet(payload[1], 7)) // Autostick equipped
+                    {
+                        ValueToInsert += "AUTOSTICK | ";
+                    }
+                    switch (payload[1] & 0x70)
                     {
                         case 0x10:
-                            ValueToInsert = "1ST";
+                            ValueToInsert += "1ST";
                             break;
                         case 0x20:
-                            ValueToInsert = "2ND";
+                            ValueToInsert += "2ND";
                             break;
                         case 0x30:
-                            ValueToInsert = "3RD";
+                            ValueToInsert += "3RD";
                             break;
                         case 0x40:
-                            ValueToInsert = "4TH";
+                            ValueToInsert += "4TH";
                             break;
                         default:
-                            ValueToInsert = "UNDEFINED";
                             break;
                     }
                     break;
@@ -1932,19 +1935,18 @@ namespace ChryslerScanner
 
                     break;
                 case 0xDC:
-                    DescriptionToInsert = "SELECTED GEAR";
+                    DescriptionToInsert = "TRANSMISSION SELECTED GEAR";
 
                     if (message.Length < 3) break;
 
                     ValueToInsert = string.Empty;
 
                     if (Util.IsBitSet(payload[0], 0)) ValueToInsert += "NEUTRAL ";
-                    else if (Util.IsBitSet(payload[0], 1)) ValueToInsert += "REVERSE ";
-                    else if (Util.IsBitSet(payload[0], 2)) ValueToInsert += "1 ";
-                    else if (Util.IsBitSet(payload[0], 3)) ValueToInsert += "2 ";
-                    else if (Util.IsBitSet(payload[0], 4)) ValueToInsert += "3 ";
-                    else if (Util.IsBitSet(payload[0], 5)) ValueToInsert += "4 ";
-                    else ValueToInsert += "N/A ";
+                    if (Util.IsBitSet(payload[0], 1)) ValueToInsert += "REVERSE ";
+                    if (Util.IsBitSet(payload[0], 2)) ValueToInsert += "1ST ";
+                    if (Util.IsBitSet(payload[0], 3)) ValueToInsert += "2ND ";
+                    if (Util.IsBitSet(payload[0], 4)) ValueToInsert += "3RD ";
+                    if (Util.IsBitSet(payload[0], 5)) ValueToInsert += "4TH ";
 
                     switch ((payload[0] >> 6) & 0x03)
                     {
@@ -1955,7 +1957,6 @@ namespace ChryslerScanner
                             ValueToInsert += "| LOCK: FULL";
                             break;
                         default:
-                            ValueToInsert += "| LOCK: N/A";
                             break;
                     }
                     break;

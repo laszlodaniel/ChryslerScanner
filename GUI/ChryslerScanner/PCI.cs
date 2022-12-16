@@ -92,6 +92,12 @@ namespace ChryslerScanner
 
             switch (ID)
             {
+                case 0x0A:
+                    DescriptionToInsert = "AIRBAG LAMP REQUEST";
+
+                    if (message.Length < 4) break;
+
+                    break;
                 case 0x10:
                     DescriptionToInsert = "ENGINE SPEED | VEHICLE SPEED | MAP";
 
@@ -250,6 +256,12 @@ namespace ChryslerScanner
                     // TODO
 
                     break;
+                case 0x25:
+                    DescriptionToInsert = "FRONT DOOR AJAR SWITCH";
+
+                    if (message.Length < 4) break;
+
+                    break;
                 case 0x26:
                     DescriptionToInsert = "RESPONSE |";
 
@@ -345,21 +357,41 @@ namespace ChryslerScanner
                             ValueToInsert = "UNDEFINED";
                             break;
                     }
+
+                    if ((payload[0] == 0x06) && Util.IsBitSet(payload[1], 7)) // Autostick equipped
+                    {
+                        switch (payload[1] & 0xF0)
+                        {
+                            case 0x90:
+                                ValueToInsert += " | 1ST";
+                                break;
+                            case 0xA0:
+                                ValueToInsert += " | 2ND";
+                                break;
+                            case 0xB0:
+                                ValueToInsert += " | 3RD";
+                                break;
+                            case 0xC0:
+                                ValueToInsert += " | 4TH";
+                                break;
+                            default:
+                                break;
+                        }
+                    }
                     break;
                 case 0x3A:
-                    DescriptionToInsert = "SELECTED GEAR";
+                    DescriptionToInsert = "TRANSMISSION SELECTED GEAR";
 
                     if (message.Length < 3) break;
 
                     ValueToInsert = string.Empty;
 
                     if (Util.IsBitSet(payload[0], 0)) ValueToInsert += "NEUTRAL ";
-                    else if (Util.IsBitSet(payload[0], 1)) ValueToInsert += "REVERSE ";
-                    else if (Util.IsBitSet(payload[0], 2)) ValueToInsert += "1 ";
-                    else if (Util.IsBitSet(payload[0], 3)) ValueToInsert += "2 ";
-                    else if (Util.IsBitSet(payload[0], 4)) ValueToInsert += "3 ";
-                    else if (Util.IsBitSet(payload[0], 5)) ValueToInsert += "4 ";
-                    else ValueToInsert += "N/A ";
+                    if (Util.IsBitSet(payload[0], 1)) ValueToInsert += "REVERSE ";
+                    if (Util.IsBitSet(payload[0], 2)) ValueToInsert += "1ST ";
+                    if (Util.IsBitSet(payload[0], 3)) ValueToInsert += "2ND ";
+                    if (Util.IsBitSet(payload[0], 4)) ValueToInsert += "3RD ";
+                    if (Util.IsBitSet(payload[0], 5)) ValueToInsert += "4TH ";
 
                     switch ((payload[0] >> 6) & 0x03)
                     {
@@ -370,7 +402,6 @@ namespace ChryslerScanner
                             ValueToInsert += "| LOCK: FULL";
                             break;
                         default:
-                            ValueToInsert += "| LOCK: N/A";
                             break;
                     }
                     break;
@@ -509,6 +540,12 @@ namespace ChryslerScanner
                     if (message.Length < 5) break;
 
                     ValueToInsert = Util.ByteToHexString(payload, 0, 3);
+
+                    break;
+                case 0x5B:
+                    DescriptionToInsert = "RUN RELAY";
+
+                    if (message.Length < 4) break;
 
                     break;
                 case 0x5D:
@@ -664,6 +701,12 @@ namespace ChryslerScanner
                         ValueToInsert = Math.Round(FuelLevelSensorVolts, 3).ToString("0.000").Replace(",", ".") + " | " + Math.Round(FuelLevelL, 1).ToString("0.0").Replace(",", ".");
                         UnitToInsert = "V | LITER";
                     }
+                    break;
+                case 0xA7:
+                    DescriptionToInsert = "FOB NUMBER/BUTTON";
+
+                    if (message.Length < 4) break;
+
                     break;
                 case 0xAC:
                     DescriptionToInsert = "RADIO CLOCK DISPLAY";

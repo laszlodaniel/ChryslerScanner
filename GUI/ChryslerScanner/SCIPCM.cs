@@ -4328,56 +4328,76 @@ namespace ChryslerScanner
 
                         if (message.Length < 3) break;
 
-                        for (int i = 0; i < HSBPNum; i++)
+                        switch (payload[0])
                         {
-                            HSOffset.Add(payload[i * 2]);
-                            HSValues.Add(payload[(i * 2) + 1]);
-                        }
+                            default:
+                                for (int i = 0; i < HSBPNum; i++)
+                                {
+                                    HSOffset.Add(payload[i * 2]);
+                                    HSValues.Add(payload[(i * 2) + 1]);
+                                }
 
-                        DescriptionToInsert = "F0 RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(HSOffset.ToArray());
-                        ValueToInsert = Util.ByteToHexStringSimple(HSValues.ToArray());
+                                DescriptionToInsert = "F0 RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(HSOffset.ToArray());
+                                ValueToInsert = Util.ByteToHexStringSimple(HSValues.ToArray());
+                                break;
+                        }
                         break;
                     case 0xF1:
                         DescriptionToInsert = "F1 RAM TABLE SELECTED";
 
                         if (message.Length < 3) break;
 
-                        for (int i = 0; i < HSBPNum; i++)
+                        switch (payload[0])
                         {
-                            HSOffset.Add(payload[i * 2]);
-                            HSValues.Add(payload[(i * 2) + 1]);
-                        }
+                            default:
+                                for (int i = 0; i < HSBPNum; i++)
+                                {
+                                    HSOffset.Add(payload[i * 2]);
+                                    HSValues.Add(payload[(i * 2) + 1]);
+                                }
 
-                        DescriptionToInsert = "F1 RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(HSOffset.ToArray());
-                        ValueToInsert = Util.ByteToHexStringSimple(HSValues.ToArray());
+                                DescriptionToInsert = "F1 RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(HSOffset.ToArray());
+                                ValueToInsert = Util.ByteToHexStringSimple(HSValues.ToArray());
+                                break;
+                        }
                         break;
                     case 0xF2:
                         DescriptionToInsert = "F2 RAM TABLE SELECTED";
 
                         if (message.Length < 3) break;
 
-                        for (int i = 0; i < HSBPNum; i++)
+                        switch (payload[0])
                         {
-                            HSOffset.Add(payload[i * 2]);
-                            HSValues.Add(payload[(i * 2) + 1]);
-                        }
+                            default:
+                                for (int i = 0; i < HSBPNum; i++)
+                                {
+                                    HSOffset.Add(payload[i * 2]);
+                                    HSValues.Add(payload[(i * 2) + 1]);
+                                }
 
-                        DescriptionToInsert = "F2 RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(HSOffset.ToArray());
-                        ValueToInsert = Util.ByteToHexStringSimple(HSValues.ToArray());
+                                DescriptionToInsert = "F2 RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(HSOffset.ToArray());
+                                ValueToInsert = Util.ByteToHexStringSimple(HSValues.ToArray());
+                                break;
+                        }
                         break;
                     case 0xF3:
                         DescriptionToInsert = "F3 RAM TABLE SELECTED";
 
                         if (message.Length < 3) break;
 
-                        for (int i = 0; i < HSBPNum; i++)
+                        switch (payload[0])
                         {
-                            HSOffset.Add(payload[i * 2]);
-                            HSValues.Add(payload[(i * 2) + 1]);
-                        }
+                            default:
+                                for (int i = 0; i < HSBPNum; i++)
+                                {
+                                    HSOffset.Add(payload[i * 2]);
+                                    HSValues.Add(payload[(i * 2) + 1]);
+                                }
 
-                        DescriptionToInsert = "F3 RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(HSOffset.ToArray());
-                        ValueToInsert = Util.ByteToHexStringSimple(HSValues.ToArray());
+                                DescriptionToInsert = "F3 RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(HSOffset.ToArray());
+                                ValueToInsert = Util.ByteToHexStringSimple(HSValues.ToArray());
+                                break;
+                        }
                         break;
                     case 0xF4:
                         DescriptionToInsert = "F4 RAM TABLE SELECTED";
@@ -4455,16 +4475,16 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0x0B)
-                                {
-                                    double EngineSpeed = ((payload[1] << 8) + payload[3]) * 0.125;
-                                    ValueToInsert = Math.Round(EngineSpeed, 3).ToString("0.000").Replace(",", ".");
-                                    UnitToInsert = "RPM";
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST F4 0A 0B";
+                                    break;
                                 }
+
+                                double EngineSpeed = ((payload[1] << 8) + payload[3]) * 0.125;
+
+                                ValueToInsert = Math.Round(EngineSpeed, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "RPM";
                                 break;
                             case 0x0B:
                                 DescriptionToInsert = "ENGINE SPEED | ERROR: REQUEST F4 0A 0B";
@@ -4474,25 +4494,24 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0x0D)
-                                {
-                                    double VehicleSpeedMPH = ((payload[1] << 8) + payload[3]) * 0.015625;
-                                    double VehicleSpeedKMH = VehicleSpeedMPH * 1.609344;
-
-                                    if (Properties.Settings.Default.Units == "imperial")
-                                    {
-                                        ValueToInsert = Math.Round(VehicleSpeedMPH, 3).ToString("0.000").Replace(",", ".");
-                                        UnitToInsert = "MPH";
-                                    }
-                                    else if (Properties.Settings.Default.Units == "metric")
-                                    {
-                                        ValueToInsert = Math.Round(VehicleSpeedKMH, 3).ToString("0.000").Replace(",", ".");
-                                        UnitToInsert = "KM/H";
-                                    }
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST F4 0C 0D";
+                                    break;
+                                }
+
+                                double VehicleSpeedMPH = ((payload[1] << 8) + payload[3]) * 0.015625;
+                                double VehicleSpeedKMH = VehicleSpeedMPH * 1.609344;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(VehicleSpeedMPH, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "MPH";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(VehicleSpeedKMH, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "KM/H";
                                 }
                                 break;
                             case 0x0D:
@@ -4781,16 +4800,16 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0x28)
-                                {
-                                    double InjectorPulseWidth1 = ((payload[1] << 8) + payload[3]) * 0.00390625;
-                                    ValueToInsert = Math.Round(InjectorPulseWidth1, 3).ToString("0.000").Replace(",", ".");
-                                    UnitToInsert = "MS";
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST F4 27 28";
+                                    break;
                                 }
+
+                                double InjectorPulseWidth1 = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(InjectorPulseWidth1, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "MS";
                                 break;
                             case 0x28:
                                 DescriptionToInsert = "INJECTOR PULSE WIDTH 1 | ERROR: REQUEST F4 27 28";
@@ -4800,16 +4819,16 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0x2A)
-                                {
-                                    double InjectorPulseWidth2 = ((payload[1] << 8) + payload[3]) * 0.00390625;
-                                    ValueToInsert = Math.Round(InjectorPulseWidth2, 3).ToString("0.000").Replace(",", ".");
-                                    UnitToInsert = "MS";
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST F4 29 2A";
+                                    break;
                                 }
+
+                                double InjectorPulseWidth2 = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(InjectorPulseWidth2, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "MS";
                                 break;
                             case 0x2A:
                                 DescriptionToInsert = "INJECTOR PULSE WIDTH 2 | ERROR: REQUEST F4 29 2A";
@@ -4921,16 +4940,15 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0x36)
-                                {
-                                    double IdleSpeed = ((payload[1] << 8) + payload[3]) * 0.125;
-                                    ValueToInsert = Math.Round(IdleSpeed, 3).ToString("0.000").Replace(",", ".");
-                                    UnitToInsert = "RPM";
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST F4 35 36";
                                 }
+
+                                double IdleSpeed = ((payload[1] << 8) + payload[3]) * 0.125;
+
+                                ValueToInsert = Math.Round(IdleSpeed, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "RPM";
                                 break;
                             case 0x36:
                                 DescriptionToInsert = "TARGET IDLE SPEED | ERROR: REQUEST F4 35 36";
@@ -4969,14 +4987,13 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0x3D)
-                                {
-                                    ValueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0') + " " + Convert.ToString(payload[3], 2).PadLeft(8, '0');
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST F4 3C 3D";
+                                    break;
                                 }
+
+                                ValueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0') + " " + Convert.ToString(payload[3], 2).PadLeft(8, '0');
                                 break;
                             case 0x3D:
                                 DescriptionToInsert = "BIT STATE 5 | ERROR: REQUEST F4 3C 3D";
@@ -5215,16 +5232,16 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0x4C)
-                                {
-                                    double TimeFromStartRun = ((payload[1] << 8) + payload[3]) * 0.000208984375;
-                                    ValueToInsert = Math.Round(TimeFromStartRun, 3).ToString("0.000").Replace(",", ".");
-                                    UnitToInsert = "MINUTES";
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST F4 4B 4C";
+                                    break;
                                 }
+
+                                double TimeFromStartRun = ((payload[1] << 8) + payload[3]) * 0.000208984375;
+
+                                ValueToInsert = Math.Round(TimeFromStartRun, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "MINUTES";
                                 break;
                             case 0x4C:
                                 DescriptionToInsert = "TIME FROM START/RUN | ERROR: REQUEST F4 4B 4C";
@@ -5476,7 +5493,7 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0x7B)
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     ValueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0') + " " + Convert.ToString(payload[3], 2).PadLeft(8, '0');
                                 }
@@ -5994,20 +6011,19 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0xCC)
-                                {
-                                    if ((payload[1] == 0) && (payload[3] == 0))
-                                    {
-                                        DescriptionToInsert = "TCM | NO FAULT CODE";
-                                        break;
-                                    }
-
-                                    ValueToInsert = "OBD2 P" + Util.ByteToHexStringSimple(new byte[2] { payload[1], payload[3] }).Replace(" ", "");
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST F5 CB CC";
+                                    break;
                                 }
+
+                                if ((payload[1] == 0) && (payload[3] == 0))
+                                {
+                                    DescriptionToInsert = "TCM | NO FAULT CODE";
+                                    break;
+                                }
+
+                                ValueToInsert = "OBD2 P" + Util.ByteToHexStringSimple(new byte[2] { payload[1], payload[3] }).Replace(" ", "");
                                 break;
                             default:
                                 for (int i = 0; i < HSBPNum; i++)
@@ -6026,28 +6042,38 @@ namespace ChryslerScanner
 
                         if (message.Length < 3) break;
 
-                        for (int i = 0; i < HSBPNum; i++)
+                        switch (payload[0])
                         {
-                            HSOffset.Add(payload[i * 2]);
-                            HSValues.Add(payload[(i * 2) + 1]);
-                        }
+                            default:
+                                for (int i = 0; i < HSBPNum; i++)
+                                {
+                                    HSOffset.Add(payload[i * 2]);
+                                    HSValues.Add(payload[(i * 2) + 1]);
+                                }
 
-                        DescriptionToInsert = "F6 RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(HSOffset.ToArray());
-                        ValueToInsert = Util.ByteToHexStringSimple(HSValues.ToArray());
+                                DescriptionToInsert = "F6 RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(HSOffset.ToArray());
+                                ValueToInsert = Util.ByteToHexStringSimple(HSValues.ToArray());
+                                break;
+                        }
                         break;
                     case 0xF7:
                         DescriptionToInsert = "F7 RAM TABLE SELECTED";
 
                         if (message.Length < 3) break;
 
-                        for (int i = 0; i < HSBPNum; i++)
+                        switch (payload[0])
                         {
-                            HSOffset.Add(payload[i * 2]);
-                            HSValues.Add(payload[(i * 2) + 1]);
-                        }
+                            default:
+                                for (int i = 0; i < HSBPNum; i++)
+                                {
+                                    HSOffset.Add(payload[i * 2]);
+                                    HSValues.Add(payload[(i * 2) + 1]);
+                                }
 
-                        DescriptionToInsert = "F7 RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(HSOffset.ToArray());
-                        ValueToInsert = Util.ByteToHexStringSimple(HSValues.ToArray());
+                                DescriptionToInsert = "F7 RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(HSOffset.ToArray());
+                                ValueToInsert = Util.ByteToHexStringSimple(HSValues.ToArray());
+                                break;
+                        }
                         break;
                     case 0xF8:
                         DescriptionToInsert = "F8 RAM TABLE SELECTED";
@@ -6056,8 +6082,6 @@ namespace ChryslerScanner
 
                         switch (payload[0])
                         {
-                            case 0xCB:
-                                break;
                             default:
                                 for (int i = 0; i < HSBPNum; i++)
                                 {
@@ -6075,28 +6099,38 @@ namespace ChryslerScanner
 
                         if (message.Length < 3) break;
 
-                        for (int i = 0; i < HSBPNum; i++)
+                        switch (payload[0])
                         {
-                            HSOffset.Add(payload[i * 2]);
-                            HSValues.Add(payload[(i * 2) + 1]);
-                        }
+                            default:
+                                for (int i = 0; i < HSBPNum; i++)
+                                {
+                                    HSOffset.Add(payload[i * 2]);
+                                    HSValues.Add(payload[(i * 2) + 1]);
+                                }
 
-                        DescriptionToInsert = "F9 RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(HSOffset.ToArray());
-                        ValueToInsert = Util.ByteToHexStringSimple(HSValues.ToArray());
+                                DescriptionToInsert = "F9 RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(HSOffset.ToArray());
+                                ValueToInsert = Util.ByteToHexStringSimple(HSValues.ToArray());
+                                break;
+                        }
                         break;
                     case 0xFA:
                         DescriptionToInsert = "FA RAM TABLE SELECTED";
 
                         if (message.Length < 3) break;
 
-                        for (int i = 0; i < HSBPNum; i++)
+                        switch (payload[0])
                         {
-                            HSOffset.Add(payload[i * 2]);
-                            HSValues.Add(payload[(i * 2) + 1]);
-                        }
+                            default:
+                                for (int i = 0; i < HSBPNum; i++)
+                                {
+                                    HSOffset.Add(payload[i * 2]);
+                                    HSValues.Add(payload[(i * 2) + 1]);
+                                }
 
-                        DescriptionToInsert = "FA RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(HSOffset.ToArray());
-                        ValueToInsert = Util.ByteToHexStringSimple(HSValues.ToArray());
+                                DescriptionToInsert = "FA RAM TABLE | OFFSET: " + Util.ByteToHexStringSimple(HSOffset.ToArray());
+                                ValueToInsert = Util.ByteToHexStringSimple(HSValues.ToArray());
+                                break;
+                        }
                         break;
                     case 0xFB:
                         DescriptionToInsert = "FB RAM TABLE SELECTED";
@@ -6110,16 +6144,16 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0x02)
-                                {
-                                    double EngineSpeed = ((payload[1] << 8) + payload[3]) * 0.125;
-                                    ValueToInsert = Math.Round(EngineSpeed, 3).ToString("0.000").Replace(",", ".");
-                                    UnitToInsert = "RPM";
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FB 01 02";
+                                    break;
                                 }
+
+                                double EngineSpeed = ((payload[1] << 8) + payload[3]) * 0.125;
+
+                                ValueToInsert = Math.Round(EngineSpeed, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "RPM";
                                 break;
                             case 0x02:
                                 DescriptionToInsert = "ENGINE SPEED | ERROR: REQUEST FB 01 02";
@@ -6129,25 +6163,24 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0x06)
-                                {
-                                    double VehicleSpeedMPH = ((payload[1] << 8) + payload[3]) * 0.00390625;
-                                    double VehicleSpeedKMH = VehicleSpeedMPH * 1.609344;
-
-                                    if (Properties.Settings.Default.Units == "imperial")
-                                    {
-                                        ValueToInsert = Math.Round(VehicleSpeedMPH, 3).ToString("0.000").Replace(",", ".");
-                                        UnitToInsert = "MPH";
-                                    }
-                                    else if (Properties.Settings.Default.Units == "metric")
-                                    {
-                                        ValueToInsert = Math.Round(VehicleSpeedKMH, 3).ToString("0.000").Replace(",", ".");
-                                        UnitToInsert = "KM/H";
-                                    }
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FB 05 06";
+                                    break;
+                                }
+
+                                double VehicleSpeedMPH = ((payload[1] << 8) + payload[3]) * 0.00390625;
+                                double VehicleSpeedKMH = VehicleSpeedMPH * 1.609344;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(VehicleSpeedMPH, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "MPH";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(VehicleSpeedKMH, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "KM/H";
                                 }
                                 break;
                             case 0x06:
@@ -6158,16 +6191,16 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0x08)
-                                {
-                                    double APPSPercent = ((payload[1] << 8) + payload[3]) * 0.25;
-                                    ValueToInsert = Math.Round(APPSPercent, 1).ToString("0.0").Replace(",", ".");
-                                    UnitToInsert = "PERCENT";
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FB 07 08";
+                                    break;
                                 }
+
+                                double APPSPercent = ((payload[1] << 8) + payload[3]) * 0.25;
+
+                                ValueToInsert = Math.Round(APPSPercent, 1).ToString("0.0").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
                                 break;
                             case 0x08:
                                 DescriptionToInsert = "APP SENSOR PERCENT | ERROR: REQUEST FB 07 08";
@@ -6177,25 +6210,24 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0x10)
-                                {
-                                    double ECTF = ((payload[1] << 8) + payload[3]) * 0.0156;
-                                    double ECTC = (ECTF - 32.0) / 1.8;
-
-                                    if (Properties.Settings.Default.Units == "imperial")
-                                    {
-                                        ValueToInsert = Math.Round(ECTF, 1).ToString("0.0").Replace(",", ".");
-                                        UnitToInsert = "°F";
-                                    }
-                                    else if (Properties.Settings.Default.Units == "metric")
-                                    {
-                                        ValueToInsert = Math.Round(ECTC, 1).ToString("0.0").Replace(",", ".");
-                                        UnitToInsert = "°C";
-                                    }
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FB 0F 10";
+                                    break;
+                                }
+
+                                double ECTF = ((payload[1] << 8) + payload[3]) * 0.0156;
+                                double ECTC = (ECTF - 32.0) / 1.8;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(ECTF, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "°F";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(ECTC, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "°C";
                                 }
                                 break;
                             case 0x10:
@@ -6206,16 +6238,16 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0x12)
-                                {
-                                    double ECTVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
-                                    ValueToInsert = Math.Round(ECTVolts, 3).ToString("0.000").Replace(",", ".");
-                                    UnitToInsert = "V";
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FB 11 12";
+                                    break;
                                 }
+
+                                double ECTVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
+
+                                ValueToInsert = Math.Round(ECTVolts, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "V";
                                 break;
                             case 0x12:
                                 DescriptionToInsert = "ECT SENSOR VOLTS | ERROR: REQUEST FB 11 12";
@@ -6225,25 +6257,24 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0xBA)
-                                {
-                                    double IATF = ((payload[1] << 8) + payload[3]) * 0.0156;
-                                    double IATC = (IATF - 32.0) / 1.8;
-
-                                    if (Properties.Settings.Default.Units == "imperial")
-                                    {
-                                        ValueToInsert = Math.Round(IATF, 1).ToString("0.0").Replace(",", ".");
-                                        UnitToInsert = "°F";
-                                    }
-                                    else if (Properties.Settings.Default.Units == "metric")
-                                    {
-                                        ValueToInsert = Math.Round(IATC, 1).ToString("0.0").Replace(",", ".");
-                                        UnitToInsert = "°C";
-                                    }
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FB 15 16";
+                                    break;
+                                }
+
+                                double IATF = ((payload[1] << 8) + payload[3]) * 0.0156;
+                                double IATC = (IATF - 32.0) / 1.8;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(IATF, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "°F";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(IATC, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "°C";
                                 }
                                 break;
                             case 0x16:
@@ -6254,16 +6285,16 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0x18)
-                                {
-                                    double IATVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
-                                    ValueToInsert = Math.Round(IATVolts, 3).ToString("0.000").Replace(",", ".");
-                                    UnitToInsert = "V";
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FB 17 18";
+                                    break;
                                 }
+
+                                double IATVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
+
+                                ValueToInsert = Math.Round(IATVolts, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "V";
                                 break;
                             case 0x18:
                                 DescriptionToInsert = "IAT SENSOR VOLTS | ERROR: REQUEST FB 17 18";
@@ -6273,17 +6304,16 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0x1A)
-                                {
-                                    double ECMBatteryVolts = ((payload[1] << 8) + payload[3]) * 0.0625;
-
-                                    ValueToInsert = Math.Round(ECMBatteryVolts, 3).ToString("0.000").Replace(",", ".");
-                                    UnitToInsert = "V";
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FB 19 1A";
+                                    break;
                                 }
+
+                                double ECMBatteryVolts = ((payload[1] << 8) + payload[3]) * 0.0625;
+
+                                ValueToInsert = Math.Round(ECMBatteryVolts, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "V";
                                 break;
                             case 0x1A:
                                 DescriptionToInsert = "ECM BATTERY VOLTS | ERROR: REQUEST FB 19 1A";
@@ -6293,16 +6323,16 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0x52)
-                                {
-                                    double BoostVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
-                                    ValueToInsert = Math.Round(BoostVolts, 3).ToString("0.000").Replace(",", ".");
-                                    UnitToInsert = "V";
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FB 51 52";
+                                    break;
                                 }
+
+                                double BoostVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
+
+                                ValueToInsert = Math.Round(BoostVolts, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "V";
                                 break;
                             case 0x52:
                                 DescriptionToInsert = "BOOST VOLTS | ERROR: REQUEST FB 51 52";
@@ -6312,16 +6342,16 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                    if (payload[2] == 0x56)
-                                    {
-                                        double WIFVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
-                                        ValueToInsert = Math.Round(WIFVolts, 3).ToString("0.000").Replace(",", ".");
-                                        UnitToInsert = "V";
-                                    }
-                                    else
-                                    {
-                                        DescriptionToInsert += " | ERROR: REQUEST FB 55 56";
-                                    }
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FB 55 56";
+                                    break;
+                                }
+
+                                double WIFVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
+
+                                ValueToInsert = Math.Round(WIFVolts, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "V";
                                 break;
                             case 0x56:
                                 DescriptionToInsert = "WATER IN FUEL VOLTS | ERROR: REQUEST FB 55 56";
@@ -6331,16 +6361,16 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0x58)
-                                {
-                                    double EngineLoadA = ((payload[1] << 8) + payload[3]) * 0.00390625;
-                                    ValueToInsert = Math.Round(EngineLoadA, 1).ToString("0.0").Replace(",", ".");
-                                    UnitToInsert = "PERCENT";
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FB 57 58";
+                                    break;
                                 }
+
+                                double EngineLoadA = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(EngineLoadA, 1).ToString("0.0").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
                                 break;
                             case 0x58:
                                 DescriptionToInsert = "ENGINE LOAD | ERROR: REQUEST FB 57 58";
@@ -6350,25 +6380,24 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0xBA)
-                                {
-                                    double BatteryTempteratureF = ((payload[1] << 8) + payload[3]) * 0.0156;
-                                    double BatteryTemperatureC = (BatteryTempteratureF - 32.0) / 1.8;
-
-                                    if (Properties.Settings.Default.Units == "imperial")
-                                    {
-                                        ValueToInsert = Math.Round(BatteryTempteratureF, 1).ToString("0.0").Replace(",", ".");
-                                        UnitToInsert = "°F";
-                                    }
-                                    else if (Properties.Settings.Default.Units == "metric")
-                                    {
-                                        ValueToInsert = Math.Round(BatteryTemperatureC, 1).ToString("0.0").Replace(",", ".");
-                                        UnitToInsert = "°C";
-                                    }
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FB B9 BA";
+                                    break;
+                                }
+
+                                double BatteryTempteratureF = ((payload[1] << 8) + payload[3]) * 0.0156;
+                                double BatteryTemperatureC = (BatteryTempteratureF - 32.0) / 1.8;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(BatteryTempteratureF, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "°F";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(BatteryTemperatureC, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "°C";
                                 }
                                 break;
                             case 0xBA:
@@ -6379,16 +6408,16 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0xCC)
-                                {
-                                    ushort KeyOnCounter = (ushort)((payload[1] << 8) + payload[3]);
-                                    ValueToInsert = KeyOnCounter.ToString("0");
-                                    UnitToInsert = "COUNTS";
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FB CB CC";
+                                    break;
                                 }
+
+                                ushort KeyOnCounter = (ushort)((payload[1] << 8) + payload[3]);
+
+                                ValueToInsert = KeyOnCounter.ToString("0");
+                                UnitToInsert = "COUNTS";
                                 break;
                             case 0xCC:
                                 DescriptionToInsert = "KEY-ON COUNTER | ERROR: REQUEST FB CB CC";
@@ -6398,16 +6427,16 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0xD8)
-                                {
-                                    double APPSVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
-                                    ValueToInsert = Math.Round(APPSVolts, 3).ToString("0.000").Replace(",", ".");
-                                    UnitToInsert = "V";
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FB D7 D8";
+                                    break;
                                 }
+
+                                double APPSVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
+
+                                ValueToInsert = Math.Round(APPSVolts, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "V";
                                 break;
                             case 0xD8:
                                 DescriptionToInsert = "APP SENSOR VOLTS | ERROR: REQUEST FB D7 D8";
@@ -6417,25 +6446,24 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0xE6)
-                                {
-                                    double CruiseSetSpeedMPH = ((payload[1] << 8) + payload[3]) * 0.00390625;
-                                    double CruiseSetSpeedKMH = CruiseSetSpeedMPH * 1.609344;
-
-                                    if (Properties.Settings.Default.Units == "imperial")
-                                    {
-                                        ValueToInsert = Math.Round(CruiseSetSpeedMPH, 3).ToString("0.000").Replace(",", ".");
-                                        UnitToInsert = "MPH";
-                                    }
-                                    else if (Properties.Settings.Default.Units == "metric")
-                                    {
-                                        ValueToInsert = Math.Round(CruiseSetSpeedKMH, 3).ToString("0.000").Replace(",", ".");
-                                        UnitToInsert = "KM/H";
-                                    }
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FB E5 E6";
+                                    break;
+                                }
+
+                                double CruiseSetSpeedMPH = ((payload[1] << 8) + payload[3]) * 0.00390625;
+                                double CruiseSetSpeedKMH = CruiseSetSpeedMPH * 1.609344;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(CruiseSetSpeedMPH, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "MPH";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(CruiseSetSpeedKMH, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "KM/H";
                                 }
                                 break;
                             case 0xE6:
@@ -6446,16 +6474,16 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0xE8)
-                                {
-                                    double CruiseSwitchVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
-                                    ValueToInsert = Math.Round(CruiseSwitchVolts, 3).ToString("0.000").Replace(",", ".");
-                                    UnitToInsert = "V";
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FB E7 E8";
+                                    break;
                                 }
+
+                                double CruiseSwitchVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
+
+                                ValueToInsert = Math.Round(CruiseSwitchVolts, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "V";
                                 break;
                             case 0xE8:
                                 DescriptionToInsert = "CRUISE SWITCH VOLTS | ERROR: REQUEST FB E7 E8";
@@ -6484,25 +6512,24 @@ namespace ChryslerScanner
 
                                 if (message.Length < 9) break;
 
-                                if ((payload[2] == 0x02) && (payload[4] == 0x03) && (payload[6] == 0x04))
-                                {
-                                    double TotalFuelUsedG = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000076;
-                                    double TotalFuelUsedL = TotalFuelUsedG * 3.785412;
-
-                                    if (Properties.Settings.Default.Units == "imperial")
-                                    {
-                                        ValueToInsert = Math.Round(TotalFuelUsedG, 1).ToString("0.0").Replace(",", ".");
-                                        UnitToInsert = "GALLON";
-                                    }
-                                    else if (Properties.Settings.Default.Units == "metric")
-                                    {
-                                        ValueToInsert = Math.Round(TotalFuelUsedL, 1).ToString("0.0").Replace(",", ".");
-                                        UnitToInsert = "LITER";
-                                    }
-                                }
-                                else
+                                if ((payload[2] != (payload[0] + 1)) || (payload[4] != (payload[0] + 2)) || (payload[6] != (payload[0] + 3)))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FC 01 02 03 04";
+                                    break;
+                                }
+
+                                double TotalFuelUsedG = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000076;
+                                double TotalFuelUsedL = TotalFuelUsedG * 3.785412;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(TotalFuelUsedG, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "GALLON";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(TotalFuelUsedL, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "LITER";
                                 }
                                 break;
                             case 0x02:
@@ -6515,25 +6542,24 @@ namespace ChryslerScanner
 
                                 if (message.Length < 9) break;
 
-                                if ((payload[2] == 0x06) && (payload[4] == 0x07) && (payload[6] == 0x08))
-                                {
-                                    double TripFuelUsedG = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000076;
-                                    double TripFuelUsedL = TripFuelUsedG * 3.785412;
-
-                                    if (Properties.Settings.Default.Units == "imperial")
-                                    {
-                                        ValueToInsert = Math.Round(TripFuelUsedG, 1).ToString("0.0").Replace(",", ".");
-                                        UnitToInsert = "GALLON";
-                                    }
-                                    else if (Properties.Settings.Default.Units == "metric")
-                                    {
-                                        ValueToInsert = Math.Round(TripFuelUsedL, 1).ToString("0.0").Replace(",", ".");
-                                        UnitToInsert = "LITER";
-                                    }
-                                }
-                                else
+                                if ((payload[2] != (payload[0] + 1)) || (payload[4] != (payload[0] + 2)) || (payload[6] != (payload[0] + 3)))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FC 05 06 07 08";
+                                    break;
+                                }
+
+                                double TripFuelUsedG = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000076;
+                                double TripFuelUsedL = TripFuelUsedG * 3.785412;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(TripFuelUsedG, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "GALLON";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(TripFuelUsedL, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "LITER";
                                 }
                                 break;
                             case 0x06:
@@ -6546,19 +6572,18 @@ namespace ChryslerScanner
 
                                 if (message.Length < 9) break;
 
-                                if ((payload[2] == 0x0E) && (payload[4] == 0x0F) && (payload[6] == 0x10))
-                                {
-                                    double TripTimeHours = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000028;
-                                    double TripTimeSeconds = TripTimeHours * 3600.0;
-                                    TimeSpan Timestamp = TimeSpan.FromSeconds(TripTimeSeconds);
-
-                                    ValueToInsert = Timestamp.ToString(@"hh\:mm\:ss");
-                                    UnitToInsert = "HH:MM:SS";
-                                }
-                                else
+                                if ((payload[2] != (payload[0] + 1)) || (payload[4] != (payload[0] + 2)) || (payload[6] != (payload[0] + 3)))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FC 0D 0E 0F 10";
+                                    break;
                                 }
+
+                                double TripTimeHours = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000028;
+                                double TripTimeSeconds = TripTimeHours * 3600.0;
+                                TimeSpan TimestampA = TimeSpan.FromSeconds(TripTimeSeconds);
+
+                                ValueToInsert = TimestampA.ToString(@"hh\:mm\:ss");
+                                UnitToInsert = "HH:MM:SS";
                                 break;
                             case 0x0E:
                             case 0x0F:
@@ -6570,25 +6595,24 @@ namespace ChryslerScanner
 
                                 if (message.Length < 9) break;
 
-                                if ((payload[2] == 0x12) && (payload[4] == 0x13) && (payload[6] == 0x14))
-                                {
-                                    double TotalIdleFuelG = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000076;
-                                    double TotalIdleFuelL = TotalIdleFuelG * 3.785412;
-
-                                    if (Properties.Settings.Default.Units == "imperial")
-                                    {
-                                        ValueToInsert = Math.Round(TotalIdleFuelG, 1).ToString("0.0").Replace(",", ".");
-                                        UnitToInsert = "GALLON";
-                                    }
-                                    else if (Properties.Settings.Default.Units == "metric")
-                                    {
-                                        ValueToInsert = Math.Round(TotalIdleFuelL, 1).ToString("0.0").Replace(",", ".");
-                                        UnitToInsert = "LITER";
-                                    }
-                                }
-                                else
+                                if ((payload[2] != (payload[0] + 1)) || (payload[4] != (payload[0] + 2)) || (payload[6] != (payload[0] + 3)))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FC 11 12 13 14";
+                                    break;
+                                }
+
+                                double TotalIdleFuelG = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000076;
+                                double TotalIdleFuelL = TotalIdleFuelG * 3.785412;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(TotalIdleFuelG, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "GALLON";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(TotalIdleFuelL, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "LITER";
                                 }
                                 break;
                             case 0x12:
@@ -6601,25 +6625,24 @@ namespace ChryslerScanner
 
                                 if (message.Length < 9) break;
 
-                                if ((payload[2] == 0x16) && (payload[4] == 0x17) && (payload[6] == 0x18))
-                                {
-                                    double TripIdleFuelG = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000076;
-                                    double TripIdleFuelL = TripIdleFuelG * 3.785412;
-
-                                    if (Properties.Settings.Default.Units == "imperial")
-                                    {
-                                        ValueToInsert = Math.Round(TripIdleFuelG, 1).ToString("0.0").Replace(",", ".");
-                                        UnitToInsert = "GALLON";
-                                    }
-                                    else if (Properties.Settings.Default.Units == "metric")
-                                    {
-                                        ValueToInsert = Math.Round(TripIdleFuelL, 1).ToString("0.0").Replace(",", ".");
-                                        UnitToInsert = "LITER";
-                                    }
-                                }
-                                else
+                                if ((payload[2] != (payload[0] + 1)) || (payload[4] != (payload[0] + 2)) || (payload[6] != (payload[0] + 3)))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FC 15 16 17 18";
+                                    break;
+                                }
+
+                                double TripIdleFuelG = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000076;
+                                double TripIdleFuelL = TripIdleFuelG * 3.785412;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(TripIdleFuelG, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "GALLON";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(TripIdleFuelL, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "LITER";
                                 }
                                 break;
                             case 0x16:
@@ -6632,19 +6655,18 @@ namespace ChryslerScanner
 
                                 if (message.Length < 9) break;
 
-                                if ((payload[2] == 0x1E) && (payload[4] == 0x1F) && (payload[6] == 0x20))
-                                {
-                                    double TripIdleTimeHours = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000028;
-                                    double TripIdleTimeSeconds = TripIdleTimeHours * 3600.0;
-                                    TimeSpan Timestamp = TimeSpan.FromSeconds(TripIdleTimeSeconds);
-
-                                    ValueToInsert = Timestamp.ToString(@"hh\:mm\:ss");
-                                    UnitToInsert = "HH:MM:SS";
-                                }
-                                else
+                                if ((payload[2] != (payload[0] + 1)) || (payload[4] != (payload[0] + 2)) || (payload[6] != (payload[0] + 3)))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FC 1D 1E 1F 20";
+                                    break;
                                 }
+
+                                double TripIdleTimeHours = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000028;
+                                double TripIdleTimeSeconds = TripIdleTimeHours * 3600.0;
+                                TimeSpan TimestampB = TimeSpan.FromSeconds(TripIdleTimeSeconds);
+
+                                ValueToInsert = TimestampB.ToString(@"hh\:mm\:ss");
+                                UnitToInsert = "HH:MM:SS";
                                 break;
                             case 0x1E:
                             case 0x1F:
@@ -6656,25 +6678,24 @@ namespace ChryslerScanner
 
                                 if (message.Length < 9) break;
 
-                                if ((payload[2] == 0x22) && (payload[4] == 0x23) && (payload[6] == 0x24))
-                                {
-                                    double TotalDistanceMi = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000125;
-                                    double TotalDistanceKm = TotalDistanceMi * 1.609344;
-
-                                    if (Properties.Settings.Default.Units == "imperial")
-                                    {
-                                        ValueToInsert = Math.Round(TotalDistanceMi, 3).ToString("0.000").Replace(",", ".");
-                                        UnitToInsert = "MILE";
-                                    }
-                                    else if (Properties.Settings.Default.Units == "metric")
-                                    {
-                                        ValueToInsert = Math.Round(TotalDistanceKm, 3).ToString("0.000").Replace(",", ".");
-                                        UnitToInsert = "KILOMETER";
-                                    }
-                                }
-                                else
+                                if ((payload[2] != (payload[0] + 1)) || (payload[4] != (payload[0] + 2)) || (payload[6] != (payload[0] + 3)))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FC 21 22 23 24";
+                                    break;
+                                }
+
+                                double TotalDistanceMi = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000125;
+                                double TotalDistanceKm = TotalDistanceMi * 1.609344;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(TotalDistanceMi, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "MILE";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(TotalDistanceKm, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "KILOMETER";
                                 }
                                 break;
                             case 0x22:
@@ -6687,18 +6708,17 @@ namespace ChryslerScanner
 
                                 if (message.Length < 9) break;
 
-                                if ((payload[2] == 0x2C) && (payload[4] == 0x2D) && (payload[6] == 0x2E))
-                                {
-                                    double ECMRunTimeSeconds = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.2;
-                                    TimeSpan Timestamp = TimeSpan.FromSeconds(ECMRunTimeSeconds);
-
-                                    ValueToInsert = Timestamp.ToString(@"hh\:mm\:ss");
-                                    UnitToInsert = "HH:MM:SS";
-                                }
-                                else
+                                if ((payload[2] != (payload[0] + 1)) || (payload[4] != (payload[0] + 2)) || (payload[6] != (payload[0] + 3)))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FC 2B 2C 2D 2E";
+                                    break;
                                 }
+
+                                double ECMRunTimeSeconds = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.2;
+                                TimeSpan TimestampC = TimeSpan.FromSeconds(ECMRunTimeSeconds);
+
+                                ValueToInsert = TimestampC.ToString(@"hh\:mm\:ss");
+                                UnitToInsert = "HH:MM:SS";
                                 break;
                             case 0x2C:
                             case 0x2D:
@@ -6710,18 +6730,17 @@ namespace ChryslerScanner
 
                                 if (message.Length < 9) break;
 
-                                if ((payload[2] == 0x30) && (payload[4] == 0x31) && (payload[6] == 0x32))
-                                {
-                                    double EngineRunTimeSeconds = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.2;
-                                    TimeSpan Timestamp = TimeSpan.FromSeconds(EngineRunTimeSeconds);
-
-                                    ValueToInsert = Timestamp.ToString(@"hh\:mm\:ss");
-                                    UnitToInsert = "HH:MM:SS";
-                                }
-                                else
+                                if ((payload[2] != (payload[0] + 1)) || (payload[4] != (payload[0] + 2)) || (payload[6] != (payload[0] + 3)))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FC 2F 30 31 32";
+                                    break;
                                 }
+
+                                double EngineRunTimeSeconds = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.2;
+                                TimeSpan TimestampD = TimeSpan.FromSeconds(EngineRunTimeSeconds);
+
+                                ValueToInsert = TimestampD.ToString(@"hh\:mm\:ss");
+                                UnitToInsert = "HH:MM:SS";
                                 break;
                             case 0x30:
                             case 0x31:
@@ -6752,25 +6771,24 @@ namespace ChryslerScanner
 
                                 if (message.Length < 5) break;
 
-                                if (payload[2] == 0xA1)
-                                {
-                                    double BarometricPressurePSI = ((payload[1] << 8) + payload[3]) * 0.0159 * 0.4911542; // 1 inHg = 0.4911542 psi
-                                    double BarometricPressureKPA = BarometricPressurePSI * 6.894757;
-
-                                    if (Properties.Settings.Default.Units == "imperial")
-                                    {
-                                        ValueToInsert = Math.Round(BarometricPressurePSI, 3).ToString("0.000").Replace(",", ".");
-                                        UnitToInsert = "PSI";
-                                    }
-                                    else if (Properties.Settings.Default.Units == "metric")
-                                    {
-                                        ValueToInsert = Math.Round(BarometricPressureKPA, 3).ToString("0.000").Replace(",", ".");
-                                        UnitToInsert = "KPA";
-                                    }
-                                }
-                                else
+                                if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST FD A0 A1";
+                                    break;
+                                }
+
+                                double BarometricPressurePSI = ((payload[1] << 8) + payload[3]) * 0.0159 * 0.4911542; // 1 inHg = 0.4911542 psi
+                                double BarometricPressureKPA = BarometricPressurePSI * 6.894757;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(BarometricPressurePSI, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "PSI";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(BarometricPressureKPA, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "KPA";
                                 }
                                 break;
                             case 0xA1:
