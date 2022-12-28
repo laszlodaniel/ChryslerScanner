@@ -70,6 +70,11 @@
             this.RAMTableGroupBox = new System.Windows.Forms.GroupBox();
             this.RAMTableComboBox = new System.Windows.Forms.ComboBox();
             this.RAMTableSelectButton = new System.Windows.Forms.Button();
+            this.CHTGroupBox = new System.Windows.Forms.GroupBox();
+            this.CHTDetectButton = new System.Windows.Forms.Button();
+            this.CHTComboBox = new System.Windows.Forms.ComboBox();
+            this.EngineToolsStatusStrip = new System.Windows.Forms.StatusStrip();
+            this.EnginePropertiesLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.FaultCodeGroupBox.SuspendLayout();
             this.BaudrateGroupBox.SuspendLayout();
             this.ActuatorTestGroupBox.SuspendLayout();
@@ -80,6 +85,8 @@
             this.SecurityGroupBox.SuspendLayout();
             this.ConfigurationGroupBox.SuspendLayout();
             this.RAMTableGroupBox.SuspendLayout();
+            this.CHTGroupBox.SuspendLayout();
+            this.EngineToolsStatusStrip.SuspendLayout();
             this.SuspendLayout();
             // 
             // FaultCodeGroupBox
@@ -87,18 +94,18 @@
             this.FaultCodeGroupBox.Controls.Add(this.ReadFaultCodeFreezeFrameButton);
             this.FaultCodeGroupBox.Controls.Add(this.EraseFaultCodesButton);
             this.FaultCodeGroupBox.Controls.Add(this.ReadFaultCodesButton);
-            this.FaultCodeGroupBox.Location = new System.Drawing.Point(9, 7);
+            this.FaultCodeGroupBox.Location = new System.Drawing.Point(178, 7);
             this.FaultCodeGroupBox.Name = "FaultCodeGroupBox";
-            this.FaultCodeGroupBox.Size = new System.Drawing.Size(215, 46);
+            this.FaultCodeGroupBox.Size = new System.Drawing.Size(126, 74);
             this.FaultCodeGroupBox.TabIndex = 0;
             this.FaultCodeGroupBox.TabStop = false;
             this.FaultCodeGroupBox.Text = "Fault code";
             // 
             // ReadFaultCodeFreezeFrameButton
             // 
-            this.ReadFaultCodeFreezeFrameButton.Location = new System.Drawing.Point(124, 16);
+            this.ReadFaultCodeFreezeFrameButton.Location = new System.Drawing.Point(6, 43);
             this.ReadFaultCodeFreezeFrameButton.Name = "ReadFaultCodeFreezeFrameButton";
-            this.ReadFaultCodeFreezeFrameButton.Size = new System.Drawing.Size(85, 23);
+            this.ReadFaultCodeFreezeFrameButton.Size = new System.Drawing.Size(114, 23);
             this.ReadFaultCodeFreezeFrameButton.TabIndex = 17;
             this.ReadFaultCodeFreezeFrameButton.Text = "Freeze Frame";
             this.ReadFaultCodeFreezeFrameButton.UseVisualStyleBackColor = true;
@@ -128,9 +135,9 @@
             // 
             this.BaudrateGroupBox.Controls.Add(this.Baud62500Button);
             this.BaudrateGroupBox.Controls.Add(this.Baud7812Button);
-            this.BaudrateGroupBox.Location = new System.Drawing.Point(258, 7);
+            this.BaudrateGroupBox.Location = new System.Drawing.Point(313, 7);
             this.BaudrateGroupBox.Name = "BaudrateGroupBox";
-            this.BaudrateGroupBox.Size = new System.Drawing.Size(130, 46);
+            this.BaudrateGroupBox.Size = new System.Drawing.Size(75, 74);
             this.BaudrateGroupBox.TabIndex = 1;
             this.BaudrateGroupBox.TabStop = false;
             this.BaudrateGroupBox.Text = "Baudrate";
@@ -138,7 +145,7 @@
             // Baud62500Button
             // 
             this.Baud62500Button.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.Baud62500Button.Location = new System.Drawing.Point(68, 16);
+            this.Baud62500Button.Location = new System.Drawing.Point(7, 43);
             this.Baud62500Button.Name = "Baud62500Button";
             this.Baud62500Button.Size = new System.Drawing.Size(55, 23);
             this.Baud62500Button.TabIndex = 18;
@@ -162,7 +169,7 @@
             this.ActuatorTestGroupBox.Controls.Add(this.ActuatorTestComboBox);
             this.ActuatorTestGroupBox.Controls.Add(this.ActuatorTestStopButton);
             this.ActuatorTestGroupBox.Controls.Add(this.ActuatorTestStartButton);
-            this.ActuatorTestGroupBox.Location = new System.Drawing.Point(9, 55);
+            this.ActuatorTestGroupBox.Location = new System.Drawing.Point(9, 83);
             this.ActuatorTestGroupBox.Name = "ActuatorTestGroupBox";
             this.ActuatorTestGroupBox.Size = new System.Drawing.Size(295, 73);
             this.ActuatorTestGroupBox.TabIndex = 1;
@@ -340,7 +347,7 @@
             this.DiagnosticDataGroupBox.Controls.Add(this.DiagnosticDataStopButton);
             this.DiagnosticDataGroupBox.Controls.Add(this.DiagnosticDataListBox);
             this.DiagnosticDataGroupBox.Controls.Add(this.DiagnosticDataReadButton);
-            this.DiagnosticDataGroupBox.Location = new System.Drawing.Point(9, 130);
+            this.DiagnosticDataGroupBox.Location = new System.Drawing.Point(9, 158);
             this.DiagnosticDataGroupBox.Name = "DiagnosticDataGroupBox";
             this.DiagnosticDataGroupBox.Size = new System.Drawing.Size(379, 168);
             this.DiagnosticDataGroupBox.TabIndex = 2;
@@ -386,7 +393,6 @@
             this.DiagnosticDataRepeatIntervalCheckBox.TabIndex = 25;
             this.DiagnosticDataRepeatIntervalCheckBox.Text = "Repeat:";
             this.DiagnosticDataRepeatIntervalCheckBox.UseVisualStyleBackColor = true;
-            this.DiagnosticDataRepeatIntervalCheckBox.CheckedChanged += new System.EventHandler(this.DiagnosticDataRepeatIntervalCheckBox_CheckedChanged);
             // 
             // DiagnosticDataClearButton
             // 
@@ -567,7 +573,7 @@
             this.SetIdleSpeedGroupBox.Controls.Add(this.SetIdleSpeedTrackBar);
             this.SetIdleSpeedGroupBox.Controls.Add(this.SetIdleSpeedStopButton);
             this.SetIdleSpeedGroupBox.Controls.Add(this.SetIdleSpeedSetButton);
-            this.SetIdleSpeedGroupBox.Location = new System.Drawing.Point(9, 300);
+            this.SetIdleSpeedGroupBox.Location = new System.Drawing.Point(9, 328);
             this.SetIdleSpeedGroupBox.Name = "SetIdleSpeedGroupBox";
             this.SetIdleSpeedGroupBox.Size = new System.Drawing.Size(379, 95);
             this.SetIdleSpeedGroupBox.TabIndex = 28;
@@ -640,9 +646,9 @@
             // 
             this.ResetMemoryGroupBox.Controls.Add(this.ResetMemoryComboBox);
             this.ResetMemoryGroupBox.Controls.Add(this.ResetMemoryOKButton);
-            this.ResetMemoryGroupBox.Location = new System.Drawing.Point(9, 397);
+            this.ResetMemoryGroupBox.Location = new System.Drawing.Point(9, 425);
             this.ResetMemoryGroupBox.Name = "ResetMemoryGroupBox";
-            this.ResetMemoryGroupBox.Size = new System.Drawing.Size(379, 73);
+            this.ResetMemoryGroupBox.Size = new System.Drawing.Size(241, 73);
             this.ResetMemoryGroupBox.TabIndex = 30;
             this.ResetMemoryGroupBox.TabStop = false;
             this.ResetMemoryGroupBox.Text = "Reset memory";
@@ -657,7 +663,7 @@
             this.ResetMemoryComboBox.Items.AddRange(new object[] {
             "2300 |",
             "2301 | All fault data",
-            "2302 | Adaptive fuel factor (LTFT)",
+            "2302 | Long term fuel trim",
             "2303 | IAC counter",
             "2304 | Minimum TPS volts",
             "2305 | Flex fuel percent",
@@ -666,15 +672,15 @@
             "2308 | Runtime at stall",
             "2309 | Door lock enable",
             "230A | Door lock disable",
-            "230B | CMP/CKP timing reference",
+            "230B | CMP/CKP timing ref.",
             "230C | A/C fault enable",
             "230D | A/C fault disable",
             "230E | Cruise fault enable",
             "230F | Cruise fault disable",
             "2310 | PS fault enable",
             "2311 | PS fault disable",
-            "2312 | EEPROM / Adaptive numerator",
-            "2313 | SKIM",
+            "2312 | EEPROM / Adaptive num.",
+            "2313 | SKIM (w/Lvl 2 access!)",
             "2314 | Duty cycle monitor",
             "2315 |",
             "2316 |",
@@ -689,15 +695,15 @@
             "231F |",
             "2320 | TPS adaptive for ETC",
             "2321 | Minimum TPS",
-            "2322 | Learned knock correction",
-            "2323 | Learned misfire correction",
+            "2322 | Learned knock corr.",
+            "2323 | Learned misfire corr.",
             "2324 | Idle adaptation",
             "2325 |",
             "2326 |",
             "2327 |"});
             this.ResetMemoryComboBox.Location = new System.Drawing.Point(7, 16);
             this.ResetMemoryComboBox.Name = "ResetMemoryComboBox";
-            this.ResetMemoryComboBox.Size = new System.Drawing.Size(365, 22);
+            this.ResetMemoryComboBox.Size = new System.Drawing.Size(227, 22);
             this.ResetMemoryComboBox.TabIndex = 29;
             // 
             // ResetMemoryOKButton
@@ -715,7 +721,7 @@
             this.SecurityGroupBox.Controls.Add(this.LegacySecurityCheckBox);
             this.SecurityGroupBox.Controls.Add(this.SecurityLevelComboBox);
             this.SecurityGroupBox.Controls.Add(this.SecurityUnlockButton);
-            this.SecurityGroupBox.Location = new System.Drawing.Point(259, 472);
+            this.SecurityGroupBox.Location = new System.Drawing.Point(259, 425);
             this.SecurityGroupBox.Name = "SecurityGroupBox";
             this.SecurityGroupBox.Size = new System.Drawing.Size(129, 73);
             this.SecurityGroupBox.TabIndex = 31;
@@ -733,6 +739,7 @@
             this.LegacySecurityCheckBox.TabIndex = 27;
             this.LegacySecurityCheckBox.Text = "Legacy";
             this.LegacySecurityCheckBox.UseVisualStyleBackColor = true;
+            this.LegacySecurityCheckBox.CheckedChanged += new System.EventHandler(this.LegacySecurityCheckBox_CheckedChanged);
             // 
             // SecurityLevelComboBox
             // 
@@ -742,13 +749,12 @@
             this.SecurityLevelComboBox.FormattingEnabled = true;
             this.SecurityLevelComboBox.IntegralHeight = false;
             this.SecurityLevelComboBox.Items.AddRange(new object[] {
-            "Level 1",
-            "Level 2"});
+            "2B | Lvl 1",
+            "3502 | Lvl 2"});
             this.SecurityLevelComboBox.Location = new System.Drawing.Point(7, 16);
             this.SecurityLevelComboBox.Name = "SecurityLevelComboBox";
             this.SecurityLevelComboBox.Size = new System.Drawing.Size(115, 22);
             this.SecurityLevelComboBox.TabIndex = 29;
-            this.SecurityLevelComboBox.SelectedIndexChanged += new System.EventHandler(this.SecurityLevelComboBox_SelectedIndexChanged);
             // 
             // SecurityUnlockButton
             // 
@@ -766,7 +772,7 @@
             this.ConfigurationGroupBox.Controls.Add(this.ConfigurationGetAllButton);
             this.ConfigurationGroupBox.Controls.Add(this.ConfigurationComboBox);
             this.ConfigurationGroupBox.Controls.Add(this.ConfigurationGetButton);
-            this.ConfigurationGroupBox.Location = new System.Drawing.Point(9, 472);
+            this.ConfigurationGroupBox.Location = new System.Drawing.Point(397, 7);
             this.ConfigurationGroupBox.Name = "ConfigurationGroupBox";
             this.ConfigurationGroupBox.Size = new System.Drawing.Size(241, 73);
             this.ConfigurationGroupBox.TabIndex = 32;
@@ -781,7 +787,7 @@
             this.ConfigurationGetPartNumberButton.TabIndex = 31;
             this.ConfigurationGetPartNumberButton.Text = "Get part number";
             this.ConfigurationGetPartNumberButton.UseVisualStyleBackColor = true;
-            this.ConfigurationGetPartNumberButton.Click += new System.EventHandler(this.InformationGetPartNumberButton_Click);
+            this.ConfigurationGetPartNumberButton.Click += new System.EventHandler(this.ConfigurationGetPartNumberButton_Click);
             // 
             // ConfigurationGetAllButton
             // 
@@ -791,7 +797,7 @@
             this.ConfigurationGetAllButton.TabIndex = 30;
             this.ConfigurationGetAllButton.Text = "Get all";
             this.ConfigurationGetAllButton.UseVisualStyleBackColor = true;
-            this.ConfigurationGetAllButton.Click += new System.EventHandler(this.InformationGetAllButton_Click);
+            this.ConfigurationGetAllButton.Click += new System.EventHandler(this.ConfigurationGetAllButton_Click);
             // 
             // ConfigurationComboBox
             // 
@@ -824,15 +830,15 @@
             "2A14 | Module software month",
             "2A15 | Module software day",
             "2A16 | Transmission type info",
-            "2A17 | PCM part number 9",
-            "2A18 | PCM part number 10",
-            "2A19 | Software rev. level",
-            "2A1A | Homologation number 1",
-            "2A1B | Homologation number 2",
-            "2A1C | Homologation number 3",
-            "2A1D | Homologation number 4",
-            "2A1E | Homologation number 5",
-            "2A1F | Homologation number 6"});
+            "2A17 | PCM part number rev 1",
+            "2A18 | PCM part number rev 2",
+            "2A19 | Software rev level",
+            "2A1A | Homologation ID 1",
+            "2A1B | Homologation ID 2",
+            "2A1C | Homologation ID 3",
+            "2A1D | Homologation ID 4",
+            "2A1E | Homologation ID 5",
+            "2A1F | Homologation ID 6"});
             this.ConfigurationComboBox.Location = new System.Drawing.Point(7, 16);
             this.ConfigurationComboBox.Name = "ConfigurationComboBox";
             this.ConfigurationComboBox.Size = new System.Drawing.Size(227, 22);
@@ -846,13 +852,13 @@
             this.ConfigurationGetButton.TabIndex = 19;
             this.ConfigurationGetButton.Text = "Get";
             this.ConfigurationGetButton.UseVisualStyleBackColor = true;
-            this.ConfigurationGetButton.Click += new System.EventHandler(this.InformationGetButton_Click);
+            this.ConfigurationGetButton.Click += new System.EventHandler(this.ConfigurationGetButton_Click);
             // 
             // RAMTableGroupBox
             // 
             this.RAMTableGroupBox.Controls.Add(this.RAMTableComboBox);
             this.RAMTableGroupBox.Controls.Add(this.RAMTableSelectButton);
-            this.RAMTableGroupBox.Location = new System.Drawing.Point(313, 55);
+            this.RAMTableGroupBox.Location = new System.Drawing.Point(313, 83);
             this.RAMTableGroupBox.Name = "RAMTableGroupBox";
             this.RAMTableGroupBox.Size = new System.Drawing.Size(75, 73);
             this.RAMTableGroupBox.TabIndex = 21;
@@ -896,11 +902,90 @@
             this.RAMTableSelectButton.UseVisualStyleBackColor = true;
             this.RAMTableSelectButton.Click += new System.EventHandler(this.RAMTableSelectButton_Click);
             // 
+            // CHTGroupBox
+            // 
+            this.CHTGroupBox.Controls.Add(this.CHTDetectButton);
+            this.CHTGroupBox.Controls.Add(this.CHTComboBox);
+            this.CHTGroupBox.Location = new System.Drawing.Point(9, 7);
+            this.CHTGroupBox.Name = "CHTGroupBox";
+            this.CHTGroupBox.Size = new System.Drawing.Size(160, 74);
+            this.CHTGroupBox.TabIndex = 33;
+            this.CHTGroupBox.TabStop = false;
+            this.CHTGroupBox.Text = "Controller hardware type";
+            // 
+            // CHTDetectButton
+            // 
+            this.CHTDetectButton.Location = new System.Drawing.Point(6, 43);
+            this.CHTDetectButton.Name = "CHTDetectButton";
+            this.CHTDetectButton.Size = new System.Drawing.Size(55, 23);
+            this.CHTDetectButton.TabIndex = 32;
+            this.CHTDetectButton.Text = "Detect";
+            this.CHTDetectButton.UseVisualStyleBackColor = true;
+            this.CHTDetectButton.Click += new System.EventHandler(this.CHTDetectButton_Click);
+            // 
+            // CHTComboBox
+            // 
+            this.CHTComboBox.DropDownHeight = 226;
+            this.CHTComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.CHTComboBox.Font = new System.Drawing.Font("Courier New", 8.25F);
+            this.CHTComboBox.FormattingEnabled = true;
+            this.CHTComboBox.IntegralHeight = false;
+            this.CHTComboBox.Items.AddRange(new object[] {
+            "Unknown",
+            "FCC",
+            "SBEC1",
+            "SBEC2",
+            "SBEC2A",
+            "SBEC3",
+            "JTEC",
+            "SBEC3A",
+            "SBEC3+",
+            "CUMMINS",
+            "BOSCH",
+            "NORTHROP EV SCU",
+            "JTEC+",
+            "JTEC (TCM ONLY)",
+            "JTEC+ (TCM ONLY)",
+            "BOSCH EDC15-V",
+            "BOSCH EDC15-C5",
+            "SIEMENS SIM-70",
+            "SBEC3A+",
+            "SBEC3B",
+            "GENERIC JTEC"});
+            this.CHTComboBox.Location = new System.Drawing.Point(7, 17);
+            this.CHTComboBox.Name = "CHTComboBox";
+            this.CHTComboBox.Size = new System.Drawing.Size(146, 22);
+            this.CHTComboBox.TabIndex = 31;
+            this.CHTComboBox.SelectedIndexChanged += new System.EventHandler(this.CHTComboBox_SelectedIndexChanged);
+            // 
+            // EngineToolsStatusStrip
+            // 
+            this.EngineToolsStatusStrip.AutoSize = false;
+            this.EngineToolsStatusStrip.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.EngineToolsStatusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.EnginePropertiesLabel});
+            this.EngineToolsStatusStrip.LayoutStyle = System.Windows.Forms.ToolStripLayoutStyle.Flow;
+            this.EngineToolsStatusStrip.Location = new System.Drawing.Point(0, 506);
+            this.EngineToolsStatusStrip.Name = "EngineToolsStatusStrip";
+            this.EngineToolsStatusStrip.Size = new System.Drawing.Size(647, 34);
+            this.EngineToolsStatusStrip.TabIndex = 34;
+            // 
+            // EnginePropertiesLabel
+            // 
+            this.EnginePropertiesLabel.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.EnginePropertiesLabel.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.EnginePropertiesLabel.Name = "EnginePropertiesLabel";
+            this.EnginePropertiesLabel.Size = new System.Drawing.Size(126, 14);
+            this.EnginePropertiesLabel.Text = "Engine properties";
+            this.EnginePropertiesLabel.TextAlign = System.Drawing.ContentAlignment.TopLeft;
+            // 
             // EngineToolsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(397, 553);
+            this.ClientSize = new System.Drawing.Size(647, 540);
+            this.Controls.Add(this.EngineToolsStatusStrip);
+            this.Controls.Add(this.CHTGroupBox);
             this.Controls.Add(this.RAMTableGroupBox);
             this.Controls.Add(this.ConfigurationGroupBox);
             this.Controls.Add(this.SecurityGroupBox);
@@ -926,6 +1011,9 @@
             this.SecurityGroupBox.PerformLayout();
             this.ConfigurationGroupBox.ResumeLayout(false);
             this.RAMTableGroupBox.ResumeLayout(false);
+            this.CHTGroupBox.ResumeLayout(false);
+            this.EngineToolsStatusStrip.ResumeLayout(false);
+            this.EngineToolsStatusStrip.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -974,5 +1062,10 @@
         private System.Windows.Forms.Button RAMTableSelectButton;
         private System.Windows.Forms.ComboBox RAMTableComboBox;
         private System.Windows.Forms.Button ReadFaultCodeFreezeFrameButton;
+        private System.Windows.Forms.GroupBox CHTGroupBox;
+        private System.Windows.Forms.StatusStrip EngineToolsStatusStrip;
+        private System.Windows.Forms.ToolStripStatusLabel EnginePropertiesLabel;
+        private System.Windows.Forms.ComboBox CHTComboBox;
+        private System.Windows.Forms.Button CHTDetectButton;
     }
 }

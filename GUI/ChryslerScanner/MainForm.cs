@@ -74,7 +74,7 @@ namespace ChryslerScanner
 
         private ReadMemoryForm ReadMemory;
         private WriteMemoryForm WriteMemory;
-        private SecurityKeyCalculatorForm SecuritySeedCalculator;
+        private SecurityKeyCalculatorForm SecurityKeyCalculator;
         private BootstrapToolsForm BootstrapTools;
         private EngineToolsForm EngineTools;
         private ABSToolsForm ABSTools;
@@ -2668,83 +2668,37 @@ namespace ChryslerScanner
                             {
                                 switch (Packet.rx.payload[4]) // ID byte
                                 {
-                                    case 0x10: // stored fault code list request
-                                        if (Packet.rx.payload.Length > 6)
-                                        {
-                                            byte checksum = 0;
-                                            int ChecksumLocation = Packet.rx.payload.Length - 1;
-
-                                            for (int i = 4; i < ChecksumLocation; i++)
-                                            {
-                                                checksum += Packet.rx.payload[i];
-                                            }
-
-                                            if (checksum == Packet.rx.payload[ChecksumLocation])
-                                            {
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) stored fault code list:", Packet.rx.buffer);
-
-                                                List<byte> StoredFaultCodeList = new List<byte>();
-                                                StoredFaultCodeList.AddRange(Packet.rx.payload.Skip(5).Take(Packet.rx.payload.Length - 6)); // skip first 5 bytes (timestamp and ID)
-                                                StoredFaultCodeList.Remove(0xFD); // not fault code related
-                                                StoredFaultCodeList.Remove(0xFE); // end of fault code list signifier
-
-                                                if (StoredFaultCodeList.Count > 0)
-                                                {
-                                                    StringBuilder sb = new StringBuilder();
-
-                                                    foreach (byte code in StoredFaultCodeList)
-                                                    {
-                                                        int index = PCM.EngineDTC.Rows.IndexOf(PCM.EngineDTC.Rows.Find(code));
-
-                                                        if (index > -1) // DTC description found
-                                                        {
-                                                            sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": " + PCM.EngineDTC.Rows[index]["description"] + Environment.NewLine);
-                                                        }
-                                                        else // no DTC description found
-                                                        {
-                                                            sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": UNRECOGNIZED DTC" + Environment.NewLine);
-                                                        }
-                                                    }
-
-                                                    sb.Remove(sb.Length - 2, 2); // remove last newline character
-
-                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Stored PCM fault codes found:" + Environment.NewLine + sb.ToString());
-                                                }
-                                                else
-                                                {
-                                                    Util.UpdateTextBox(USBTextBox, "[INFO] No stored PCM fault code found.");
-                                                }
-                                            }
-                                            else
-                                            {
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) fault code checksum error:", Packet.rx.buffer);
-                                            }
-                                        }
-                                        else // error
+                                    case 0x10:
+                                    case 0x32:
+                                        if (Packet.rx.payload.Length < 7)
                                         {
                                             Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) stored fault code list:", Packet.rx.buffer);
+                                            break;
                                         }
-                                        break;
-                                    case 0x11: // pending fault code list request
-                                        if (Packet.rx.payload.Length > 2)
+
+                                        byte ChecksumA = 0;
+                                        int ChecksumALocation = Packet.rx.payload.Length - 1;
+
+                                        for (int i = 4; i < ChecksumALocation; i++)
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) pending fault code list:", Packet.rx.buffer);
+                                            ChecksumA += Packet.rx.payload[i];
+                                        }
 
-                                            List<byte> PendingFaultCodeList = new List<byte>();
-                                            PendingFaultCodeList.AddRange(Packet.rx.payload.Skip(5).Take(Packet.rx.payload.Length - 2)); // skip first 5 bytes (timestamp and ID)
+                                        if (ChecksumA == Packet.rx.payload[ChecksumALocation])
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) stored fault code list:", Packet.rx.buffer);
 
-                                            if ((PendingFaultCodeList[0] == 0) && (PendingFaultCodeList[1] == 0))
-                                            {
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] No pending PCM fault code found.");
-                                            }
-                                            else
+                                            List<byte> StoredFaultCodeList = new List<byte>();
+                                            StoredFaultCodeList.AddRange(Packet.rx.payload.Skip(5).Take(Packet.rx.payload.Length - 6)); // skip first 5 bytes (timestamp and ID)
+                                            StoredFaultCodeList.Remove(0xFD); // not fault code related
+                                            StoredFaultCodeList.Remove(0xFE); // end of fault code list signifier
+
+                                            if (StoredFaultCodeList.Count > 0)
                                             {
                                                 StringBuilder sb = new StringBuilder();
 
-                                                foreach (byte code in PendingFaultCodeList)
+                                                foreach (byte code in StoredFaultCodeList)
                                                 {
-                                                    if (code == 0) continue; // skip zero code, empty slot
-
                                                     int index = PCM.EngineDTC.Rows.IndexOf(PCM.EngineDTC.Rows.Find(code));
 
                                                     if (index > -1) // DTC description found
@@ -2753,35 +2707,79 @@ namespace ChryslerScanner
                                                     }
                                                     else // no DTC description found
                                                     {
-                                                        sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": EMPTY DTC SLOT" + Environment.NewLine);
+                                                        sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": UNRECOGNIZED DTC" + Environment.NewLine);
                                                     }
                                                 }
 
                                                 sb.Remove(sb.Length - 2, 2); // remove last newline character
 
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Pending PCM fault codes found:" + Environment.NewLine + sb.ToString());
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Stored PCM fault codes found:" + Environment.NewLine + sb.ToString());
+                                            }
+                                            else
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] No stored PCM fault code found.");
                                             }
                                         }
-                                        else // error
+                                        else
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) pending fault code list:", Packet.rx.buffer);
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) fault code checksum error:", Packet.rx.buffer);
                                         }
                                         break;
-                                    case 0x2E: // one-trip fault code list request
-                                    case 0x32:
+                                    case 0x11: // pending fault code list request
+                                        if (Packet.rx.payload.Length < 3)
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) pending fault code list:", Packet.rx.buffer);
+                                            break;
+                                        }
+
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) pending fault code list:", Packet.rx.buffer);
+
+                                        List<byte> PendingFaultCodeList = new List<byte>();
+                                        PendingFaultCodeList.AddRange(Packet.rx.payload.Skip(5).Take(Packet.rx.payload.Length - 2)); // skip first 5 bytes (timestamp and ID)
+
+                                        if ((PendingFaultCodeList[0] == 0) && (PendingFaultCodeList[1] == 0))
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] No pending PCM fault code found.");
+                                        }
+                                        else
+                                        {
+                                            StringBuilder sb = new StringBuilder();
+
+                                            foreach (byte code in PendingFaultCodeList)
+                                            {
+                                                if (code == 0) continue; // skip zero code, empty slot
+
+                                                int index = PCM.EngineDTC.Rows.IndexOf(PCM.EngineDTC.Rows.Find(code));
+
+                                                if (index > -1) // DTC description found
+                                                {
+                                                    sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": " + PCM.EngineDTC.Rows[index]["description"] + Environment.NewLine);
+                                                }
+                                                else // no DTC description found
+                                                {
+                                                    sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": EMPTY DTC SLOT" + Environment.NewLine);
+                                                }
+                                            }
+
+                                            sb.Remove(sb.Length - 2, 2); // remove last newline character
+
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Pending PCM fault codes found:" + Environment.NewLine + sb.ToString());
+                                        }
+                                        break;
+                                    case 0x2E:
                                     case 0x33:
                                         if (Packet.rx.payload.Length > 6)
                                         {
-                                            //byte checksum = 0;
-                                            //int ChecksumLocation = Packet.rx.payload.Length - 1;
+                                            byte ChecksumB = 0;
+                                            int ChecksumBLocation = Packet.rx.payload.Length - 1;
 
-                                            //for (int i = 4; i < ChecksumLocation; i++)
-                                            //{
-                                            //    checksum += Packet.rx.payload[i];
-                                            //}
+                                            for (int i = 4; i < ChecksumBLocation; i++)
+                                            {
+                                                ChecksumB += Packet.rx.payload[i];
+                                            }
 
-                                            //if (checksum == Packet.rx.payload[ChecksumLocation])
-                                            //{
+                                            if ((ChecksumB == Packet.rx.payload[ChecksumBLocation]) || ((ChecksumB - 0x1E) == Packet.rx.payload[ChecksumBLocation]))
+                                            {
                                                 Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) one-trip fault code list:", Packet.rx.buffer);
 
                                                 List<byte> FaultCode1TList = new List<byte>();
@@ -2815,11 +2813,11 @@ namespace ChryslerScanner
                                                 {
                                                     Util.UpdateTextBox(USBTextBox, "[INFO] No one-trip PCM fault code found.");
                                                 }
-                                            //}
-                                            //else
-                                            //{
-                                            //    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) fault code checksum error:", Packet.rx.buffer);
-                                            //}
+                                            }
+                                            else
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) fault code checksum error:", Packet.rx.buffer);
+                                            }
                                         }
                                         else // error
                                         {
@@ -2974,13 +2972,13 @@ namespace ChryslerScanner
             Util.UpdateTextBox(USBTextBox, description);
         }
 
-        public void SelectSCIBusPCMHSMode()
+        public void SelectSCIBusHSMode()
         {
             SCIBusSpeedComboBox.SelectedIndex = 3; // 62500 baud
             SCIBusModuleConfigSpeedApplyButton_Click(this, EventArgs.Empty);
         }
 
-        public void SelectSCIBusPCMLSMode()
+        public void SelectSCIBusLSMode()
         {
             SCIBusSpeedComboBox.SelectedIndex = 2; // 7812.5 baud
             SCIBusModuleConfigSpeedApplyButton_Click(this, EventArgs.Empty);
@@ -3657,7 +3655,7 @@ namespace ChryslerScanner
                     if (CCDBusTxMessageCalculateChecksumCheckBox.Checked && (message.Length > 1))
                     {
                         int checksumLocation = message.Length - 1;
-                        message[checksumLocation] = Util.CalculateChecksum(message, 0, message.Length - 1);
+                        message[checksumLocation] = Util.ChecksumCalculator(message, 0, message.Length - 1);
 
                         CCDBusTxMessageComboBox.Text = Util.ByteToHexStringSimple(message);
                         CCDBusTxMessageComboBox.SelectionStart = CCDBusTxMessageComboBox.Text.Length;
@@ -4830,7 +4828,7 @@ namespace ChryslerScanner
                     if (PCIBusTxMessageCalculateCRCCheckBox.Checked && (message.Length > 1))
                     {
                         int crcLocation = message.Length - 1;
-                        message[crcLocation] = Util.CalculateCRC(message, 0, message.Length - 1);
+                        message[crcLocation] = Util.CRCCalculator(message, 0, message.Length - 1);
 
                         PCIBusTxMessageComboBox.Text = Util.ByteToHexStringSimple(message);
                         PCIBusTxMessageComboBox.SelectionStart = PCIBusTxMessageComboBox.Text.Length;
@@ -5154,7 +5152,7 @@ namespace ChryslerScanner
                     if (PCIBusTxMessageCalculateCRCCheckBox.Checked && (message.Length > 1))
                     {
                         int crcLocation = message.Length - 1;
-                        message[crcLocation] = Util.CalculateCRC(message, 0, message.Length - 1);
+                        message[crcLocation] = Util.CRCCalculator(message, 0, message.Length - 1);
 
                         PCIBusTxMessageComboBox.Text = Util.ByteToHexStringSimple(message);
                         PCIBusTxMessageComboBox.SelectionStart = PCIBusTxMessageComboBox.Text.Length;
@@ -5176,7 +5174,7 @@ namespace ChryslerScanner
                     if (PCIBusTxMessageCalculateCRCCheckBox.Checked && (message.Length > 1))
                     {
                         int crcLocation = message.Length - 1;
-                        message[crcLocation] = Util.CalculateCRC(message, 0, message.Length - 1);
+                        message[crcLocation] = Util.CRCCalculator(message, 0, message.Length - 1);
 
                         PCIBusTxMessageComboBox.Text = Util.ByteToHexStringSimple(message);
                         PCIBusTxMessageComboBox.SelectionStart = PCIBusTxMessageComboBox.Text.Length;
@@ -5936,36 +5934,19 @@ namespace ChryslerScanner
             }
         }
 
-        private void SecuritySeedCalculatorToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (SecuritySeedCalculator == null)
-            {
-                SecuritySeedCalculator = new SecurityKeyCalculatorForm(this)
-                {
-                    StartPosition = FormStartPosition.CenterParent
-                };
-
-                SecuritySeedCalculator.FormClosed += delegate { SecuritySeedCalculator = null; };
-                SecuritySeedCalculator.Show(this);
-
-                if (SecuritySeedCalculator.StartPosition == FormStartPosition.CenterParent)
-                {
-                    var x = Location.X + (Width - SecuritySeedCalculator.Width) / 2;
-                    var y = Location.Y + (Height - SecuritySeedCalculator.Height) / 2;
-                    SecuritySeedCalculator.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
-                }
-            }
-            else
-            {
-                SecuritySeedCalculator.WindowState = FormWindowState.Normal;
-                SecuritySeedCalculator.Focus();
-            }
-        }
-
         private void BootstrapToolsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (BootstrapTools == null)
             {
+                SuspendLayout();
+
+                DeviceTabControl.SelectedTab = SCIBusControlTabPage;
+
+                if (SCIBusModuleComboBox.SelectedIndex == 0) DiagnosticsTabControl.SelectedTab = SCIBusPCMDiagnosticsTabPage;
+                else if (SCIBusModuleComboBox.SelectedIndex == 1) DiagnosticsTabControl.SelectedTab = SCIBusTCMDiagnosticsTabPage;
+
+                ResumeLayout();
+
                 BootstrapTools = new BootstrapToolsForm(this)
                 {
                     StartPosition = FormStartPosition.CenterParent
@@ -5980,9 +5961,6 @@ namespace ChryslerScanner
                     var y = Location.Y + (Height - BootstrapTools.Height) / 2;
                     BootstrapTools.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
                 }
-
-                DeviceTabControl.SelectedTab = SCIBusControlTabPage;
-                DiagnosticsTabControl.SelectedTab = SCIBusPCMDiagnosticsTabPage;
             }
             else
             {
@@ -5995,6 +5973,13 @@ namespace ChryslerScanner
         {
             if (EngineTools == null)
             {
+                SuspendLayout();
+
+                DeviceTabControl.SelectedTab = SCIBusControlTabPage;
+                DiagnosticsTabControl.SelectedTab = SCIBusPCMDiagnosticsTabPage;
+
+                ResumeLayout();
+
                 EngineTools = new EngineToolsForm(this)
                 {
                     StartPosition = FormStartPosition.CenterParent
@@ -6009,9 +5994,6 @@ namespace ChryslerScanner
                     var y = Location.Y + (Height - EngineTools.Height) / 2;
                     EngineTools.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
                 }
-
-                DeviceTabControl.SelectedTab = SCIBusControlTabPage;
-                DiagnosticsTabControl.SelectedTab = SCIBusPCMDiagnosticsTabPage;
             }
             else
             {
@@ -6024,6 +6006,13 @@ namespace ChryslerScanner
         {
             if (ABSTools == null)
             {
+                SuspendLayout();
+
+                DeviceTabControl.SelectedTab = CCDBusControlTabPage;
+                DiagnosticsTabControl.SelectedTab = CCDBusDiagnosticsTabPage;
+
+                ResumeLayout();
+
                 ABSTools = new ABSToolsForm(this)
                 {
                     StartPosition = FormStartPosition.CenterParent
@@ -6141,6 +6130,32 @@ namespace ChryslerScanner
         {
             if (DeviceFound)
             {
+                if (e.Control && e.KeyCode == Keys.L) // Ctrl+L shortcut
+                {
+                    if (SecurityKeyCalculator == null)
+                    {
+                        SecurityKeyCalculator = new SecurityKeyCalculatorForm(this)
+                        {
+                            StartPosition = FormStartPosition.CenterParent
+                        };
+
+                        SecurityKeyCalculator.FormClosed += delegate { SecurityKeyCalculator = null; };
+                        SecurityKeyCalculator.Show(this);
+
+                        if (SecurityKeyCalculator.StartPosition == FormStartPosition.CenterParent)
+                        {
+                            var x = Location.X + (Width - SecurityKeyCalculator.Width) / 2;
+                            var y = Location.Y + (Height - SecurityKeyCalculator.Height) / 2;
+                            SecurityKeyCalculator.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
+                        }
+                    }
+                    else
+                    {
+                        SecurityKeyCalculator.WindowState = FormWindowState.Normal;
+                        SecurityKeyCalculator.Focus();
+                    }
+                }
+
                 if (e.Control && e.KeyCode == Keys.B) // Ctrl+B shortcut
                 {
                     BootstrapToolsToolStripMenuItem_Click(this, EventArgs.Empty);

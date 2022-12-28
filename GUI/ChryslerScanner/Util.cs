@@ -218,7 +218,7 @@ namespace ChryslerScanner
         /// <param name="index">Start offset in byte array<./param>
         /// <param name="length">Number of bytes to take into calculation.</param>
         /// <returns>Checksum byte.</returns>
-        public static byte CalculateChecksum(byte[] data, int index, int length)
+        public static byte ChecksumCalculator(byte[] data, int index, int length)
         {
             byte checksum = 0;
 
@@ -237,9 +237,9 @@ namespace ChryslerScanner
         /// <param name="index">Start offset in byte array<./param>
         /// <param name="length">Number of bytes to take into calculation.</param>
         /// <returns>CRC-8 J1850 byte.</returns>
-        public static byte CalculateCRC(byte[] data, int index, int length)
+        public static byte CRCCalculator(byte[] data, int index, int length)
         {
-            byte crc_reg = 0xFF, poly, bit_count;
+            byte crc = 0xFF, poly, bit_count;
             int byte_count;
             int byte_point = 0;
             byte bit_point;
@@ -250,32 +250,18 @@ namespace ChryslerScanner
                 {
                     if ((bit_point & data[byte_point]) > 0) // case for new bit = 1
                     {
-                        if (IsBitSet(crc_reg, 7))
-                        {
-                            poly = 1; // define the polynomial
-                        }
-                        else
-                        {
-                            poly = 0x1C;
-                        }
-
-                        crc_reg = (byte)(((crc_reg << 1) | 1) ^ poly);
+                        poly = (byte)(IsBitSet(crc, 7) ? 1 : 0x1C);
+                        crc = (byte)(((crc << 1) | 1) ^ poly);
                     }
                     else // case for new bit = 0
                     {
-                        poly = 0;
-
-                        if (IsBitSet(crc_reg, 7))
-                        {
-                            poly = 0x1D;
-                        }
-
-                        crc_reg = (byte)((crc_reg << 1) ^ poly);
+                        poly = (byte)(IsBitSet(crc, 7) ? 0x1D : 0);
+                        crc = (byte)((crc << 1) ^ poly);
                     }
                 }
             }
 
-            return (byte)~crc_reg;
+            return (byte)~crc;
         }
 
         public static byte[] GetSKIMUnlockKey(byte[] seed, string VIN)

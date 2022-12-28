@@ -99,18 +99,18 @@ namespace ChryslerScanner
             byte[] message = new byte[] { };
             byte[] payload = new byte[] { };
 
-            if (data.Length > 3)
+            if (data.Length >= 4)
             {
                 Array.Copy(data, 0, timestamp, 0, 4);
             }
 
-            if (data.Length > 4)
+            if (data.Length >= 5)
             {
                 message = new byte[data.Length - 4];
                 Array.Copy(data, 4, message, 0, message.Length); // copy message from the input byte array
             }
 
-            if (data.Length > 5)
+            if (data.Length >= 6)
             {
                 payload = new byte[data.Length - 5];
                 Array.Copy(data, 5, payload, 0, payload.Length); // copy payload from the input byte array (without ID)

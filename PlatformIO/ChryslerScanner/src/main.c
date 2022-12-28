@@ -337,7 +337,7 @@ uint64_t IRAM_ATTR micros()
  * 
  * @return Checksum value of the input byte array.
  */
-uint8_t calculate_checksum(uint8_t *buffer, uint16_t index, uint16_t length)
+uint8_t checksum_calculator(uint8_t *buffer, uint16_t index, uint16_t length)
 {
     uint8_t checksum = 0;
 
@@ -360,7 +360,7 @@ uint8_t calculate_checksum(uint8_t *buffer, uint16_t index, uint16_t length)
  * 
  * @return CRC value of the input byte array.
  */
-uint8_t calculate_crc(uint8_t *buffer, uint16_t index, uint16_t length)
+uint8_t crc_calculator(uint8_t *buffer, uint16_t index, uint16_t length)
 {
     uint8_t crc = 0xFF, poly, bit_count;
     uint16_t byte_count;
@@ -373,26 +373,12 @@ uint8_t calculate_crc(uint8_t *buffer, uint16_t index, uint16_t length)
         {
             if (bit_point & *byte_point) // case for new bit = 1
             {
-                if (crc & 0x80)
-                {
-                    poly = 1; // define the polynomial
-                }
-                else
-                {
-                    poly = 0x1C;
-                }
-
+                poly = (crc & 0x80 ? 1 : 0x1C);
                 crc = ((crc << 1) | 1) ^ poly;
             }
             else // case for new bit = 0
             {
-                poly = 0;
-
-                if (crc & 0x80)
-                {
-                    poly = 0x1D;
-                }
-
+                poly = (crc & 0x80 ? 0x1D : 0);
                 crc = (crc << 1) ^ poly;
             }
         }
@@ -505,7 +491,7 @@ void send_usb_packet(uint8_t bus, uint8_t command, uint8_t subdatacode, uint8_t 
     }
 
     // Calculate checksum.
-    checksum = calculate_checksum(packet, 0, packet_length - 1);
+    checksum = checksum_calculator(packet, 0, packet_length - 1);
 
     // Place checksum byte.
     packet[packet_length - 1] = checksum;
@@ -519,8 +505,9 @@ void send_usb_packet(uint8_t bus, uint8_t command, uint8_t subdatacode, uint8_t 
  */
 void send_handshake()
 {
-    uint8_t handshake[15] = { 0x43, 0x48, 0x52, 0x59, 0x53, 0x4C, 0x45, 0x52, 0x53, 0x43, 0x41, 0x4E, 0x4E, 0x45, 0x52 }; // CHRYSLERSCANNER
-    send_usb_packet(Bus_USB, Command_Handshake, Error_OK, handshake, sizeof(handshake));
+    //uint8_t handshake[15] = { 0x43, 0x48, 0x52, 0x59, 0x53, 0x4C, 0x45, 0x52, 0x53, 0x43, 0x41, 0x4E, 0x4E, 0x45, 0x52 }; // CHRYSLERSCANNER
+    char *handshake = "CHRYSLERSCANNER";
+    send_usb_packet(Bus_USB, Command_Handshake, Error_OK, (uint8_t *)handshake, 15);
 }
 
 /**
@@ -1540,7 +1527,7 @@ void parse_usb_command()
                             if (ccd.msg.tx_length > 1)
                             {
                                 uint8_t checksum_position = ccd.msg.tx_length - 1;
-                                ccd.msg.tx_buffer[checksum_position] = calculate_checksum(ccd.msg.tx_buffer, 0, checksum_position); // overwrite last checksum byte with the correct one
+                                ccd.msg.tx_buffer[checksum_position] = checksum_calculator(ccd.msg.tx_buffer, 0, checksum_position); // overwrite last checksum byte with the correct one
                             }
 
                             ccd.msg.tx_count = 1;
@@ -1598,7 +1585,7 @@ void parse_usb_command()
                                 if (current_msg_length > 1) // checksum is only applicable if message is at least 2 bytes long
                                 {
                                     uint8_t current_checksum_position = ccd.msg.tx_ptr + current_msg_length;
-                                    ccd.msg.tx_buffer[current_checksum_position] = calculate_checksum(ccd.msg.tx_buffer, ccd.msg.tx_ptr + 1, current_checksum_position); // re-calculate every checksum byte
+                                    ccd.msg.tx_buffer[current_checksum_position] = checksum_calculator(ccd.msg.tx_buffer, ccd.msg.tx_ptr + 1, current_checksum_position); // re-calculate every checksum byte
                                 }
 
                                 ccd.msg.tx_ptr += current_msg_length + 1;
@@ -1818,7 +1805,7 @@ void parse_usb_command()
                             if (pci.msg.tx_length > 1)
                             {
                                 uint8_t crc_position = pci.msg.tx_length - 1;
-                                pci.msg.tx_buffer[crc_position] = calculate_crc(pci.msg.tx_buffer, 0, crc_position); // overwrite last byte with the correct CRC byte
+                                pci.msg.tx_buffer[crc_position] = crc_calculator(pci.msg.tx_buffer, 0, crc_position); // overwrite last byte with the correct CRC byte
                             }
 
                             pci.msg.tx_count = 1;
@@ -1876,7 +1863,7 @@ void parse_usb_command()
                                 if (current_msg_length > 1) // checksum is only applicable if message is at least 2 bytes long
                                 {
                                     uint8_t current_crc_position = pci.msg.tx_ptr + current_msg_length;
-                                    pci.msg.tx_buffer[current_crc_position] = calculate_crc(pci.msg.tx_buffer, pci.msg.tx_ptr + 1, current_crc_position); // re-calculate every checksum byte
+                                    pci.msg.tx_buffer[current_crc_position] = crc_calculator(pci.msg.tx_buffer, pci.msg.tx_ptr + 1, current_crc_position); // re-calculate every checksum byte
                                 }
 
                                 pci.msg.tx_ptr += current_msg_length + 1;
@@ -2248,7 +2235,7 @@ void ccd_msg_task(void *pvParameters)
     {
         if (ccd.msg.rx_length > 0)
         {
-            checksum = calculate_checksum(ccd.msg.rx_buffer, 0, ccd.msg.rx_length - 1);
+            checksum = checksum_calculator(ccd.msg.rx_buffer, 0, ccd.msg.rx_length - 1);
 
             if (ccd.msg.rx_buffer[ccd.msg.rx_length - 1] == checksum)
             {
@@ -2327,7 +2314,7 @@ void ccd_msg_task(void *pvParameters)
                 }
 
                 uint8_t checksum_position = ccd.msg.tx_length - 1;
-                ccd.msg.tx_buffer[checksum_position] = calculate_checksum(ccd.msg.tx_buffer, 0, checksum_position);
+                ccd.msg.tx_buffer[checksum_position] = checksum_calculator(ccd.msg.tx_buffer, 0, checksum_position);
                 ccd.state.msg_tx_pending = true;
                 ccd.random.interval = get_random(ccd.random.interval_min, ccd.random.interval_max); // generate new delay value between random messages
             }
@@ -2876,15 +2863,15 @@ void sci_msg_task(void *pvParameters)
                             sci.msg.tx_length = 241;
                         }
 
-                        if (sci.state.ngc_mode) // do not wait for response
+                        if (sci.state.ngc_mode) // do not wait for echo
                         {
                             uart_write_bytes(UART_SCI, (const uint8_t *)sci.msg.tx_buffer, sci.msg.tx_length);
                             uart_wait_tx_idle_polling(UART_SCI);
                             vTaskDelay(pdMS_TO_TICKS(5));
 
-                            while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+                            while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1)); // wait for message coming from NGC to complete
                         }
-                        else // wait for response
+                        else // wait for echo
                         {
                             sci.msg.byte_received = false;
 
@@ -2901,14 +2888,14 @@ void sci_msg_task(void *pvParameters)
                             sci_idle_timer_isr_callback(NULL);
                         }
                     }
-                    else // bootstrap mode, always wait for echo
+                    else // bootstrap mode, always wait for echo when dealing with worker functions
                     {
                         sci.msg.byte_received = false;
 
-                        if (sci.bootstrap.progvolts_request)
+                        if (sci.bootstrap.progvolts_request) // only when programming flash file
                         {
                             sci.bootstrap.progvolts_request = false;
-                            sci_set_timeout(5 * SCI_LS_T1_DELAY); // apply generous timeout because flash block is not echoed back right away (100 ms for 512 bytes)
+                            sci_set_timeout(5 * SCI_LS_T1_DELAY); // apply generous timeout because flash block echoes are not starting right away (100 ms for 512 bytes)
                             sci.msg.byte_received = false;
 
                             for (uint8_t i = 0; i < 6; i++)
@@ -2927,16 +2914,29 @@ void sci_msg_task(void *pvParameters)
 
                             uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
                             vTaskDelay(pdMS_TO_TICKS(1));
-                            apply_progvolt(1 << SCI_VPP_EN_BIT);
+
+                            switch (sci.bootstrap.bootloader_src)
+                            {
+                                default:
+                                {
+                                    apply_progvolt(1 << SCI_VPP_EN_BIT);
+                                    break;
+                                }
+                            }
+
                             sci.msg.byte_received = false;
+
                             while (!sci.msg.byte_received && !sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+
                             sci_set_timeout(SCI_LS_T3_DELAY);
+
                             while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+
                             apply_progvolt(0);
                         }
                         else
                         {
-                            if (sci.bootstrap.worker_function_src == WorkerFunction_EEPROMWriteSPI)
+                            if (sci.bootstrap.worker_function_src == WorkerFunction_EEPROMWriteSBEC)
                             {
                                 sci_set_timeout(5 * SCI_LS_T1_DELAY); // apply generous timeout because EEPROM block is not echoed back right away (100 ms for 512 bytes)
                                 sci.msg.byte_received = false;
@@ -3135,7 +3135,7 @@ void sci_boot_task(void *pvParameters)
 
             if (key_required)
             {
-                checksum = calculate_checksum(sci.msg.rx_buffer, 0, 6);
+                checksum = checksum_calculator(sci.msg.rx_buffer, 0, 6);
 
                 uint8_t key[2];
 
@@ -3153,7 +3153,7 @@ void sci_boot_task(void *pvParameters)
 
                 send_key_cmd[4] = key[0];
                 send_key_cmd[5] = key[1];
-                send_key_cmd[6] = calculate_checksum(send_key_cmd, 0, sizeof(send_key_cmd) - 1);
+                send_key_cmd[6] = checksum_calculator(send_key_cmd, 0, sizeof(send_key_cmd) - 1);
 
                 sci.state.idle = false;
                 
@@ -3610,7 +3610,7 @@ void sci_boot_task(void *pvParameters)
                     break;
                 }
                 
-                case WorkerFunction_EEPROMReadSPI:
+                case WorkerFunction_EEPROMReadSBEC:
                 {
                     wf_header[1] = (sizeof(LdEEPROMRead_SBEC3) >> 8) & 0xFF;
                     wf_header[2] = sizeof(LdEEPROMRead_SBEC3) & 0xFF;
@@ -3632,7 +3632,7 @@ void sci_boot_task(void *pvParameters)
                     }
                     break;
                 }
-                case WorkerFunction_EEPROMWriteSPI:
+                case WorkerFunction_EEPROMWriteSBEC:
                 {
                     wf_header[1] = (sizeof(LdEEPROMWrite_SBEC3) >> 8) & 0xFF;
                     wf_header[2] = sizeof(LdEEPROMWrite_SBEC3) & 0xFF;
@@ -3714,12 +3714,28 @@ void sci_boot_task(void *pvParameters)
             {
                 case WorkerFunction_FlashID:
                 {
-                    sci.msg.byte_received = false;
                     uart_write_bytes(UART_SCI, (const uint8_t *)start_worker_function_cmd, sizeof(start_worker_function_cmd));
                     uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
+
+                    sci.state.idle = false;
+
+                    while ((sci.msg.rx_ptr < 3) && !sci.state.idle); // wait for 3 bytes (21 PP QQ)
+
                     vTaskDelay(pdMS_TO_TICKS(1));
-                    apply_progvolt(1 << SCI_VPP_EN_BIT);
-                    vTaskDelay(pdMS_TO_TICKS(100));
+
+                    switch (sci.bootstrap.bootloader_src)
+                    {
+                        default:
+                        {
+                            apply_progvolt(1 << SCI_VPP_EN_BIT);
+                            break;
+                        }
+                    }
+
+                    sci.state.idle = false;
+
+                    while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1)); // wait for last 2 bytes (RR SS)
+
                     apply_progvolt(0);
                     break;
                 }
@@ -3731,19 +3747,41 @@ void sci_boot_task(void *pvParameters)
                     if (sci.bootstrap.flash_chip_src == 0) break; // unsupported erase mode
 
                     vTaskDelay(pdMS_TO_TICKS(1));
-                    apply_progvolt(1 << SCI_VPP_EN_BIT);
+
+                    switch (sci.bootstrap.bootloader_src)
+                    {
+                        default:
+                        {
+                            apply_progvolt(1 << SCI_VPP_EN_BIT);
+                            break;
+                        }
+                    }
+
                     sci.msg.byte_received = false;
-                    while (!sci.msg.byte_received) vTaskDelay(pdMS_TO_TICKS(1));
-                    vTaskDelay(pdMS_TO_TICKS(25));
+
+                    uint16_t counter = 0;
+
+                    while (!sci.msg.byte_received)
+                    {
+                        vTaskDelay(pdMS_TO_TICKS(1)); // wait for erase finished message
+                        counter++;
+
+                        if (counter >= 10000) break; // break out if erasing lasts longer than 10 seconds
+                    }
+
+                    sci.state.idle = false;
+
+                    while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1)); // wait for last 2 bytes (RR SS)
+
                     apply_progvolt(0);
                     break;
                 }
                 case WorkerFunction_PartNumberRead:
                 case WorkerFunction_FlashRead:
-                case WorkerFunction_EEPROMReadSPI:
+                case WorkerFunction_EEPROMReadSBEC:
                 case WorkerFunction_FlashWrite:
                 case WorkerFunction_VerifyFlashChecksum:
-                case WorkerFunction_EEPROMWriteSPI:
+                case WorkerFunction_EEPROMWriteSBEC:
                 case WorkerFunction_Empty:
                 default:
                 {
@@ -3776,13 +3814,13 @@ void sci_boot_task(void *pvParameters)
                     uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
                     break;
                 }
-                case WorkerFunction_EEPROMReadSPI:
+                case WorkerFunction_EEPROMReadSBEC:
                 {
                     uart_write_bytes(UART_SCI, (const uint8_t *)stop_eeprom_read_cmd, sizeof(stop_eeprom_read_cmd));
                     uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
                     break;
                 }
-                case WorkerFunction_EEPROMWriteSPI:
+                case WorkerFunction_EEPROMWriteSBEC:
                 {
                     uart_write_bytes(UART_SCI, (const uint8_t *)stop_eeprom_write_cmd, sizeof(stop_eeprom_write_cmd));
                     uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
@@ -3912,7 +3950,7 @@ void sci_eeprom_task(void *pvParameters)
 
                 send_key_cmd[1] = (key >> 8) & 0xFF;
                 send_key_cmd[2] = key & 0xFF;
-                send_key_cmd[3] = calculate_checksum(send_key_cmd, 0, sizeof(send_key_cmd) - 1);
+                send_key_cmd[3] = checksum_calculator(send_key_cmd, 0, sizeof(send_key_cmd) - 1);
 
                 sci.msg.byte_received = false;
                 sci.state.idle = false;
@@ -4343,7 +4381,7 @@ void pci_msg_task(void *pvParameters)
     {
         if (pci.msg.rx_length > 0)
         {
-            crc = calculate_crc(pci.msg.rx_buffer, 0, pci.msg.rx_length - 1);
+            crc = crc_calculator(pci.msg.rx_buffer, 0, pci.msg.rx_length - 1);
 
             if (pci.msg.rx_buffer[pci.msg.rx_length - 1] == crc)
             {

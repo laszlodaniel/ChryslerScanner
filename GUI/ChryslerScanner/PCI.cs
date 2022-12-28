@@ -64,25 +64,24 @@ namespace ChryslerScanner
             byte[] message = new byte[] { };
             byte[] payload = new byte[] { };
 
-            if (data.Length > 3)
+            if (data.Length >= 4)
             {
                 Array.Copy(data, 0, timestamp, 0, 4);
             }
 
-            if (data.Length > 4)
+            if (data.Length >= 5)
             {
                 message = new byte[data.Length - 4];
                 Array.Copy(data, 4, message, 0, message.Length); // copy message from the input byte array
             }
 
-            if (data.Length > 5)
+            if (data.Length >= 6)
             {
                 payload = new byte[data.Length - 6];
                 Array.Copy(data, 5, payload, 0, payload.Length); // copy payload from the input byte array (without ID and checksum)
             }
 
             List<string> Status = new List<string>();
-            Status.Clear();
             string StatusString = string.Empty;
 
             string DescriptionToInsert;
@@ -417,7 +416,7 @@ namespace ChryslerScanner
                     byte[] key = Util.GetSKIMUnlockKey(payload, VIN);
                     byte[] KeyArray = { 0xC2, 0xC0, key[0], key[1], key[2], 0x00 };
 
-                    KeyArray[KeyArray.Length - 1] = Util.CalculateChecksum(KeyArray, 0, KeyArray.Length - 1);
+                    KeyArray[KeyArray.Length - 1] = Util.ChecksumCalculator(KeyArray, 0, KeyArray.Length - 1);
                     DescriptionToInsert += " | KEY: " + Util.ByteToHexStringSimple(KeyArray);
                     break;
                 case 0x42:
@@ -459,7 +458,7 @@ namespace ChryslerScanner
                         }
                     }
 
-                    if (payload[0] == 0x40) // packet received from SKIM to write to PCM EEPROM
+                    if (payload[0] == 0x40) // packet received from SKIM to write to PCM EEPROM (DRB3 PCM replaced menu)
                     {
                         switch (payload[1] & 0x03)
                         {
@@ -481,7 +480,7 @@ namespace ChryslerScanner
                         }
                     }
 
-                    if (payload[0] == 0x10) // packet sent to SKIM to verify content
+                    if (payload[0] == 0x10) // packet sent to SKIM to write to SKIM EEPROM (DRB3 SKIM replaced menu)
                     {
                         switch (payload[1] & 0x03)
                         {
@@ -509,7 +508,6 @@ namespace ChryslerScanner
                     if (message.Length < 3) break;
 
                     List<string> RelayList = new List<string>();
-                    RelayList.Clear();
 
                     if (payload[0] != 0)
                     {
@@ -742,7 +740,6 @@ namespace ChryslerScanner
                     else
                     {
                         List<string> WarningList = new List<string>();
-                        WarningList.Clear();
 
                         if (Util.IsBitSet(payload[0], 2)) WarningList.Add("-7-");
                         if (Util.IsBitSet(payload[0], 6)) WarningList.Add("-6-");
@@ -817,7 +814,6 @@ namespace ChryslerScanner
                     if (message.Length < 4) break;
 
                     List<string> LimpStateA = new List<string>();
-                    LimpStateA.Clear();
 
                     if (Util.IsBitSet(payload[1], 7)) LimpStateA.Add("ATS"); // Ambient temperature sensor
                     if (Util.IsBitSet(payload[1], 6)) LimpStateA.Add("IAT"); // Intake air temperature
@@ -850,7 +846,6 @@ namespace ChryslerScanner
                     if (message.Length < 7) break;
 
                     List<string> LimpStateB = new List<string>();
-                    LimpStateB.Clear();
 
                     if (Util.IsBitSet(payload[2], 7)) LimpStateB.Add("ATS"); // Ambient temperature sensor
                     if (Util.IsBitSet(payload[2], 6)) LimpStateB.Add("IAT"); // Intake air temperature

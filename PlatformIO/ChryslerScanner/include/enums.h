@@ -110,10 +110,10 @@ enum WorkerFunction {
     WorkerFunction_FlashErase          = 0x04,
     WorkerFunction_FlashWrite          = 0x05,
     WorkerFunction_VerifyFlashChecksum = 0x06,
-    WorkerFunction_EEPROMReadSPI       = 0x07, // SBEC3
-    WorkerFunction_EEPROMWriteSPI      = 0x08, // SBEC3
-    WorkerFunction_EEPROMReadParallel  = 0x09, // JTEC
-    WorkerFunction_EEPROMWriteParallel = 0x0A, // JTEC
+    WorkerFunction_EEPROMReadSBEC      = 0x07,
+    WorkerFunction_EEPROMWriteSBEC     = 0x08,
+    WorkerFunction_EEPROMReadJTEC      = 0x09,
+    WorkerFunction_EEPROMWriteJTEC     = 0x0A,
 };
 
 enum FlashMemoryManufacturer

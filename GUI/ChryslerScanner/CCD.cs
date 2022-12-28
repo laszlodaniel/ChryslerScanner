@@ -71,18 +71,18 @@ namespace ChryslerScanner
             byte[] message = new byte[] { };
             byte[] payload = new byte[] { };
 
-            if (data.Length > 3)
+            if (data.Length >= 4)
             {
                 Array.Copy(data, 0, timestamp, 0, 4);
             }
 
-            if (data.Length > 4)
+            if (data.Length >= 5)
             {
                 message = new byte[data.Length - 4];
                 Array.Copy(data, 4, message, 0, message.Length); // copy message from the input byte array
             }
 
-            if (data.Length > 5)
+            if (data.Length >= 6)
             {
                 payload = new byte[data.Length - 6];
                 Array.Copy(data, 5, payload, 0, payload.Length); // copy payload from the input byte array (without ID and checksum)
@@ -123,7 +123,7 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x07:
-                    DescriptionToInsert = "SKIM PAYLOAD FROM PCM EEPROM";
+                    DescriptionToInsert = "SKIM PAYLOAD FROM PCM EEPROM"; // packet sent to SKIM to write to SKIM EEPROM (DRB3 SKIM replaced menu)
 
                     if (message.Length < 4) break;
                     if ((payload[0] < 0x10) || (payload[0] > 0x14)) break;
@@ -145,7 +145,6 @@ namespace ChryslerScanner
                     if (message.Length < 3) break;
 
                     List<string> WarningList = new List<string>();
-                    WarningList.Clear();
 
                     if (payload[0] == 0)
                     {
@@ -235,7 +234,7 @@ namespace ChryslerScanner
 
                     break;
                 case 0x16:
-                    DescriptionToInsert = "VEHICLE THEFT SECURITY STATUS";
+                    DescriptionToInsert = "SKIM SECURITY STATUS";
 
                     if (message.Length < 3) break;
 
@@ -419,7 +418,6 @@ namespace ChryslerScanner
                     if (message.Length < 4) break;
 
                     List<string> LampListA = new List<string>();
-                    LampListA.Clear();
 
                     if (payload[0] != 0)
                     {
@@ -506,7 +504,6 @@ namespace ChryslerScanner
                     if (message.Length < 3) break;
 
                     List<string> LampListB = new List<string>();
-                    LampListB.Clear();
 
                     if (payload[0] != 0)
                     {
@@ -697,7 +694,6 @@ namespace ChryslerScanner
                     if (message.Length < 3) break;
 
                     List<string> RelayList = new List<string>();
-                    RelayList.Clear();
 
                     if (payload[0] != 0)
                     {
@@ -878,7 +874,6 @@ namespace ChryslerScanner
                     if (message.Length < 4) break;
 
                     List<string> Status = new List<string>();
-                    Status.Clear();
 
                     if ((payload[0] == 0) && (payload[1] == 0))
                     {
@@ -940,7 +935,7 @@ namespace ChryslerScanner
                     byte[] key = Util.GetSKIMUnlockKey(payload, VIN);
                     byte[] KeyArray = { 0xC2, 0xC0, key[0], key[1], key[2], 0x00 };
 
-                    KeyArray[KeyArray.Length - 1] = Util.CalculateChecksum(KeyArray, 0, KeyArray.Length - 1);
+                    KeyArray[KeyArray.Length - 1] = Util.ChecksumCalculator(KeyArray, 0, KeyArray.Length - 1);
                     DescriptionToInsert += " | KEY: " + Util.ByteToHexStringSimple(KeyArray);
                     break;
                 case 0xA9:
@@ -961,7 +956,7 @@ namespace ChryslerScanner
 
                     if (message.Length < 5) break;
 
-                    DescriptionToInsert += " | VERSION: " + Util.ByteToHexString(payload, 0, 2);
+                    //DescriptionToInsert += " | VERSION: " + Util.ByteToHexString(payload, 0, 2);
 
                     switch (payload[2])
                     {
@@ -1009,7 +1004,6 @@ namespace ChryslerScanner
                     if (message.Length < 3) break;
 
                     List<string> WarningListB = new List<string>();
-                    WarningListB.Clear();
 
                     if (payload[0] == 0)
                     {
@@ -1800,12 +1794,12 @@ namespace ChryslerScanner
                             ValueToInsert = Util.ByteToHexString(payload, 1, 3);
                             break;
                         case 0xC1:
-                            DescriptionToInsert = "SKIM | PAYLOAD #1 TO BE WRITTEN TO PCM EEPROM";
+                            DescriptionToInsert = "SKIM | PAYLOAD #1 TO BE WRITTEN TO PCM EEPROM"; // packet received from SKIM to write to PCM EEPROM (DRB3 PCM replaced menu)
                             Array.Copy(payload, 1, SKIMPayload, 0, 3);
                             ValueToInsert = Util.ByteToHexString(payload, 1, 3);
                             break;
                         case 0xC2:
-                            DescriptionToInsert = "SKIM | PAYLOAD #2 TO BE WRITTEN TO PCM EEPROM";
+                            DescriptionToInsert = "SKIM | PAYLOAD #2 TO BE WRITTEN TO PCM EEPROM"; // packet received from SKIM to write to PCM EEPROM (DRB3 PCM replaced menu)
                             Array.Copy(payload, 1, SKIMPayload, 3, 2);
                             ValueToInsert = Util.ByteToHexStringSimple(SKIMPayload);
                             UnitToInsert = "EEPROM 01D8";
@@ -1987,7 +1981,6 @@ namespace ChryslerScanner
                     if (message.Length < 4) break;
 
                     List<string> LimpStates = new List<string>();
-                    LimpStates.Clear();
 
                     if (Util.IsBitSet(payload[0], 7)) LimpStates.Add("ATS"); // Ambient temperature sensor
                     if (Util.IsBitSet(payload[0], 6)) LimpStates.Add("IAT"); // Intake air temperature
@@ -2066,7 +2059,6 @@ namespace ChryslerScanner
                     if (message.Length < 3) break;
 
                     List<string> WarningListA = new List<string>();
-                    WarningListA.Clear();
 
                     if (payload[0] == 0)
                     {
@@ -2148,7 +2140,6 @@ namespace ChryslerScanner
                                             }
 
                                             List<string> flags = new List<string>();
-                                            flags.Clear();
 
                                             if (Util.IsBitClear(payload[3], 5)) flags.Add("OUTAGE");
                                             if (Util.IsBitClear(payload[3], 6)) flags.Add("TURN");
@@ -2494,7 +2485,6 @@ namespace ChryslerScanner
                                     else
                                     {
                                         List<string> FaultCodes = new List<string>();
-                                        FaultCodes.Clear();
 
                                         if (Util.IsBitSet(payload[3], 1)) FaultCodes.Add("NO BCM MSG");
                                         if (Util.IsBitSet(payload[3], 2)) FaultCodes.Add("NO PCM MSG");

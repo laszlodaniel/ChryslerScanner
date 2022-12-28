@@ -34,7 +34,6 @@
             this.UpdateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ReadMemoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.WriteMemoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.SecurityKeyCalculatorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.BootstrapToolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.EngineToolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ABSToolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -215,7 +214,6 @@
             this.UpdateToolStripMenuItem,
             this.ReadMemoryToolStripMenuItem,
             this.WriteMemoryToolStripMenuItem,
-            this.SecurityKeyCalculatorToolStripMenuItem,
             this.BootstrapToolsToolStripMenuItem,
             this.EngineToolsToolStripMenuItem,
             this.ABSToolsToolStripMenuItem});
@@ -245,13 +243,6 @@
             this.WriteMemoryToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
             this.WriteMemoryToolStripMenuItem.Text = "Write memory";
             this.WriteMemoryToolStripMenuItem.Click += new System.EventHandler(this.WriteMemoryToolStripMenuItem_Click);
-            // 
-            // SecurityKeyCalculatorToolStripMenuItem
-            // 
-            this.SecurityKeyCalculatorToolStripMenuItem.Name = "SecurityKeyCalculatorToolStripMenuItem";
-            this.SecurityKeyCalculatorToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.SecurityKeyCalculatorToolStripMenuItem.Text = "Security key calculator";
-            this.SecurityKeyCalculatorToolStripMenuItem.Click += new System.EventHandler(this.SecuritySeedCalculatorToolStripMenuItem_Click);
             // 
             // BootstrapToolsToolStripMenuItem
             // 
@@ -2036,7 +2027,6 @@
         private System.Windows.Forms.Button DiagnosticsSnapshotButton;
         private System.Windows.Forms.ToolStripMenuItem CCDBusOnDemandToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem WriteMemoryToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem SecurityKeyCalculatorToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem BootstrapToolsToolStripMenuItem;
         private System.Windows.Forms.TabPage PCIBusControlTabPage;
         private System.Windows.Forms.TabPage PCIBusDiagnosticsTabPage;

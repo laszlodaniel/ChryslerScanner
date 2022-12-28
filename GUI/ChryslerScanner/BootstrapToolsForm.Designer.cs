@@ -216,6 +216,7 @@ namespace ChryslerScanner
             this.FlashChipComboBox.Name = "FlashChipComboBox";
             this.FlashChipComboBox.Size = new System.Drawing.Size(152, 21);
             this.FlashChipComboBox.TabIndex = 12;
+            this.FlashChipComboBox.SelectedIndexChanged += new System.EventHandler(this.FlashChipComboBox_SelectedIndexChanged);
             // 
             // FlashChipLabel
             // 

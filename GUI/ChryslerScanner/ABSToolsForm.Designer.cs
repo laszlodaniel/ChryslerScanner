@@ -31,12 +31,12 @@
             this.FaultCodeGroupBox = new System.Windows.Forms.GroupBox();
             this.EraseFaultCodesButton = new System.Windows.Forms.Button();
             this.ReadFaultCodesButton = new System.Windows.Forms.Button();
-            this.ABSModuleInformationGroupBox = new System.Windows.Forms.GroupBox();
+            this.ABSModuleTypeGroupBox = new System.Windows.Forms.GroupBox();
             this.ABSModuleIDReadButton = new System.Windows.Forms.Button();
             this.ABSToolsInfoTextBox = new System.Windows.Forms.TextBox();
             this.ABSToolsHelpButton = new System.Windows.Forms.Button();
             this.FaultCodeGroupBox.SuspendLayout();
-            this.ABSModuleInformationGroupBox.SuspendLayout();
+            this.ABSModuleTypeGroupBox.SuspendLayout();
             this.SuspendLayout();
             // 
             // FaultCodeGroupBox
@@ -70,15 +70,15 @@
             this.ReadFaultCodesButton.UseVisualStyleBackColor = true;
             this.ReadFaultCodesButton.Click += new System.EventHandler(this.ReadFaultCodesButton_Click);
             // 
-            // ABSModuleInformationGroupBox
+            // ABSModuleTypeGroupBox
             // 
-            this.ABSModuleInformationGroupBox.Controls.Add(this.ABSModuleIDReadButton);
-            this.ABSModuleInformationGroupBox.Location = new System.Drawing.Point(9, 7);
-            this.ABSModuleInformationGroupBox.Name = "ABSModuleInformationGroupBox";
-            this.ABSModuleInformationGroupBox.Size = new System.Drawing.Size(165, 46);
-            this.ABSModuleInformationGroupBox.TabIndex = 6;
-            this.ABSModuleInformationGroupBox.TabStop = false;
-            this.ABSModuleInformationGroupBox.Text = "Module information";
+            this.ABSModuleTypeGroupBox.Controls.Add(this.ABSModuleIDReadButton);
+            this.ABSModuleTypeGroupBox.Location = new System.Drawing.Point(9, 7);
+            this.ABSModuleTypeGroupBox.Name = "ABSModuleTypeGroupBox";
+            this.ABSModuleTypeGroupBox.Size = new System.Drawing.Size(165, 46);
+            this.ABSModuleTypeGroupBox.TabIndex = 6;
+            this.ABSModuleTypeGroupBox.TabStop = false;
+            this.ABSModuleTypeGroupBox.Text = "Module type";
             // 
             // ABSModuleIDReadButton
             // 
@@ -119,13 +119,13 @@
             this.ClientSize = new System.Drawing.Size(727, 313);
             this.Controls.Add(this.ABSToolsHelpButton);
             this.Controls.Add(this.ABSToolsInfoTextBox);
-            this.Controls.Add(this.ABSModuleInformationGroupBox);
+            this.Controls.Add(this.ABSModuleTypeGroupBox);
             this.Controls.Add(this.FaultCodeGroupBox);
             this.Name = "ABSToolsForm";
             this.Text = "ABS tools";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ABSToolsForm_FormClosing);
             this.FaultCodeGroupBox.ResumeLayout(false);
-            this.ABSModuleInformationGroupBox.ResumeLayout(false);
+            this.ABSModuleTypeGroupBox.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -135,7 +135,7 @@
         private System.Windows.Forms.GroupBox FaultCodeGroupBox;
         private System.Windows.Forms.Button EraseFaultCodesButton;
         private System.Windows.Forms.Button ReadFaultCodesButton;
-        private System.Windows.Forms.GroupBox ABSModuleInformationGroupBox;
+        private System.Windows.Forms.GroupBox ABSModuleTypeGroupBox;
         private System.Windows.Forms.Button ABSModuleIDReadButton;
         private System.Windows.Forms.TextBox ABSToolsInfoTextBox;
         private System.Windows.Forms.Button ABSToolsHelpButton;

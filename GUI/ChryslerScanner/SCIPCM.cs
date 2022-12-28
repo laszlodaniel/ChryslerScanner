@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Windows.Forms;
 
@@ -19,8 +20,8 @@ namespace ChryslerScanner
         public List<byte> FaultCode1TList = new List<byte>();
         public bool FaultCodes1TSaved = true;
         public byte[] EngineDTCList;
-        public DataColumn column;
-        public DataRow row;
+        public DataColumn Column;
+        public DataRow Row;
 
         private const int HexBytesColumnStart = 2;
         private const int DescriptionColumnStart = 28;
@@ -38,1190 +39,1195 @@ namespace ChryslerScanner
         public string EmptyLine      = "│                         │                                                     │                         │             │";
         public string HeaderModified = string.Empty;
 
+        public static byte ControllerHardwareType = 0;
+        public static byte[] PartNumberChars = new byte[6] { 0, 0, 0, 0, 0, 0 };
+        public static string[] EngineToolsStatusBarTextItems = new string[12];
+
         public SCIPCM()
         {
-            column = new DataColumn();
-            column.DataType = typeof(byte);
-            column.ColumnName = "id";
-            column.ReadOnly = true;
-            column.Unique = true;
-            EngineDTC.Columns.Add(column);
+            Column = new DataColumn
+            {
+                DataType = typeof(byte),
+                ColumnName = "id",
+                ReadOnly = true,
+                Unique = true
+            };
+            EngineDTC.Columns.Add(Column);
 
-            column = new DataColumn();
-            column.DataType = typeof(string);
-            column.ColumnName = "description";
-            column.ReadOnly = true;
-            column.Unique = false;
-            EngineDTC.Columns.Add(column);
+            Column = new DataColumn
+            {
+                DataType = typeof(string),
+                ColumnName = "description",
+                ReadOnly = true,
+                Unique = false
+            };
+            EngineDTC.Columns.Add(Column);
 
             DataColumn[] PrimaryKeyColumnsDTC = new DataColumn[1];
             PrimaryKeyColumnsDTC[0] = EngineDTC.Columns["id"];
             EngineDTC.PrimaryKey = PrimaryKeyColumnsDTC;
 
-            DataSet dataSetDTC = new DataSet();
-            dataSetDTC.Tables.Add(EngineDTC);
-
             #region SCI-bus (PCM) fault codes
 
-            row = EngineDTC.NewRow();
-            row["id"] = 0x00;
-            row["description"] = "UNRECOGNIZED DTC";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x01;
-            row["description"] = "NO CAM SIGNAL AT PCM";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x02;
-            row["description"] = "INTERNAL CONTROLLER FAILURE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x03;
-            row["description"] = "LEFT BANK O2 SENSOR STAYS ABOVE CENTER (RICH)";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x04;
-            row["description"] = "LEFT BANK O2 SENSOR STAYS BELOW CENTER (LEAN)";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x05;
-            row["description"] = "CHARGING SYSTEM VOLTAGE TOO LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x06;
-            row["description"] = "CHARGING SYSTEM VOLTAGE TOO HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x07;
-            row["description"] = "TURBO BOOST LIMIT EXCEEDED";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x08;
-            row["description"] = "RIGHT BANK O2 SENSOR STAYS ABOVE CENTER (RICH)";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x09;
-            row["description"] = "RIGHT BANK O2 SENSOR STAYS BELOW CENTER (LEAN)";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x0A;
-            row["description"] = "AUTO SHUTDOWN RELAY CONTROL CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x0B;
-            row["description"] = "GENERATOR FIELD NOT SWITCHING PROPERLY";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x0C;
-            row["description"] = "TORQUE CONVERTER CLUTCH SOLENOID / TRANS RELAY CIRCUITS";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x0D;
-            row["description"] = "TURBOCHARGER WASTEGATE SOLENOID CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x0E;
-            row["description"] = "LOW SPEED FAN CONTROL RELAY CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x0F;
-            row["description"] = "CRUISE CONTROL SOLENOID CIRCUITS";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x10;
-            row["description"] = "A/C CLUTCH RELAY CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x11;
-            row["description"] = "EGR SOLENOID CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x12;
-            row["description"] = "EVAP PURGE SOLENOID CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x13;
-            row["description"] = "INJECTOR #3 CONTROL CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x14;
-            row["description"] = "INJECTOR #2 CONTROL CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x15;
-            row["description"] = "INJECTOR #1 CONTROL CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x16;
-            row["description"] = "INJECTOR #3 PEAK CURRENT NOT REACHED";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x17;
-            row["description"] = "INJECTOR #2 PEAK CURRENT NOT REACHED";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x18;
-            row["description"] = "INJECTOR #1 PEAK CURRENT NOT REACHED";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x19;
-            row["description"] = "IDLE AIR CONTROL MOTOR CIRCUITS";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x1A;
-            row["description"] = "THROTTLE POSITION SENSOR VOLTAGE LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x1B;
-            row["description"] = "THROTTLE POSITION SENSOR VOLTAGE HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x1C;
-            row["description"] = "THROTTLE BODY TEMP SENSOR VOLTAGE LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x1D;
-            row["description"] = "THROTTLE BODY TEMP SENSOR VOLTAGE HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x1E;
-            row["description"] = "COOLANT TEMPERATURE SENSOR VOLTAGE TOO LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x1F;
-            row["description"] = "COOLANT TEMPERATURE SENSOR VOLTAGE TOO HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x20;
-            row["description"] = "UPSTREAM O2 SENSOR STAYS AT CENTER";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x21;
-            row["description"] = "ENGINE IS COLD TOO LONG";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x22;
-            row["description"] = "SKIP SHIFT SOLENOID CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x23;
-            row["description"] = "NO VEHICLE SPEED SENSOR SIGNAL";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x24;
-            row["description"] = "MAP SENSOR VOLTAGE TOO LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x25;
-            row["description"] = "MAP SENSOR VOLTAGE TOO HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x26;
-            row["description"] = "SLOW CHANGE IN IDLE MAP SENSOR SIGNAL";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x27;
-            row["description"] = "NO CHANGE IN MAP FROM START TO RUN";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x28;
-            row["description"] = "NO CRANKSHAFT REFERENCE SIGNAL AT PCM";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x29;
-            row["description"] = "IGNITION COIL #3 PRIMARY CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x2A;
-            row["description"] = "IGNITION COIL #2 PRIMARY CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x2B;
-            row["description"] = "IGNITION COIL #1 PRIMARY CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x2C;
-            row["description"] = "NO ASD RELAY OUTPUT VOLTAGE AT PCM";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x2D;
-            row["description"] = "SYSTEM RICH, L-IDLE ADAPTIVE AT LEAN LIMIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x2E;
-            row["description"] = "EGR SYSTEM FAILURE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x2F;
-            row["description"] = "BAROMETRIC READ SOLENOID CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x30;
-            row["description"] = "PCM FAILURE SRI MILE NOT STORED";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x31;
-            row["description"] = "PCM FAILURE EEPROM WRITE DENIED";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x32;
-            row["description"] = "TRANSMISSION 3-4 SHIFT SOLENOID / TRANSMISSION RELAY CIRCUITS";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x33;
-            row["description"] = "SECONDARY AIR SOLENOID CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x34;
-            row["description"] = "IDLE SWITCH SHORTED TO GROUND";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x35;
-            row["description"] = "IDLE SWITCH OPEN CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x36;
-            row["description"] = "SURGE VALVE SOLENOID CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x37;
-            row["description"] = "INJECTOR #9 CONTROL CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x38;
-            row["description"] = "INJECTOR #10 CONTROL CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x39;
-            row["description"] = "INTAKE AIR TEMPERATURE SENSOR VOLTAGE LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x3A;
-            row["description"] = "INTAKE AIR TEMPERATURE SENSOR VOLTAGE HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x3B;
-            row["description"] = "KNOCK SENSOR #1 CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x3C;
-            row["description"] = "BAROMETRIC PRESSURE OUT OF RANGE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x3D;
-            row["description"] = "INJECTOR #4 CONTROL CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x3E;
-            row["description"] = "LEFT BANK UPSTREAM O2 SENSOR SHORTED TO VOLTAGE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x3F;
-            row["description"] = "FUEL SYSTEM RICH, R-IDLE ADAPTIVE AT LEAN LIMIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x40;
-            row["description"] = "WASTEGATE #2 CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x41;
-            row["description"] = "RIGHT BANK UPSTREAM O2 SENSOR STAYS AT CENTER";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x42;
-            row["description"] = "RIGHT BANK UPSTREAM O2 SENSOR SHORTED TO VOLTAGE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x43;
-            row["description"] = "FUEL SYSTEM LEAN, R-IDLE ADAPTIVE AT RICH LIMIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x44;
-            row["description"] = "PCM FAILURE SPI COMMUNICATIONS";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x45;
-            row["description"] = "INJECTOR #5 CONTROL CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x46;
-            row["description"] = "INJECTOR #6 CONTROL CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x47;
-            row["description"] = "BATTERY TEMPERATURE SENSOR VOLTS OUT OF LIMIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x48;
-            row["description"] = "NO CMP AT IGNITION / INJ DRIVER MODULE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x49;
-            row["description"] = "NO CKP AT IGNITION/ INJ DRIVER MODULE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x4A;
-            row["description"] = "TRANSMISSION TEMPERATURE SENSOR VOLTAGE TOO LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x4B;
-            row["description"] = "TRANSMISSION TEMPERATURE SENSOR VOLTAGE TOO HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x4C;
-            row["description"] = "IGNITION COIL #4 PRIMARY CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x4D;
-            row["description"] = "IGNITION COIL #5 PRIMARY CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x4E;
-            row["description"] = "FUEL SYSTEM LEAN, L-IDLE ADAPTIVE AT RICH LIMIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x4F;
-            row["description"] = "INJECTOR #7 CONTROL CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x50;
-            row["description"] = "INJECTOR #8 CONTROL CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x51;
-            row["description"] = "FUEL PUMP RESISTOR BYPASS RELAY CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x52;
-            row["description"] = "CRUISE CONTROL POWER RELAY OR 12V DRIVER CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x53;
-            row["description"] = "KNOCK SENSOR #2 CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x54;
-            row["description"] = "FLEX FUEL SENSOR VOLTS TOO HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x55;
-            row["description"] = "FLEX FUEL SENSOR VOLTS TOO LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x56;
-            row["description"] = "CRUISE CONTROL SWITCH ALWAYS HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x57;
-            row["description"] = "CRUISE CONTROL SWITCH ALWAYS LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x58;
-            row["description"] = "MANIFOLD TUNE VALVE SOLENOID CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x59;
-            row["description"] = "NO BUS MESSAGES";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x5A;
-            row["description"] = "A/C PRESSURE SENSOR VOLTS TOO HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x5B;
-            row["description"] = "A/C PRESSURE SENSOR VOLTS TOO LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x5C;
-            row["description"] = "LOW SPEED FAN CONTROL RELAY CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x5D;
-            row["description"] = "HIGH SPEED CONDENSER FAN CTRL RELAY CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x5E;
-            row["description"] = "CNG TEMPERATURE SENSOR VOLTAGE TOO LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x5F;
-            row["description"] = "CNG TEMPERATURE SENSOR VOLTAGE TOO HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x60;
-            row["description"] = "NO CCD/PCI BUS MESSAGES FROM TCM";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x61;
-            row["description"] = "NO CCD/PCI BUS MESSAGE FROM BCM";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x62;
-            row["description"] = "CNG PRESSURE SENSOR VOLTAGE TOO HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x63;
-            row["description"] = "CNG PRESSURE SENSOR VOLTAGE TOO LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x64;
-            row["description"] = "LOSS OF FLEX FUEL CALIBRATION SIGNAL";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x65;
-            row["description"] = "FUEL PUMP RELAY CONTROL CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x66;
-            row["description"] = "LEFT BANK UPSTREAM O2 SENSOR SLOW RESPONSE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x67;
-            row["description"] = "LEFT BANK UPSTREAM O2 SENSOR HEATER FAILURE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x68;
-            row["description"] = "DOWNSTREAM O2 SENSOR UNABLE TO SWITCH RICH/LEAN";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x69;
-            row["description"] = "DOWNSTREAM O2 SENSOR HEATER FAILURE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x6A;
-            row["description"] = "MULTIPLE CYLINDER MISFIRE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x6B;
-            row["description"] = "CYLINDER #1 MISFIRE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x6C;
-            row["description"] = "CYLINDER #2 MISFIRE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x6D;
-            row["description"] = "CYLINDER #3 MISFIRE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x6E;
-            row["description"] = "CYLINDER #4 MISFIRE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x6F;
-            row["description"] = "TOO LITTLE SECONDARY AIR";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x70;
-            row["description"] = "CATALYTIC CONVERTER EFFICIENCY FAILURE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x71;
-            row["description"] = "EVAP PURGE FLOW MONITOR FAILURE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x72;
-            row["description"] = "P/N SWITCH STUCK IN PARK OR IN GEAR";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x73;
-            row["description"] = "POWER STEERING SWITCH FAILURE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x74;
-            row["description"] = "DESIRED FUEL TIMING ADVANCE NOT REACHED";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x75;
-            row["description"] = "LOST FUEL INJECTION TIMING SIGNAL";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x76;
-            row["description"] = "LEFT BANK FUEL SYSTEM RICH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x77;
-            row["description"] = "LEFT BANK FUEL SYSTEM LEAN";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x78;
-            row["description"] = "RIGHT BANK FUEL SYSTEM RICH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x79;
-            row["description"] = "RIGHT BANK FUEL SYSTEM LEAN";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x7A;
-            row["description"] = "RIGHT BANK UPSTREAM O2 SENSOR SLOW RESPONSE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x7B;
-            row["description"] = "RIGHT BANK DOWNSTREAM O2 SENSOR SLOW RESPONSE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x7C;
-            row["description"] = "RIGHT BANK UPSTREAM O2 SENSOR HEATER FAILURE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x7D;
-            row["description"] = "RIGHT BANK DOWNSTREAM O2 SENSOR HEATER FAILURE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x7E;
-            row["description"] = "DOWNSTREAM O2 SENSOR SHORTED TO VOLTAGE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x7F;
-            row["description"] = "RIGHT BANK DOWNSTREAM O2 SENSOR SHORTED TO VOLTAGE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x80;
-            row["description"] = "CLOSED LOOP TEMPERATURE NOT REACHED";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x81;
-            row["description"] = "LEFT BANK DOWNSTREAM O2 SENSOR STAYS AT CENTER";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x82;
-            row["description"] = "RIGHT BANK DOWNSTREAM O2 SENSOR STAYS AT CENTER";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x83;
-            row["description"] = "LEAN OPERATION AT WIDE OPEN THROTTLE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x84;
-            row["description"] = "TPS VOLTAGE DOES NOT AGREE WITH MAP";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x85;
-            row["description"] = "TIMING BELT SKIPPED 1 TOOTH OR MORE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x86;
-            row["description"] = "NO 5 VOLTS TO A/C PRESSURE SENSOR";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x87;
-            row["description"] = "NO 5 VOLTS TO MAP SENSOR";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x88;
-            row["description"] = "NO 5 VOLTS TO TPS";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x89;
-            row["description"] = "EATX CONTROLLER DTC PRESENT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x8A;
-            row["description"] = "TARGET IDLE NOT REACHED";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x8B;
-            row["description"] = "HIGH SPEED RADIATOR FAN CONTROL RELAY CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x8C;
-            row["description"] = "DIESEL EGR SYSTEM FAILURE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x8D;
-            row["description"] = "GOVERNOR PRESSURE NOT EQUAL TO TARGET @ 15 - 20 PSI";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x8E;
-            row["description"] = "GOVERNOR PRESSURE ABOVE 3 PSI IN GEAR WITH 0 MPH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x8F;
-            row["description"] = "STARTER RELAY CONTROL CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x90;
-            row["description"] = "DOWNSTREAM O2 SENSOR SHORTED TO GROUND";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x91;
-            row["description"] = "VACUUM LEAK FOUND (IAC FULLY SEATED)";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x92;
-            row["description"] = "5 VOLT SUPPLY, OUTPUT TOO LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x93;
-            row["description"] = "DOWNSTREAM O2 SENSOR SHORTED TO VOLTAGE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x94;
-            row["description"] = "TORQUE CONVERTER CLUTCH, NO RPM DROP AT LOCKUP";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x95;
-            row["description"] = "FUEL LEVEL SENDING UNIT VOLTS TOO LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x96;
-            row["description"] = "FUEL LEVEL SENDING UNIT VOLTS TOO HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x97;
-            row["description"] = "FUEL LEVEL UNIT NO CHANGE OVER MILES";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x98;
-            row["description"] = "BRAKE SWITCH STUCK PRESSED OR RELEASED";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x99;
-            row["description"] = "BATTERY TEMPERATURE SENSOR VOLTS TOO LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x9A;
-            row["description"] = "BATTERY TEMPERATURE SENSOR VOLTS TOO HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x9B;
-            row["description"] = "LEFT BANK UPSTREAM O2 SENSOR SHORTED TO GROUND";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x9C;
-            row["description"] = "DOWNSTREAM O2 SENSOR SHORTED TO GROUND";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x9D;
-            row["description"] = "INTERMITTENT LOSS OF CMP OR CKP";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x9E;
-            row["description"] = "TOO MUCH SECONDARY AIR";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0x9F;
-            row["description"] = "DOWNSTREAM O2 SENSOR SLOW RESPONSE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xA0;
-            row["description"] = "EVAP LEAK MONITOR SMALL LEAK DETECTED";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xA1;
-            row["description"] = "EVAP LEAK MONITOR LARGE LEAK DETECTED";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xA2;
-            row["description"] = "NO TEMPERATURE RISE SEEN FROM INTAKE HEATERS";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xA3;
-            row["description"] = "WAIT TO START LAMP CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xA4;
-            row["description"] = "TRANSMISSION TEMPERATURE SENSOR, NO TEMPERATURE RISE AFTR START";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xA5;
-            row["description"] = "3-4 SHIFT SOLENOID, NO RPM DROP @ 3-4 SHIFT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xA6;
-            row["description"] = "LOW OUTPUT SPEED SENSOR RPM, ABOVE 15 MPH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xA7;
-            row["description"] = "GOVERNOR PRESSURE SENSOR VOLTS TOO LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xA8;
-            row["description"] = "GOVERNOR PRESSURE SENSOR VOLTS TOO HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xA9;
-            row["description"] = "GOVERNOR PRESSURE SENSOR OFFSET VOLTS TOO LOW OR HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xAA;
-            row["description"] = "PCM NOT PROGRAMMED";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xAB;
-            row["description"] = "GOVERNOR PRESSURE SOLENOID CONTROL / TRANSMISSION RELAY CIRCUITS";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xAC;
-            row["description"] = "DOWNSTREAM O2 SENSOR STUCK AT CENTER";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xAD;
-            row["description"] = "TRANSMISSION 12 VOLT SUPPLY RELAY CONTROL CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xAE;
-            row["description"] = "CYLINDER #5 MIS-FIRE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xAF;
-            row["description"] = "CYLINDER #6 MIS-FIRE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xB0;
-            row["description"] = "CYLINDER #7 MIS-FIRE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xB1;
-            row["description"] = "CYLINDER #8 MIS-FIRE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xB2;
-            row["description"] = "CYLINDER #9 MIS-FIRE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xB3;
-            row["description"] = "CYLINDER #10 MIS-FIRE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xB4;
-            row["description"] = "RIGHT BANK CATALYST EFFICIENCY FAILURE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xB5;
-            row["description"] = "REAR BANK UPSTREAM O2 SENSOR SHORTED TO GROUND";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xB6;
-            row["description"] = "REAR BANK DOWNSTREAM O2 SENSOR SHORTED TO GROUND";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xB7;
-            row["description"] = "LEAK DETECTION PUMP SOLENOID CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xB8;
-            row["description"] = "LEAK DETECT PUMP SWITCH OR MECHANICAL FAULT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xB9;
-            row["description"] = "AUXILIARY 5 VOLT SUPPLY OUTPUT TOO LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xBA;
-            row["description"] = "MISFIRE ADAPTIVE NUMERATOR AT LIMIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xBB;
-            row["description"] = "EVAP LEAK MONITOR PINCHED HOSE FOUND";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xBC;
-            row["description"] = "O/D SWITCH PRESSED (LOW) MORE THAN 5 MIN";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xBD;
-            row["description"] = "DOWNSTREAM O2 SENSOR HEATER FAILURE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xC5;
-            row["description"] = "HIGH SPEED RADIATOR FAN GROUND CONTROL RELAY CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xC6;
-            row["description"] = "ONE OF THE IGNITION COILS DRAWS TOO MUCH CURRENT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xC7;
-            row["description"] = "AW4 TRANSMISSION SHIFT SOLENOID B FUNCTIONAL FAILURE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xC8;
-            row["description"] = "RADIATOR TEMPERATURE SENSOR VOLTS TOO LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xC9;
-            row["description"] = "RADIATOR TEMPERATURE SENSOR VOLTS TOO HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xCA;
-            row["description"] = "NO I/P CLUSTER CCD/PCI BUS MESSAGES RECEIVED";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xCB;
-            row["description"] = "AW4 TRANSMISSION INTERNAL FAILURE (ROM CHECK)";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xCC;
-            row["description"] = "UPSTREAM O2 SENSOR SLOW RESPONSE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xCD;
-            row["description"] = "UPSTREAM O2 SENSOR HEATER FAILURE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xCE;
-            row["description"] = "UPSTREAM O2 SENSOR SHORTED TO VOLTAGE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xCF;
-            row["description"] = "UPSTREAM O2 SENSOR SHORTED TO GROUND";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xD0;
-            row["description"] = "NO CAM SYNC SIGNAL AT PCM";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xD1;
-            row["description"] = "GLOW PLUG RELAY CONTROL CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xD2;
-            row["description"] = "HIGH SPEED CONDENSER FAN CONTROL RELAY CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xD3;
-            row["description"] = "AW4 TRANSMISSION SHIFT SOLENOID B (2-3) SHORTED TO VOLTAGE (12V)";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xD4;
-            row["description"] = "EGR POSITION SENSOR VOLTS TOO LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xD5;
-            row["description"] = "EGR POSITION SENSOR VOLTS TOO HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xD6;
-            row["description"] = "NO 5 VOLTS TO EGR POSITION SENSOR";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xD7;
-            row["description"] = "EGR POSITION SENSOR RATIONALITY FAILURE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xD8;
-            row["description"] = "IGNITION COIL #6 PRIMARY CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xD9;
-            row["description"] = "INTAKE MANIFOLD SHORT RUNNER SOLENOID CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xDA;
-            row["description"] = "AIR ASSIST INJECTION SOLENOID CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xDB;
-            row["description"] = "CATALYST TEMPERATURE SENSOR VOLTS TOO HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xDC;
-            row["description"] = "CATALYST TEMPERATURE SENSOR VOLTS TOO LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xDD;
-            row["description"] = "EATX RPM PULSE PERFORMANCE CONDITION";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xDE;
-            row["description"] = "NO BUS MESSAGE RECEIVED FROM COMPANION MODULE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xDF;
-            row["description"] = "MIL FAULT IN COMPANION MODULE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xE0;
-            row["description"] = "COOLANT TEMPERATURE SENSOR PERFORMANCE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xE1;
-            row["description"] = "NO MIC BUS MESSAGE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xE2;
-            row["description"] = "NO SKIM BUS MESSAGE RECEIVED";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xE3;
-            row["description"] = "IGNITION COIL #7 PRIMARY CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xE4;
-            row["description"] = "IGNITION COIL #8 PRIMARY CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xE5;
-            row["description"] = "PCV SOLENOID CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xE6;
-            row["description"] = "TRANSMISSION FAN RELAY CIRCUIT";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xE7;
-            row["description"] = "TCC OR O/D SOLENOID PERFORMANCE";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xE8;
-            row["description"] = "WRONG OR INVALID KEY MESSAGE RECEIVED FROM SKIM";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xEA;
-            row["description"] = "AW4 TRANSMISSION SOLENOID A 1-2/3-4 OR TCC SOLENOID C FUNCTIONAL FAIL";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xEB;
-            row["description"] = "AW4 TRANSMISSION TCC SOLENOID C SHORTED TO GROUND";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xEC;
-            row["description"] = "AW4 TRANSMISSION TCC SOLENOID C SHORTED TO VOLTAGE (12V)";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xED;
-            row["description"] = "AW4 TRANSMISSION BATTERY VOLTS SENSE TOO LOW";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xEE;
-            row["description"] = "AW4 TRANSMISSION BATTERY VOLTS SENSE TOO HIGH";
-            EngineDTC.Rows.Add(row);
-
-            row = EngineDTC.NewRow();
-            row["id"] = 0xEF;
-            row["description"] = "AISIN AW4 TRANSMISSION DTC PRESENT";
-            EngineDTC.Rows.Add(row);
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x00;
+            Row["description"] = "UNRECOGNIZED DTC";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x01;
+            Row["description"] = "NO CAM SIGNAL AT PCM";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x02;
+            Row["description"] = "INTERNAL CONTROLLER FAILURE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x03;
+            Row["description"] = "LEFT BANK O2 SENSOR STAYS ABOVE CENTER (RICH)";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x04;
+            Row["description"] = "LEFT BANK O2 SENSOR STAYS BELOW CENTER (LEAN)";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x05;
+            Row["description"] = "CHARGING SYSTEM VOLTAGE TOO LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x06;
+            Row["description"] = "CHARGING SYSTEM VOLTAGE TOO HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x07;
+            Row["description"] = "TURBO BOOST LIMIT EXCEEDED";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x08;
+            Row["description"] = "RIGHT BANK O2 SENSOR STAYS ABOVE CENTER (RICH)";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x09;
+            Row["description"] = "RIGHT BANK O2 SENSOR STAYS BELOW CENTER (LEAN)";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x0A;
+            Row["description"] = "AUTO SHUTDOWN RELAY CONTROL CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x0B;
+            Row["description"] = "GENERATOR FIELD NOT SWITCHING PROPERLY";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x0C;
+            Row["description"] = "TORQUE CONVERTER CLUTCH SOLENOID / TRANS RELAY CIRCUITS";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x0D;
+            Row["description"] = "TURBOCHARGER WASTEGATE SOLENOID CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x0E;
+            Row["description"] = "LOW SPEED FAN CONTROL RELAY CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x0F;
+            Row["description"] = "CRUISE CONTROL SOLENOID CIRCUITS";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x10;
+            Row["description"] = "A/C CLUTCH RELAY CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x11;
+            Row["description"] = "EGR SOLENOID CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x12;
+            Row["description"] = "EVAP PURGE SOLENOID CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x13;
+            Row["description"] = "INJECTOR #3 CONTROL CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x14;
+            Row["description"] = "INJECTOR #2 CONTROL CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x15;
+            Row["description"] = "INJECTOR #1 CONTROL CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x16;
+            Row["description"] = "INJECTOR #3 PEAK CURRENT NOT REACHED";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x17;
+            Row["description"] = "INJECTOR #2 PEAK CURRENT NOT REACHED";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x18;
+            Row["description"] = "INJECTOR #1 PEAK CURRENT NOT REACHED";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x19;
+            Row["description"] = "IDLE AIR CONTROL MOTOR CIRCUITS";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x1A;
+            Row["description"] = "THROTTLE POSITION SENSOR VOLTAGE LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x1B;
+            Row["description"] = "THROTTLE POSITION SENSOR VOLTAGE HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x1C;
+            Row["description"] = "THROTTLE BODY TEMP SENSOR VOLTAGE LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x1D;
+            Row["description"] = "THROTTLE BODY TEMP SENSOR VOLTAGE HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x1E;
+            Row["description"] = "COOLANT TEMPERATURE SENSOR VOLTAGE TOO LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x1F;
+            Row["description"] = "COOLANT TEMPERATURE SENSOR VOLTAGE TOO HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x20;
+            Row["description"] = "UPSTREAM O2 SENSOR STAYS AT CENTER";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x21;
+            Row["description"] = "ENGINE IS COLD TOO LONG";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x22;
+            Row["description"] = "SKIP SHIFT SOLENOID CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x23;
+            Row["description"] = "NO VEHICLE SPEED SENSOR SIGNAL";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x24;
+            Row["description"] = "MAP SENSOR VOLTAGE TOO LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x25;
+            Row["description"] = "MAP SENSOR VOLTAGE TOO HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x26;
+            Row["description"] = "SLOW CHANGE IN IDLE MAP SENSOR SIGNAL";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x27;
+            Row["description"] = "NO CHANGE IN MAP FROM START TO RUN";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x28;
+            Row["description"] = "NO CRANKSHAFT REFERENCE SIGNAL AT PCM";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x29;
+            Row["description"] = "IGNITION COIL #3 PRIMARY CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x2A;
+            Row["description"] = "IGNITION COIL #2 PRIMARY CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x2B;
+            Row["description"] = "IGNITION COIL #1 PRIMARY CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x2C;
+            Row["description"] = "NO ASD RELAY OUTPUT VOLTAGE AT PCM";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x2D;
+            Row["description"] = "SYSTEM RICH, L-IDLE ADAPTIVE AT LEAN LIMIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x2E;
+            Row["description"] = "EGR SYSTEM FAILURE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x2F;
+            Row["description"] = "BAROMETRIC READ SOLENOID CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x30;
+            Row["description"] = "PCM FAILURE SRI MILE NOT STORED";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x31;
+            Row["description"] = "PCM FAILURE EEPROM WRITE DENIED";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x32;
+            Row["description"] = "TRANSMISSION 3-4 SHIFT SOLENOID / TRANSMISSION RELAY CIRCUITS";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x33;
+            Row["description"] = "SECONDARY AIR SOLENOID CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x34;
+            Row["description"] = "IDLE SWITCH SHORTED TO GROUND";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x35;
+            Row["description"] = "IDLE SWITCH OPEN CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x36;
+            Row["description"] = "SURGE VALVE SOLENOID CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x37;
+            Row["description"] = "INJECTOR #9 CONTROL CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x38;
+            Row["description"] = "INJECTOR #10 CONTROL CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x39;
+            Row["description"] = "INTAKE AIR TEMPERATURE SENSOR VOLTAGE LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x3A;
+            Row["description"] = "INTAKE AIR TEMPERATURE SENSOR VOLTAGE HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x3B;
+            Row["description"] = "KNOCK SENSOR #1 CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x3C;
+            Row["description"] = "BAROMETRIC PRESSURE OUT OF RANGE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x3D;
+            Row["description"] = "INJECTOR #4 CONTROL CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x3E;
+            Row["description"] = "LEFT BANK UPSTREAM O2 SENSOR SHORTED TO VOLTAGE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x3F;
+            Row["description"] = "FUEL SYSTEM RICH, R-IDLE ADAPTIVE AT LEAN LIMIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x40;
+            Row["description"] = "WASTEGATE #2 CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x41;
+            Row["description"] = "RIGHT BANK UPSTREAM O2 SENSOR STAYS AT CENTER";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x42;
+            Row["description"] = "RIGHT BANK UPSTREAM O2 SENSOR SHORTED TO VOLTAGE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x43;
+            Row["description"] = "FUEL SYSTEM LEAN, R-IDLE ADAPTIVE AT RICH LIMIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x44;
+            Row["description"] = "PCM FAILURE SPI COMMUNICATIONS";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x45;
+            Row["description"] = "INJECTOR #5 CONTROL CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x46;
+            Row["description"] = "INJECTOR #6 CONTROL CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x47;
+            Row["description"] = "BATTERY TEMPERATURE SENSOR VOLTS OUT OF RNG";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x48;
+            Row["description"] = "NO CMP AT IGNITION / INJ DRIVER MODULE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x49;
+            Row["description"] = "NO CKP AT IGNITION/ INJ DRIVER MODULE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x4A;
+            Row["description"] = "TRANSMISSION TEMPERATURE SENSOR VOLTAGE TOO LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x4B;
+            Row["description"] = "TRANSMISSION TEMPERATURE SENSOR VOLTAGE TOO HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x4C;
+            Row["description"] = "IGNITION COIL #4 PRIMARY CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x4D;
+            Row["description"] = "IGNITION COIL #5 PRIMARY CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x4E;
+            Row["description"] = "FUEL SYSTEM LEAN, L-IDLE ADAPTIVE AT RICH LIMIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x4F;
+            Row["description"] = "INJECTOR #7 CONTROL CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x50;
+            Row["description"] = "INJECTOR #8 CONTROL CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x51;
+            Row["description"] = "FUEL PUMP RESISTOR BYPASS RELAY CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x52;
+            Row["description"] = "CRUISE CONTROL POWER RELAY OR 12V DRIVER CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x53;
+            Row["description"] = "KNOCK SENSOR #2 CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x54;
+            Row["description"] = "FLEX FUEL SENSOR VOLTS TOO HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x55;
+            Row["description"] = "FLEX FUEL SENSOR VOLTS TOO LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x56;
+            Row["description"] = "CRUISE CONTROL SWITCH ALWAYS HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x57;
+            Row["description"] = "CRUISE CONTROL SWITCH ALWAYS LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x58;
+            Row["description"] = "MANIFOLD TUNE VALVE SOLENOID CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x59;
+            Row["description"] = "NO BUS MESSAGES";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x5A;
+            Row["description"] = "A/C PRESSURE SENSOR VOLTS TOO HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x5B;
+            Row["description"] = "A/C PRESSURE SENSOR VOLTS TOO LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x5C;
+            Row["description"] = "LOW SPEED FAN CONTROL RELAY CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x5D;
+            Row["description"] = "HIGH SPEED CONDENSER FAN CTRL RELAY CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x5E;
+            Row["description"] = "CNG TEMPERATURE SENSOR VOLTAGE TOO LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x5F;
+            Row["description"] = "CNG TEMPERATURE SENSOR VOLTAGE TOO HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x60;
+            Row["description"] = "NO CCD/PCI BUS MESSAGES FROM TCM";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x61;
+            Row["description"] = "NO CCD/PCI BUS MESSAGE FROM BCM";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x62;
+            Row["description"] = "CNG PRESSURE SENSOR VOLTAGE TOO HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x63;
+            Row["description"] = "CNG PRESSURE SENSOR VOLTAGE TOO LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x64;
+            Row["description"] = "LOSS OF FLEX FUEL CALIBRATION SIGNAL";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x65;
+            Row["description"] = "FUEL PUMP RELAY CONTROL CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x66;
+            Row["description"] = "LEFT BANK UPSTREAM O2 SENSOR SLOW RESPONSE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x67;
+            Row["description"] = "LEFT BANK UPSTREAM O2 SENSOR HEATER FAILURE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x68;
+            Row["description"] = "DOWNSTREAM O2 SENSOR UNABLE TO SWITCH RICH/LEAN";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x69;
+            Row["description"] = "DOWNSTREAM O2 SENSOR HEATER FAILURE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x6A;
+            Row["description"] = "MULTIPLE CYLINDER MISFIRE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x6B;
+            Row["description"] = "CYLINDER #1 MISFIRE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x6C;
+            Row["description"] = "CYLINDER #2 MISFIRE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x6D;
+            Row["description"] = "CYLINDER #3 MISFIRE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x6E;
+            Row["description"] = "CYLINDER #4 MISFIRE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x6F;
+            Row["description"] = "TOO LITTLE SECONDARY AIR";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x70;
+            Row["description"] = "CATALYTIC CONVERTER EFFICIENCY FAILURE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x71;
+            Row["description"] = "EVAP PURGE FLOW MONITOR FAILURE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x72;
+            Row["description"] = "P/N SWITCH STUCK IN PARK OR IN GEAR";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x73;
+            Row["description"] = "POWER STEERING SWITCH FAILURE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x74;
+            Row["description"] = "DESIRED FUEL TIMING ADVANCE NOT REACHED";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x75;
+            Row["description"] = "LOST FUEL INJECTION TIMING SIGNAL";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x76;
+            Row["description"] = "LEFT BANK FUEL SYSTEM RICH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x77;
+            Row["description"] = "LEFT BANK FUEL SYSTEM LEAN";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x78;
+            Row["description"] = "RIGHT BANK FUEL SYSTEM RICH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x79;
+            Row["description"] = "RIGHT BANK FUEL SYSTEM LEAN";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x7A;
+            Row["description"] = "RIGHT BANK UPSTREAM O2 SENSOR SLOW RESPONSE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x7B;
+            Row["description"] = "RIGHT BANK DOWNSTREAM O2 SENSOR SLOW RESPONSE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x7C;
+            Row["description"] = "RIGHT BANK UPSTREAM O2 SENSOR HEATER FAILURE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x7D;
+            Row["description"] = "RIGHT BANK DOWNSTREAM O2 SENSOR HEATER FAILURE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x7E;
+            Row["description"] = "DOWNSTREAM O2 SENSOR SHORTED TO VOLTAGE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x7F;
+            Row["description"] = "RIGHT BANK DOWNSTREAM O2 SENSOR SHORTED TO VOLTAGE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x80;
+            Row["description"] = "CLOSED LOOP TEMPERATURE NOT REACHED";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x81;
+            Row["description"] = "LEFT BANK DOWNSTREAM O2 SENSOR STAYS AT CENTER";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x82;
+            Row["description"] = "RIGHT BANK DOWNSTREAM O2 SENSOR STAYS AT CENTER";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x83;
+            Row["description"] = "LEAN OPERATION AT WIDE OPEN THROTTLE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x84;
+            Row["description"] = "TPS VOLTAGE DOES NOT AGREE WITH MAP";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x85;
+            Row["description"] = "TIMING BELT SKIPPED 1 TOOTH OR MORE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x86;
+            Row["description"] = "NO 5 VOLTS TO A/C PRESSURE SENSOR";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x87;
+            Row["description"] = "NO 5 VOLTS TO MAP SENSOR";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x88;
+            Row["description"] = "NO 5 VOLTS TO TPS";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x89;
+            Row["description"] = "EATX CONTROLLER DTC PRESENT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x8A;
+            Row["description"] = "TARGET IDLE NOT REACHED";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x8B;
+            Row["description"] = "HIGH SPEED RADIATOR FAN CONTROL RELAY CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x8C;
+            Row["description"] = "DIESEL EGR SYSTEM FAILURE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x8D;
+            Row["description"] = "GOVERNOR PRESSURE NOT EQUAL TO TARGET @ 15 - 20 PSI";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x8E;
+            Row["description"] = "GOVERNOR PRESSURE ABOVE 3 PSI IN GEAR WITH 0 MPH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x8F;
+            Row["description"] = "STARTER RELAY CONTROL CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x90;
+            Row["description"] = "DOWNSTREAM O2 SENSOR SHORTED TO GROUND";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x91;
+            Row["description"] = "VACUUM LEAK FOUND (IAC FULLY SEATED)";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x92;
+            Row["description"] = "5 VOLT SUPPLY, OUTPUT TOO LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x93;
+            Row["description"] = "DOWNSTREAM O2 SENSOR SHORTED TO VOLTAGE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x94;
+            Row["description"] = "TORQUE CONVERTER CLUTCH, NO RPM DROP AT LOCKUP";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x95;
+            Row["description"] = "FUEL LEVEL SENDING UNIT VOLTS TOO LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x96;
+            Row["description"] = "FUEL LEVEL SENDING UNIT VOLTS TOO HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x97;
+            Row["description"] = "FUEL LEVEL UNIT NO CHANGE OVER MILES";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x98;
+            Row["description"] = "BRAKE SWITCH STUCK PRESSED OR RELEASED";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x99;
+            Row["description"] = "BATTERY TEMPERATURE SENSOR VOLTS TOO LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x9A;
+            Row["description"] = "BATTERY TEMPERATURE SENSOR VOLTS TOO HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x9B;
+            Row["description"] = "LEFT BANK UPSTREAM O2 SENSOR SHORTED TO GROUND";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x9C;
+            Row["description"] = "DOWNSTREAM O2 SENSOR SHORTED TO GROUND";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x9D;
+            Row["description"] = "INTERMITTENT LOSS OF CMP OR CKP";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x9E;
+            Row["description"] = "TOO MUCH SECONDARY AIR";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0x9F;
+            Row["description"] = "DOWNSTREAM O2 SENSOR SLOW RESPONSE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xA0;
+            Row["description"] = "EVAP LEAK MONITOR SMALL LEAK DETECTED";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xA1;
+            Row["description"] = "EVAP LEAK MONITOR LARGE LEAK DETECTED";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xA2;
+            Row["description"] = "NO TEMPERATURE RISE SEEN FROM INTAKE HEATERS";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xA3;
+            Row["description"] = "WAIT TO START LAMP CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xA4;
+            Row["description"] = "TRANSMISSION TEMPERATURE SENSOR, NO TEMPERATURE RISE AFTR START";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xA5;
+            Row["description"] = "3-4 SHIFT SOLENOID, NO RPM DROP @ 3-4 SHIFT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xA6;
+            Row["description"] = "LOW OUTPUT SPEED SENSOR RPM, ABOVE 15 MPH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xA7;
+            Row["description"] = "GOVERNOR PRESSURE SENSOR VOLTS TOO LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xA8;
+            Row["description"] = "GOVERNOR PRESSURE SENSOR VOLTS TOO HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xA9;
+            Row["description"] = "GOVERNOR PRESSURE SENSOR OFFSET VOLTS TOO LOW OR HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xAA;
+            Row["description"] = "PCM NOT PROGRAMMED";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xAB;
+            Row["description"] = "GOVERNOR PRESSURE SOLENOID CONTROL / TRANSMISSION RELAY CIRCUITS";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xAC;
+            Row["description"] = "DOWNSTREAM O2 SENSOR STUCK AT CENTER";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xAD;
+            Row["description"] = "TRANSMISSION 12 VOLT SUPPLY RELAY CONTROL CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xAE;
+            Row["description"] = "CYLINDER #5 MIS-FIRE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xAF;
+            Row["description"] = "CYLINDER #6 MIS-FIRE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xB0;
+            Row["description"] = "CYLINDER #7 MIS-FIRE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xB1;
+            Row["description"] = "CYLINDER #8 MIS-FIRE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xB2;
+            Row["description"] = "CYLINDER #9 MIS-FIRE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xB3;
+            Row["description"] = "CYLINDER #10 MIS-FIRE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xB4;
+            Row["description"] = "RIGHT BANK CATALYST EFFICIENCY FAILURE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xB5;
+            Row["description"] = "REAR BANK UPSTREAM O2 SENSOR SHORTED TO GROUND";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xB6;
+            Row["description"] = "REAR BANK DOWNSTREAM O2 SENSOR SHORTED TO GROUND";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xB7;
+            Row["description"] = "LEAK DETECTION PUMP SOLENOID CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xB8;
+            Row["description"] = "LEAK DETECT PUMP SWITCH OR MECHANICAL FAULT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xB9;
+            Row["description"] = "AUXILIARY 5 VOLT SUPPLY OUTPUT TOO LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xBA;
+            Row["description"] = "MISFIRE ADAPTIVE NUMERATOR AT LIMIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xBB;
+            Row["description"] = "EVAP LEAK MONITOR PINCHED HOSE FOUND";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xBC;
+            Row["description"] = "O/D SWITCH PRESSED (LOW) MORE THAN 5 MIN";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xBD;
+            Row["description"] = "DOWNSTREAM O2 SENSOR HEATER FAILURE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xC5;
+            Row["description"] = "HIGH SPEED RADIATOR FAN GROUND CONTROL RELAY CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xC6;
+            Row["description"] = "ONE OF THE IGNITION COILS DRAWS TOO MUCH CURRENT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xC7;
+            Row["description"] = "AW4 TRANSMISSION SHIFT SOLENOID B FUNCTIONAL FAILURE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xC8;
+            Row["description"] = "RADIATOR TEMPERATURE SENSOR VOLTS TOO LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xC9;
+            Row["description"] = "RADIATOR TEMPERATURE SENSOR VOLTS TOO HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xCA;
+            Row["description"] = "NO I/P CLUSTER CCD/PCI BUS MESSAGES RECEIVED";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xCB;
+            Row["description"] = "AW4 TRANSMISSION INTERNAL FAILURE (ROM CHECK)";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xCC;
+            Row["description"] = "UPSTREAM O2 SENSOR SLOW RESPONSE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xCD;
+            Row["description"] = "UPSTREAM O2 SENSOR HEATER FAILURE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xCE;
+            Row["description"] = "UPSTREAM O2 SENSOR SHORTED TO VOLTAGE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xCF;
+            Row["description"] = "UPSTREAM O2 SENSOR SHORTED TO GROUND";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xD0;
+            Row["description"] = "NO CAM SYNC SIGNAL AT PCM";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xD1;
+            Row["description"] = "GLOW PLUG RELAY CONTROL CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xD2;
+            Row["description"] = "HIGH SPEED CONDENSER FAN CONTROL RELAY CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xD3;
+            Row["description"] = "AW4 TRANSMISSION SHIFT SOLENOID B (2-3) SHORTED TO VOLTAGE (12V)";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xD4;
+            Row["description"] = "EGR POSITION SENSOR VOLTS TOO LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xD5;
+            Row["description"] = "EGR POSITION SENSOR VOLTS TOO HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xD6;
+            Row["description"] = "NO 5 VOLTS TO EGR POSITION SENSOR";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xD7;
+            Row["description"] = "EGR POSITION SENSOR RATIONALITY FAILURE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xD8;
+            Row["description"] = "IGNITION COIL #6 PRIMARY CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xD9;
+            Row["description"] = "INTAKE MANIFOLD SHORT RUNNER SOLENOID CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xDA;
+            Row["description"] = "AIR ASSIST INJECTION SOLENOID CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xDB;
+            Row["description"] = "CATALYST TEMPERATURE SENSOR VOLTS TOO HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xDC;
+            Row["description"] = "CATALYST TEMPERATURE SENSOR VOLTS TOO LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xDD;
+            Row["description"] = "EATX RPM PULSE PERFORMANCE CONDITION";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xDE;
+            Row["description"] = "NO BUS MESSAGE RECEIVED FROM COMPANION MODULE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xDF;
+            Row["description"] = "MIL FAULT IN COMPANION MODULE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xE0;
+            Row["description"] = "COOLANT TEMPERATURE SENSOR PERFORMANCE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xE1;
+            Row["description"] = "NO MIC BUS MESSAGE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xE2;
+            Row["description"] = "NO SKIM BUS MESSAGE RECEIVED";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xE3;
+            Row["description"] = "IGNITION COIL #7 PRIMARY CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xE4;
+            Row["description"] = "IGNITION COIL #8 PRIMARY CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xE5;
+            Row["description"] = "PCV SOLENOID CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xE6;
+            Row["description"] = "TRANSMISSION FAN RELAY CIRCUIT";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xE7;
+            Row["description"] = "TCC OR O/D SOLENOID PERFORMANCE";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xE8;
+            Row["description"] = "WRONG OR INVALID KEY MESSAGE RECEIVED FROM SKIM";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xEA;
+            Row["description"] = "AW4 TRANSMISSION SOLENOID A 1-2/3-4 OR TCC SOLENOID C FUNCTIONAL FAIL";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xEB;
+            Row["description"] = "AW4 TRANSMISSION TCC SOLENOID C SHORTED TO GROUND";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xEC;
+            Row["description"] = "AW4 TRANSMISSION TCC SOLENOID C SHORTED TO VOLTAGE (12V)";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xED;
+            Row["description"] = "AW4 TRANSMISSION BATTERY VOLTS SENSE TOO LOW";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xEE;
+            Row["description"] = "AW4 TRANSMISSION BATTERY VOLTS SENSE TOO HIGH";
+            EngineDTC.Rows.Add(Row);
+
+            Row = EngineDTC.NewRow();
+            Row["id"] = 0xEF;
+            Row["description"] = "AISIN AW4 TRANSMISSION DTC PRESENT";
+            EngineDTC.Rows.Add(Row);
 
             #endregion
 
@@ -1262,44 +1268,41 @@ namespace ChryslerScanner
             byte[] PendingFaultCodePayload = new byte[] { }; // pending fault codes
             byte[] FaultCode1TPayload = new byte[] { }; // one-trip fault codes
 
-            if (data.Length > 3)
+            if (data.Length >= 4)
             {
                 Array.Copy(data, 0, timestamp, 0, 4);
             }
 
-            if (data.Length > 4)
+            if (data.Length >= 5)
             {
                 message = new byte[data.Length - 4];
                 Array.Copy(data, 4, message, 0, message.Length); // copy message from the input byte array
             }
 
-            if (data.Length > 5)
+            if (data.Length >= 6)
             {
                 payload = new byte[data.Length - 5];
                 Array.Copy(data, 5, payload, 0, payload.Length); // copy payload from the input byte array (without ID)
             }
 
-            if (message.Length > 2)
+            if (message.Length >= 3)
             {
-                if (message[0] == 0x10)
+                if ((message[0] == 0x10) || (message[0] == 0x32)) // stored fault codes, SBEC or CUMMINS, respectively
                 {
                     StoredFaultCodePayload = new byte[message.Length - 2]; // skip ID and checksum bytes
                     Array.Copy(message, 1, StoredFaultCodePayload, 0, StoredFaultCodePayload.Length); // copy payload from the input byte array
                 }
-                if (message[0] == 0x11)
+                if (message[0] == 0x11) // pending fault codes
                 {
                     PendingFaultCodePayload = new byte[2]; // always 2 bytes long
                     Array.Copy(message, 1, PendingFaultCodePayload, 0, PendingFaultCodePayload.Length); // copy payload from the input byte array (without ID)
                 }
-                else if ((message[0] == 0x2E) || (message[0] == 0x32) || (message[0] == 0x33))
+                else if (message[0] == 0x2E) // one-trip fault codes
                 {
                     FaultCode1TPayload = new byte[message.Length - 2];
                     Array.Copy(message, 1, FaultCode1TPayload, 0, FaultCode1TPayload.Length); // copy payload from the input byte array (without ID and checksum byte)
                 }
             }
-
-            byte checksum = 0;
-            int ChecksumLocation = 0;
 
             string DescriptionToInsert = string.Empty;
             string ValueToInsert = string.Empty;
@@ -1313,43 +1316,43 @@ namespace ChryslerScanner
                     case 0x00:
                         DescriptionToInsert = "PCM WAKE UP";
                         break;
-                    case 0x10:
+                    case 0x10: // SBEC
+                    case 0x32: // CUMMINS
                         DescriptionToInsert = "STORED FAULT CODE LIST";
 
                         if (message.Length < 3) break;
 
-                        ChecksumLocation = message.Length - 1;
+                        byte ChecksumA = 0;
+                        byte ChecksumALocation = (byte)(message.Length - 1);
 
-                        for (int i = 0; i < ChecksumLocation; i++)
+                        for (int i = 0; i < ChecksumALocation; i++)
                         {
-                            checksum += message[i];
+                            ChecksumA += message[i];
                         }
 
-                        if (checksum == message[ChecksumLocation])
-                        {
-                            StoredFaultCodeList.Clear();
-                            StoredFaultCodeList.AddRange(StoredFaultCodePayload);
-                            StoredFaultCodeList.Remove(0xFD); // not fault code related
-                            StoredFaultCodeList.Remove(0xFE); // end of fault code list signifier
-
-                            if (StoredFaultCodeList.Count > 0)
-                            {
-                                ValueToInsert = Util.ByteToHexStringSimple(StoredFaultCodeList.ToArray());
-                                StoredFaultCodesSaved = false;
-                            }
-                            else
-                            {
-                                StoredFaultCodeList.Clear();
-                                ValueToInsert = "NO FAULT CODE";
-                                StoredFaultCodesSaved = false;
-                            }
-                        }
-                        else
+                        if (ChecksumA != message[ChecksumALocation])
                         {
                             StoredFaultCodeList.Clear();
                             ValueToInsert = "CHECKSUM ERROR";
                             StoredFaultCodesSaved = true;
+                            break;
                         }
+
+                        StoredFaultCodeList.Clear();
+                        StoredFaultCodeList.AddRange(StoredFaultCodePayload);
+                        StoredFaultCodeList.Remove(0xFD); // not fault code related
+                        StoredFaultCodeList.Remove(0xFE); // end of fault code list signifier
+
+                        if (StoredFaultCodeList.Count == 0)
+                        {
+                            StoredFaultCodeList.Clear();
+                            ValueToInsert = "NO FAULT CODE";
+                            StoredFaultCodesSaved = false;
+                            break;
+                        }
+
+                        ValueToInsert = Util.ByteToHexStringSimple(StoredFaultCodeList.ToArray());
+                        StoredFaultCodesSaved = false;
                         break;
                     case 0x11:
                         DescriptionToInsert = "PENDING FAULT CODE LIST";
@@ -1361,13 +1364,12 @@ namespace ChryslerScanner
                             PendingFaultCodeList.Clear();
                             ValueToInsert = "NO FAULT CODE";
                             PendingFaultCodesSaved = false;
+                            break;
                         }
-                        else
-                        {
-                            PendingFaultCodeList.AddRange(PendingFaultCodePayload);
-                            ValueToInsert = Util.ByteToHexString(payload, 0, 2);
-                            PendingFaultCodesSaved = false;
-                        }
+
+                        PendingFaultCodeList.AddRange(PendingFaultCodePayload);
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 2);
+                        PendingFaultCodesSaved = false;
                         break;
                     case 0x12:
                         DescriptionToInsert = "SELECT HIGH-SPEED MODE";
@@ -2298,7 +2300,6 @@ namespace ChryslerScanner
                                 DescriptionToInsert = "FUEL SYSTEM STATUS 2";
 
                                 List<string> FSS2 = new List<string>();
-                                FSS2.Clear();
 
                                 if (Util.IsBitSet(payload[1], 0)) FSS2.Add("OPEN LOOP");
                                 if (Util.IsBitSet(payload[1], 1)) FSS2.Add("CLOSED LOOP");
@@ -2306,19 +2307,18 @@ namespace ChryslerScanner
                                 if (Util.IsBitSet(payload[1], 3)) FSS2.Add("OPEN LOOP / DTC");
                                 if (Util.IsBitSet(payload[1], 4)) FSS2.Add("CLOSED LOOP / DTC");
 
-                                if (FSS2.Count > 0)
-                                {
-                                    foreach (string s in FSS2)
-                                    {
-                                        ValueToInsert += s + " | ";
-                                    }
-
-                                    if (ValueToInsert.Length > 2) ValueToInsert = ValueToInsert.Remove(ValueToInsert.Length - 3); // remove last "|" character
-                                }
-                                else
+                                if (FSS2.Count == 0)
                                 {
                                     ValueToInsert = "N/A";
+                                    break;
                                 }
+
+                                foreach (string s in FSS2)
+                                {
+                                    ValueToInsert += s + " | ";
+                                }
+
+                                if (ValueToInsert.Length > 2) ValueToInsert = ValueToInsert.Remove(ValueToInsert.Length - 3); // remove last "|" character
                                 break;
                             case 0x58:
                                 string LastCruiseCutoutReasonB;
@@ -2658,8 +2658,6 @@ namespace ChryslerScanner
                         switch (payload[0])
                         {
                             case 0x01:
-                                SwitchList.Clear();
-
                                 if (Util.IsBitSet(payload[1], 0)) SwitchList.Add("WAIT TO START LAMP");
                                 if (Util.IsBitSet(payload[1], 1)) SwitchList.Add("INTAKE HEATER #1");
                                 if (Util.IsBitSet(payload[1], 2)) SwitchList.Add("INTAKE HEATER #2");
@@ -2667,99 +2665,44 @@ namespace ChryslerScanner
                                 if (Util.IsBitSet(payload[1], 4)) SwitchList.Add("IDLE VALIDATION SW2");
                                 if (Util.IsBitSet(payload[1], 5)) SwitchList.Add("IDLE SELECT");
                                 if (Util.IsBitSet(payload[1], 6)) SwitchList.Add("TRANSFER PMPDR");
-
-                                if (SwitchList.Count > 0)
-                                {
-                                    DescriptionToInsert = "SWITCH TEST | ";
-
-                                    foreach (string s in SwitchList)
-                                    {
-                                        DescriptionToInsert += s + " | ";
-                                    }
-
-                                    if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
-                                }
-                                else
-                                {
-                                    DescriptionToInsert = "SWITCH TEST";
-                                }
                                 break;
                             case 0x02:
-                                SwitchList.Clear();
                                 if (Util.IsBitSet(payload[1], 0)) SwitchList.Add("INJ PUMP");
                                 if (Util.IsBitSet(payload[1], 2)) SwitchList.Add("A/C CLUTCH");
                                 if (Util.IsBitSet(payload[1], 3)) SwitchList.Add("EXHAUST BRAKE");
                                 if (Util.IsBitSet(payload[1], 4)) SwitchList.Add("BRAKE");
                                 if (Util.IsBitSet(payload[1], 5)) SwitchList.Add("EVAP PURGE");
                                 if (Util.IsBitSet(payload[1], 7)) SwitchList.Add("LOW OIL");
-
-                                if (SwitchList.Count > 0)
-                                {
-                                    DescriptionToInsert = "SWITCH TEST | ";
-
-                                    foreach (string s in SwitchList)
-                                    {
-                                        DescriptionToInsert += s + " | ";
-                                    }
-
-                                    DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
-                                }
-                                else
-                                {
-                                    DescriptionToInsert = "SWITCH TEST";
-                                }
                                 break;
                             case 0x03:
-                                SwitchList.Clear();
                                 if (Util.IsBitSet(payload[1], 1)) SwitchList.Add("MIL");
                                 if (Util.IsBitSet(payload[1], 2)) SwitchList.Add("GENERATOR LAMP");
                                 if (Util.IsBitSet(payload[1], 3)) SwitchList.Add("GENERATOR FIELD");
                                 if (Util.IsBitSet(payload[1], 4)) SwitchList.Add("12V FEED");
                                 if (Util.IsBitSet(payload[1], 6)) SwitchList.Add("TRANS O/D");
                                 if (Util.IsBitSet(payload[1], 7)) SwitchList.Add("TRANS TOW MODE");
-
-                                if (SwitchList.Count > 0)
-                                {
-                                    DescriptionToInsert = "SWITCH TEST | ";
-
-                                    foreach (string s in SwitchList)
-                                    {
-                                        DescriptionToInsert += s + " | ";
-                                    }
-
-                                    DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
-                                }
-                                else
-                                {
-                                    DescriptionToInsert = "SWITCH TEST";
-                                }
                                 break;
                             case 0x04:
-                                SwitchList.Clear();
                                 if (Util.IsBitSet(payload[1], 1)) SwitchList.Add("TRD LINK");
                                 if (Util.IsBitSet(payload[1], 4)) SwitchList.Add("ASD");
                                 if (Util.IsBitSet(payload[1], 6)) SwitchList.Add("IGNITION");
-
-                                if (SwitchList.Count > 0)
-                                {
-                                    DescriptionToInsert = "SWITCH TEST | ";
-
-                                    foreach (string s in SwitchList)
-                                    {
-                                        DescriptionToInsert += s + " | ";
-                                    }
-
-                                    DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
-                                }
-                                else
-                                {
-                                    DescriptionToInsert = "SWITCH TEST";
-                                }
                                 break;
                             default:
                                 DescriptionToInsert = "SWITCH TEST | OFFSET: " + Util.ByteToHexString(payload, 0, 1);
                                 break;
                         }
+
+                        if (SwitchList.Count == 0) break;
+
+                        DescriptionToInsert += " | ";
+
+                        foreach (string s in SwitchList)
+                        {
+                            DescriptionToInsert += s + " | ";
+                        }
+
+                        if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
+
                         break;
                     case 0x1B:
                         DescriptionToInsert = "INIT BYTE MODE DOWNLOAD";
@@ -3250,167 +3193,280 @@ namespace ChryslerScanner
                     case 0x2A:
                         DescriptionToInsert = "CONFIGURATION";
 
-                        if (message.Length < 3) break;
+                        if (message.Length < 4) break;
 
                         switch (payload[0])
                         {
                             case 0x01:
-                                DescriptionToInsert = "CONFIGURATION | PART NUMBER 1-2";
+                                DescriptionToInsert += " | PART NUMBER 1-2";
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                PartNumberChars[0] = payload[1];
                                 break;
                             case 0x02:
-                                DescriptionToInsert = "CONFIGURATION | PART NUMBER 3-4";
+                                DescriptionToInsert += " | PART NUMBER 3-4";
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                PartNumberChars[1] = payload[1];
                                 break;
                             case 0x03:
-                                DescriptionToInsert = "CONFIGURATION | PART NUMBER 5-6";
+                                DescriptionToInsert += " | PART NUMBER 5-6";
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                PartNumberChars[2] = payload[1];
                                 break;
                             case 0x04:
-                                DescriptionToInsert = "CONFIGURATION | PART NUMBER 7-8";
+                                DescriptionToInsert += " | PART NUMBER 7-8 | CHECKSUM";
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                PartNumberChars[3] = payload[1];
                                 break;
+                            //case 0x05:
+                            //    DescriptionToInsert += " | EMISSION STANDARD SUPPLEMENT";
+
+                            //    switch (payload[1])
+                            //    {
+                            //        case 0x01:
+                            //            ValueToInsert = "CA/NY/MA STATE TLEV MOD";
+                            //            break;
+                            //        case 0x02:
+                            //            ValueToInsert = "CA/NY/MA STATE MODULE";
+                            //            break;
+                            //        case 0x03:
+                            //            ValueToInsert = "CA/MA/FED HIGH ALT MOD";
+                            //            break;
+                            //        case 0x04:
+                            //            ValueToInsert = "CA/MA STATE MODULE";
+                            //            break;
+                            //        case 0x05:
+                            //            ValueToInsert = "CA/NY/FED HIGH ALT MOD";
+                            //            break;
+                            //        case 0x06:
+                            //            ValueToInsert = "CA/NY MODULE";
+                            //            break;
+                            //        case 0x07:
+                            //            ValueToInsert = "FEDERAL LOW ALT MODULE";
+                            //            break;
+                            //        case 0x08:
+                            //            ValueToInsert = "FED LOW ALT/TAIWAN MOD";
+                            //            break;
+                            //        case 0x09:
+                            //            ValueToInsert = "CA/NY/MA STATE LEV MOD";
+                            //            break;
+                            //        case 0x0A:
+                            //            ValueToInsert = "CA/NY/MA/CT STATE MOD";
+                            //            break;
+                            //        case 0x0B:
+                            //            ValueToInsert = "CA/NY/MA/CT TLEV MOD";
+                            //            break;
+                            //        case 0x0C:
+                            //            ValueToInsert = "CA/NY/MA/CT LEV MOD";
+                            //            break;
+                            //        default:
+                            //            ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+                            //            break;
+                            //    }
+                            //    break;
                             case 0x06:
-                                DescriptionToInsert = "CONFIGURATION | EMISSION STANDARD";
+                                DescriptionToInsert += " | EMISSION STANDARD";
 
                                 switch (payload[1])
                                 {
-                                    case 1:
-                                        ValueToInsert = "OBD-II BY CARB";
+                                    case 0x01:
+                                        ValueToInsert = "FEDERAL HIGH ALTITUDE";
                                         break;
-                                    case 2:
-                                        ValueToInsert = "OBD BY EPA";
+                                    case 0x02:
+                                        ValueToInsert = "TRUCK MODULE";
                                         break;
-                                    case 3:
-                                        ValueToInsert = "OBD AND OBD-II";
+                                    case 0x03:
+                                        ValueToInsert = "MEXICAN MODULE";
                                         break;
-                                    case 4:
-                                        ValueToInsert = "OBD-I";
+                                    case 0x04:
+                                        ValueToInsert = "CA/NY/MA/CT STATE MOD";
                                         break;
-                                    case 5:
-                                        ValueToInsert = "NOT OBD COMPLIANT";
+                                    case 0x05:
+                                        ValueToInsert = "FEDERAL/CANADIAN MODULE";
                                         break;
-                                    case 6:
-                                        ValueToInsert = "EOBD (EUROPE)";
+                                    case 0x06:
+                                        ValueToInsert = "BUX/ECE MODULE";
                                         break;
-                                    case 7:
-                                        ValueToInsert = "EOBD AND OBD-II";
+                                    case 0x07:
+                                        ValueToInsert = "GULF STATES MODULE";
                                         break;
-                                    case 8:
-                                        ValueToInsert = "EOBD AND OBD";
+                                    case 0x08:
+                                        ValueToInsert = "50 STATE/CANADIAN MOD";
                                         break;
-                                    case 9:
-                                        ValueToInsert = "EOBD OBD OBD-II";
+                                    case 0x09:
+                                        ValueToInsert = "CA/NY/MA/CT STATE TLEV";
                                         break;
-                                    case 10:
-                                        ValueToInsert = "JOBD (JAPAN)";
+                                    case 0x0A:
+                                        ValueToInsert = "CA/NY/MA/CT STATE LEV";
                                         break;
-                                    case 11:
-                                        ValueToInsert = "JOBD AND OBD-II";
+                                    case 0x0B:
+                                        ValueToInsert = "CARB OBD2 TRUCK MODULE";
                                         break;
-                                    case 12:
-                                        ValueToInsert = "JOBD AND EOBD";
+                                    case 0x0C:
+                                        ValueToInsert = "EPA FEDERAL OBD TRUCK M";
                                         break;
-                                    case 13:
-                                        ValueToInsert = "JOBD EOBD OBD-II";
+                                    case 0x0D:
+                                        ValueToInsert = "HEAVY DUTY TRUCK MODULE";
                                         break;
-                                    case 14:
-                                        ValueToInsert = "RESERVED";
+                                    case 0x0E:
+                                        ValueToInsert = "CANADIAN ONLY";
                                         break;
-                                    case 15:
-                                        ValueToInsert = "RESERVED";
+                                    case 0x0F:
+                                        ValueToInsert = "FEDERAL ONLY";
                                         break;
-                                    case 16:
-                                        ValueToInsert = "RESERVED";
+                                    case 0x10:
+                                        ValueToInsert = "50 STATE ONLY";
                                         break;
-                                    case 17:
-                                        ValueToInsert = "EMD";
+                                    case 0x11:
+                                        ValueToInsert = "ZERO EMISSION VEHICLE";
                                         break;
-                                    case 18:
-                                        ValueToInsert = "EMD+";
+                                    case 0x12:
+                                        ValueToInsert = "CA/NY/MA STATE ULEV MOD";
                                         break;
-                                    case 19:
-                                        ValueToInsert = "HD OBD-C";
+                                    case 0x13:
+                                        ValueToInsert = "JAPAN EMISSIONS CALIBR.";
                                         break;
-                                    case 20:
-                                        ValueToInsert = "HD OBD";
+                                    case 0x14:
+                                        ValueToInsert = "EURO STAGE 3 OBD";
                                         break;
-                                    case 21:
-                                        ValueToInsert = "WWH OBD";
-                                        break;
-                                    case 22:
-                                        ValueToInsert = "RESERVED";
-                                        break;
-                                    case 23:
-                                        ValueToInsert = "HD EOBD-I";
-                                        break;
-                                    case 24:
-                                        ValueToInsert = "HD EOBD-I N";
-                                        break;
-                                    case 25:
-                                        ValueToInsert = "HD EOBD-II";
-                                        break;
-                                    case 26:
-                                        ValueToInsert = "HD EOBD-II N";
-                                        break;
-                                    case 27:
-                                        ValueToInsert = "RESERVED";
-                                        break;
-                                    case 28:
-                                        ValueToInsert = "OBDBR-1";
-                                        break;
-                                    case 29:
-                                        ValueToInsert = "OBDBR-2";
-                                        break;
-                                    case 30:
-                                        ValueToInsert = "KOBD";
-                                        break;
-                                    case 31:
-                                        ValueToInsert = "IOBD-I";
-                                        break;
-                                    case 32:
-                                        ValueToInsert = "IOBD-II";
-                                        break;
-                                    case 33:
-                                        ValueToInsert = "HD EOBD-IV";
+                                    case 0x15:
+                                        ValueToInsert = "NATIONAL LOW EMS (NLEV)";
                                         break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                         break;
                                 }
+
+                                EngineToolsStatusBarTextItems[6] = ValueToInsert;
                                 break;
                             case 0x07:
-                                DescriptionToInsert = "CONFIGURATION | CHASSIS TYPE";
-                                ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                DescriptionToInsert += " | CHASSIS TYPE";
+
+                                switch (payload[1])
+                                {
+                                    case 0x01:
+                                        ValueToInsert = "MTX RWD HEAVY DUTY";
+                                        break;
+                                    case 0x02:
+                                        ValueToInsert = "ATX RWD HEAVY DUTY";
+                                        break;
+                                    case 0x03:
+                                        ValueToInsert = "MTX RWD";
+                                        break;
+                                    case 0x04:
+                                        ValueToInsert = "ATX RWD";
+                                        break;
+                                    case 0x05:
+                                        ValueToInsert = "MTX FWD HEAVY DUTY";
+                                        break;
+                                    case 0x06:
+                                        ValueToInsert = "ATX FWD HEAVY DUTY";
+                                        break;
+                                    case 0x07:
+                                        ValueToInsert = "MTX FWD";
+                                        break;
+                                    case 0x08:
+                                        ValueToInsert = "ATX FWD";
+                                        break;
+                                    case 0x09:
+                                        ValueToInsert = "MTX AWD HEAVY DUTY";
+                                        break;
+                                    case 0x0A:
+                                        ValueToInsert = "ATX AWD HEAVY DUTY";
+                                        break;
+                                    case 0x0B:
+                                        ValueToInsert = "MTX AWD";
+                                        break;
+                                    case 0x0C:
+                                        ValueToInsert = "ATX AWD";
+                                        break;
+                                    case 0x0D:
+                                        ValueToInsert = "4X2 MTX";
+                                        break;
+                                    case 0x0E:
+                                        ValueToInsert = "4X2 ATX";
+                                        break;
+                                    case 0x0F:
+                                        ValueToInsert = "4X4 MTX";
+                                        break;
+                                    case 0x10:
+                                        ValueToInsert = "4X4 ATX";
+                                        break;
+                                    default:
+                                        ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        break;
+                                }
+
+                                EngineToolsStatusBarTextItems[9] = ValueToInsert;
                                 break;
                             case 0x08:
-                                DescriptionToInsert = "CONFIGURATION | ASPIRATION TYPE";
+                                DescriptionToInsert += " | ASPIRATION TYPE";
 
                                 switch (payload[1])
                                 {
-                                    case 1:
+                                    case 0x01:
                                         ValueToInsert = "NATURAL";
                                         break;
+                                    case 0x02:
+                                        ValueToInsert = "TURBO I";
+                                        break;
+                                    case 0x03:
+                                        ValueToInsert = "TURBO II";
+                                        break;
+                                    case 0x04:
+                                        ValueToInsert = "TURBO III";
+                                        break;
+                                    case 0x05:
+                                        ValueToInsert = "TURBO IV";
+                                        break;
+                                    case 0x06:
+                                        ValueToInsert = "TURBO DIESEL";
+                                        break;
+                                    case 0x07:
+                                        ValueToInsert = "TWO-STROKE";
+                                        break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                         break;
                                 }
+
+                                EngineToolsStatusBarTextItems[7] = ValueToInsert;
+
+                                if (EngineToolsStatusBarTextItems[7] == "NATURAL") EngineToolsStatusBarTextItems[7] = "NATURAL ASPIRATION";
+
                                 break;
                             case 0x09:
-                                DescriptionToInsert = "CONFIGURATION | INJECTION TYPE";
+                                DescriptionToInsert += " | INJECTION TYPE";
 
                                 switch (payload[1])
                                 {
-                                    case 4:
-                                        ValueToInsert = "SFI";
+                                    case 0x01:
+                                        ValueToInsert = "TBI SINGLE";
+                                        break;
+                                    case 0x02:
+                                        ValueToInsert = "TBI DOUBLE";
+                                        break;
+                                    case 0x03:
+                                        ValueToInsert = "MPI BANKED";
+                                        break;
+                                    case 0x04:
+                                        ValueToInsert = "SEQUENTIAL";
+                                        break;
+                                    case 0x05:
+                                        ValueToInsert = "DIRECT";
                                         break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                         break;
                                 }
+
+                                EngineToolsStatusBarTextItems[5] = ValueToInsert;
+
+                                if (EngineToolsStatusBarTextItems[5] == "SEQUENTIAL") EngineToolsStatusBarTextItems[5] = "SFI";
+                                if (EngineToolsStatusBarTextItems[5] == "DIRECT") EngineToolsStatusBarTextItems[5] = "DIRECT INJ";
+
                                 break;
                             case 0x0A:
-                                DescriptionToInsert = "CONFIGURATION | FUEL TYPE";
+                                DescriptionToInsert += " | FUEL TYPE";
 
                                 switch (payload[1])
                                 {
@@ -3430,21 +3486,26 @@ namespace ChryslerScanner
                                         ValueToInsert = "LEADED GAS";
                                         break;
                                     case 0x06:
-                                        ValueToInsert = "FLEX";
+                                        ValueToInsert = "SENSORLESS FLEX";
                                         break;
                                     case 0x07:
                                         ValueToInsert = "CNG";
                                         break;
                                     case 0x08:
-                                        ValueToInsert = "ELECTRIC";
+                                        ValueToInsert = "LEAD-ACID ELECTRIC";
+                                        break;
+                                    case 0x09:
+                                        ValueToInsert = "NIMH ELECTRIC";
                                         break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                         break;
                                 }
+
+                                EngineToolsStatusBarTextItems[4] = ValueToInsert;
                                 break;
                             case 0x0B:
-                                DescriptionToInsert = "CONFIGURATION | MODEL YEAR";
+                                DescriptionToInsert += " | MODEL YEAR";
 
                                 switch (payload[1])
                                 {
@@ -3488,238 +3549,468 @@ namespace ChryslerScanner
                                         ValueToInsert = "2003";
                                         break;
                                     case 0x0E:
-                                        ValueToInsert = "2004";
+                                        ValueToInsert = "1994 1/2";
                                         break;
                                     case 0x0F:
-                                        ValueToInsert = "2005";
+                                        ValueToInsert = "1991-1995";
                                         break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                         break;
                                 }
+
+                                EngineToolsStatusBarTextItems[0] = ValueToInsert;
                                 break;
                             case 0x0C:
-                                DescriptionToInsert = "CONFIGURATION | ENGINE DISPLACEMENT | CYL ORIEN";
+                                DescriptionToInsert += " | ENGINE DISPLACEMENT AND CYL ORIENT.";
 
                                 switch (payload[1])
                                 {
                                     case 0x01:
-                                        ValueToInsert = "2.2L | I4 E-W";
+                                        ValueToInsert = "2.2L I4 E-W";
                                         break;
                                     case 0x02:
-                                        ValueToInsert = "2.5L | I4 E-W";
+                                        ValueToInsert = "2.5L I4 E-W";
                                         break;
                                     case 0x03:
-                                        ValueToInsert = "3.0L | V6 E-W";
+                                        ValueToInsert = "3.0L V6 E-W";
                                         break;
                                     case 0x04:
-                                        ValueToInsert = "3.3L | V6 E-W";
+                                        ValueToInsert = "3.3L V6 E-W";
                                         break;
                                     case 0x05:
-                                        ValueToInsert = "3.9L | V6 N-S";
+                                        ValueToInsert = "3.9L V6 N-S";
                                         break;
                                     case 0x06:
-                                        ValueToInsert = "5.2L | V8 N-S";
+                                        ValueToInsert = "5.2L V8 N-S";
                                         break;
                                     case 0x07:
-                                        ValueToInsert = "5.9L | V8 N-S";
+                                        ValueToInsert = "5.9L V8 N-S";
                                         break;
                                     case 0x08:
-                                        ValueToInsert = "3.8L | V6 E-W";
+                                        ValueToInsert = "3.8L V6 E-W";
                                         break;
                                     case 0x09:
-                                        ValueToInsert = "4.0L | I6 N-S";
+                                        ValueToInsert = "4.0L I6 N-S";
                                         break;
                                     case 0x0A:
-                                        ValueToInsert = "2.0L | I4 E-W SOHC";
+                                        ValueToInsert = "2.0L I4 E-W SOHC";
                                         break;
                                     case 0x0B:
-                                        ValueToInsert = "3.5L | V6 N-S";
+                                        ValueToInsert = "3.5L V6 N-S";
                                         break;
                                     case 0x0C:
-                                        ValueToInsert = "8.0L | V10 N-S";
+                                        ValueToInsert = "8.0L V10 N-S";
                                         break;
                                     case 0x0D:
-                                        ValueToInsert = "2.4L | I4 E-W";
+                                        ValueToInsert = "2.4L I4 E-W";
                                         break;
                                     case 0x0E:
-                                        ValueToInsert = "2.5L | I4 N-S";
+                                        ValueToInsert = "2.5L I4 N-S";
                                         break;
                                     case 0x0F:
-                                        ValueToInsert = "2.5L | V6 N-S";
+                                        ValueToInsert = "2.5L V6 N-S";
                                         break;
                                     case 0x10:
-                                        ValueToInsert = "2.0L | I4 E-W DOHC";
+                                        ValueToInsert = "2.0L I4 E-W DOHC";
                                         break;
                                     case 0x11:
-                                        ValueToInsert = "2.5L | V6 E-W";
+                                        ValueToInsert = "2.5L V6 E-W";
                                         break;
                                     case 0x12:
-                                        ValueToInsert = "5.9L | I6 N-S";
+                                        ValueToInsert = "5.9L I6 N-S";
                                         break;
                                     case 0x13:
-                                        ValueToInsert = "3.3L | V6 N-S";
+                                        ValueToInsert = "3.3L V6 N-S";
                                         break;
                                     case 0x14:
-                                        ValueToInsert = "2.7L | V6 N-S";
+                                        ValueToInsert = "2.7L V6 N-S";
                                         break;
                                     case 0x15:
-                                        ValueToInsert = "3.2L | V6 N-S";
+                                        ValueToInsert = "3.2L V6 N-S";
                                         break;
                                     case 0x16:
-                                        ValueToInsert = "1.8L | I4 E-W";
+                                        ValueToInsert = "1.8L I4 E-W";
                                         break;
                                     case 0x17:
-                                        ValueToInsert = "3.7L | V6 N-S";
+                                        ValueToInsert = "3.7L V6 N-S";
                                         break;
                                     case 0x18:
-                                        ValueToInsert = "4.7L | V8 N-S";
+                                        ValueToInsert = "4.7L V8 N-S";
                                         break;
                                     case 0x19:
-                                        ValueToInsert = "1.9L | I4 E-W";
+                                        ValueToInsert = "1.9L I4 E-W";
                                         break;
                                     case 0x1A:
-                                        ValueToInsert = "3.1L | I5 N-S";
+                                        ValueToInsert = "3.1L I5 N-S";
                                         break;
                                     case 0x1B:
-                                        ValueToInsert = "1.6L | I4 E-W";
+                                        ValueToInsert = "1.6L I4 E-W";
                                         break;
                                     case 0x1C:
-                                        ValueToInsert = "2.7L | V6 E-W";
+                                        ValueToInsert = "2.7L V6 E-W";
                                         break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                         break;
                                 }
+
+                                EngineToolsStatusBarTextItems[3] = ValueToInsert;
                                 break;
                             case 0x0D:
-                                DescriptionToInsert = "CONFIGURATION | A/C SYSTEM TYPE";
-                                ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                DescriptionToInsert += " | COOLING FAN";
+
+                                switch (payload[1])
+                                {
+                                    case 0x01:
+                                        ValueToInsert = "NO ELECTRIC FAN";
+                                        break;
+                                    case 0x02:
+                                        ValueToInsert = "SINGLE FAN CYCLING A/C";
+                                        break;
+                                    case 0x03:
+                                        ValueToInsert = "DUAL FAN CYCLING A/C";
+                                        break;
+                                    case 0x04:
+                                        ValueToInsert = "SINGLE FAN VAR A/C";
+                                        break;
+                                    case 0x05:
+                                        ValueToInsert = "DUAL FAN VAR A/C";
+                                        break;
+                                    case 0x06:
+                                        ValueToInsert = "TWO-SPEED FAN";
+                                        break;
+                                    case 0x07:
+                                        ValueToInsert = "PWM FAN VAR A/C";
+                                        break;
+                                    default:
+                                        ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        break;
+                                }
+
+                                EngineToolsStatusBarTextItems[8] = ValueToInsert;
                                 break;
                             case 0x0E:
-                                DescriptionToInsert = "CONFIGURATION | ENGINE MANUFACTURER";
+                                DescriptionToInsert += " | ENGINE MANUFACTURER";
 
                                 switch (payload[1])
                                 {
                                     case 0x01:
                                         ValueToInsert = "CHRYSLER";
                                         break;
+                                    case 0x02:
+                                        ValueToInsert = "JEEP";
+                                        break;
+                                    case 0x03:
+                                        ValueToInsert = "MITSUBISHI";
+                                        break;
+                                    case 0x04:
+                                        ValueToInsert = "LOTUS";
+                                        break;
+                                    case 0x05:
+                                        ValueToInsert = "DITOMASO";
+                                        break;
+                                    case 0x06:
+                                        ValueToInsert = "PRV";
+                                        break;
+                                    case 0x07:
+                                        ValueToInsert = "CUMMINS";
+                                        break;
+                                    case 0x08:
+                                        ValueToInsert = "NORTHRUP/GRUMMAN";
+                                        break;
+                                    case 0x09:
+                                        ValueToInsert = "VM MOTORI";
+                                        break;
+                                    case 0x0A:
+                                        ValueToInsert = "SEIMENS";
+                                        break;
                                     default:
+                                        ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                         break;
                                 }
+
+                                EngineToolsStatusBarTextItems[2] = ValueToInsert;
                                 break;
                             case 0x0F:
-                                DescriptionToInsert = "CONFIGURATION | CONTROLLER HARDWARE TYPE";
+                                DescriptionToInsert += " | CONTROLLER HARDWARE TYPE";
 
                                 switch (payload[1])
                                 {
+                                    case 0x01:
+                                        ValueToInsert = "FCC";
+                                        break;
+                                    case 0x02:
+                                        ValueToInsert = "SBEC1";
+                                        break;
+                                    case 0x03:
+                                        ValueToInsert = "SBEC2";
+                                        break;
+                                    case 0x04:
+                                        ValueToInsert = "SBEC2A";
+                                        break;
                                     case 0x05:
                                         ValueToInsert = "SBEC3";
+                                        break;
+                                    case 0x06:
+                                        ValueToInsert = "JTEC";
                                         break;
                                     case 0x07:
                                         ValueToInsert = "SBEC3A";
                                         break;
+                                    case 0x08:
+                                        ValueToInsert = "SBEC3+";
+                                        break;
+                                    case 0x09:
+                                        ValueToInsert = "CUMMINS";
+                                        break;
+                                    case 0x0A:
+                                        ValueToInsert = "BOSCH";
+                                        break;
+                                    case 0x0B:
+                                        ValueToInsert = "NORTHROP EV SCU";
+                                        break;
                                     case 0x0C:
-                                        ValueToInsert = "JTEC";
+                                        ValueToInsert = "JTEC+";
+                                        break;
+                                    case 0x0D:
+                                        ValueToInsert = "JTEC (TCM ONLY)";
+                                        break;
+                                    case 0x0E:
+                                        ValueToInsert = "JTEC+ (TCM ONLY)";
+                                        break;
+                                    case 0x0F:
+                                        ValueToInsert = "BOSCH EDC15-V";
+                                        break;
+                                    case 0x10:
+                                        ValueToInsert = "BOSCH EDC15-C5";
+                                        break;
+                                    case 0x11:
+                                        ValueToInsert = "SIEMENS SIM-70";
                                         break;
                                     case 0x12:
                                         ValueToInsert = "SBEC3A+";
                                         break;
+                                    case 0x13:
+                                        ValueToInsert = "SBEC3B";
+                                        break;
+                                    case 0x14:
+                                        ValueToInsert = "GENERIC JTEC";
+                                        break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                         break;
                                 }
+
+                                ControllerHardwareType = payload[1];
                                 break;
                             case 0x10:
-                                DescriptionToInsert = "CONFIGURATION | BODY STYLE";
-
-                                switch (payload[1]) // to be verified!
-                                {
-                                    case 1:
-                                        ValueToInsert = "NS";
-                                        break;
-                                    case 2:
-                                        ValueToInsert = "PL";
-                                        break;
-                                    case 3:
-                                        ValueToInsert = "FJ";
-                                        break;
-                                    case 4:
-                                        ValueToInsert = "LH";
-                                        break;
-                                    case 5:
-                                        ValueToInsert = "PR";
-                                        break;
-                                    case 6:
-                                        ValueToInsert = "JA";
-                                        break;
-                                    case 7:
-                                        ValueToInsert = "JX";
-                                        break;
-                                    case 0x16:
-                                        ValueToInsert = "WJ";
-                                        break;
-                                    default:
-                                        ValueToInsert = Util.ByteToHexString(payload, 1, 1);
-                                        break;
-                                }
-                                break;
-                            case 0x11:
-                                DescriptionToInsert = "CONFIGURATION | MODULE SOFTWARE PHASE";
-                                ValueToInsert = Util.ByteToHexString(payload, 1, 1);
-                                break;
-                            case 0x12:
-                                DescriptionToInsert = "CONFIGURATION | MODULE SOFTWARE VERSION";
-                                ValueToInsert = Util.ByteToHexString(payload, 1, 1);
-                                break;
-                            case 0x13:
-                                DescriptionToInsert = "CONFIGURATION | MODULE SOFTWARE FAMILY";
-                                ValueToInsert = Util.ByteToHexString(payload, 1, 1);
-                                break;
-                            case 0x14:
-                                DescriptionToInsert = "CONFIGURATION | MODULE SOFTWARE GROUP AND MONTH";
-                                ValueToInsert = Util.ByteToHexString(payload, 1, 1);
-                                break;
-                            case 0x15:
-                                DescriptionToInsert = "CONFIGURATION | MODULE SOFTWARE DAY";
-                                ValueToInsert = Util.ByteToHexString(payload, 1, 1);
-                                break;
-                            case 0x16:
-                                DescriptionToInsert = "CONFIGURATION | TRANSMISSION TYPE";
+                                DescriptionToInsert += " | BODY STYLE";
 
                                 switch (payload[1])
                                 {
-                                    case 1:
-                                        ValueToInsert = "ATX ?-SPEED";
+                                    case 0x01:
+                                        ValueToInsert = "YJ";
                                         break;
-                                    case 2:
+                                    case 0x02:
+                                        ValueToInsert = "XJ";
+                                        break;
+                                    case 0x03:
+                                        ValueToInsert = "ZJ/ZG";
+                                        break;
+                                    case 0x04:
+                                        ValueToInsert = "FJ";
+                                        break;
+                                    case 0x05:
+                                        ValueToInsert = "PL";
+                                        break;
+                                    case 0x06:
+                                        ValueToInsert = "JA";
+                                        break;
+                                    case 0x07:
+                                        ValueToInsert = "AA/AG/AJ/AP";
+                                        break;
+                                    case 0x08:
+                                        ValueToInsert = "AC/AY";
+                                        break;
+                                    case 0x09:
+                                        ValueToInsert = "AS/ES";
+                                        break;
+                                    case 0x0A:
+                                        ValueToInsert = "LH";
+                                        break;
+                                    case 0x0B:
+                                        ValueToInsert = "NS/GS";
+                                        break;
+                                    case 0x0C:
+                                        ValueToInsert = "AB";
+                                        break;
+                                    case 0x0D:
+                                        ValueToInsert = "AN";
+                                        break;
+                                    case 0x0E:
+                                        ValueToInsert = "BR";
+                                        break;
+                                    case 0x0F:
+                                        ValueToInsert = "SR";
+                                        break;
+                                    case 0x10:
+                                        ValueToInsert = "AN/BR";
+                                        break;
+                                    case 0x11:
+                                        ValueToInsert = "AN/AB";
+                                        break;
+                                    case 0x12:
+                                        ValueToInsert = "JX";
+                                        break;
+                                    case 0x13:
+                                        ValueToInsert = "PR";
+                                        break;
+                                    case 0x14:
+                                        ValueToInsert = "TJ";
+                                        break;
+                                    case 0x15:
+                                        ValueToInsert = "DN";
+                                        break;
+                                    case 0x16:
+                                        ValueToInsert = "WJ/WG";
+                                        break;
+                                    case 0x17:
+                                        ValueToInsert = "SJ";
+                                        break;
+                                    case 0x18:
+                                        ValueToInsert = "JR";
+                                        break;
+                                    case 0x19:
+                                        ValueToInsert = "PT";
+                                        break;
+                                    case 0x1A:
+                                        ValueToInsert = "RS/RG";
+                                        break;
+                                    case 0x1B:
+                                        ValueToInsert = "KJ";
+                                        break;
+                                    case 0x1C:
+                                        ValueToInsert = "DR";
+                                        break;
+                                    case 0x1D:
+                                        ValueToInsert = "F24S/FJ22";
+                                        break;
+                                    case 0x1E:
+                                        ValueToInsert = "FJ22";
+                                        break;
+                                    case 0x1F:
+                                        ValueToInsert = "AA/AJ/AP";
+                                        break;
+                                    default:
+                                        ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        break;
+                                }
+
+                                EngineToolsStatusBarTextItems[1] = ValueToInsert;
+                                break;
+                            case 0x11:
+                                DescriptionToInsert += " | MODULE SOFTWARE PHASE";
+                                ValueToInsert = payload[1].ToString("0");
+                                break;
+                            case 0x12:
+                                DescriptionToInsert += " | MODULE SOFTWARE VERSION";
+                                ValueToInsert = payload[1].ToString("0");
+                                break;
+                            case 0x13:
+                                DescriptionToInsert += " | MODULE SOFTWARE FAMILY";
+                                ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                break;
+                            case 0x14:
+                                DescriptionToInsert += " | MODULE SOFTWARE GROUP AND MONTH";
+
+                                switch (payload[1] & 0x0F)
+                                {
+                                    case 0x01:
+                                        ValueToInsert = "JANUARY";
+                                        break;
+                                    case 0x02:
+                                        ValueToInsert = "FEBRUARY";
+                                        break;
+                                    case 0x03:
+                                        ValueToInsert = "MARCH";
+                                        break;
+                                    case 0x04:
+                                        ValueToInsert = "APRIL";
+                                        break;
+                                    case 0x05:
+                                        ValueToInsert = "MAY";
+                                        break;
+                                    case 0x06:
+                                        ValueToInsert = "JUNE";
+                                        break;
+                                    case 0x07:
+                                        ValueToInsert = "JULY";
+                                        break;
+                                    case 0x08:
+                                        ValueToInsert = "AUGUST";
+                                        break;
+                                    case 0x09:
+                                        ValueToInsert = "SEPTEMBER";
+                                        break;
+                                    case 0x0A:
+                                        ValueToInsert = "OCTOBER";
+                                        break;
+                                    case 0x0B:
+                                        ValueToInsert = "NOVEMBER";
+                                        break;
+                                    case 0x0C:
+                                        ValueToInsert = "DECEMBER";
+                                        break;
+                                    default:
+                                        ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                        break;
+                                }
+                                break;
+                            case 0x15:
+                                DescriptionToInsert += " | MODULE SOFTWARE DAY";
+                                ValueToInsert = payload[1].ToString("0");
+                                break;
+                            case 0x16:
+                                DescriptionToInsert += " | TRANSMISSION TYPE";
+
+                                switch (payload[1])
+                                {
+                                    case 0x01:
+                                        ValueToInsert = "ATX ?-SPEED (PTU)";
+                                        break;
+                                    case 0x02:
                                         ValueToInsert = "MTX";
                                         break;
-                                    case 3:
+                                    case 0x03:
                                         ValueToInsert = "ATX 3-SPEED";
                                         break;
-                                    case 4:
+                                    case 0x04:
                                         ValueToInsert = "ATX 4-SPEED";
                                         break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                         break;
                                 }
+
+                                EngineToolsStatusBarTextItems[10] = ValueToInsert;
                                 break;
                             case 0x17:
-                                DescriptionToInsert = "CONFIGURATION | PART NUMBER REVISION 1";
+                                DescriptionToInsert += " | PART NUMBER REVISION 1";
                                 ValueToInsert = Encoding.ASCII.GetString(payload, 1, 1);
+                                PartNumberChars[4] = payload[1];
                                 break;
                             case 0x18:
-                                DescriptionToInsert = "CONFIGURATION | PART NUMBER REVISION 2";
+                                DescriptionToInsert += " | PART NUMBER REVISION 2";
                                 ValueToInsert = Encoding.ASCII.GetString(payload, 1, 1);
+                                PartNumberChars[5] = payload[1];
                                 break;
                             case 0x19:
-                                DescriptionToInsert = "CONFIGURATION | SOFTWARE REVISION LEVEL";
+                                DescriptionToInsert += " | SOFTWARE REVISION LEVEL";
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                 break;
                             case 0x1A:
-                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION ID 1";
+                                DescriptionToInsert += " | HOMOLOGATION ID 1";
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
 
                                 if ((payload[1] < 0x20) || (payload[1] > 0x7E)) break;
@@ -3727,7 +4018,7 @@ namespace ChryslerScanner
                                 ValueToInsert += " | " + Encoding.ASCII.GetString(payload, 1, 1);
                                 break;
                             case 0x1B:
-                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION ID 2";
+                                DescriptionToInsert += " | HOMOLOGATION ID 2";
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
 
                                 if ((payload[1] < 0x20) || (payload[1] > 0x7E)) break;
@@ -3735,7 +4026,7 @@ namespace ChryslerScanner
                                 ValueToInsert += " | " + Encoding.ASCII.GetString(payload, 1, 1);
                                 break;
                             case 0x1C:
-                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION ID 3";
+                                DescriptionToInsert += " | HOMOLOGATION ID 3";
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
 
                                 if ((payload[1] < 0x20) || (payload[1] > 0x7E)) break;
@@ -3743,7 +4034,7 @@ namespace ChryslerScanner
                                 ValueToInsert += " | " + Encoding.ASCII.GetString(payload, 1, 1);
                                 break;
                             case 0x1D:
-                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION ID 4";
+                                DescriptionToInsert += " | HOMOLOGATION ID 4";
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
 
                                 if ((payload[1] < 0x20) || (payload[1] > 0x7E)) break;
@@ -3751,7 +4042,7 @@ namespace ChryslerScanner
                                 ValueToInsert += " | " + Encoding.ASCII.GetString(payload, 1, 1);
                                 break;
                             case 0x1E:
-                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION ID 5";
+                                DescriptionToInsert += " | HOMOLOGATION ID 5";
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
 
                                 if ((payload[1] < 0x20) || (payload[1] > 0x7E)) break;
@@ -3759,7 +4050,7 @@ namespace ChryslerScanner
                                 ValueToInsert += " | " + Encoding.ASCII.GetString(payload, 1, 1);
                                 break;
                             case 0x1F:
-                                DescriptionToInsert = "CONFIGURATION | HOMOLOGATION ID 6";
+                                DescriptionToInsert += " | HOMOLOGATION ID 6";
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
 
                                 if ((payload[1] < 0x20) || (payload[1] > 0x7E)) break;
@@ -3767,43 +4058,39 @@ namespace ChryslerScanner
                                 ValueToInsert += " | " + Encoding.ASCII.GetString(payload, 1, 1);
                                 break;
                             default:
-                                DescriptionToInsert = "CONFIGURATION | " + "OFFSET: " + Util.ByteToHexString(payload, 0, 1);
+                                DescriptionToInsert += " | " + "OFFSET: " + Util.ByteToHexString(payload, 0, 1);
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                 break;
                         }
                         break;
                     case 0x2B:
-                        DescriptionToInsert = "GET SECURITY SEED";
+                        DescriptionToInsert = "GET SECURITY SEED"; // Legacy, Level 1 only! Level 2 can only be unlocked with 35 02.
 
                         if (message.Length < 4) break;
 
-                        checksum = (byte)(0x2B + payload[0] + payload[1]);
+                        byte ChecksumB = (byte)(0x2B + payload[0] + payload[1]);
 
-                        if (payload[2] == checksum)
+                        if (payload[2] != ChecksumB)
                         {
-                            ushort seed = (ushort)((payload[0] << 8) + payload[1]);
-
-                            if (seed != 0)
-                            {
-                                ushort key = (ushort)((seed << 2) + 0x9018);
-                                byte keyHB = (byte)(key >> 8);
-                                byte keyLB = (byte)(key);
-                                byte keyChecksum = (byte)(0x2C + keyHB + keyLB);
-                                byte[] keyArray = { 0x2C, keyHB, keyLB, keyChecksum };
-                                DescriptionToInsert = "GET SECURITY SEED | KEY: " + Util.ByteToHexStringSimple(keyArray);
-                            }
-                            else
-                            {
-                                DescriptionToInsert = "GET SECURITY SEED | PCM ALREADY UNLOCKED";
-                            }
-
-                            ValueToInsert = Util.ByteToHexString(payload, 0, 2);
-                        }
-                        else
-                        {
-                            DescriptionToInsert = "GET SECURITY SEED";
                             ValueToInsert = "CHECKSUM ERROR";
+                            break;
                         }
+
+                        ushort SeedA = (ushort)((payload[0] << 8) + payload[1]);
+
+                        if (SeedA == 0)
+                        {
+                            DescriptionToInsert += " | PCM ALREADY UNLOCKED";
+                            break;
+                        }
+
+                        ushort KeyA = (ushort)((SeedA << 2) + 0x9018);
+                        byte KeyAHB = (byte)(KeyA >> 8);
+                        byte KeyALB = (byte)(KeyA);
+                        byte KeyAChecksum = (byte)(0x2C + KeyAHB + KeyALB);
+                        byte[] KeyAArray = new byte[4] { 0x2C, KeyAHB, KeyALB, KeyAChecksum };
+                        DescriptionToInsert += " | KEY: " + Util.ByteToHexStringSimple(KeyAArray);
+                        ValueToInsert = Util.ByteToHexString(payload, 0, 2);
                         break;
                     case 0x2C:
                         DescriptionToInsert = "SEND SECURITY KEY";
@@ -3837,122 +4124,119 @@ namespace ChryslerScanner
                         DescriptionToInsert = "CONFIGURATION | PAGE: " + Util.ByteToHexString(payload, 0, 1) + " | ITEM: " + Util.ByteToHexString(payload, 1, 1);
                         ValueToInsert = Util.ByteToHexString(payload, 2, 2);
                         break;
-                    case 0x2E:
-                    case 0x32:
-                    case 0x33:
+                    case 0x2E: // SBEC
+                    case 0x33: // CUMMINS
                         DescriptionToInsert = "ONE-TRIP FAULT CODE LIST";
 
                         if (message.Length < 3) break;
 
-                        checksum = 0;
-                        ChecksumLocation = message.Length - 1;
+                        byte ChecksumD = 0;
+                        byte ChecksumDLocation = (byte)(message.Length - 1);
 
-                        for (int i = 0; i < ChecksumLocation; i++)
+                        for (int i = 0; i < ChecksumDLocation; i++)
                         {
-                            checksum += message[i];
+                            ChecksumD += message[i];
                         }
 
-                        if ((checksum == message[ChecksumLocation]) || ((checksum - 0x1E) == message[ChecksumLocation]))
-                        {
-                            if ((checksum - 0x1E) == message[ChecksumLocation])
-                            {
-                                DescriptionToInsert += " | CHECKSUM BUG";
-                            }
-
-                            FaultCode1TList.Clear();
-                            FaultCode1TList.AddRange(FaultCode1TPayload);
-                            FaultCode1TList.Remove(0xFD); // not fault code related
-                            FaultCode1TList.Remove(0xFE); // end of fault code list signifier
-
-                            if (FaultCode1TList.Count > 0)
-                            {
-                                ValueToInsert = Util.ByteToHexStringSimple(FaultCode1TList.ToArray());
-                                FaultCodes1TSaved = false;
-                            }
-                            else
-                            {
-                                FaultCode1TList.Clear();
-                                ValueToInsert = "NO FAULT CODE";
-                                FaultCodes1TSaved = false;
-                            }
-                        }
-                        else
+                        if ((ChecksumD != message[ChecksumDLocation]) && ((ChecksumD - 0x1E) != message[ChecksumDLocation]))
                         {
                             FaultCode1TList.Clear();
                             ValueToInsert = "CHECKSUM ERROR";
                             FaultCodes1TSaved = true;
+                            break;
                         }
+
+                        if ((ChecksumD - 0x1E) == message[ChecksumDLocation])
+                        {
+                            DescriptionToInsert += " | CHECKSUM BUG";
+                        }
+
+                        FaultCode1TList.Clear();
+                        FaultCode1TList.AddRange(FaultCode1TPayload);
+                        FaultCode1TList.Remove(0xFD); // not fault code related
+                        FaultCode1TList.Remove(0xFE); // end of fault code list signifier
+
+                        if (FaultCode1TList.Count == 0)
+                        {
+                            FaultCode1TList.Clear();
+                            ValueToInsert = "NO FAULT CODE";
+                            FaultCodes1TSaved = false;
+                            break;
+                        }
+
+                        ValueToInsert = Util.ByteToHexStringSimple(FaultCode1TList.ToArray());
+                        FaultCodes1TSaved = false;
                         break;
                     case 0x35:
                         DescriptionToInsert = "GET SECURITY SEED";
 
                         if (message.Length < 5) break;
 
-                        checksum = (byte)(0x35 + payload[0] + payload[1] + payload[2]);
+                        byte ChecksumE = (byte)(0x35 + payload[0] + payload[1] + payload[2]);
 
-                        if (payload[3] == checksum)
-                        {
-                            ushort seed = (ushort)((payload[1] << 8) + payload[2]);
-
-                            if (payload[0] == 1)
-                            {
-                                if (seed != 0)
-                                {
-                                    ushort key = (ushort)((seed << 2) + 0x9018);
-                                    byte keyHB = (byte)(key >> 8);
-                                    byte keyLB = (byte)(key);
-                                    byte keyChecksum = (byte)(0x2C + keyHB + keyLB);
-                                    byte[] keyArray = { 0x2C, keyHB, keyLB, keyChecksum };
-
-                                    DescriptionToInsert = "GET SECURITY SEED #1 | KEY: " + Util.ByteToHexStringSimple(keyArray);
-                                }
-                                else
-                                {
-                                    DescriptionToInsert = "GET SECURITY SEED #1 | PCM ALREADY UNLOCKED";
-                                }
-                            }
-                            else if (payload[0] == 2)
-                            {
-                                if (seed != 0)
-                                {
-                                    ushort key = (ushort)(seed & 0xFF00);
-                                    key |= (ushort)(key >> 8);
-                                    ushort mask = (ushort)(seed & 0xFF);
-                                    mask |= (ushort)(mask << 8);
-                                    key ^= 0x9340; // polinom
-                                    key += 0x1010;
-                                    key ^= mask;
-                                    key += 0x1911;
-                                    uint tmp = (uint)((key << 16) | key);
-                                    key += (ushort)(tmp >> 3);
-                                    byte keyHB = (byte)(key >> 8);
-                                    byte keyLB = (byte)(key);
-                                    byte keyChecksum = (byte)(0x2C + keyHB + keyLB);
-                                    byte[] keyArray = { 0x2C, keyHB, keyLB, keyChecksum };
-
-                                    DescriptionToInsert = "GET SECURITY SEED #2 | KEY: " + Util.ByteToHexStringSimple(keyArray);
-                                }
-                                else
-                                {
-                                    DescriptionToInsert = "GET SECURITY SEED #2 | PCM ALREADY UNLOCKED";
-                                }
-                            }
-
-                            ValueToInsert = Util.ByteToHexString(payload, 1, 2);
-                        }
-                        else
+                        if (payload[3] != ChecksumE)
                         {
                             if (payload[0] == 1)
                             {
-                                DescriptionToInsert = "GET SECURITY SEED #1";
+                                DescriptionToInsert += " #1";
                             }
                             else if (payload[0] == 2)
                             {
-                                DescriptionToInsert = "GET SECURITY SEED #2";
+                                DescriptionToInsert += " #2";
                             }
 
                             ValueToInsert = "CHECKSUM ERROR";
+                            break;
                         }
+
+                        ushort SeedB = (ushort)((payload[1] << 8) + payload[2]);
+
+                        if (payload[0] == 1)
+                        {
+                            if (SeedB == 0)
+                            {
+                                DescriptionToInsert += " #1 | PCM ALREADY UNLOCKED";
+                                break;
+                            }
+
+                            ushort KeyB = (ushort)((SeedB << 2) + 0x9018);
+                            byte KeyBHB = (byte)(KeyB >> 8);
+                            byte KeyBLB = (byte)(KeyB);
+                            byte KeyBChecksum = (byte)(0x2C + KeyBHB + KeyBLB);
+                            byte[] KeyBArray = new byte[4] { 0x2C, KeyBHB, KeyBLB, KeyBChecksum };
+
+                            DescriptionToInsert += " #1 | KEY: " + Util.ByteToHexStringSimple(KeyBArray);
+                        }
+                        else if (payload[0] == 2)
+                        {
+                            if (SeedB == 0)
+                            {
+                                DescriptionToInsert += " #2 | PCM ALREADY UNLOCKED";
+                                break;
+                            }
+
+                            ushort KeyC = (ushort)(SeedB & 0xFF00);
+                            KeyC |= (ushort)(KeyC >> 8);
+                            ushort mask = (ushort)(SeedB & 0xFF);
+                            mask |= (ushort)(mask << 8);
+                            KeyC ^= 0x9340; // polinom
+                            KeyC += 0x1010;
+                            KeyC ^= mask;
+                            KeyC += 0x1911;
+                            uint tmp = (uint)((KeyC << 16) | KeyC);
+                            KeyC += (ushort)(tmp >> 3);
+                            byte KeyVHB = (byte)(KeyC >> 8);
+                            byte KeyVLB = (byte)(KeyC);
+                            byte KeyVChecksum = (byte)(0x2C + KeyVHB + KeyVLB);
+                            byte[] KeyCArray = new byte[4] { 0x2C, KeyVHB, KeyVLB, KeyVChecksum };
+
+                            DescriptionToInsert += " #2 | KEY: " + Util.ByteToHexStringSimple(KeyCArray);
+                        }
+
+                        ValueToInsert = Util.ByteToHexString(payload, 1, 2);
+                        break;
+                    case 0x36:
+                        // TODO: OBD2 diagnostics
                         break;
                     case 0xFE:
                         DescriptionToInsert = "SELECT LOW-SPEED MODE";
@@ -3967,26 +4251,17 @@ namespace ChryslerScanner
             }
             else if ((speed == "62500 baud") || (speed == "125000 baud"))
             {
-                ushort HSBPNum = (ushort)(payload.Length / 2); // number of byte pairs (offset value)
                 List<byte> HSOffset = new List<byte>();
                 List<byte> HSValues = new List<byte>();
-                HSOffset.Clear();
-                HSValues.Clear();
-
                 List<byte> BootstrapOffset = new List<byte>();
                 List<byte> BootstrapLength = new List<byte>();
                 List<byte> BootstrapValues = new List<byte>();
-                BootstrapOffset.Clear();
-                BootstrapLength.Clear();
-                BootstrapValues.Clear();
-
                 List<byte> OffsetStart = new List<byte>();
                 List<byte> OffsetEnd = new List<byte>();
-                OffsetStart.Clear();
-                OffsetEnd.Clear();
 
-                ushort BlockSize = 0;
-                ushort EchoCount = 0;
+                ushort HSBPNum = (ushort)(payload.Length / 2); // number of byte pairs (offset value)
+                ushort BlockSize;
+                ushort EchoCount;
 
                 switch (ID)
                 {
@@ -4040,7 +4315,7 @@ namespace ChryslerScanner
 
                         if (message.Length == 5)
                         {
-                            checksum = (byte)(message[0] + message[1] + message[2] + message[3]);
+                            byte checksum = (byte)(message[0] + message[1] + message[2] + message[3]);
 
                             DescriptionToInsert = "REQUEST BOOTSTRAP SECURITY SEED";
 
@@ -4062,7 +4337,7 @@ namespace ChryslerScanner
                         }
                         else if (message.Length == 7)
                         {
-                            checksum = (byte)(message[0] + message[1] + message[2] + message[3] + message[4] + message[5]);
+                            byte checksum = (byte)(message[0] + message[1] + message[2] + message[3] + message[4] + message[5]);
 
                             DescriptionToInsert = "SEND BOOTSTRAP SECURITY KEY";
 
@@ -4094,7 +4369,7 @@ namespace ChryslerScanner
 
                         if (message.Length == 5)
                         {
-                            checksum = (byte)(message[0] + message[1] + message[2] + message[3]);
+                            byte checksum = (byte)(message[0] + message[1] + message[2] + message[3]);
 
                             DescriptionToInsert = "BOOTSTRAP SECURITY STATUS";
 
@@ -4116,7 +4391,7 @@ namespace ChryslerScanner
                         }
                         else if (message.Length == 7)
                         {
-                            checksum = (byte)(message[0] + message[1] + message[2] + message[3] + message[4] + message[5]);
+                            byte checksum = (byte)(message[0] + message[1] + message[2] + message[3] + message[4] + message[5]);
 
                             DescriptionToInsert = "BOOTSTRAP SECURITY SEED RECEIVED";
 
@@ -4521,24 +4796,24 @@ namespace ChryslerScanner
                                 DescriptionToInsert = "CRUISE | BUTTON PRESSED";
 
                                 List<string> SwitchList = new List<string>();
-                                SwitchList.Clear();
 
-                                if (Util.IsBitSet(payload[1], 0)) SwitchList.Add("CANCEL");
-                                if (Util.IsBitSet(payload[1], 1)) SwitchList.Add("COAST");
-                                if (Util.IsBitClear(payload[1], 2)) SwitchList.Add("SET");
-                                if (Util.IsBitSet(payload[1], 3)) SwitchList.Add("ACC/RES");
-                                if (Util.IsBitSet(payload[1], 4)) SwitchList.Add("ON/OFF");
                                 if (Util.IsBitSet(payload[1], 7)) SwitchList.Add("BRAKE");
+                                if (Util.IsBitSet(payload[1], 6)) SwitchList.Add("-6-");
+                                if (Util.IsBitSet(payload[1], 5)) SwitchList.Add("-5-");
+                                if (Util.IsBitSet(payload[1], 4)) SwitchList.Add("ON/OFF");
+                                if (Util.IsBitSet(payload[1], 3)) SwitchList.Add("ACC/RES");
+                                if (Util.IsBitClear(payload[1], 2)) SwitchList.Add("SET");
+                                if (Util.IsBitSet(payload[1], 1)) SwitchList.Add("COAST");
+                                if (Util.IsBitSet(payload[1], 0)) SwitchList.Add("CANCEL");
 
-                                if (SwitchList.Count > 0)
+                                if (SwitchList.Count == 0) break;
+
+                                foreach (string s in SwitchList)
                                 {
-                                    foreach (string s in SwitchList)
-                                    {
-                                        ValueToInsert += s + " | ";
-                                    }
-
-                                    if (ValueToInsert.Length > 2) ValueToInsert = ValueToInsert.Remove(ValueToInsert.Length - 3); // remove last "|" character
+                                    ValueToInsert += s + " | ";
                                 }
+
+                                if (ValueToInsert.Length > 2) ValueToInsert = ValueToInsert.Remove(ValueToInsert.Length - 3); // remove last "|" character
                                 break;
                             case 0x0F:
                                 DescriptionToInsert = "BATTERY VOLTAGE";
@@ -4943,6 +5218,7 @@ namespace ChryslerScanner
                                 if (payload[2] != (payload[0] + 1))
                                 {
                                     DescriptionToInsert += " | ERROR: REQUEST F4 35 36";
+                                    break;
                                 }
 
                                 double IdleSpeed = ((payload[1] << 8) + payload[3]) * 0.125;
@@ -5146,7 +5422,7 @@ namespace ChryslerScanner
                                 }
                                 break;
                             case 0x41:
-                                DescriptionToInsert = "CRANKSHAFT/CAMSHAFT POSITION SENSOR SYNC STATE";
+                                //DescriptionToInsert = "CRANKSHAFT/CAMSHAFT POSITION SENSOR SYNC STATE";
 
                                 if (Util.IsBitSet(payload[1], 5)) DescriptionToInsert = "CKP: PRESENT | ";
                                 else DescriptionToInsert = "CKP: LOST | ";
@@ -5357,7 +5633,6 @@ namespace ChryslerScanner
                                 DescriptionToInsert = "LIMP-IN: ";
 
                                 List<string> LimpInStates = new List<string>();
-                                LimpInStates.Clear();
 
                                 if (Util.IsBitSet(payload[1], 0)) LimpInStates.Add("ATS"); // Ambient temperature sensor
                                 if (Util.IsBitSet(payload[1], 3)) LimpInStates.Add("IAT"); // Intake air temperature
@@ -5366,19 +5641,18 @@ namespace ChryslerScanner
                                 if (Util.IsBitSet(payload[1], 6)) LimpInStates.Add("MPV"); // Intake manifold vacuum
                                 if (Util.IsBitSet(payload[1], 7)) LimpInStates.Add("ECT"); // Engine coolant temperature
 
-                                if (LimpInStates.Count > 0)
-                                {
-                                    foreach (string s in LimpInStates)
-                                    {
-                                        DescriptionToInsert += s + " | ";
-                                    }
-
-                                    if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
-                                }
-                                else
+                                if (LimpInStates.Count == 0)
                                 {
                                     DescriptionToInsert = "NO LIMP-IN STATE";
+                                    break;
                                 }
+
+                                foreach (string s in LimpInStates)
+                                {
+                                    DescriptionToInsert += s + " | ";
+                                }
+
+                                if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
                                 break;
                             case 0x74:
                                 DescriptionToInsert = "DTC 2: ";
@@ -5495,12 +5769,11 @@ namespace ChryslerScanner
 
                                 if (payload[2] != (payload[0] + 1))
                                 {
-                                    ValueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0') + " " + Convert.ToString(payload[3], 2).PadLeft(8, '0');
-                                }
-                                else
-                                {
                                     DescriptionToInsert += " | ERROR: REQUEST F4 7A 7B";
+                                    break;
                                 }
+
+                                ValueToInsert = Convert.ToString(payload[1], 2).PadLeft(8, '0') + " " + Convert.ToString(payload[3], 2).PadLeft(8, '0');
                                 break;
                             case 0x7B:
                                 DescriptionToInsert = "SPI TRANSFER RESULT | ERROR: REQUEST F4 7A 7B";
@@ -5999,13 +6272,117 @@ namespace ChryslerScanner
                                 break;
                         }
                         break;
-                    case 0xF5:
+                    case 0xF5: // SBEC3 and CUMMINS
                         DescriptionToInsert = "F5 RAM TABLE SELECTED";
 
                         if (message.Length < 3) break;
 
                         switch (payload[0])
                         {
+                            case 0x1E:
+                                DescriptionToInsert = "ACTUAL GOVERNOR PRESSURE";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F5 1E 1F";
+                                    break;
+                                }
+
+                                double ActGovernorPressurePSI = ((payload[1] << 8) + payload[3]) * 0.0078125;
+                                double ActGovernorPressureKPA = ActGovernorPressurePSI * 6.894757;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(ActGovernorPressurePSI, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "PSI";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(ActGovernorPressureKPA, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "KPA";
+                                }
+                                break;
+                            case 0x1F:
+                                DescriptionToInsert = "ACTUAL GOVERNOR PRESSURE | ERROR: REQUEST F5 1E 1F";
+                                break;
+                            case 0x47:
+                                DescriptionToInsert = "TTVA ADJUSTED POSITION"; // Transmission Throttle Valve Actuator
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F5 47 48";
+                                    break;
+                                }
+
+                                double TTVAAdjustedPosition = ((payload[1] << 8) + payload[3]) * 0.0078125;
+
+                                ValueToInsert = Math.Round(TTVAAdjustedPosition, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "DEGREE";
+                                break;
+                            case 0x48:
+                                DescriptionToInsert = "TTVA ADJUSTED POSITION | ERROR: REQUEST F5 47 48";
+                                break;
+                            case 0x49:
+                                DescriptionToInsert = "TTVA TARGET POSITION";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F5 49 4A";
+                                    break;
+                                }
+
+                                double TTVATargetPosition = ((payload[1] << 8) + payload[3]) * 0.0078125;
+
+                                ValueToInsert = Math.Round(TTVATargetPosition, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "DEGREE";
+                                break;
+                            case 0x4A:
+                                DescriptionToInsert = "TTVA TARGET POSITION | ERROR: REQUEST F5 49 4A";
+                                break;
+                            case 0x4B:
+                                DescriptionToInsert = "TTVA ACTUAL POSITION";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F5 4B 4C";
+                                    break;
+                                }
+
+                                double TTVAActualPosition = ((payload[1] << 8) + payload[3]) * 0.0078125;
+
+                                ValueToInsert = Math.Round(TTVAActualPosition, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "DEGREE";
+                                break;
+                            case 0x4C:
+                                DescriptionToInsert = "TTVA ACTUAL POSITION | ERROR: REQUEST F5 4B 4C";
+                                break;
+                            case 0x4D:
+                                DescriptionToInsert = "TTVA DUTY CYCLE";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F5 4D 4E";
+                                    break;
+                                }
+
+                                double TTVADutyCycle = ((payload[1] << 8) + payload[3]) * 0.0078125;
+
+                                ValueToInsert = Math.Round(TTVADutyCycle, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x4E:
+                                DescriptionToInsert = "TTVA DUTY CYCLE | ERROR: REQUEST F5 4D 4E";
+                                break;
                             case 0xCB:
                                 DescriptionToInsert = "TCM | FAULT CODE PRESENT";
 
@@ -6024,6 +6401,9 @@ namespace ChryslerScanner
                                 }
 
                                 ValueToInsert = "OBD2 P" + Util.ByteToHexStringSimple(new byte[2] { payload[1], payload[3] }).Replace(" ", "");
+                                break;
+                            case 0xCC:
+                                DescriptionToInsert = "TCM | FAULT CODE PRESENT | ERROR: REQUEST F5 CB CC";
                                 break;
                             default:
                                 for (int i = 0; i < HSBPNum; i++)
@@ -6075,13 +6455,557 @@ namespace ChryslerScanner
                                 break;
                         }
                         break;
-                    case 0xF8:
+                    case 0xF8: // CUMMINS DTC freeze frames
                         DescriptionToInsert = "F8 RAM TABLE SELECTED";
 
                         if (message.Length < 3) break;
 
                         switch (payload[0])
                         {
+                            case 0x06:
+                                DescriptionToInsert = "VEHICLE SPEED";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 06 07";
+                                    break;
+                                }
+
+                                double VehicleSpeedAMPH = ((payload[1] << 8) + payload[3]) * 0.00390625;
+                                double VehicleSpeedAKMH = VehicleSpeedAMPH * 1.609344;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(VehicleSpeedAMPH, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "MPH";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(VehicleSpeedAKMH, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "KM/H";
+                                }
+                                break;
+                            case 0x07:
+                                DescriptionToInsert = "VEHICLE SPEED | ERROR: REQUEST F8 06 07";
+                                break;
+                            case 0x08:
+                                DescriptionToInsert = "ENGINE SPEED";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 08 09";
+                                    break;
+                                }
+
+                                double EngineSpeedA = ((payload[1] << 8) + payload[3]) * 0.125;
+
+                                ValueToInsert = Math.Round(EngineSpeedA, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "RPM";
+                                break;
+                            case 0x09:
+                                DescriptionToInsert = "ENGINE SPEED | ERROR: REQUEST F8 08 09";
+                                break;
+                            case 0x0A:
+                                DescriptionToInsert = "SWITCH STATUS 1";
+
+                                List<string> SwitchListB = new List<string>();
+
+                                if (Util.IsBitSet(payload[1], 7)) SwitchListB.Add("-7-");
+                                if (Util.IsBitSet(payload[1], 6)) SwitchListB.Add("BRAKE");
+                                if (Util.IsBitSet(payload[1], 5)) SwitchListB.Add("-5-");
+                                if (Util.IsBitSet(payload[1], 4)) SwitchListB.Add("-4-");
+                                if (Util.IsBitSet(payload[1], 3)) SwitchListB.Add("-3-");
+                                if (Util.IsBitSet(payload[1], 2)) SwitchListB.Add("-2-");
+                                if (Util.IsBitSet(payload[1], 1)) SwitchListB.Add("-1-");
+                                if (Util.IsBitSet(payload[1], 0)) SwitchListB.Add("-0-");
+
+                                if (SwitchListB.Count == 0) break;
+
+                                DescriptionToInsert += ": ";
+
+                                foreach (string s in SwitchListB)
+                                {
+                                    DescriptionToInsert += s + " | ";
+                                }
+
+                                if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
+                                break;
+                            case 0x0B:
+                                DescriptionToInsert = "SWITCH STATUS 2";
+
+                                List<string> SwitchListA = new List<string>();
+
+                                if (Util.IsBitSet(payload[1], 7)) SwitchListA.Add("-7-");
+                                if (Util.IsBitSet(payload[1], 6)) SwitchListA.Add("BRAKE");
+                                if (Util.IsBitSet(payload[1], 5)) SwitchListA.Add("IDLE");
+                                if (Util.IsBitSet(payload[1], 4)) SwitchListA.Add("-4-");
+                                if (Util.IsBitSet(payload[1], 3)) SwitchListA.Add("-3-");
+                                if (Util.IsBitSet(payload[1], 2)) SwitchListA.Add("NOT-IDLE");
+                                if (Util.IsBitSet(payload[1], 1)) SwitchListA.Add("-1-");
+                                if (Util.IsBitSet(payload[1], 0)) SwitchListA.Add("-0-");
+
+                                if (SwitchListA.Count == 0) break;
+
+                                DescriptionToInsert += ": ";
+
+                                foreach (string s in SwitchListA)
+                                {
+                                    DescriptionToInsert += s + " | ";
+                                }
+
+                                if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
+                                break;
+                            case 0x0C:
+                                DescriptionToInsert = "ENGINE LOAD";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 0C 0D";
+                                    break;
+                                }
+
+                                double EngineLoadA = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(EngineLoadA, 1).ToString("0.0").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x0D:
+                                DescriptionToInsert = "ENGINE LOAD | ERROR: REQUEST F8 0C 0D";
+                                break;
+                            case 0x0E:
+                                DescriptionToInsert = "APP SENSOR PERCENT";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 0E 0F";
+                                    break;
+                                }
+
+                                double APPSPercentA = ((payload[1] << 8) + payload[3]) * 0.25;
+
+                                ValueToInsert = Math.Round(APPSPercentA, 1).ToString("0.0").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x0F:
+                                DescriptionToInsert = "APP SENSOR PERCENT | ERROR: REQUEST F8 0E 0F";
+                                break;
+                            case 0x10:
+                                DescriptionToInsert = "BOOST PRESSURE";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 10 11";
+                                    break;
+                                }
+
+                                double BoostPressureAPSI = ((payload[1] << 8) + payload[3]) * 0.0078125;
+                                double BoostPressureAKPA = BoostPressureAPSI * 6.894757;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(BoostPressureAPSI, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "PSI";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(BoostPressureAKPA, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "KPA";
+                                }
+                                break;
+                            case 0x11:
+                                DescriptionToInsert = "BOOST PRESSURE | ERROR: REQUEST F8 10 11";
+                                break;
+                            case 0x12:
+                                DescriptionToInsert = "ENGINE COOLANT TEMPERATURE";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 12 13";
+                                    break;
+                                }
+
+                                double ECT1F = ((payload[1] << 8) + payload[3]) * 0.015625;
+                                double ECT1C = (ECT1F - 32.0) / 1.8;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(ECT1F, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "°F";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(ECT1C, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "°C";
+                                }
+                                break;
+                            case 0x13:
+                                DescriptionToInsert = "ENGINE COOLANT TEMPERATURE | ERROR: REQUEST F8 12 13";
+                                break;
+                            case 0x19:
+                                DescriptionToInsert = "SWITCH STATUS 3";
+
+                                List<string> SwitchListC = new List<string>();
+
+                                if (Util.IsBitSet(payload[1], 7)) SwitchListC.Add("-7-");
+                                if (Util.IsBitSet(payload[1], 6)) SwitchListC.Add("-6-");
+                                if (Util.IsBitSet(payload[1], 5)) SwitchListC.Add("-5-");
+                                if (Util.IsBitSet(payload[1], 4)) SwitchListC.Add("-4-");
+                                if (Util.IsBitSet(payload[1], 3)) SwitchListC.Add("INTHEAT2"); // intake heater 2
+                                if (Util.IsBitSet(payload[1], 2)) SwitchListC.Add("INTHEAT1"); // intake heater 1
+                                if (Util.IsBitSet(payload[1], 1)) SwitchListC.Add("TRFPMPDR"); // transfer pump driver
+                                if (Util.IsBitSet(payload[1], 0)) SwitchListC.Add("-0-");
+
+                                if (SwitchListC.Count == 0) break;
+
+                                DescriptionToInsert += ": ";
+
+                                foreach (string s in SwitchListC)
+                                {
+                                    DescriptionToInsert += s + " | ";
+                                }
+
+                                if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
+                                break;
+                            case 0x1F:
+                                DescriptionToInsert = "BATTERY VOLTAGE";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 1F 20";
+                                    break;
+                                }
+
+                                double BatteryVolts = ((payload[1] << 8) + payload[3]) * 0.0625;
+
+                                ValueToInsert = Math.Round(BatteryVolts, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "V";
+                                break;
+                            case 0x20:
+                                DescriptionToInsert = "BATTERY VOLTAGE | ERROR: REQUEST F8 1F 20";
+                                break;
+                            case 0x21:
+                                DescriptionToInsert = "CALCULATED FUEL";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 21 22";
+                                    break;
+                                }
+
+                                double CalculatedFuelA = ((payload[1] << 8) + payload[3]) * 0.001953155;
+
+                                ValueToInsert = Math.Round(CalculatedFuelA, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x22:
+                                DescriptionToInsert = "CALCULATED FUEL | ERROR: REQUEST F8 21 22";
+                                break;
+                            case 0x23:
+                                DescriptionToInsert = "CALCULATED TIMING";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 23 24";
+                                    break;
+                                }
+
+                                double CalculatedTimingA = (((payload[1] << 8) + payload[3]) * 0.1176475) - 20.0;
+
+                                ValueToInsert = Math.Round(CalculatedTimingA, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "DEGREE";
+                                break;
+                            case 0x24:
+                                DescriptionToInsert = "CALCULATED TIMING | ERROR: REQUEST F8 23 24";
+                                break;
+                            case 0x25:
+                                DescriptionToInsert = "REGULATOR VALVE CURRENT";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 25 26";
+                                    break;
+                                }
+
+                                double RVC = ((payload[1] << 8) + payload[3]) * 1.220721752;
+
+                                ValueToInsert = Math.Round(RVC, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "MILLIAMPS";
+                                break;
+                            case 0x26:
+                                DescriptionToInsert = "REGULATOR VALVE CURRENT | ERROR: REQUEST F8 25 26";
+                                break;
+                            case 0x27:
+                                DescriptionToInsert = "DEFECT STATUS";
+
+                                switch (payload[1])
+                                {
+                                    case 0x00:
+                                        ValueToInsert = "OK";
+                                        break;
+                                    case 0x01:
+                                        ValueToInsert = "CURRENT HIGH";
+                                        break;
+                                    case 0x02:
+                                        ValueToInsert = "CURRENT LOW";
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                break;
+                            case 0x28:
+                                DescriptionToInsert = "FUEL PRESSURE STATUS";
+
+                                switch (payload[1])
+                                {
+                                    case 0x00:
+                                        ValueToInsert = "OK";
+                                        break;
+                                    case 0x01:
+                                        ValueToInsert = "TOO HIGH";
+                                        break;
+                                    case 0x02:
+                                        ValueToInsert = "LIMIT";
+                                        break;
+                                    case 0x04:
+                                        ValueToInsert = "TOO LOW";
+                                        break;
+                                    case 0x08:
+                                        ValueToInsert = "NEG DEV";
+                                        break;
+                                    case 0x10:
+                                        ValueToInsert = "POS DEV";
+                                        break;
+                                    case 0x20:
+                                        ValueToInsert = "LK MON";
+                                        break;
+                                    case 0x40:
+                                        ValueToInsert = "LK IDLE";
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                break;
+                            case 0x3A:
+                                DescriptionToInsert = "ENGINE SPEED";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 3A 3B";
+                                    break;
+                                }
+
+                                double EngineSpeedB = ((payload[1] << 8) + payload[3]) * 0.125;
+
+                                ValueToInsert = Math.Round(EngineSpeedB, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "RPM";
+                                break;
+                            case 0x3B:
+                                DescriptionToInsert = "ENGINE SPEED | ERROR: REQUEST F8 3A 3B";
+                                break;
+                            case 0x3C:
+                                DescriptionToInsert = "SWITCH STATUS 4";
+
+                                List<string> SwitchListD = new List<string>();
+
+                                if (Util.IsBitSet(payload[1], 7)) SwitchListD.Add("-7-");
+                                if (Util.IsBitSet(payload[1], 6)) SwitchListD.Add("BRAKE");
+                                if (Util.IsBitSet(payload[1], 5)) SwitchListD.Add("ACSEL");
+                                if (Util.IsBitSet(payload[1], 4)) SwitchListD.Add("POWST");
+                                if (Util.IsBitSet(payload[1], 3)) SwitchListD.Add("-3-");
+                                if (Util.IsBitSet(payload[1], 2)) SwitchListD.Add("-2-");
+                                if (Util.IsBitSet(payload[1], 1)) SwitchListD.Add("-1-");
+                                if (Util.IsBitSet(payload[1], 0)) SwitchListD.Add("-0-");
+
+                                if (SwitchListD.Count == 0) break;
+
+                                DescriptionToInsert += ": ";
+
+                                foreach (string s in SwitchListD)
+                                {
+                                    DescriptionToInsert += s + " | ";
+                                }
+
+                                if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
+                                break;
+                            case 0x3D:
+                                DescriptionToInsert = "SWITCH STATUS 5";
+
+                                List<string> SwitchListE = new List<string>();
+
+                                if (Util.IsBitSet(payload[1], 7)) SwitchListE.Add("-7-");
+                                if (Util.IsBitSet(payload[1], 6)) SwitchListE.Add("BRAKE");
+                                if (Util.IsBitSet(payload[1], 5)) SwitchListE.Add("IDLE");
+                                if (Util.IsBitSet(payload[1], 4)) SwitchListE.Add("-4-");
+                                if (Util.IsBitSet(payload[1], 3)) SwitchListE.Add("-3-");
+                                if (Util.IsBitSet(payload[1], 2)) SwitchListE.Add("NOT-IDLE");
+                                if (Util.IsBitSet(payload[1], 1)) SwitchListE.Add("-1-");
+                                if (Util.IsBitSet(payload[1], 0)) SwitchListE.Add("-0-");
+
+                                if (SwitchListE.Count == 0) break;
+
+                                DescriptionToInsert += ": ";
+
+                                foreach (string s in SwitchListE)
+                                {
+                                    DescriptionToInsert += s + " | ";
+                                }
+
+                                if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
+                                break;
+                            case 0x3E:
+                                DescriptionToInsert = "ENGINE LOAD";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 3E 3F";
+                                    break;
+                                }
+
+                                double EngineLoadB = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(EngineLoadB, 1).ToString("0.0").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x3F:
+                                DescriptionToInsert = "ENGINE LOAD | ERROR: REQUEST F8 3E 3F";
+                                break;
+                            case 0x40:
+                                DescriptionToInsert = "APP SENSOR PERCENT";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 40 41";
+                                    break;
+                                }
+
+                                double APPSPercentB = ((payload[1] << 8) + payload[3]) * 0.25;
+
+                                ValueToInsert = Math.Round(APPSPercentB, 1).ToString("0.0").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x41:
+                                DescriptionToInsert = "APP SENSOR PERCENT | ERROR: REQUEST F8 40 41";
+                                break;
+                            case 0x42:
+                                DescriptionToInsert = "BOOST PRESSURE";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 42 43";
+                                    break;
+                                }
+
+                                double BoostPressureBPSI = ((payload[1] << 8) + payload[3]) * 0.0078125;
+                                double BoostPressureBKPA = BoostPressureBPSI * 6.894757;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(BoostPressureBPSI, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "PSI";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(BoostPressureBKPA, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "KPA";
+                                }
+                                break;
+                            case 0x43:
+                                DescriptionToInsert = "BOOST PRESSURE | ERROR: REQUEST F8 42 43";
+                                break;
+                            case 0x44:
+                                DescriptionToInsert = "ENGINE COOLANT TEMPERATURE";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 44 45";
+                                    break;
+                                }
+
+                                double ECT2F = ((payload[1] << 8) + payload[3]) * 0.015625;
+                                double ECT2C = (ECT2F - 32.0) / 1.8;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(ECT2F, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "°F";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(ECT2C, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "°C";
+                                }
+                                break;
+                            case 0x45:
+                                DescriptionToInsert = "ENGINE COOLANT TEMPERATURE | ERROR: REQUEST F8 44 45";
+                                break;
+                            case 0x53:
+                                DescriptionToInsert = "CALCULATED FUEL";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 53 54";
+                                    break;
+                                }
+
+                                double CalculatedFuelB = ((payload[1] << 8) + payload[3]) * 0.001953155;
+
+                                ValueToInsert = Math.Round(CalculatedFuelB, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x54:
+                                DescriptionToInsert = "CALCULATED FUEL | ERROR: REQUEST F8 53 54";
+                                break;
+                            case 0x55:
+                                DescriptionToInsert = "CALCULATED TIMING";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 55 56";
+                                    break;
+                                }
+
+                                double CalculatedTimingB = (((payload[1] << 8) + payload[3]) * 0.1176475) - 20.0;
+
+                                ValueToInsert = Math.Round(CalculatedTimingB, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "DEGREE";
+                                break;
+                            case 0x56:
+                                DescriptionToInsert = "CALCULATED TIMING | ERROR: REQUEST F8 55 56";
+                                break;
                             default:
                                 for (int i = 0; i < HSBPNum; i++)
                                 {
@@ -6132,7 +7056,7 @@ namespace ChryslerScanner
                                 break;
                         }
                         break;
-                    case 0xFB:
+                    case 0xFB: // CUMMINS
                         DescriptionToInsert = "FB RAM TABLE SELECTED";
 
                         if (message.Length < 3) break;
@@ -6157,6 +7081,34 @@ namespace ChryslerScanner
                                 break;
                             case 0x02:
                                 DescriptionToInsert = "ENGINE SPEED | ERROR: REQUEST FB 01 02";
+                                break;
+                            case 0x03:
+                                DescriptionToInsert = "TRANSMISSION TEMPERATURE";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FB 03 04";
+                                    break;
+                                }
+
+                                double TransTempF = ((payload[1] << 8) + payload[3]) * 0.015625;
+                                double TransTempC = (TransTempF - 32.0) / 1.8;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(TransTempF, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "°F";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(TransTempC, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "°C";
+                                }
+                                break;
+                            case 0x04:
+                                DescriptionToInsert = "TRANSMISSION TEMPERATURE | ERROR: REQUEST FB 03 04";
                                 break;
                             case 0x05:
                                 DescriptionToInsert = "VEHICLE SPEED";
@@ -6205,6 +7157,25 @@ namespace ChryslerScanner
                             case 0x08:
                                 DescriptionToInsert = "APP SENSOR PERCENT | ERROR: REQUEST FB 07 08";
                                 break;
+                            case 0x0B:
+                                DescriptionToInsert = "TRANSMISSION TEMPERATURE SENSOR VOLTS";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FB 0B 0C";
+                                    break;
+                                }
+
+                                double TransTempSensorVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
+
+                                ValueToInsert = Math.Round(TransTempSensorVolts, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "V";
+                                break;
+                            case 0x0C:
+                                DescriptionToInsert = "TRANSMISSION TEMP SENSOR VOLTS | ERROR: REQUEST FB 0B 0C";
+                                break;
                             case 0x0F:
                                 DescriptionToInsert = "ENGINE COOLANT TEMPERATURE";
 
@@ -6216,7 +7187,7 @@ namespace ChryslerScanner
                                     break;
                                 }
 
-                                double ECTF = ((payload[1] << 8) + payload[3]) * 0.0156;
+                                double ECTF = ((payload[1] << 8) + payload[3]) * 0.015625;
                                 double ECTC = (ECTF - 32.0) / 1.8;
 
                                 if (Properties.Settings.Default.Units == "imperial")
@@ -6252,6 +7223,34 @@ namespace ChryslerScanner
                             case 0x12:
                                 DescriptionToInsert = "ECT SENSOR VOLTS | ERROR: REQUEST FB 11 12";
                                 break;
+                            case 0x13:
+                                DescriptionToInsert = "BOOST PRESSURE";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FB 13 14";
+                                    break;
+                                }
+
+                                double BoostPressureAPSI = ((payload[1] << 8) + payload[3]) * 0.0078125;
+                                double BoostPressureAKPA = BoostPressureAPSI * 6.894757;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(BoostPressureAPSI, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "PSI";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(BoostPressureAKPA, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "KPA";
+                                }
+                                break;
+                            case 0x14:
+                                DescriptionToInsert = "BOOST PRESSURE | ERROR: REQUEST FB 13 14";
+                                break;
                             case 0x15:
                                 DescriptionToInsert = "INTAKE AIR TEMPERATURE";
 
@@ -6263,7 +7262,7 @@ namespace ChryslerScanner
                                     break;
                                 }
 
-                                double IATF = ((payload[1] << 8) + payload[3]) * 0.0156;
+                                double IATF = ((payload[1] << 8) + payload[3]) * 0.015625;
                                 double IATC = (IATF - 32.0) / 1.8;
 
                                 if (Properties.Settings.Default.Units == "imperial")
@@ -6300,7 +7299,7 @@ namespace ChryslerScanner
                                 DescriptionToInsert = "IAT SENSOR VOLTS | ERROR: REQUEST FB 17 18";
                                 break;
                             case 0x19:
-                                DescriptionToInsert = "ECM BATTERY VOLTS";
+                                DescriptionToInsert = "BATTERY VOLTAGE";
 
                                 if (message.Length < 5) break;
 
@@ -6310,13 +7309,415 @@ namespace ChryslerScanner
                                     break;
                                 }
 
-                                double ECMBatteryVolts = ((payload[1] << 8) + payload[3]) * 0.0625;
+                                double BatteryVolts = ((payload[1] << 8) + payload[3]) * 0.0625;
 
-                                ValueToInsert = Math.Round(ECMBatteryVolts, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(BatteryVolts, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x1A:
-                                DescriptionToInsert = "ECM BATTERY VOLTS | ERROR: REQUEST FB 19 1A";
+                                DescriptionToInsert = "BATTERY VOLTAGE | ERROR: REQUEST FB 19 1A";
+                                break;
+                            case 0x1B:
+                                DescriptionToInsert = "OUTPUT SHAFT SPEED";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FB 1B 1C";
+                                    break;
+                                }
+
+                                double OutputShaftSpeed = ((payload[1] << 8) + payload[3]) * 0.125;
+
+                                ValueToInsert = Math.Round(OutputShaftSpeed, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "RPM";
+                                break;
+                            case 0x1C:
+                                DescriptionToInsert = "OUTPUT SHAFT SPEED | ERROR: REQUEST FB 1B 1C";
+                                break;
+                            case 0x1D:
+                                DescriptionToInsert = "WATER IN FUEL VOLTS";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FB 1D 1E";
+                                    break;
+                                }
+
+                                double WIFVoltsA = ((payload[1] << 8) + payload[3]) * 0.0049;
+
+                                ValueToInsert = Math.Round(WIFVoltsA, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "V";
+                                break;
+                            case 0x1E:
+                                DescriptionToInsert = "WATER IN FUEL VOLTS | ERROR: REQUEST FB 1D 1E";
+                                break;
+                            case 0x1F:
+                                DescriptionToInsert = "TRANSMISSION PWM DUTY CYCLE";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FB 1F 20";
+                                    break;
+                                }
+
+                                double TransPWMDutyCycle = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(TransPWMDutyCycle, 1).ToString("0.0").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x20:
+                                DescriptionToInsert = "TRANSMISSION PWM DUTY CYCLE | ERROR: REQUEST FB 1F 20";
+                                break;
+                            case 0x23:
+                                DescriptionToInsert = "PRESENT DRIVE GEAR";
+
+                                switch (payload[1])
+                                {
+                                    case 0x00:
+                                        ValueToInsert = "NEUTRAL";
+                                        break;
+                                    case 0x01:
+                                        ValueToInsert = "1ST";
+                                        break;
+                                    case 0x02:
+                                        ValueToInsert = "2ND";
+                                        break;
+                                    case 0x03:
+                                        ValueToInsert = "3RD";
+                                        break;
+                                    case 0x04:
+                                        ValueToInsert = "4TH";
+                                        break;
+                                    case 0x05:
+                                        ValueToInsert = "5TH";
+                                        break;
+                                    case 0x06:
+                                        ValueToInsert = "6TH";
+                                        break;
+                                    case 0x10:
+                                        ValueToInsert = "REVERSE";
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                break;
+                            case 0x2F:
+                                DescriptionToInsert = "TARGET GOVERNOR PRESSURE";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FB 2F 30";
+                                    break;
+                                }
+
+                                double TargetGovPressurePSI = ((payload[1] << 8) + payload[3]) * 0.0078125;
+                                double TargetGovPressureKPA = TargetGovPressurePSI * 6.894757;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(TargetGovPressurePSI, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "PSI";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(TargetGovPressureKPA, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "KPA";
+                                }
+                                break;
+                            case 0x30:
+                                DescriptionToInsert = "TARGET GOVERNOR PRESSURE | ERROR: REQUEST FB 2F 30";
+                                break;
+                            case 0x31:
+                                DescriptionToInsert = "PPS 1 SENSOR PERCENT";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FB 31 32";
+                                    break;
+                                }
+
+                                double PPS1SensorPercent = ((payload[1] << 8) + payload[3]) * 0.25;
+
+                                ValueToInsert = Math.Round(PPS1SensorPercent, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x32:
+                                DescriptionToInsert = "PPS 1 SENSOR PERCENT | ERROR: REQUEST FB 31 32";
+                                break;
+                            case 0x33:
+                                DescriptionToInsert = "PPS 1 SENSOR VOLTS";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FB 33 34";
+                                    break;
+                                }
+
+                                double PPS1SensorVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
+
+                                ValueToInsert = Math.Round(PPS1SensorVolts, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "V";
+                                break;
+                            case 0x34:
+                                DescriptionToInsert = "PPS 1 SENSOR VOLTS | ERROR: REQUEST FB 33 34";
+                                break;
+                            case 0x3F:
+                                DescriptionToInsert = "PPS 2 SENSOR PERCENT";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FB 3F 40";
+                                    break;
+                                }
+
+                                double PPS2SensorPercent = ((payload[1] << 8) + payload[3]) * 0.25;
+
+                                ValueToInsert = Math.Round(PPS2SensorPercent, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x40:
+                                DescriptionToInsert = "PPS 2 SENSOR PERCENT | ERROR: REQUEST FB 3F 40";
+                                break;
+                            case 0x41:
+                                DescriptionToInsert = "PPS 2 SENSOR VOLTS";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FB 41 42";
+                                    break;
+                                }
+
+                                double PPS2SensorVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
+
+                                ValueToInsert = Math.Round(PPS2SensorVolts, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "V";
+                                break;
+                            case 0x42:
+                                DescriptionToInsert = "PPS 2 SENSOR VOLTS | ERROR: REQUEST FB 41 42";
+                                break;
+                            case 0x45:
+                                DescriptionToInsert = "IDLE SWITCH STATUS";
+
+                                if (Util.IsBitSet(payload[1], 1) && Util.IsBitSet(payload[1], 0)) ValueToInsert = "PRESSED";
+                                else ValueToInsert = "RELEASED";
+                                break;
+                            case 0x46:
+                                DescriptionToInsert = "BRAKE SWITCH PRESSED";
+
+                                double BSPPercentage = payload[1] * 0.25;
+
+                                ValueToInsert = Math.Round(BSPPercentage, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x47:
+                                DescriptionToInsert = "SWITCH STATUS | ERROR: REQUEST FB 46 47";
+
+                                List<string> SwitchListA = new List<string>();
+
+                                if (Util.IsBitSet(payload[1], 7)) SwitchListA.Add("OPSCLSD"); // 1=oil pressure switch closed, 0=open
+                                else SwitchListA.Add("OPSOPEN");
+                                if (Util.IsBitSet(payload[1], 6)) SwitchListA.Add("-6-");
+                                if (Util.IsBitSet(payload[1], 5)) SwitchListA.Add("ODRLSD"); // 1=overdrive switch released, 0=pressed
+                                else SwitchListA.Add("ODPRSD");
+                                if (Util.IsBitSet(payload[1], 4)) SwitchListA.Add("P/N"); // 1=P/N, 0=D/R
+                                else SwitchListA.Add("D/R");
+                                if (Util.IsBitSet(payload[1], 3)) SwitchListA.Add("-3-");
+                                if (Util.IsBitSet(payload[1], 2)) SwitchListA.Add("-2-");
+                                if (Util.IsBitSet(payload[1], 1)) SwitchListA.Add("-1-");
+                                if (Util.IsBitSet(payload[1], 0)) SwitchListA.Add("0-0");
+
+                                if (SwitchListA.Count == 0) break;
+
+                                foreach (string s in SwitchListA)
+                                {
+                                    ValueToInsert += s + " | ";
+                                }
+
+                                if (ValueToInsert.Length > 2) ValueToInsert = ValueToInsert.Remove(ValueToInsert.Length - 3); // remove last "|" character
+                                break;
+                            case 0x48:
+                                DescriptionToInsert = "DESIRED TORQUE CONVERTER CLUTCH STATUS";
+
+                                if (Util.IsBitSet(payload[1], 0)) ValueToInsert = "LOCKED";
+                                else ValueToInsert = "UNLOCKED";
+
+                                break;
+                            case 0x49:
+                                DescriptionToInsert = "FINAL FUEL STATE";
+
+                                switch (payload[1])
+                                {
+                                    case 0x00:
+                                        ValueToInsert = "NOT SET";
+                                        break;
+                                    case 0x01:
+                                        ValueToInsert = "JCOM TORQUE";
+                                        break;
+                                    case 0x02:
+                                        ValueToInsert = "JCOM SPEED";
+                                        break;
+                                    case 0x03:
+                                        ValueToInsert = "PROGRSV SHIFT";
+                                        break;
+                                    case 0x04:
+                                        ValueToInsert = "PTO";
+                                        break;
+                                    case 0x05:
+                                        ValueToInsert = "USER COMMAND";
+                                        break;
+                                    case 0x06:
+                                        ValueToInsert = "LIMP HOME";
+                                        break;
+                                    case 0x07:
+                                        ValueToInsert = "ASG THROTTLE";
+                                        break;
+                                    case 0x08:
+                                        ValueToInsert = "4-D FUELING";
+                                        break;
+                                    case 0x09:
+                                        ValueToInsert = "CRUISE CONTROL";
+                                        break;
+                                    case 0x0A:
+                                        ValueToInsert = "ROAD SPEED GOV";
+                                        break;
+                                    case 0x0B:
+                                        ValueToInsert = "LOW SPEED GOV";
+                                        break;
+                                    case 0x0C:
+                                        ValueToInsert = "HIGH SPEED GOV";
+                                        break;
+                                    case 0x0D:
+                                        ValueToInsert = "TORQUE DERATE OVERRIDE";
+                                        break;
+                                    case 0x0E:
+                                        ValueToInsert = "LOW GEAR";
+                                        break;
+                                    case 0x0F:
+                                        ValueToInsert = "ALTITUDE DERATE";
+                                        break;
+                                    case 0x10:
+                                        ValueToInsert = "AFC DERATE";
+                                        break;
+                                    case 0x11:
+                                        ValueToInsert = "ANC DERATE";
+                                        break;
+                                    case 0x12:
+                                        ValueToInsert = "ENGINE PROTECT";
+                                        break;
+                                    case 0x13:
+                                        ValueToInsert = "TORQUE CRV LIMIT";
+                                        break;
+                                    case 0x14:
+                                        ValueToInsert = "JCOM TORQUE DERATE";
+                                        break;
+                                    case 0x15:
+                                        ValueToInsert = "OUT OF GEAR";
+                                        break;
+                                    case 0x16:
+                                        ValueToInsert = "CRANKING";
+                                        break;
+                                    case 0x17:
+                                        ValueToInsert = "USER OVERRIDE";
+                                        break;
+                                    case 0x18:
+                                        ValueToInsert = "ENGINE BRAKE";
+                                        break;
+                                    case 0x19:
+                                        ValueToInsert = "ENGINE OVERSPEED";
+                                        break;
+                                    case 0x1A:
+                                        ValueToInsert = "ENGINE STOPPED";
+                                        break;
+                                    case 0x1B:
+                                        ValueToInsert = "SHUTDOWN";
+                                        break;
+                                    case 0x1C:
+                                        ValueToInsert = "FUEL DTC DERATE";
+                                        break;
+                                    case 0x1D:
+                                        ValueToInsert = "ENGINE PROTECT";
+                                        break;
+                                    case 0x1E:
+                                        ValueToInsert = "ALL SPD GOV APP";
+                                        break;
+                                    case 0x1F:
+                                        ValueToInsert = "ALT TORQUE";
+                                        break;
+                                    case 0x20:
+                                        ValueToInsert = "MASTER/SLAVE OVERRIDE";
+                                        break;
+                                    case 0x21:
+                                        ValueToInsert = "STARTUP OIL LIMIT";
+                                        break;
+                                    case 0x22:
+                                        ValueToInsert = "PTO DERATE";
+                                        break;
+                                    case 0x23:
+                                        ValueToInsert = "TORQUE CONTROL";
+                                        break;
+                                    case 0x24:
+                                        ValueToInsert = "POWERTRAIN PROTECT";
+                                        break;
+                                    case 0x25:
+                                        ValueToInsert = "T2 SPEED";
+                                        break;
+                                    case 0x26:
+                                        ValueToInsert = "T2 TORQUE DERATE";
+                                        break;
+                                    case 0x27:
+                                        ValueToInsert = "T2 DERATE";
+                                        break;
+                                    case 0x28:
+                                        ValueToInsert = "NO DERATE";
+                                        break;
+                                    case 0x29:
+                                        ValueToInsert = "ANTI THEFT DERATE";
+                                        break;
+                                    case 0x2A:
+                                        ValueToInsert = "PART THROTTLE LIMIT";
+                                        break;
+                                    case 0x2B:
+                                        ValueToInsert = "STEADY-STATE AMB DERATE";
+                                        break;
+                                    case 0x2C:
+                                        ValueToInsert = "TRSNT COOLANT DERATE";
+                                        break;
+                                }
+                                break;
+                            case 0x4F:
+                                DescriptionToInsert = "WASTEGATE DUTY CYCLE";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FB 4F 50";
+                                    break;
+                                }
+
+                                double WasteGateDutyCycle = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(WasteGateDutyCycle, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x50:
+                                DescriptionToInsert = "WASTEGATE DUTY CYCLE | ERROR: REQUEST FB 4F 50";
                                 break;
                             case 0x51:
                                 DescriptionToInsert = "BOOST VOLTS";
@@ -6348,9 +7749,9 @@ namespace ChryslerScanner
                                     break;
                                 }
 
-                                double WIFVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
+                                double WIFVoltsB = ((payload[1] << 8) + payload[3]) * 0.0049;
 
-                                ValueToInsert = Math.Round(WIFVolts, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(WIFVoltsB, 3).ToString("0.000").Replace(",", ".");
                                 UnitToInsert = "V";
                                 break;
                             case 0x56:
@@ -6386,7 +7787,7 @@ namespace ChryslerScanner
                                     break;
                                 }
 
-                                double BatteryTempteratureF = ((payload[1] << 8) + payload[3]) * 0.0156;
+                                double BatteryTempteratureF = ((payload[1] << 8) + payload[3]) * 0.015625;
                                 double BatteryTemperatureC = (BatteryTempteratureF - 32.0) / 1.8;
 
                                 if (Properties.Settings.Default.Units == "imperial")
@@ -6402,6 +7803,150 @@ namespace ChryslerScanner
                                 break;
                             case 0xBA:
                                 DescriptionToInsert = "BATTERY TEMPERATURE | ERROR: REQUEST FB B9 BA";
+                                break;
+                            case 0xBB:
+                                DescriptionToInsert = "DTC 1: ";
+
+                                if (payload[1] == 0) ValueToInsert = "EMPTY SLOT";
+                                else
+                                {
+                                    int index = EngineDTC.Rows.IndexOf(EngineDTC.Rows.Find(payload[1]));
+
+                                    if (index > -1) // DTC description found
+                                    {
+                                        DescriptionToInsert += EngineDTC.Rows[index]["description"];
+                                    }
+                                    else // no DTC description found
+                                    {
+                                        DescriptionToInsert += "UNRECOGNIZED DTC";
+                                    }
+                                }
+                                break;
+                            case 0xBC:
+                                DescriptionToInsert = "DTC 2: ";
+
+                                if (payload[1] == 0) ValueToInsert = "EMPTY SLOT";
+                                else
+                                {
+                                    int index = EngineDTC.Rows.IndexOf(EngineDTC.Rows.Find(payload[1]));
+
+                                    if (index > -1) // DTC description found
+                                    {
+                                        DescriptionToInsert += EngineDTC.Rows[index]["description"];
+                                    }
+                                    else // no DTC description found
+                                    {
+                                        DescriptionToInsert += "UNRECOGNIZED DTC";
+                                    }
+                                }
+                                break;
+                            case 0xBD:
+                                DescriptionToInsert = "DTC 3: ";
+
+                                if (payload[1] == 0) ValueToInsert = "EMPTY SLOT";
+                                else
+                                {
+                                    int index = EngineDTC.Rows.IndexOf(EngineDTC.Rows.Find(payload[1]));
+
+                                    if (index > -1) // DTC description found
+                                    {
+                                        DescriptionToInsert += EngineDTC.Rows[index]["description"];
+                                    }
+                                    else // no DTC description found
+                                    {
+                                        DescriptionToInsert += "UNRECOGNIZED DTC";
+                                    }
+                                }
+                                break;
+                            case 0xBE:
+                                DescriptionToInsert = "DTC 4: ";
+
+                                if (payload[1] == 0) ValueToInsert = "EMPTY SLOT";
+                                else
+                                {
+                                    int index = EngineDTC.Rows.IndexOf(EngineDTC.Rows.Find(payload[1]));
+
+                                    if (index > -1) // DTC description found
+                                    {
+                                        DescriptionToInsert += EngineDTC.Rows[index]["description"];
+                                    }
+                                    else // no DTC description found
+                                    {
+                                        DescriptionToInsert += "UNRECOGNIZED DTC";
+                                    }
+                                }
+                                break;
+                            case 0xBF:
+                                DescriptionToInsert = "DTC 5: ";
+
+                                if (payload[1] == 0) ValueToInsert = "EMPTY SLOT";
+                                else
+                                {
+                                    int index = EngineDTC.Rows.IndexOf(EngineDTC.Rows.Find(payload[1]));
+
+                                    if (index > -1) // DTC description found
+                                    {
+                                        DescriptionToInsert += EngineDTC.Rows[index]["description"];
+                                    }
+                                    else // no DTC description found
+                                    {
+                                        DescriptionToInsert += "UNRECOGNIZED DTC";
+                                    }
+                                }
+                                break;
+                            case 0xC0:
+                                DescriptionToInsert = "DTC 6: ";
+
+                                if (payload[1] == 0) ValueToInsert = "EMPTY SLOT";
+                                else
+                                {
+                                    int index = EngineDTC.Rows.IndexOf(EngineDTC.Rows.Find(payload[1]));
+
+                                    if (index > -1) // DTC description found
+                                    {
+                                        DescriptionToInsert += EngineDTC.Rows[index]["description"];
+                                    }
+                                    else // no DTC description found
+                                    {
+                                        DescriptionToInsert += "UNRECOGNIZED DTC";
+                                    }
+                                }
+                                break;
+                            case 0xC1:
+                                DescriptionToInsert = "DTC 7: ";
+
+                                if (payload[1] == 0) ValueToInsert = "EMPTY SLOT";
+                                else
+                                {
+                                    int index = EngineDTC.Rows.IndexOf(EngineDTC.Rows.Find(payload[1]));
+
+                                    if (index > -1) // DTC description found
+                                    {
+                                        DescriptionToInsert += EngineDTC.Rows[index]["description"];
+                                    }
+                                    else // no DTC description found
+                                    {
+                                        DescriptionToInsert += "UNRECOGNIZED DTC";
+                                    }
+                                }
+                                break;
+                            case 0xC2:
+                                DescriptionToInsert = "DTC 8: ";
+
+                                if (payload[1] == 0) ValueToInsert = "EMPTY SLOT";
+                                else
+                                {
+                                    int index = EngineDTC.Rows.IndexOf(EngineDTC.Rows.Find(payload[1]));
+
+                                    if (index > -1) // DTC description found
+                                    {
+                                        DescriptionToInsert += EngineDTC.Rows[index]["description"];
+                                    }
+                                    else // no DTC description found
+                                    {
+                                        DescriptionToInsert += "UNRECOGNIZED DTC";
+                                    }
+                                }
                                 break;
                             case 0xCB:
                                 DescriptionToInsert = "KEY-ON COUNTER";
@@ -6422,6 +7967,72 @@ namespace ChryslerScanner
                             case 0xCC:
                                 DescriptionToInsert = "KEY-ON COUNTER | ERROR: REQUEST FB CB CC";
                                 break;
+                            case 0xCD:
+                                DescriptionToInsert = "ENGINE SPEED CKD SENSOR";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FB CD CE";
+                                    break;
+                                }
+
+                                double EngineSpeedCKD = ((payload[1] << 8) + payload[3]) * 0.125;
+
+                                ValueToInsert = Math.Round(EngineSpeedCKD, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "RPM";
+                                break;
+                            case 0xCE:
+                                DescriptionToInsert = "ENGINE SPEED CKD SENSOR | ERROR: REQUEST FB CF D0";
+                                break;
+                            case 0xCF:
+                                DescriptionToInsert = "ENGINE SPEED CMP SENSOR";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FB CD CE";
+                                    break;
+                                }
+
+                                double EngineSpeedCMP = ((payload[1] << 8) + payload[3]) * 0.125;
+
+                                ValueToInsert = Math.Round(EngineSpeedCMP, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "RPM";
+                                break;
+                            case 0xD0:
+                                DescriptionToInsert = "ENGINE SPEED CMP SENSOR | ERROR: REQUEST FB CF D0";
+                                break;
+                            case 0xD2:
+                                DescriptionToInsert = "RELAY STATUS";
+
+                                List<string> RelayList = new List<string>();
+
+                                if (Util.IsBitSet(payload[1], 7)) RelayList.Add("-7-");
+                                if (Util.IsBitSet(payload[1], 6)) RelayList.Add("-6-");
+                                if (Util.IsBitSet(payload[1], 5)) RelayList.Add("CRS12V");
+                                if (Util.IsBitSet(payload[1], 4)) RelayList.Add("CVACBLOCK"); // cruise vacuum solenoid block
+                                else RelayList.Add("CVACAPPLY"); // cruise vacuum solenoid apply
+                                if (Util.IsBitSet(payload[1], 3)) RelayList.Add("CVNTBLOCK"); // cruise vent solenoid block
+                                else RelayList.Add("CVNTBLEED"); // cruise vent solenoid bleed
+                                if (Util.IsBitSet(payload[1], 2)) RelayList.Add("-2-");
+                                if (Util.IsBitSet(payload[1], 1)) RelayList.Add("ODSOLON"); // overdrive solenoid on
+                                else RelayList.Add("ODSOLOFF"); // overdrive solenoid off
+                                if (Util.IsBitSet(payload[1], 0)) RelayList.Add("TCM12V");
+
+                                if (RelayList.Count == 0) break;
+
+                                DescriptionToInsert += ": ";
+
+                                foreach (string s in RelayList)
+                                {
+                                    DescriptionToInsert += s + " | ";
+                                }
+
+                                if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
+                                break;
                             case 0xD7:
                                 DescriptionToInsert = "APP SENSOR VOLTS";
 
@@ -6440,6 +8051,125 @@ namespace ChryslerScanner
                                 break;
                             case 0xD8:
                                 DescriptionToInsert = "APP SENSOR VOLTS | ERROR: REQUEST FB D7 D8";
+                                break;
+                            case 0xDC:
+                                DescriptionToInsert = "CRUISE CONTROL | DENIED REASON";
+
+                                switch (payload[1])
+                                {
+                                    case 0x02:
+                                        ValueToInsert = "CRUISE SWITCH DTC";
+                                        break;
+                                    case 0x03:
+                                        ValueToInsert = "VSS RATIONALITY";
+                                        break;
+                                    case 0x04:
+                                        ValueToInsert = "BRAKE RATIONALITY";
+                                        break;
+                                    case 0x05:
+                                        ValueToInsert = "ON/OFF SWITCH";
+                                        break;
+                                    case 0x06:
+                                        ValueToInsert = "BRAKE SWITCH";
+                                        break;
+                                    case 0x07:
+                                        ValueToInsert = "CANCEL SWITCH";
+                                        break;
+                                    case 0x08:
+                                        ValueToInsert = "SPEED SENSOR";
+                                        break;
+                                    case 0x09:
+                                        ValueToInsert = "RPM LIMIT";
+                                        break;
+                                    case 0x0A:
+                                        ValueToInsert = "RPM/VSS RATIO";
+                                        break;
+                                    case 0x0B:
+                                        ValueToInsert = "CLUTCH SWITCH";
+                                        break;
+                                    case 0x0C:
+                                        ValueToInsert = "P/N SWITCH";
+                                        break;
+                                    default:
+                                        ValueToInsert = "N/A";
+                                        break;
+                                }
+                                break;
+                            case 0xDE:
+                                DescriptionToInsert = "CRUISE CONTROL | LAST CUTOUT REASON";
+
+                                switch (payload[1])
+                                {
+                                    case 0x02:
+                                        ValueToInsert = "CRUISE SWITCH DTC";
+                                        break;
+                                    case 0x03:
+                                        ValueToInsert = "VSS RATIONALITY";
+                                        break;
+                                    case 0x04:
+                                        ValueToInsert = "BRAKE RATIONALITY";
+                                        break;
+                                    case 0x05:
+                                        ValueToInsert = "ON/OFF SWITCH";
+                                        break;
+                                    case 0x06:
+                                        ValueToInsert = "BRAKE SWITCH";
+                                        break;
+                                    case 0x07:
+                                        ValueToInsert = "CANCEL SWITCH";
+                                        break;
+                                    case 0x08:
+                                        ValueToInsert = "SPEED SENSOR";
+                                        break;
+                                    case 0x09:
+                                        ValueToInsert = "RPM LIMIT";
+                                        break;
+                                    case 0x0A:
+                                        ValueToInsert = "RPM/VSS RATIO";
+                                        break;
+                                    case 0x0B:
+                                        ValueToInsert = "CLUTCH SWITCH";
+                                        break;
+                                    case 0x0C:
+                                        ValueToInsert = "P/N SWITCH";
+                                        break;
+                                    default:
+                                        ValueToInsert = "N/A";
+                                        break;
+                                }
+                                break;
+                            case 0xE2:
+                                DescriptionToInsert = "CRUISE INDICATOR LAMP";
+
+                                if (Util.IsBitSet(payload[1], 0)) ValueToInsert = "ON";
+                                else ValueToInsert = "OFF";
+
+                                break;
+                            case 0xE4:
+                                DescriptionToInsert = "CRUISE | BUTTON PRESSED";
+
+                                List<string> SwitchListB = new List<string>();
+
+                                if (payload[1] == 0) SwitchListB.Add("ON/OFF");
+                                if (Util.IsBitSet(payload[1], 1) && Util.IsBitSet(payload[1], 0)) SwitchListB.Add("SET");
+
+                                if (Util.IsBitSet(payload[1], 7)) SwitchListB.Add("-7-");
+                                if (Util.IsBitSet(payload[1], 6)) SwitchListB.Add("-6-");
+                                if (Util.IsBitSet(payload[1], 5)) SwitchListB.Add("-5-");
+                                if (Util.IsBitSet(payload[1], 4)) SwitchListB.Add("-4-");
+                                if (Util.IsBitSet(payload[1], 3)) SwitchListB.Add("-3-");
+                                if (Util.IsBitSet(payload[1], 2)) SwitchListB.Add("ACC/RES");
+                                if (Util.IsBitSet(payload[1], 1)) SwitchListB.Add("COAST");
+                                if (Util.IsBitSet(payload[1], 0)) SwitchListB.Add("CANCEL");
+
+                                if (SwitchListB.Count == 0) break;
+
+                                foreach (string s in SwitchListB)
+                                {
+                                    ValueToInsert += s + " | ";
+                                }
+
+                                if (ValueToInsert.Length > 2) ValueToInsert = ValueToInsert.Remove(ValueToInsert.Length - 3); // remove last "|" character
                                 break;
                             case 0xE5:
                                 DescriptionToInsert = "CRUISE SET SPEED";
@@ -6488,6 +8218,34 @@ namespace ChryslerScanner
                             case 0xE8:
                                 DescriptionToInsert = "CRUISE SWITCH VOLTS | ERROR: REQUEST FB E7 E8";
                                 break;
+                            case 0xEB:
+                                DescriptionToInsert = "INJECTORS DISABLED VEHICLE SPEED";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST F8 EB EC";
+                                    break;
+                                }
+
+                                double InjDisVehicleSpeedMPH = ((payload[1] << 8) + payload[3]) * 0.00390625;
+                                double InjDisVehicleSpeedKMH = InjDisVehicleSpeedMPH * 1.609344;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(InjDisVehicleSpeedMPH, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "MPH";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(InjDisVehicleSpeedKMH, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "KM/H";
+                                }
+                                break;
+                            case 0xEC:
+                                DescriptionToInsert = "INJECTORS DISABLED VEHICLE SPEED | ERROR: REQUEST FB EB EC";
+                                break;
                             default:
                                 for (int i = 0; i < HSBPNum; i++)
                                 {
@@ -6500,7 +8258,7 @@ namespace ChryslerScanner
                                 break;
                         }
                         break;
-                    case 0xFC:
+                    case 0xFC: // CUMMINS
                         DescriptionToInsert = "FC RAM TABLE SELECTED";
 
                         if (message.Length < 3) break;
@@ -6567,6 +8325,29 @@ namespace ChryslerScanner
                             case 0x08:
                                 DescriptionToInsert = "TRIP FUEL USED | ERROR: REQUEST FC 05 06 07 08";
                                 break;
+                            case 0x09:
+                                DescriptionToInsert = "TOTAL TIME";
+
+                                if (message.Length < 9) break;
+
+                                if ((payload[2] != (payload[0] + 1)) || (payload[4] != (payload[0] + 2)) || (payload[6] != (payload[0] + 3)))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FC 09 0A 0B 0C";
+                                    break;
+                                }
+
+                                double TotalTimeHours = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000028;
+                                double TotalTimeSeconds = TotalTimeHours * 3600.0;
+                                TimeSpan TimestampA = TimeSpan.FromSeconds(TotalTimeSeconds);
+
+                                ValueToInsert = TimestampA.ToString(@"hh\:mm\:ss");
+                                UnitToInsert = "HH:MM:SS";
+                                break;
+                            case 0x0A:
+                            case 0x0B:
+                            case 0x0C:
+                                DescriptionToInsert = "TOTAL TIME | ERROR: REQUEST FC 09 0A 0B 0C";
+                                break;
                             case 0x0D:
                                 DescriptionToInsert = "TRIP TIME";
 
@@ -6580,9 +8361,9 @@ namespace ChryslerScanner
 
                                 double TripTimeHours = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000028;
                                 double TripTimeSeconds = TripTimeHours * 3600.0;
-                                TimeSpan TimestampA = TimeSpan.FromSeconds(TripTimeSeconds);
+                                TimeSpan TimestampB = TimeSpan.FromSeconds(TripTimeSeconds);
 
-                                ValueToInsert = TimestampA.ToString(@"hh\:mm\:ss");
+                                ValueToInsert = TimestampB.ToString(@"hh\:mm\:ss");
                                 UnitToInsert = "HH:MM:SS";
                                 break;
                             case 0x0E:
@@ -6650,6 +8431,29 @@ namespace ChryslerScanner
                             case 0x18:
                                 DescriptionToInsert = "TRIP IDLE FUEL | ERROR: REQUEST FC 15 16 17 18";
                                 break;
+                            case 0x19:
+                                DescriptionToInsert = "TOTAL IDLE TIME";
+
+                                if (message.Length < 9) break;
+
+                                if ((payload[2] != (payload[0] + 1)) || (payload[4] != (payload[0] + 2)) || (payload[6] != (payload[0] + 3)))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FC 19 1A 1B 1C";
+                                    break;
+                                }
+
+                                double TotalIdleTimeHours = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000028;
+                                double TotalIdleTimeSeconds = TotalIdleTimeHours * 3600.0;
+                                TimeSpan TimestampC = TimeSpan.FromSeconds(TotalIdleTimeSeconds);
+
+                                ValueToInsert = TimestampC.ToString(@"hh\:mm\:ss");
+                                UnitToInsert = "HH:MM:SS";
+                                break;
+                            case 0x1A:
+                            case 0x1B:
+                            case 0x1C:
+                                DescriptionToInsert = "TOTAL IDLE TIME | ERROR: REQUEST FC 19 1A 1B 1C";
+                                break;
                             case 0x1D:
                                 DescriptionToInsert = "TRIP IDLE TIME";
 
@@ -6663,9 +8467,9 @@ namespace ChryslerScanner
 
                                 double TripIdleTimeHours = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000028;
                                 double TripIdleTimeSeconds = TripIdleTimeHours * 3600.0;
-                                TimeSpan TimestampB = TimeSpan.FromSeconds(TripIdleTimeSeconds);
+                                TimeSpan TimestampD = TimeSpan.FromSeconds(TripIdleTimeSeconds);
 
-                                ValueToInsert = TimestampB.ToString(@"hh\:mm\:ss");
+                                ValueToInsert = TimestampD.ToString(@"hh\:mm\:ss");
                                 UnitToInsert = "HH:MM:SS";
                                 break;
                             case 0x1E:
@@ -6703,6 +8507,64 @@ namespace ChryslerScanner
                             case 0x24:
                                 DescriptionToInsert = "TOTAL DISTANCE | ERROR: REQUEST FC 21 22 23 24";
                                 break;
+                            case 0x25:
+                                DescriptionToInsert = "TRIP DISTANCE";
+
+                                if (message.Length < 9) break;
+
+                                if ((payload[2] != (payload[0] + 1)) || (payload[4] != (payload[0] + 2)) || (payload[6] != (payload[0] + 3)))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FC 25 26 27 28";
+                                    break;
+                                }
+
+                                double TripDistanceMi = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.000125;
+                                double TripDistanceKm = TripDistanceMi * 1.609344;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(TripDistanceMi, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "MILE";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(TripDistanceKm, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "KILOMETER";
+                                }
+                                break;
+                            case 0x26:
+                            case 0x27:
+                            case 0x28:
+                                DescriptionToInsert = "TRIP DISTANCE | ERROR: REQUEST FC 25 26 27 28";
+                                break;
+                            case 0x29:
+                                DescriptionToInsert = "TRIP AVERAGE FUEL";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FC 29 2A";
+                                    break;
+                                }
+
+                                double TripAverageFuelMPG = ((payload[1] << 8) + payload[3]) * 0.125;
+                                double TripAverageFuelLP100KM = 235.214583 / TripAverageFuelMPG;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(TripAverageFuelMPG, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "MPG";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(TripAverageFuelLP100KM, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "L/100KM";
+                                }
+                                break;
+                            case 0x2A:
+                                DescriptionToInsert = "TRIP AVERAGE FUEL | ERROR: REQUEST FC 29 2A";
+                                break;
                             case 0x2B:
                                 DescriptionToInsert = "ECM RUN TIME";
 
@@ -6715,9 +8577,9 @@ namespace ChryslerScanner
                                 }
 
                                 double ECMRunTimeSeconds = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.2;
-                                TimeSpan TimestampC = TimeSpan.FromSeconds(ECMRunTimeSeconds);
+                                TimeSpan TimestampE = TimeSpan.FromSeconds(ECMRunTimeSeconds);
 
-                                ValueToInsert = TimestampC.ToString(@"hh\:mm\:ss");
+                                ValueToInsert = TimestampE.ToString(@"hh\:mm\:ss");
                                 UnitToInsert = "HH:MM:SS";
                                 break;
                             case 0x2C:
@@ -6737,9 +8599,9 @@ namespace ChryslerScanner
                                 }
 
                                 double EngineRunTimeSeconds = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.2;
-                                TimeSpan TimestampD = TimeSpan.FromSeconds(EngineRunTimeSeconds);
+                                TimeSpan TimestampF = TimeSpan.FromSeconds(EngineRunTimeSeconds);
 
-                                ValueToInsert = TimestampD.ToString(@"hh\:mm\:ss");
+                                ValueToInsert = TimestampF.ToString(@"hh\:mm\:ss");
                                 UnitToInsert = "HH:MM:SS";
                                 break;
                             case 0x30:
@@ -6759,13 +8621,356 @@ namespace ChryslerScanner
                                 break;
                         }
                         break;
-                    case 0xFD:
+                    case 0xFD: // CUMMINS
                         DescriptionToInsert = "FD RAM TABLE SELECTED";
 
                         if (message.Length < 3) break;
 
                         switch (payload[0])
                         {
+                            case 0x21:
+                                DescriptionToInsert = "FUEL PRESSURE REGULATOR OUTPUT";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD 21 22";
+                                    break;
+                                }
+
+                                double FuelPressureRegOutput = ((payload[1] << 8) + payload[3]) * 0.025;
+
+                                ValueToInsert = Math.Round(FuelPressureRegOutput, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x22:
+                                DescriptionToInsert = "FUEL PRESSURE REGULATOR OUTPUT | ERROR: REQUEST FD 21 22";
+                                break;
+                            case 0x23:
+                                DescriptionToInsert = "FUEL PRESSURE";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD 23 24";
+                                    break;
+                                }
+
+                                double FuelPressurePSI = ((payload[1] << 8) + payload[3]) * 7.078;
+                                double FuelPressureKPA = FuelPressurePSI * 6.894757;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(FuelPressurePSI, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "PSI";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(FuelPressureKPA, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "KPA";
+                                }
+                                break;
+                            case 0x24:
+                                DescriptionToInsert = "FUEL PRESSURE | ERROR: REQUEST FD 23 24";
+                                break;
+                            case 0x27:
+                                DescriptionToInsert = "FUEL PRESSURE SETPOINT";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD 27 28";
+                                    break;
+                                }
+
+                                double FuelPressureSetpointPSI = ((payload[1] << 8) + payload[3]) * 7.078;
+                                double FuelPressureSetpointKPA = FuelPressureSetpointPSI * 6.894757;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(FuelPressureSetpointPSI, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "PSI";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(FuelPressureSetpointKPA, 3).ToString("0.000").Replace(",", ".");
+                                    UnitToInsert = "KPA";
+                                }
+                                break;
+                            case 0x28:
+                                DescriptionToInsert = "FUEL PRESSURE SETPOINT | ERROR: REQUEST FD 27 28";
+                                break;
+                            case 0x29:
+                                DescriptionToInsert = "FUEL PRESSURE SENSOR VOLTS";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD 29 2A";
+                                    break;
+                                }
+
+                                double FuelPressureSensorVolts = ((payload[1] << 8) + payload[3]) * 0.0012;
+
+                                ValueToInsert = Math.Round(FuelPressureSensorVolts, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "V";
+                                break;
+                            case 0x2A:
+                                DescriptionToInsert = "FUEL PRESSURE SENSOR VOLTS | ERROR: REQUEST FD 29 2A";
+                                break;
+                            case 0x7C:
+                                DescriptionToInsert = "CVN";
+
+                                if (message.Length < 9) break;
+
+                                if ((payload[2] != (payload[0] + 1)) || (payload[4] != (payload[0] + 2)) || (payload[6] != (payload[0] + 3)))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD 7C 7D 7E 7F";
+                                    break;
+                                }
+
+                                double CVNVolts = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.0049;
+
+                                ValueToInsert = Math.Round(CVNVolts, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "V";
+                                break;
+                            case 0x7D:
+                            case 0x7E:
+                            case 0x7F:
+                                DescriptionToInsert = "CVN | ERROR: REQUEST FD 7C 7D 7E 7F";
+                                break;
+                            case 0x80:
+                                DescriptionToInsert = "RADIATOR FAN SPEED";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD 80 81";
+                                    break;
+                                }
+
+                                double RadiatorFanSpeed = ((payload[1] << 8) + payload[3]) * 0.125;
+
+                                ValueToInsert = Math.Round(RadiatorFanSpeed, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "RPM";
+                                break;
+                            case 0x81:
+                                DescriptionToInsert = "RADIATOR FAN SPEED | ERROR: REQUEST FD 80 81";
+                                break;
+                            case 0x82:
+                                DescriptionToInsert = "DESIRED RADIATOR FAN PWM";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD 82 83";
+                                    break;
+                                }
+
+                                double DesRadFanPWM = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(DesRadFanPWM, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x83:
+                                DescriptionToInsert = "DESIRED RADIATOR FAN PWM | ERROR: REQUEST FD 82 83";
+                                break;
+                            case 0x84:
+                                DescriptionToInsert = "% OF TIME @  0-10% LOAD";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD 84 85";
+                                    break;
+                                }
+
+                                double TimeAt10Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(TimeAt10Load, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x85:
+                                DescriptionToInsert = "% OF TIME @  0-10% LOAD | ERROR: REQUEST FD 84 85";
+                                break;
+                            case 0x86:
+                                DescriptionToInsert = "% OF TIME @ 11-20% LOAD";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD 86 87";
+                                    break;
+                                }
+
+                                double TimeAt20Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(TimeAt20Load, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x87:
+                                DescriptionToInsert = "% OF TIME @ 11-20% LOAD | ERROR: REQUEST FD 86 87";
+                                break;
+                            case 0x88:
+                                DescriptionToInsert = "% OF TIME @ 21-30% LOAD";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD 88 89";
+                                    break;
+                                }
+
+                                double TimeAt30Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(TimeAt30Load, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x89:
+                                DescriptionToInsert = "% OF TIME @ 21-30% LOAD | ERROR: REQUEST FD 88 89";
+                                break;
+                            case 0x8A:
+                                DescriptionToInsert = "% OF TIME @ 31-40% LOAD";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD 8A 8B";
+                                    break;
+                                }
+
+                                double TimeAt40Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(TimeAt40Load, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x8B:
+                                DescriptionToInsert = "% OF TIME @ 31-40% LOAD | ERROR: REQUEST FD 8A 8B";
+                                break;
+                            case 0x8C:
+                                DescriptionToInsert = "% OF TIME @ 41-50% LOAD";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD 8C 8D";
+                                    break;
+                                }
+
+                                double TimeAt50Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(TimeAt50Load, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x8D:
+                                DescriptionToInsert = "% OF TIME @ 41-50% LOAD | ERROR: REQUEST FD 8C 8D";
+                                break;
+                            case 0x8E:
+                                DescriptionToInsert = "% OF TIME @ 51-60% LOAD";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD 8E 8F";
+                                    break;
+                                }
+
+                                double TimeAt60Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(TimeAt60Load, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x8F:
+                                DescriptionToInsert = "% OF TIME @ 51-60% LOAD | ERROR: REQUEST FD 8E 8F";
+                                break;
+                            case 0x90:
+                                DescriptionToInsert = "% OF TIME @ 61-70% LOAD";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD 90 91";
+                                    break;
+                                }
+
+                                double TimeAt70Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(TimeAt70Load, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x91:
+                                DescriptionToInsert = "% OF TIME @ 61-70% LOAD | ERROR: REQUEST FD 90 91";
+                                break;
+                            case 0x92:
+                                DescriptionToInsert = "% OF TIME @ 71-80% LOAD";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD 92 93";
+                                    break;
+                                }
+
+                                double TimeAt80Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(TimeAt80Load, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x93:
+                                DescriptionToInsert = "% OF TIME @ 71-80% LOAD | ERROR: REQUEST FD 92 93";
+                                break;
+                            case 0x94:
+                                DescriptionToInsert = "% OF TIME @ 81-90% LOAD";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD 94 95";
+                                    break;
+                                }
+
+                                double TimeAt90Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(TimeAt90Load, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x95:
+                                DescriptionToInsert = "% OF TIME @ 81-90% LOAD | ERROR: REQUEST FD 94 95";
+                                break;
+                            case 0x96:
+                                DescriptionToInsert = "% OF TIME @ 91-100% LOAD";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD 96 97";
+                                    break;
+                                }
+
+                                double TimeAt100Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
+
+                                ValueToInsert = Math.Round(TimeAt100Load, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0x97:
+                                DescriptionToInsert = "% OF TIME @ 91-100% LOAD | ERROR: REQUEST FD 96 97";
+                                break;
                             case 0xA0:
                                 DescriptionToInsert = "BAROMETRIC PRESSURE";
 
@@ -6793,6 +8998,161 @@ namespace ChryslerScanner
                                 break;
                             case 0xA1:
                                 DescriptionToInsert = "BAROMETRIC PRESSURE | ERROR: REQUEST FD A0 A1";
+                                break;
+                            case 0xA4:
+                                DescriptionToInsert = "AMBIENT AIR TEMPERATURE";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD A4 A5";
+                                    break;
+                                }
+
+                                double AmbientAirTempF = ((payload[1] << 8) + payload[3]) * 0.015625;
+                                double AmbientAirTempC = (AmbientAirTempF - 32.0) / 1.8;
+
+                                if (Properties.Settings.Default.Units == "imperial")
+                                {
+                                    ValueToInsert = Math.Round(AmbientAirTempF, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "°F";
+                                }
+                                else if (Properties.Settings.Default.Units == "metric")
+                                {
+                                    ValueToInsert = Math.Round(AmbientAirTempC, 1).ToString("0.0").Replace(",", ".");
+                                    UnitToInsert = "°C";
+                                }
+                                break;
+                            case 0xA5:
+                                DescriptionToInsert = "AMBIENT AIR TEMPERATURE | ERROR: REQUEST FD A4 A5";
+                                break;
+                            case 0xA6:
+                                DescriptionToInsert = "AMBIENT AIR TEMPERATURE SENSOR VOLTS";
+
+                                if (message.Length < 5) break;
+
+                                if (payload[2] != (payload[0] + 1))
+                                {
+                                    DescriptionToInsert += " | ERROR: REQUEST FD A6 A7";
+                                    break;
+                                }
+
+                                double AmbientTempSensorVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
+
+                                ValueToInsert = Math.Round(AmbientTempSensorVolts, 3).ToString("0.000").Replace(",", ".");
+                                UnitToInsert = "V";
+                                break;
+                            case 0xA7:
+                                DescriptionToInsert = "AMBIENT TEMP SENSOR VOLTS | ERROR: REQUEST FD A6 A7";
+                                break;
+                            case 0xE1:
+                                DescriptionToInsert = "CYLINDER 1 CONTRIBUTION";
+
+                                int Cylinder1Contribution = payload[1];
+
+                                ValueToInsert = Cylinder1Contribution.ToString("0");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0xE2:
+                                DescriptionToInsert = "CYLINDER 5 CONTRIBUTION";
+
+                                int Cylinder5Contribution = payload[1];
+
+                                ValueToInsert = Cylinder5Contribution.ToString("0");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0xE3:
+                                DescriptionToInsert = "CYLINDER 3 CONTRIBUTION";
+
+                                int Cylinder3Contribution = payload[1];
+
+                                ValueToInsert = Cylinder3Contribution.ToString("0");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0xE4:
+                                DescriptionToInsert = "CYLINDER 6 CONTRIBUTION";
+
+                                int Cylinder6Contribution = payload[1];
+
+                                ValueToInsert = Cylinder6Contribution.ToString("0");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0xE5:
+                                DescriptionToInsert = "CYLINDER 2 CONTRIBUTION";
+
+                                int Cylinder2Contribution = payload[1];
+
+                                ValueToInsert = Cylinder2Contribution.ToString("0");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0xE6:
+                                DescriptionToInsert = "CYLINDER 4 CONTRIBUTION";
+
+                                int Cylinder4Contribution = payload[1];
+
+                                ValueToInsert = Cylinder4Contribution.ToString("0");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0xE7:
+                                DescriptionToInsert = "CYLINDER 1-3 CONTRIBUTION";
+
+                                int Cylinder13Contribution = payload[1];
+
+                                ValueToInsert = Cylinder13Contribution.ToString("0");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0xE8:
+                                DescriptionToInsert = "CYLINDER 4-6 CONTRIBUTION";
+
+                                int Cylinder46Contribution = payload[1];
+
+                                ValueToInsert = Cylinder46Contribution.ToString("0");
+                                UnitToInsert = "PERCENT";
+                                break;
+                            case 0xEA:
+                                DescriptionToInsert = "ENGINE SPEED";
+
+                                int EnginSpeedLowRes = payload[1] * 32;
+
+                                ValueToInsert = EnginSpeedLowRes.ToString("0");
+                                UnitToInsert = "RPM";
+                                break;
+                            case 0xEB:
+                                DescriptionToInsert = "CYLINDER TEST STATUS";
+
+                                switch (payload[1])
+                                {
+                                    case 0x00:
+                                        ValueToInsert = "NOT RUNNING";
+                                        break;
+                                    case 0x01:
+                                        ValueToInsert = "RUNNING";
+                                        break;
+                                    case 0x02:
+                                        ValueToInsert = "ABORTED";
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                break;
+                            case 0xEC:
+                                DescriptionToInsert = "FPO TEST STATUS";
+
+                                switch (payload[1])
+                                {
+                                    case 0x00:
+                                        ValueToInsert = "NOT RUNNING";
+                                        break;
+                                    case 0x01:
+                                        ValueToInsert = "RUNNING";
+                                        break;
+                                    case 0x02:
+                                        ValueToInsert = "ABORTED";
+                                        break;
+                                    default:
+                                        break;
+                                }
                                 break;
                             default:
                                 for (int i = 0; i < HSBPNum; i++)
