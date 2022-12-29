@@ -847,7 +847,7 @@ namespace ChryslerScanner
 
                     double FuelLevelSensorVoltage = payload[0] * 0.0196;
                     double FuelLevelG = payload[1] * 0.125;
-                    double FuelLevelL = payload[1] * 0.125 * 3.785412;
+                    double FuelLevelL = FuelLevelG * 3.785412;
 
                     if (Properties.Settings.Default.Units == "imperial")
                     {

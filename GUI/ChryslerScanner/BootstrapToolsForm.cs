@@ -82,8 +82,8 @@ namespace ChryslerScanner
         {
             Empty = 0x00,
             SBEC3_128k = 0x01,
-            SBEC3_256k = 0x02,
-            SBEC3_256k_custom = 0x03,
+            SBEC3AB_256k = 0x02,
+            SBEC3AB_256k_custom = 0x03,
             JTEC_256k = 0x04
         }
 
@@ -656,11 +656,11 @@ namespace ChryslerScanner
                         case (byte)Bootloader.SBEC3_128k:
                             OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: SBEC3 (128k).");
                             break;
-                        case (byte)Bootloader.SBEC3_256k:
-                            OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: SBEC3 (256k).");
+                        case (byte)Bootloader.SBEC3AB_256k:
+                            OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: SBEC3AB (256k).");
                             break;
-                        case (byte)Bootloader.SBEC3_256k_custom:
-                            OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: SBEC3 custom (256k).");
+                        case (byte)Bootloader.SBEC3AB_256k_custom:
+                            OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: SBEC3AB (256k) custom.");
                             break;
                         case (byte)Bootloader.JTEC_256k:
                             OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: JTEC (256k).");
@@ -2151,11 +2151,11 @@ namespace ChryslerScanner
                                 case (byte)Bootloader.SBEC3_128k:
                                     UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3 (128k). ");
                                     break;
-                                case (byte)Bootloader.SBEC3_256k:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3 (256k). ");
+                                case (byte)Bootloader.SBEC3AB_256k:
+                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3AB (256k). ");
                                     break;
-                                case (byte)Bootloader.SBEC3_256k_custom:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3 custom (256k). ");
+                                case (byte)Bootloader.SBEC3AB_256k_custom:
+                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3AB (256k) custom. ");
                                     break;
                                 case (byte)Bootloader.JTEC_256k:
                                     UpdateTextBox(SCIBusBootstrapInfoTextBox, "JTEC (256k). ");

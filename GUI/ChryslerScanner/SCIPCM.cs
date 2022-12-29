@@ -3193,7 +3193,7 @@ namespace ChryslerScanner
                     case 0x2A:
                         DescriptionToInsert = "CONFIGURATION";
 
-                        if (message.Length < 4) break;
+                        if (message.Length < 3) break;
 
                         switch (payload[0])
                         {
