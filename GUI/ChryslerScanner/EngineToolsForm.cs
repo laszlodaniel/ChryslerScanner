@@ -89,6 +89,8 @@ namespace ChryslerScanner
             {
                 RAMTableComboBox.SelectedIndex = 4; // F4
             }
+
+            OriginalForm.PCM.ControllerHardwareType = (byte)CHTComboBox.SelectedIndex;
         }
 
         private void ReadFaultCodesButton_Click(object sender, EventArgs e)
@@ -1381,12 +1383,12 @@ namespace ChryslerScanner
 
         private void UpdateCHTGroup()
         {
-            CHTComboBox.SelectedIndex = SCIPCM.ControllerHardwareType;
+            CHTComboBox.SelectedIndex = OriginalForm.PCM.ControllerHardwareType;
         }
 
         private void UpdateStatusBar()
         {
-            if (SCIPCM.PartNumberChars[0] == 0)
+            if (OriginalForm.PCM.PartNumberChars[0] == 0)
             {
                 EnginePropertiesLabel.Text = "P/N | Year | Body | Manufacturer | Engine | Fuel | Injection" + Environment.NewLine + "Emission | Aspiration | Fans | Chassis ";
                 return;
@@ -1395,13 +1397,13 @@ namespace ChryslerScanner
             string StatusLabelText = string.Empty;
             byte SearchByte = 0;
 
-            if (Array.IndexOf(SCIPCM.PartNumberChars.Take(4).ToArray(), SearchByte) == -1) // first 4 bytes of part number is ready
+            if (Array.IndexOf(OriginalForm.PCM.PartNumberChars.Take(4).ToArray(), SearchByte) == -1) // first 4 bytes of part number is ready
             {
-                StatusLabelText += " P/N " + Util.ByteToHexString(SCIPCM.PartNumberChars, 0, 4).Replace(" ", ""); // show part number
+                StatusLabelText += " P/N " + Util.ByteToHexString(OriginalForm.PCM.PartNumberChars, 0, 4).Replace(" ", ""); // show part number
 
-                if ((SCIPCM.PartNumberChars[4] >= 0x41) && (SCIPCM.PartNumberChars[4] <= 0x5A) && (SCIPCM.PartNumberChars[5] >= 0x41) && (SCIPCM.PartNumberChars[5] <= 0x5A))
+                if ((OriginalForm.PCM.PartNumberChars[4] >= 0x41) && (OriginalForm.PCM.PartNumberChars[4] <= 0x5A) && (OriginalForm.PCM.PartNumberChars[5] >= 0x41) && (OriginalForm.PCM.PartNumberChars[5] <= 0x5A))
                 {
-                    StatusLabelText += Encoding.ASCII.GetString(SCIPCM.PartNumberChars.Skip(4).ToArray()); // show revision characters if available
+                    StatusLabelText += Encoding.ASCII.GetString(OriginalForm.PCM.PartNumberChars.Skip(4).ToArray()); // show revision characters if available
                 }
             }
 
@@ -1410,7 +1412,7 @@ namespace ChryslerScanner
             // Fill first line.
             for (int i = 0; i < 6; i++)
             {
-                StatusLabelText += SCIPCM.EngineToolsStatusBarTextItems[i] + " | ";
+                StatusLabelText += OriginalForm.PCM.EngineToolsStatusBarTextItems[i] + " | ";
             }
 
             StatusLabelText = StatusLabelText.Remove(StatusLabelText.Length - 3).TrimEnd(); // remove last "|" character
@@ -1419,7 +1421,7 @@ namespace ChryslerScanner
             // Fill second line.
             for (int i = 6; i < 11; i++)
             {
-                StatusLabelText += SCIPCM.EngineToolsStatusBarTextItems[i] + " | ";
+                StatusLabelText += OriginalForm.PCM.EngineToolsStatusBarTextItems[i] + " | ";
             }
 
             StatusLabelText = StatusLabelText.Remove(StatusLabelText.Length - 3).TrimEnd(); // remove last "|" character

@@ -39,9 +39,9 @@ namespace ChryslerScanner
         public string EmptyLine      = "│                         │                                                     │                         │             │";
         public string HeaderModified = string.Empty;
 
-        public static byte ControllerHardwareType = 0;
-        public static byte[] PartNumberChars = new byte[6] { 0, 0, 0, 0, 0, 0 };
-        public static string[] EngineToolsStatusBarTextItems = new string[12];
+        public byte ControllerHardwareType = 0;
+        public byte[] PartNumberChars = new byte[6] { 0, 0, 0, 0, 0, 0 };
+        public string[] EngineToolsStatusBarTextItems = new string[12];
 
         public SCIPCM()
         {
@@ -1359,7 +1359,7 @@ namespace ChryslerScanner
 
                         if (message.Length < 3) break;
 
-                        if ((payload[0] == 0) && (payload[1] == 0))
+                        if (((payload[0] == 0) || (payload[0] == 0xFD)) && (payload[1] == 0))
                         {
                             PendingFaultCodeList.Clear();
                             ValueToInsert = "NO FAULT CODE";

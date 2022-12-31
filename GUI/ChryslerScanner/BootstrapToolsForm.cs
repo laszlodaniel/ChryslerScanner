@@ -1566,7 +1566,14 @@ namespace ChryslerScanner
                                             SCIBusBootstrapWorker.CancelAsync();
                                         }
 
-                                        CurrentTask = Task.BackupFlashMemory;
+                                        if (FlashMemoryBackupCheckBox.Checked)
+                                        {
+                                            CurrentTask = Task.BackupFlashMemory;
+                                        }
+                                        else
+                                        {
+                                            CurrentTask = Task.EraseFlashMemory;
+                                        }
                                     }
 
                                     SCIBusResponse = true;

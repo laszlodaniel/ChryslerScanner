@@ -71,7 +71,7 @@
             this.AboutDescriptionLabel02.Name = "AboutDescriptionLabel02";
             this.AboutDescriptionLabel02.Size = new System.Drawing.Size(266, 13);
             this.AboutDescriptionLabel02.TabIndex = 0;
-            this.AboutDescriptionLabel02.Text = "Compatible vehicles: 1983-2004 Chrysler/Dodge/Jeep.";
+            this.AboutDescriptionLabel02.Text = "Compatible vehicles: 1983-2003 Chrysler/Dodge/Jeep.";
             // 
             // AboutDescriptionLabel03
             // 
