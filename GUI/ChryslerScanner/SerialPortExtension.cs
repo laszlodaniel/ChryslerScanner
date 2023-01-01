@@ -22,7 +22,18 @@ namespace ChryslerScanner
 
             while (true)
             {
-                await serialPort.BaseStream.ReadAsync(buffer, 0, 1);
+                try
+                {
+                    await serialPort.BaseStream.ReadAsync(buffer, 0, 1);
+                }
+                catch
+                {
+                    // TODO
+                }
+                finally
+                {
+                    // TODO
+                }
                 
                 packet.Add(buffer[0]);
 
@@ -40,8 +51,19 @@ namespace ChryslerScanner
         /// <returns></returns>
         public static async Task WritePacketAsync(this SerialPort serialPort, byte[] packet)
         {
-            await serialPort.BaseStream.WriteAsync(packet, 0, packet.Length);
-            await serialPort.BaseStream.FlushAsync();
+            try
+            {
+                await serialPort.BaseStream.WriteAsync(packet, 0, packet.Length);
+                await serialPort.BaseStream.FlushAsync();
+            }
+            catch
+            {
+                // TODO
+            }
+            finally
+            {
+                // TODO
+            }
         }
     }
 }

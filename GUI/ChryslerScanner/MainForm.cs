@@ -3028,6 +3028,19 @@ namespace ChryslerScanner
             UpdateCOMPortList();
         }
 
+        private void DemoButton_Click(object sender, EventArgs e)
+        {
+            Util.UpdateTextBox(USBTextBox, "[INFO] GUI is now running in demo mode." + Environment.NewLine + "       Explore features without scanner.");
+            USBCommunicationGroupBox.Enabled = true;
+            DeviceTabControl.Enabled = true;
+            DiagnosticsGroupBox.Enabled = true;
+            ReadMemoryToolStripMenuItem.Enabled = true;
+            WriteMemoryToolStripMenuItem.Enabled = true;
+            BootstrapToolsToolStripMenuItem.Enabled = true;
+            EngineToolsToolStripMenuItem.Enabled = true;
+            ABSToolsToolStripMenuItem.Enabled = true;
+        }
+
         private void COMPortsComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
             SelectedPort = COMPortsComboBox.Text;

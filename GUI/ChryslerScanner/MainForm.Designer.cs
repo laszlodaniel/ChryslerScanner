@@ -179,6 +179,7 @@
             this.SCIBusPCMDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
             this.SCIBusTCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
             this.SCIBusTCMDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
+            this.DemoButton = new System.Windows.Forms.Button();
             this.MenuStrip.SuspendLayout();
             this.USBCommunicationGroupBox.SuspendLayout();
             this.ControlPanelGroupBox.SuspendLayout();
@@ -397,6 +398,7 @@
             // 
             // ControlPanelGroupBox
             // 
+            this.ControlPanelGroupBox.Controls.Add(this.DemoButton);
             this.ControlPanelGroupBox.Controls.Add(this.ExpandButton);
             this.ControlPanelGroupBox.Controls.Add(this.DeviceTabControl);
             this.ControlPanelGroupBox.Controls.Add(this.COMPortsRefreshButton);
@@ -1853,6 +1855,16 @@
             this.SCIBusTCMDiagnosticsListBox.Size = new System.Drawing.Size(873, 484);
             this.SCIBusTCMDiagnosticsListBox.TabIndex = 1;
             // 
+            // DemoButton
+            // 
+            this.DemoButton.Location = new System.Drawing.Point(218, 266);
+            this.DemoButton.Name = "DemoButton";
+            this.DemoButton.Size = new System.Drawing.Size(61, 25);
+            this.DemoButton.TabIndex = 6;
+            this.DemoButton.Text = "Demo";
+            this.DemoButton.UseVisualStyleBackColor = true;
+            this.DemoButton.Click += new System.EventHandler(this.DemoButton_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -2049,6 +2061,7 @@
         private System.Windows.Forms.CheckBox SCIBusNGCModeCheckBox;
         private System.Windows.Forms.ToolStripMenuItem SortMessagesByIDByteToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem ABSToolsToolStripMenuItem;
+        private System.Windows.Forms.Button DemoButton;
     }
 }
 
