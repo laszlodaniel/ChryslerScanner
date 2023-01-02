@@ -2483,12 +2483,12 @@ namespace ChryslerScanner
                                 case (byte)Packet.DebugMode.initBootstrapMode:
                                     if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Init PCM bootstrap mode result:", Packet.rx.buffer);
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Init bootstrap mode result:", Packet.rx.buffer);
 
                                         switch (Packet.rx.payload[0])
                                         {
                                             case 0:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] PCM bootstrap init success.");
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Bootstrap init success.");
                                                 break;
                                             case 1:
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Error: no response to magic byte.");

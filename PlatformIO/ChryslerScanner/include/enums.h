@@ -97,9 +97,12 @@ enum Error {
 enum Bootloader {
     Bootloader_Empty             = 0x00,
     Bootloader_128k_SBEC3        = 0x01,
-    Bootloader_256k_SBEC3        = 0x02,
-    Bootloader_256k_SBEC3_custom = 0x03,
-    Bootloader_256k_JTEC         = 0x04
+    Bootloader_128k_SBEC3_custom = 0x02,
+    Bootloader_256k_SBEC3        = 0x03,
+    Bootloader_256k_SBEC3_custom = 0x04,
+    Bootloader_128k_EATX3        = 0x05,
+    Bootloader_256k_EATX3        = 0x06,
+    Bootloader_256k_JTEC         = 0x07
 };
 
 enum WorkerFunction {
@@ -110,10 +113,8 @@ enum WorkerFunction {
     WorkerFunction_FlashErase          = 0x04,
     WorkerFunction_FlashWrite          = 0x05,
     WorkerFunction_VerifyFlashChecksum = 0x06,
-    WorkerFunction_EEPROMReadSBEC      = 0x07,
-    WorkerFunction_EEPROMWriteSBEC     = 0x08,
-    WorkerFunction_EEPROMReadJTEC      = 0x09,
-    WorkerFunction_EEPROMWriteJTEC     = 0x0A,
+    WorkerFunction_EEPROMRead          = 0x07,
+    WorkerFunction_EEPROMWrite         = 0x08,
 };
 
 enum FlashMemoryManufacturer

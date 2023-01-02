@@ -2936,7 +2936,7 @@ void sci_msg_task(void *pvParameters)
                         }
                         else
                         {
-                            if (sci.bootstrap.worker_function_src == WorkerFunction_EEPROMWriteSBEC)
+                            if (sci.bootstrap.worker_function_src == WorkerFunction_EEPROMWrite)
                             {
                                 sci_set_timeout(5 * SCI_LS_T1_DELAY); // apply generous timeout because EEPROM block is not echoed back right away (100 ms for 512 bytes)
                                 sci.msg.byte_received = false;
@@ -3205,6 +3205,28 @@ void sci_boot_task(void *pvParameters)
                     }
                     break;
                 }
+                case Bootloader_128k_SBEC3_custom: // Dino
+                {
+                    bl_header[3] = ((0x0100 + sizeof(LdBoot_128k_SBEC3_custom) - 1) >> 8) & 0xFF;
+                    bl_header[4] = (0x0100 + sizeof(LdBoot_128k_SBEC3_custom) - 1) & 0xFF;
+
+                    for (uint8_t i = 0; i < sizeof(bl_header); i++)
+                    {
+                        buff[0] = bl_header[i];
+                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                        sci.msg.byte_received = false;
+                    }
+
+                    for (uint16_t i = 0; i < sizeof(LdBoot_128k_SBEC3_custom); i++)
+                    {
+                        buff[0] = LdBoot_128k_SBEC3_custom[i];
+                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                        sci.msg.byte_received = false;
+                    }
+                    break;
+                }
                 case Bootloader_256k_SBEC3:
                 {
                     bl_header[3] = ((0x0100 + sizeof(LdBoot_256k_SBEC3) - 1) >> 8) & 0xFF;
@@ -3227,7 +3249,7 @@ void sci_boot_task(void *pvParameters)
                     }
                     break;
                 }
-                case Bootloader_256k_SBEC3_custom: // SBEC3 256k custom by Dino
+                case Bootloader_256k_SBEC3_custom: // Dino
                 {
                     bl_header[3] = ((0x0100 + sizeof(LdBoot_256k_SBEC3_custom) - 1) >> 8) & 0xFF;
                     bl_header[4] = (0x0100 + sizeof(LdBoot_256k_SBEC3_custom) - 1) & 0xFF;
@@ -3243,6 +3265,50 @@ void sci_boot_task(void *pvParameters)
                     for (uint16_t i = 0; i < sizeof(LdBoot_256k_SBEC3_custom); i++)
                     {
                         buff[0] = LdBoot_256k_SBEC3_custom[i];
+                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                        sci.msg.byte_received = false;
+                    }
+                    break;
+                }
+                case Bootloader_128k_EATX3:
+                {
+                    bl_header[3] = ((0x0100 + sizeof(LdBoot_128k_EATX3) - 1) >> 8) & 0xFF;
+                    bl_header[4] = (0x0100 + sizeof(LdBoot_128k_EATX3) - 1) & 0xFF;
+
+                    for (uint8_t i = 0; i < sizeof(bl_header); i++)
+                    {
+                        buff[0] = bl_header[i];
+                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                        sci.msg.byte_received = false;
+                    }
+
+                    for (uint16_t i = 0; i < sizeof(LdBoot_128k_EATX3); i++)
+                    {
+                        buff[0] = LdBoot_128k_EATX3[i];
+                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                        sci.msg.byte_received = false;
+                    }
+                    break;
+                }
+                case Bootloader_256k_EATX3:
+                {
+                    bl_header[3] = ((0x0100 + sizeof(LdBoot_256k_EATX3) - 1) >> 8) & 0xFF;
+                    bl_header[4] = (0x0100 + sizeof(LdBoot_256k_EATX3) - 1) & 0xFF;
+
+                    for (uint8_t i = 0; i < sizeof(bl_header); i++)
+                    {
+                        buff[0] = bl_header[i];
+                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                        sci.msg.byte_received = false;
+                    }
+
+                    for (uint16_t i = 0; i < sizeof(LdBoot_256k_EATX3); i++)
+                    {
+                        buff[0] = LdBoot_256k_EATX3[i];
                         uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
                         while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
                         sci.msg.byte_received = false;
@@ -3364,45 +3430,153 @@ void sci_boot_task(void *pvParameters)
             {
                 case WorkerFunction_PartNumberRead:
                 {
-                    wf_header[1] = (sizeof(LdPartNumberRead_SBEC3) >> 8) & 0xFF;
-                    wf_header[2] = sizeof(LdPartNumberRead_SBEC3) & 0xFF;
-
-                    for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                    switch (sci.bootstrap.bootloader_src)
                     {
-                        buff[0] = wf_header[i];
-                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
-                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
-                        sci.msg.byte_received = false;
-                    }
+                        case (Bootloader_128k_SBEC3):
+                        case (Bootloader_256k_SBEC3):
+                        {
+                            wf_header[1] = (sizeof(LdPartNumberRead_SBEC3) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdPartNumberRead_SBEC3) & 0xFF;
 
-                    for (uint16_t i = 0; i < sizeof(LdPartNumberRead_SBEC3); i++)
-                    {
-                        buff[0] = LdPartNumberRead_SBEC3[i];
-                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
-                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
-                        sci.msg.byte_received = false;
+                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                            {
+                                buff[0] = wf_header[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+
+                            for (uint16_t i = 0; i < sizeof(LdPartNumberRead_SBEC3); i++)
+                            {
+                                buff[0] = LdPartNumberRead_SBEC3[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+                            break;
+                        }
+                        case (Bootloader_128k_EATX3):
+                        case (Bootloader_256k_EATX3):
+                        {
+                            wf_header[1] = (sizeof(LdPartNumberRead_EATX3) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdPartNumberRead_EATX3) & 0xFF;
+
+                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                            {
+                                buff[0] = wf_header[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+
+                            for (uint16_t i = 0; i < sizeof(LdPartNumberRead_EATX3); i++)
+                            {
+                                buff[0] = LdPartNumberRead_EATX3[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+                            break;
+                        }
+                        case (Bootloader_256k_JTEC):
+                        {
+                            wf_header[1] = (sizeof(LdPartNumberRead_JTEC) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdPartNumberRead_JTEC) & 0xFF;
+
+                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                            {
+                                buff[0] = wf_header[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+
+                            for (uint16_t i = 0; i < sizeof(LdPartNumberRead_JTEC); i++)
+                            {
+                                buff[0] = LdPartNumberRead_JTEC[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+                            break;
+                        }
+                        default:
+                        {
+                            wf_header[1] = (sizeof(LdWorker_empty_SBEC3) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdWorker_empty_SBEC3) & 0xFF;
+
+                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                            {
+                                buff[0] = wf_header[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+
+                            for (uint16_t i = 0; i < sizeof(LdWorker_empty_SBEC3); i++)
+                            {
+                                buff[0] = LdWorker_empty_SBEC3[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+                            break;
+                        }
                     }
                     break;
                 }
                 case WorkerFunction_FlashID:
                 {
-                    wf_header[1] = (sizeof(LdFlashID_SBEC3) >> 8) & 0xFF;
-                    wf_header[2] = sizeof(LdFlashID_SBEC3) & 0xFF;
-
-                    for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                    switch (sci.bootstrap.bootloader_src)
                     {
-                        buff[0] = wf_header[i];
-                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
-                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
-                        sci.msg.byte_received = false;
-                    }
+                        case (Bootloader_128k_SBEC3):
+                        case (Bootloader_256k_SBEC3):
+                        case (Bootloader_256k_JTEC):
+                        default:
+                        {
+                            wf_header[1] = (sizeof(LdFlashID_SBEC3) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdFlashID_SBEC3) & 0xFF;
 
-                    for (uint16_t i = 0; i < sizeof(LdFlashID_SBEC3); i++)
-                    {
-                        buff[0] = LdFlashID_SBEC3[i];
-                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
-                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
-                        sci.msg.byte_received = false;
+                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                            {
+                                buff[0] = wf_header[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+
+                            for (uint16_t i = 0; i < sizeof(LdFlashID_SBEC3); i++)
+                            {
+                                buff[0] = LdFlashID_SBEC3[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+                            break;
+                        }
+                        case (Bootloader_128k_EATX3):
+                        case (Bootloader_256k_EATX3):
+                        {
+                            wf_header[1] = (sizeof(LdFlashID_EATX3) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdFlashID_EATX3) & 0xFF;
+
+                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                            {
+                                buff[0] = wf_header[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+
+                            for (uint16_t i = 0; i < sizeof(LdFlashID_EATX3); i++)
+                            {
+                                buff[0] = LdFlashID_EATX3[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+                            break;
+                        }
                     }
                     break;
                 }
@@ -3610,47 +3784,197 @@ void sci_boot_task(void *pvParameters)
                     break;
                 }
                 
-                case WorkerFunction_EEPROMReadSBEC:
+                case WorkerFunction_EEPROMRead:
                 {
-                    wf_header[1] = (sizeof(LdEEPROMRead_SBEC3) >> 8) & 0xFF;
-                    wf_header[2] = sizeof(LdEEPROMRead_SBEC3) & 0xFF;
-
-                    for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                    switch (sci.bootstrap.bootloader_src)
                     {
-                        buff[0] = wf_header[i];
-                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
-                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
-                        sci.msg.byte_received = false;
-                    }
+                        case (Bootloader_128k_SBEC3):
+                        case (Bootloader_256k_SBEC3):
+                        {
+                            wf_header[1] = (sizeof(LdEEPROMRead_SBEC3) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdEEPROMRead_SBEC3) & 0xFF;
 
-                    for (uint16_t i = 0; i < sizeof(LdEEPROMRead_SBEC3); i++)
-                    {
-                        buff[0] = LdEEPROMRead_SBEC3[i];
-                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
-                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
-                        sci.msg.byte_received = false;
+                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                            {
+                                buff[0] = wf_header[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+
+                            for (uint16_t i = 0; i < sizeof(LdEEPROMRead_SBEC3); i++)
+                            {
+                                buff[0] = LdEEPROMRead_SBEC3[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+                            break;
+                        }
+                        case (Bootloader_128k_EATX3):
+                        case (Bootloader_256k_EATX3):
+                        {
+                            wf_header[1] = (sizeof(LdEEPROMRead_EATX3) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdEEPROMRead_EATX3) & 0xFF;
+
+                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                            {
+                                buff[0] = wf_header[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+
+                            for (uint16_t i = 0; i < sizeof(LdEEPROMRead_EATX3); i++)
+                            {
+                                buff[0] = LdEEPROMRead_EATX3[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+                            break;
+                        }
+                        case (Bootloader_256k_JTEC):
+                        {
+                            wf_header[1] = (sizeof(LdWorker_empty_JTEC) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdWorker_empty_JTEC) & 0xFF;
+
+                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                            {
+                                buff[0] = wf_header[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+
+                            for (uint16_t i = 0; i < sizeof(LdWorker_empty_JTEC); i++)
+                            {
+                                buff[0] = LdWorker_empty_JTEC[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+                            break;
+                        }
+                        default:
+                        {
+                            wf_header[1] = (sizeof(LdWorker_empty_SBEC3) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdWorker_empty_SBEC3) & 0xFF;
+
+                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                            {
+                                buff[0] = wf_header[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+
+                            for (uint16_t i = 0; i < sizeof(LdWorker_empty_SBEC3); i++)
+                            {
+                                buff[0] = LdWorker_empty_SBEC3[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+                            break;
+                        }
                     }
                     break;
                 }
-                case WorkerFunction_EEPROMWriteSBEC:
+                case WorkerFunction_EEPROMWrite:
                 {
-                    wf_header[1] = (sizeof(LdEEPROMWrite_SBEC3) >> 8) & 0xFF;
-                    wf_header[2] = sizeof(LdEEPROMWrite_SBEC3) & 0xFF;
-
-                    for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                    switch (sci.bootstrap.bootloader_src)
                     {
-                        buff[0] = wf_header[i];
-                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
-                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
-                        sci.msg.byte_received = false;
-                    }
+                        case (Bootloader_128k_SBEC3):
+                        case (Bootloader_256k_SBEC3):
+                        {
+                            wf_header[1] = (sizeof(LdEEPROMWrite_SBEC3) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdEEPROMWrite_SBEC3) & 0xFF;
 
-                    for (uint16_t i = 0; i < sizeof(LdEEPROMWrite_SBEC3); i++)
-                    {
-                        buff[0] = LdEEPROMWrite_SBEC3[i];
-                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
-                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
-                        sci.msg.byte_received = false;
+                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                            {
+                                buff[0] = wf_header[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+
+                            for (uint16_t i = 0; i < sizeof(LdEEPROMWrite_SBEC3); i++)
+                            {
+                                buff[0] = LdEEPROMWrite_SBEC3[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+                            break;
+                        }
+                        case (Bootloader_128k_EATX3):
+                        case (Bootloader_256k_EATX3):
+                        {
+                            wf_header[1] = (sizeof(LdEEPROMWrite_EATX3) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdEEPROMWrite_EATX3) & 0xFF;
+
+                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                            {
+                                buff[0] = wf_header[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+
+                            for (uint16_t i = 0; i < sizeof(LdEEPROMWrite_EATX3); i++)
+                            {
+                                buff[0] = LdEEPROMWrite_EATX3[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+                            break;
+                        }
+                        case (Bootloader_256k_JTEC):
+                        {
+                            wf_header[1] = (sizeof(LdWorker_empty_JTEC) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdWorker_empty_JTEC) & 0xFF;
+
+                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                            {
+                                buff[0] = wf_header[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+
+                            for (uint16_t i = 0; i < sizeof(LdWorker_empty_JTEC); i++)
+                            {
+                                buff[0] = LdWorker_empty_JTEC[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+                            break;
+                        }
+                        default:
+                        {
+                            wf_header[1] = (sizeof(LdWorker_empty_SBEC3) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdWorker_empty_SBEC3) & 0xFF;
+
+                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                            {
+                                buff[0] = wf_header[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+
+                            for (uint16_t i = 0; i < sizeof(LdWorker_empty_SBEC3); i++)
+                            {
+                                buff[0] = LdWorker_empty_SBEC3[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+                            break;
+                        }
                     }
                     break;
                 }
@@ -3719,8 +4043,6 @@ void sci_boot_task(void *pvParameters)
 
                     sci.state.idle = false;
 
-                    while ((sci.msg.rx_ptr < 3) && !sci.state.idle); // wait for 3 bytes (21 PP QQ)
-
                     vTaskDelay(pdMS_TO_TICKS(1));
 
                     switch (sci.bootstrap.bootloader_src)
@@ -3734,7 +4056,7 @@ void sci_boot_task(void *pvParameters)
 
                     sci.state.idle = false;
 
-                    while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1)); // wait for last 2 bytes (RR SS)
+                    while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1)); // wait for last 2 bytes (PP QQ)
 
                     apply_progvolt(0);
                     break;
@@ -3771,17 +4093,15 @@ void sci_boot_task(void *pvParameters)
 
                     sci.state.idle = false;
 
-                    while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1)); // wait for last 2 bytes (RR SS)
+                    while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
 
                     apply_progvolt(0);
                     break;
                 }
                 case WorkerFunction_PartNumberRead:
                 case WorkerFunction_FlashRead:
-                case WorkerFunction_EEPROMReadSBEC:
                 case WorkerFunction_FlashWrite:
                 case WorkerFunction_VerifyFlashChecksum:
-                case WorkerFunction_EEPROMWriteSBEC:
                 case WorkerFunction_Empty:
                 default:
                 {
@@ -3814,13 +4134,13 @@ void sci_boot_task(void *pvParameters)
                     uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
                     break;
                 }
-                case WorkerFunction_EEPROMReadSBEC:
+                case WorkerFunction_EEPROMRead:
                 {
                     uart_write_bytes(UART_SCI, (const uint8_t *)stop_eeprom_read_cmd, sizeof(stop_eeprom_read_cmd));
                     uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
                     break;
                 }
-                case WorkerFunction_EEPROMWriteSBEC:
+                case WorkerFunction_EEPROMWrite:
                 {
                     uart_write_bytes(UART_SCI, (const uint8_t *)stop_eeprom_write_cmd, sizeof(stop_eeprom_write_cmd));
                     uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
