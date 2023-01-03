@@ -1,6 +1,6 @@
 /*
  * ChryslerScanner (https://github.com/laszlodaniel/ChryslerScanner)
- * Copyright (C) 2018-2022 Daniel Laszlo
+ * Copyright (C) 2018-2023 Daniel Laszlo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -433,16 +433,9 @@ uint32_t get_random(uint32_t min, uint32_t max)
  */
 void send_usb_packet(uint8_t bus, uint8_t command, uint8_t subdatacode, uint8_t *payload, uint16_t payload_length)
 {
-    uint16_t packet_length = 0;
+    uint16_t packet_length = payload_length + 6;
 
-    if (bus > 0)
-    {
-        packet_length = payload_length + 6 + 4; // add 4 timestamp bytes
-    }
-    else
-    {
-        packet_length = payload_length + 6;
-    }
+    if (bus > 0) packet_length += 4; // add 4 timestamp bytes
 
     uint8_t packet[packet_length];
     uint8_t datacode = 0;
