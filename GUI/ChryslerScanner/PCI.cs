@@ -599,14 +599,14 @@ namespace ChryslerScanner
 
                     if (message.Length < 7) break;
 
-                    ValueToInsert = Util.ByteToHexString(payload, 1, 5);
+                    ValueToInsert = Util.ByteToHexString(payload, 0, 5);
                     break;
                 case 0x6F:
                     DescriptionToInsert = "PCM BEACON PAYLOAD #2";
 
                     if (message.Length < 7) break;
 
-                    ValueToInsert = Util.ByteToHexString(payload, 1, 5);
+                    ValueToInsert = Util.ByteToHexString(payload, 0, 5);
                     break;
                 case 0x72:
                     DescriptionToInsert = "BCM MILEAGE";
