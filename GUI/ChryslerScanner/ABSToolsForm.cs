@@ -79,6 +79,7 @@ namespace ChryslerScanner
             InitializeComponent();
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
             MainForm.Packet.PacketReceived += PacketReceivedHandler; // subscribe to the OnPacketReceived event
+            OriginalForm.ChangeLanguage();
 
             ABSToolsLogFilename = @"LOG/ABS/abslog_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".txt";
 

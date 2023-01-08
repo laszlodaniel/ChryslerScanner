@@ -117,7 +117,2356 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="ReadFaultCodeFreezeFrameButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 43</value>
+  </data>
+  <data name="ReadFaultCodeFreezeFrameButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>114, 23</value>
+  </data>
+  <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="ReadFaultCodeFreezeFrameButton.TabIndex" type="System.Int32, mscorlib">
+    <value>17</value>
+  </data>
+  <data name="ReadFaultCodeFreezeFrameButton.Text" xml:space="preserve">
+    <value>Freeze Frame</value>
+  </data>
+  <data name="&gt;&gt;ReadFaultCodeFreezeFrameButton.Name" xml:space="preserve">
+    <value>ReadFaultCodeFreezeFrameButton</value>
+  </data>
+  <data name="&gt;&gt;ReadFaultCodeFreezeFrameButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ReadFaultCodeFreezeFrameButton.Parent" xml:space="preserve">
+    <value>FaultCodeGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ReadFaultCodeFreezeFrameButton.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="EraseFaultCodesButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>65, 16</value>
+  </data>
+  <data name="EraseFaultCodesButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="EraseFaultCodesButton.TabIndex" type="System.Int32, mscorlib">
+    <value>16</value>
+  </data>
+  <data name="EraseFaultCodesButton.Text" xml:space="preserve">
+    <value>Erase</value>
+  </data>
+  <data name="&gt;&gt;EraseFaultCodesButton.Name" xml:space="preserve">
+    <value>EraseFaultCodesButton</value>
+  </data>
+  <data name="&gt;&gt;EraseFaultCodesButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;EraseFaultCodesButton.Parent" xml:space="preserve">
+    <value>FaultCodeGroupBox</value>
+  </data>
+  <data name="&gt;&gt;EraseFaultCodesButton.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="ReadFaultCodesButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 16</value>
+  </data>
+  <data name="ReadFaultCodesButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="ReadFaultCodesButton.TabIndex" type="System.Int32, mscorlib">
+    <value>15</value>
+  </data>
+  <data name="ReadFaultCodesButton.Text" xml:space="preserve">
+    <value>Read</value>
+  </data>
+  <data name="&gt;&gt;ReadFaultCodesButton.Name" xml:space="preserve">
+    <value>ReadFaultCodesButton</value>
+  </data>
+  <data name="&gt;&gt;ReadFaultCodesButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ReadFaultCodesButton.Parent" xml:space="preserve">
+    <value>FaultCodeGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ReadFaultCodesButton.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="FaultCodeGroupBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>178, 7</value>
+  </data>
+  <data name="FaultCodeGroupBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>126, 74</value>
+  </data>
+  <data name="FaultCodeGroupBox.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="FaultCodeGroupBox.Text" xml:space="preserve">
+    <value>Fault code</value>
+  </data>
+  <data name="&gt;&gt;FaultCodeGroupBox.Name" xml:space="preserve">
+    <value>FaultCodeGroupBox</value>
+  </data>
+  <data name="&gt;&gt;FaultCodeGroupBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;FaultCodeGroupBox.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;FaultCodeGroupBox.ZOrder" xml:space="preserve">
+    <value>10</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="Baud62500Button.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
+    <value>Flat</value>
+  </data>
+  <data name="Baud62500Button.Location" type="System.Drawing.Point, System.Drawing">
+    <value>7, 43</value>
+  </data>
+  <data name="Baud62500Button.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="Baud62500Button.TabIndex" type="System.Int32, mscorlib">
+    <value>18</value>
+  </data>
+  <data name="Baud62500Button.Text" xml:space="preserve">
+    <value>62500</value>
+  </data>
+  <data name="&gt;&gt;Baud62500Button.Name" xml:space="preserve">
+    <value>Baud62500Button</value>
+  </data>
+  <data name="&gt;&gt;Baud62500Button.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Baud62500Button.Parent" xml:space="preserve">
+    <value>BaudrateGroupBox</value>
+  </data>
+  <data name="&gt;&gt;Baud62500Button.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="Baud7812Button.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
+    <value>Flat</value>
+  </data>
+  <data name="Baud7812Button.Location" type="System.Drawing.Point, System.Drawing">
+    <value>7, 16</value>
+  </data>
+  <data name="Baud7812Button.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="Baud7812Button.TabIndex" type="System.Int32, mscorlib">
+    <value>17</value>
+  </data>
+  <data name="Baud7812Button.Text" xml:space="preserve">
+    <value>7812.5</value>
+  </data>
+  <data name="&gt;&gt;Baud7812Button.Name" xml:space="preserve">
+    <value>Baud7812Button</value>
+  </data>
+  <data name="&gt;&gt;Baud7812Button.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Baud7812Button.Parent" xml:space="preserve">
+    <value>BaudrateGroupBox</value>
+  </data>
+  <data name="&gt;&gt;Baud7812Button.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="BaudrateGroupBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>313, 7</value>
+  </data>
+  <data name="BaudrateGroupBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>75, 74</value>
+  </data>
+  <data name="BaudrateGroupBox.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="BaudrateGroupBox.Text" xml:space="preserve">
+    <value>Baudrate</value>
+  </data>
+  <data name="&gt;&gt;BaudrateGroupBox.Name" xml:space="preserve">
+    <value>BaudrateGroupBox</value>
+  </data>
+  <data name="&gt;&gt;BaudrateGroupBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;BaudrateGroupBox.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;BaudrateGroupBox.ZOrder" xml:space="preserve">
+    <value>9</value>
+  </data>
+  <data name="ActuatorTestStatusLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="ActuatorTestStatusLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>122, 48</value>
+  </data>
+  <data name="ActuatorTestStatusLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>81, 13</value>
+  </data>
+  <data name="ActuatorTestStatusLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>30</value>
+  </data>
+  <data name="ActuatorTestStatusLabel.Text" xml:space="preserve">
+    <value>Status: stopped</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestStatusLabel.Name" xml:space="preserve">
+    <value>ActuatorTestStatusLabel</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestStatusLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestStatusLabel.Parent" xml:space="preserve">
+    <value>ActuatorTestGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestStatusLabel.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="ActuatorTestComboBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 8.25pt</value>
+  </data>
+  <data name="ActuatorTestComboBox.IntegralHeight" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items" xml:space="preserve">
+    <value>1300 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items1" xml:space="preserve">
+    <value>1301 | Ignition coil bank #1</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items2" xml:space="preserve">
+    <value>1302 | Ignition coil bank #2</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items3" xml:space="preserve">
+    <value>1303 | Ignition coil bank #3</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items4" xml:space="preserve">
+    <value>1304 | Fuel injector bank #1</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items5" xml:space="preserve">
+    <value>1305 | Fuel injector bank #2</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items6" xml:space="preserve">
+    <value>1306 | Fuel injector bank #3</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items7" xml:space="preserve">
+    <value>1307 | Idle air control motor</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items8" xml:space="preserve">
+    <value>1308 | Radiator fan relay</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items9" xml:space="preserve">
+    <value>1309 | A/C clutch relay</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items10" xml:space="preserve">
+    <value>130A | Automatic shutdown relay</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items11" xml:space="preserve">
+    <value>130B | Evap purge solenoid</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items12" xml:space="preserve">
+    <value>130C | Cruise control solenoids</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items13" xml:space="preserve">
+    <value>130D | Alternator field</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items14" xml:space="preserve">
+    <value>130E | Tachometer output</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items15" xml:space="preserve">
+    <value>130F | Torque converter clutch relay</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items16" xml:space="preserve">
+    <value>1310 | EGR solenoid</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items17" xml:space="preserve">
+    <value>1311 | Wastegate solenoid</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items18" xml:space="preserve">
+    <value>1312 | Barometer solenoid</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items19" xml:space="preserve">
+    <value>1313 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items20" xml:space="preserve">
+    <value>1314 | All solenoids / relays</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items21" xml:space="preserve">
+    <value>1315 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items22" xml:space="preserve">
+    <value>1316 | Transmission O/D solenoid</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items23" xml:space="preserve">
+    <value>1317 | Shift indicator lamp</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items24" xml:space="preserve">
+    <value>1318 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items25" xml:space="preserve">
+    <value>1319 | Surge valve solenoid</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items26" xml:space="preserve">
+    <value>131A | Cruise control vent solenoid</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items27" xml:space="preserve">
+    <value>131B | Cruise control vac solenoid</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items28" xml:space="preserve">
+    <value>131C | ASD fuel system</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items29" xml:space="preserve">
+    <value>131D | Fuel injector bank #4</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items30" xml:space="preserve">
+    <value>131E | Fuel injector bank #5</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items31" xml:space="preserve">
+    <value>131F | Fuel injector bank #6</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items32" xml:space="preserve">
+    <value>1320 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items33" xml:space="preserve">
+    <value>1321 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items34" xml:space="preserve">
+    <value>1322 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items35" xml:space="preserve">
+    <value>1323 | Ignition coil bank #4</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items36" xml:space="preserve">
+    <value>1324 | Ignition coil bank #5</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items37" xml:space="preserve">
+    <value>1325 | Fuel injector bank #7</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items38" xml:space="preserve">
+    <value>1326 | Fuel injector bank #8</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items39" xml:space="preserve">
+    <value>1327 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items40" xml:space="preserve">
+    <value>1328 | Intake heater bank #1</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items41" xml:space="preserve">
+    <value>1329 | Intake heater bank #2</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items42" xml:space="preserve">
+    <value>132A |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items43" xml:space="preserve">
+    <value>132B |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items44" xml:space="preserve">
+    <value>132C | Cruise control 12V feed</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items45" xml:space="preserve">
+    <value>132D | Intake manifold tune valve</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items46" xml:space="preserve">
+    <value>132E | Low speed radiator fan relay</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items47" xml:space="preserve">
+    <value>132F | High speed radiator fan relay</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items48" xml:space="preserve">
+    <value>1330 | Fuel injector bank #9</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items49" xml:space="preserve">
+    <value>1331 | Fuel injector bank #10</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items50" xml:space="preserve">
+    <value>1332 | 2-3 lockout solenoid</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items51" xml:space="preserve">
+    <value>1333 | Fuel pump relay</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items52" xml:space="preserve">
+    <value>1334 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items53" xml:space="preserve">
+    <value>1335 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items54" xml:space="preserve">
+    <value>1336 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items55" xml:space="preserve">
+    <value>1337 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items56" xml:space="preserve">
+    <value>1338 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items57" xml:space="preserve">
+    <value>1339 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items58" xml:space="preserve">
+    <value>133A |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items59" xml:space="preserve">
+    <value>133B | IAC motor step up</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items60" xml:space="preserve">
+    <value>133C | IAC motor step down</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items61" xml:space="preserve">
+    <value>133D | LD pump solenoid</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items62" xml:space="preserve">
+    <value>133E | All radiator fan relays</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items63" xml:space="preserve">
+    <value>133F |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items64" xml:space="preserve">
+    <value>1340 | O2 sensor heater relay</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items65" xml:space="preserve">
+    <value>1341 | Overdrive lamp</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items66" xml:space="preserve">
+    <value>1342 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items67" xml:space="preserve">
+    <value>1343 | Transmission 12V relay</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items68" xml:space="preserve">
+    <value>1344 | Reverse lockout solenoid</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items69" xml:space="preserve">
+    <value>1345 | COP ignition coil</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items70" xml:space="preserve">
+    <value>1346 | Short runner valve</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items71" xml:space="preserve">
+    <value>1347 | Air assist solenoid</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items72" xml:space="preserve">
+    <value>1348 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items73" xml:space="preserve">
+    <value>1349 | Wait to start lamp</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items74" xml:space="preserve">
+    <value>134A |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items75" xml:space="preserve">
+    <value>134B |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items76" xml:space="preserve">
+    <value>134C |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items77" xml:space="preserve">
+    <value>134D |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items78" xml:space="preserve">
+    <value>134E |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items79" xml:space="preserve">
+    <value>134F |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items80" xml:space="preserve">
+    <value>1350 | Transmission fan relay</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items81" xml:space="preserve">
+    <value>1351 | Transmission PTU solenoid</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items82" xml:space="preserve">
+    <value>1352 | O2 X/1 sensor heater relay</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items83" xml:space="preserve">
+    <value>1353 | O2 X/2 sensor heater relay</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items84" xml:space="preserve">
+    <value>1354 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items85" xml:space="preserve">
+    <value>1355 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items86" xml:space="preserve">
+    <value>1356 | 1/1 O2 sensor heater relay</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items87" xml:space="preserve">
+    <value>1357 | O2 sensor heater relay</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items88" xml:space="preserve">
+    <value>1358 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items89" xml:space="preserve">
+    <value>1359 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items90" xml:space="preserve">
+    <value>135A | Radiator fan solenoid</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items91" xml:space="preserve">
+    <value>135B | 1/2 O2 sensor heater relay</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items92" xml:space="preserve">
+    <value>135C |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items93" xml:space="preserve">
+    <value>135D | Exhaust brake</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items94" xml:space="preserve">
+    <value>135E | Fuel control</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items95" xml:space="preserve">
+    <value>135F | PWM radiator fan</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items96" xml:space="preserve">
+    <value>1360 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items97" xml:space="preserve">
+    <value>1361 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items98" xml:space="preserve">
+    <value>1362 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items99" xml:space="preserve">
+    <value>1363 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items100" xml:space="preserve">
+    <value>1364 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items101" xml:space="preserve">
+    <value>1365 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items102" xml:space="preserve">
+    <value>1366 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items103" xml:space="preserve">
+    <value>1367 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items104" xml:space="preserve">
+    <value>1368 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items105" xml:space="preserve">
+    <value>1369 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items106" xml:space="preserve">
+    <value>136A |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items107" xml:space="preserve">
+    <value>136B |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items108" xml:space="preserve">
+    <value>136C |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items109" xml:space="preserve">
+    <value>136D |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items110" xml:space="preserve">
+    <value>136E |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items111" xml:space="preserve">
+    <value>136F |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items112" xml:space="preserve">
+    <value>1370 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items113" xml:space="preserve">
+    <value>1371 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items114" xml:space="preserve">
+    <value>1372 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items115" xml:space="preserve">
+    <value>1373 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items116" xml:space="preserve">
+    <value>1374 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items117" xml:space="preserve">
+    <value>1375 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items118" xml:space="preserve">
+    <value>1376 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items119" xml:space="preserve">
+    <value>1377 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items120" xml:space="preserve">
+    <value>1378 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items121" xml:space="preserve">
+    <value>1379 |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items122" xml:space="preserve">
+    <value>137A |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items123" xml:space="preserve">
+    <value>137B |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items124" xml:space="preserve">
+    <value>137C |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items125" xml:space="preserve">
+    <value>137D |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items126" xml:space="preserve">
+    <value>137E |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Items127" xml:space="preserve">
+    <value>137F |</value>
+  </data>
+  <data name="ActuatorTestComboBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>7, 16</value>
+  </data>
+  <data name="ActuatorTestComboBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>281, 22</value>
+  </data>
+  <data name="ActuatorTestComboBox.TabIndex" type="System.Int32, mscorlib">
+    <value>29</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestComboBox.Name" xml:space="preserve">
+    <value>ActuatorTestComboBox</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestComboBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestComboBox.Parent" xml:space="preserve">
+    <value>ActuatorTestGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestComboBox.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="ActuatorTestStopButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>65, 43</value>
+  </data>
+  <data name="ActuatorTestStopButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="ActuatorTestStopButton.TabIndex" type="System.Int32, mscorlib">
+    <value>20</value>
+  </data>
+  <data name="ActuatorTestStopButton.Text" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestStopButton.Name" xml:space="preserve">
+    <value>ActuatorTestStopButton</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestStopButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestStopButton.Parent" xml:space="preserve">
+    <value>ActuatorTestGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestStopButton.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="ActuatorTestStartButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 43</value>
+  </data>
+  <data name="ActuatorTestStartButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="ActuatorTestStartButton.TabIndex" type="System.Int32, mscorlib">
+    <value>19</value>
+  </data>
+  <data name="ActuatorTestStartButton.Text" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestStartButton.Name" xml:space="preserve">
+    <value>ActuatorTestStartButton</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestStartButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestStartButton.Parent" xml:space="preserve">
+    <value>ActuatorTestGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestStartButton.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="ActuatorTestGroupBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>9, 83</value>
+  </data>
+  <data name="ActuatorTestGroupBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>295, 73</value>
+  </data>
+  <data name="ActuatorTestGroupBox.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="ActuatorTestGroupBox.Text" xml:space="preserve">
+    <value>Actuator test</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestGroupBox.Name" xml:space="preserve">
+    <value>ActuatorTestGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestGroupBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestGroupBox.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;ActuatorTestGroupBox.ZOrder" xml:space="preserve">
+    <value>8</value>
+  </data>
+  <data name="DiagnosticDataCSVCheckBox.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="DiagnosticDataCSVCheckBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>325, 142</value>
+  </data>
+  <data name="DiagnosticDataCSVCheckBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>47, 17</value>
+  </data>
+  <data name="DiagnosticDataCSVCheckBox.TabIndex" type="System.Int32, mscorlib">
+    <value>27</value>
+  </data>
+  <data name="DiagnosticDataCSVCheckBox.Text" xml:space="preserve">
+    <value>CSV</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataCSVCheckBox.Name" xml:space="preserve">
+    <value>DiagnosticDataCSVCheckBox</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataCSVCheckBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataCSVCheckBox.Parent" xml:space="preserve">
+    <value>DiagnosticDataGroupBox</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataCSVCheckBox.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="MillisecondsLabel01.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="MillisecondsLabel01.Location" type="System.Drawing.Point, System.Drawing">
+    <value>281, 143</value>
+  </data>
+  <data name="MillisecondsLabel01.Size" type="System.Drawing.Size, System.Drawing">
+    <value>20, 13</value>
+  </data>
+  <data name="MillisecondsLabel01.TabIndex" type="System.Int32, mscorlib">
+    <value>24</value>
+  </data>
+  <data name="MillisecondsLabel01.Text" xml:space="preserve">
+    <value>ms</value>
+  </data>
+  <data name="&gt;&gt;MillisecondsLabel01.Name" xml:space="preserve">
+    <value>MillisecondsLabel01</value>
+  </data>
+  <data name="&gt;&gt;MillisecondsLabel01.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MillisecondsLabel01.Parent" xml:space="preserve">
+    <value>DiagnosticDataGroupBox</value>
+  </data>
+  <data name="&gt;&gt;MillisecondsLabel01.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="DiagnosticDataRepeatIntervalTextBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="DiagnosticDataRepeatIntervalTextBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>246, 139</value>
+  </data>
+  <data name="DiagnosticDataRepeatIntervalTextBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>34, 21</value>
+  </data>
+  <data name="DiagnosticDataRepeatIntervalTextBox.TabIndex" type="System.Int32, mscorlib">
+    <value>26</value>
+  </data>
+  <data name="DiagnosticDataRepeatIntervalTextBox.Text" xml:space="preserve">
+    <value>50</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataRepeatIntervalTextBox.Name" xml:space="preserve">
+    <value>DiagnosticDataRepeatIntervalTextBox</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataRepeatIntervalTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataRepeatIntervalTextBox.Parent" xml:space="preserve">
+    <value>DiagnosticDataGroupBox</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataRepeatIntervalTextBox.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="DiagnosticDataRepeatIntervalCheckBox.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="DiagnosticDataRepeatIntervalCheckBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>184, 142</value>
+  </data>
+  <data name="DiagnosticDataRepeatIntervalCheckBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>64, 17</value>
+  </data>
+  <data name="DiagnosticDataRepeatIntervalCheckBox.TabIndex" type="System.Int32, mscorlib">
+    <value>25</value>
+  </data>
+  <data name="DiagnosticDataRepeatIntervalCheckBox.Text" xml:space="preserve">
+    <value>Repeat:</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataRepeatIntervalCheckBox.Name" xml:space="preserve">
+    <value>DiagnosticDataRepeatIntervalCheckBox</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataRepeatIntervalCheckBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataRepeatIntervalCheckBox.Parent" xml:space="preserve">
+    <value>DiagnosticDataGroupBox</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataRepeatIntervalCheckBox.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="DiagnosticDataClearButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>124, 138</value>
+  </data>
+  <data name="DiagnosticDataClearButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="DiagnosticDataClearButton.TabIndex" type="System.Int32, mscorlib">
+    <value>23</value>
+  </data>
+  <data name="DiagnosticDataClearButton.Text" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataClearButton.Name" xml:space="preserve">
+    <value>DiagnosticDataClearButton</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataClearButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataClearButton.Parent" xml:space="preserve">
+    <value>DiagnosticDataGroupBox</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataClearButton.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="DiagnosticDataStopButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>65, 138</value>
+  </data>
+  <data name="DiagnosticDataStopButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="DiagnosticDataStopButton.TabIndex" type="System.Int32, mscorlib">
+    <value>22</value>
+  </data>
+  <data name="DiagnosticDataStopButton.Text" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataStopButton.Name" xml:space="preserve">
+    <value>DiagnosticDataStopButton</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataStopButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataStopButton.Parent" xml:space="preserve">
+    <value>DiagnosticDataGroupBox</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataStopButton.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="DiagnosticDataListBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 8.25pt</value>
+  </data>
+  <data name="DiagnosticDataListBox.ItemHeight" type="System.Int32, mscorlib">
+    <value>14</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items" xml:space="preserve">
+    <value>1400 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items1" xml:space="preserve">
+    <value>1401 | Battery temperature sensor voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items2" xml:space="preserve">
+    <value>1402 | Upstream O2 1/1 sensor voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items3" xml:space="preserve">
+    <value>1403 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items4" xml:space="preserve">
+    <value>1404 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items5" xml:space="preserve">
+    <value>1405 | Engine coolant temperature</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items6" xml:space="preserve">
+    <value>1406 | Engine coolant temperature sensor voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items7" xml:space="preserve">
+    <value>1407 | Throttle position sensor voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items8" xml:space="preserve">
+    <value>1408 | Minimum throttle position sensor voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items9" xml:space="preserve">
+    <value>1409 | Knock sensor 1 voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items10" xml:space="preserve">
+    <value>140A | Battery voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items11" xml:space="preserve">
+    <value>140B | Intake manifold absolute pressure (MAP)</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items12" xml:space="preserve">
+    <value>140C | Target IAC stepper motor position</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items13" xml:space="preserve">
+    <value>140D |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items14" xml:space="preserve">
+    <value>140E | Long term fuel trim 1</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items15" xml:space="preserve">
+    <value>140F | Barometric pressure</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items16" xml:space="preserve">
+    <value>1410 | Minimum air flow test</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items17" xml:space="preserve">
+    <value>1411 | Engine speed</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items18" xml:space="preserve">
+    <value>1412 | Cam/Crank sync sense</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items19" xml:space="preserve">
+    <value>1413 | Key-on cycles error 1</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items20" xml:space="preserve">
+    <value>1414 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items21" xml:space="preserve">
+    <value>1415 | Spark advance</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items22" xml:space="preserve">
+    <value>1416 | Cylinder 1 retard</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items23" xml:space="preserve">
+    <value>1417 | Cylinder 2 retard</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items24" xml:space="preserve">
+    <value>1418 | Cylinder 3 retard</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items25" xml:space="preserve">
+    <value>1419 | Cylinder 4 retard</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items26" xml:space="preserve">
+    <value>141A | Target boost</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items27" xml:space="preserve">
+    <value>141B | Intake air temperature</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items28" xml:space="preserve">
+    <value>141C | Intake air temperature sensor voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items29" xml:space="preserve">
+    <value>141D | Cruise set speed</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items30" xml:space="preserve">
+    <value>141E | Key-on cycles error 2</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items31" xml:space="preserve">
+    <value>141F | Key-on cycles error 3</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items32" xml:space="preserve">
+    <value>1420 | Cruise control status 1</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items33" xml:space="preserve">
+    <value>1421 | Cylinder 1 retard</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items34" xml:space="preserve">
+    <value>1422 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items35" xml:space="preserve">
+    <value>1423 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items36" xml:space="preserve">
+    <value>1424 | Battery charging voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items37" xml:space="preserve">
+    <value>1425 | Over 5 psi boost timer</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items38" xml:space="preserve">
+    <value>1426 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items39" xml:space="preserve">
+    <value>1427 | Vehicle theft alarm status</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items40" xml:space="preserve">
+    <value>1428 | Wastegate duty cycle</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items41" xml:space="preserve">
+    <value>1429 | Read fuel setting</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items42" xml:space="preserve">
+    <value>142A | Read set sync</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items43" xml:space="preserve">
+    <value>142B |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items44" xml:space="preserve">
+    <value>142C | Cruise switch voltage sense</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items45" xml:space="preserve">
+    <value>142D | Ambient/Battery temperature</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items46" xml:space="preserve">
+    <value>142E | Fuel factor (not LH)</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items47" xml:space="preserve">
+    <value>142F | Upstream O2 2/1 sensor voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items48" xml:space="preserve">
+    <value>1430 | Knock sensor 2 voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items49" xml:space="preserve">
+    <value>1431 | Long term fuel trim 2</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items50" xml:space="preserve">
+    <value>1432 | A/C high side pressure sensor voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items51" xml:space="preserve">
+    <value>1433 | A/C high side pressure</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items52" xml:space="preserve">
+    <value>1434 | Flex fuel sensor voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items53" xml:space="preserve">
+    <value>1435 | Flex fuel info 1</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items54" xml:space="preserve">
+    <value>1436 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items55" xml:space="preserve">
+    <value>1437 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items56" xml:space="preserve">
+    <value>1438 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items57" xml:space="preserve">
+    <value>1439 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items58" xml:space="preserve">
+    <value>143A |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items59" xml:space="preserve">
+    <value>143B | Fuel system status 1</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items60" xml:space="preserve">
+    <value>143C |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items61" xml:space="preserve">
+    <value>143D |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items62" xml:space="preserve">
+    <value>143E | Calpot voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items63" xml:space="preserve">
+    <value>143F | Downstream O2 1/2 sensor voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items64" xml:space="preserve">
+    <value>1440 | MAP sensor voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items65" xml:space="preserve">
+    <value>1441 | Vehicle speed</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items66" xml:space="preserve">
+    <value>1442 | Upstream O2 1/1 sensor level</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items67" xml:space="preserve">
+    <value>1443 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items68" xml:space="preserve">
+    <value>1444 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items69" xml:space="preserve">
+    <value>1445 | MAP vacuum</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items70" xml:space="preserve">
+    <value>1446 | Throttle position relative</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items71" xml:space="preserve">
+    <value>1447 | Spark advance</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items72" xml:space="preserve">
+    <value>1448 | Upstream O2 2/1 sensor level</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items73" xml:space="preserve">
+    <value>1449 | Downstream O2 2/2 sensor voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items74" xml:space="preserve">
+    <value>144A | Downstream O2 1/2 sensor level</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items75" xml:space="preserve">
+    <value>144B | Downstream O2 2/2 sensor level</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items76" xml:space="preserve">
+    <value>144C |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items77" xml:space="preserve">
+    <value>144D |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items78" xml:space="preserve">
+    <value>144E | Fuel level sensor voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items79" xml:space="preserve">
+    <value>144F | Fuel level</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items80" xml:space="preserve">
+    <value>1450 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items81" xml:space="preserve">
+    <value>1451 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items82" xml:space="preserve">
+    <value>1452 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items83" xml:space="preserve">
+    <value>1453 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items84" xml:space="preserve">
+    <value>1454 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items85" xml:space="preserve">
+    <value>1455 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items86" xml:space="preserve">
+    <value>1456 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items87" xml:space="preserve">
+    <value>1457 | Fuel system status 2</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items88" xml:space="preserve">
+    <value>1458 | Cruise control status 1</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items89" xml:space="preserve">
+    <value>1459 | Cruise control status 2</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items90" xml:space="preserve">
+    <value>145A | Output shaft speed</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items91" xml:space="preserve">
+    <value>145B | Governor pressure duty cycle</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items92" xml:space="preserve">
+    <value>145C | Engine load</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items93" xml:space="preserve">
+    <value>145D |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items94" xml:space="preserve">
+    <value>145E |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items95" xml:space="preserve">
+    <value>145F | EGR position sensor voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items96" xml:space="preserve">
+    <value>1460 | EGR Zref update D.C.</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items97" xml:space="preserve">
+    <value>1461 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items98" xml:space="preserve">
+    <value>1462 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items99" xml:space="preserve">
+    <value>1463 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items100" xml:space="preserve">
+    <value>1464 | Actual purge current</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items101" xml:space="preserve">
+    <value>1465 | Catalyst temperature sensor voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items102" xml:space="preserve">
+    <value>1466 | Catalyst temperature</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items103" xml:space="preserve">
+    <value>1467 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items104" xml:space="preserve">
+    <value>1468 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items105" xml:space="preserve">
+    <value>1469 | Ambient temperature sensor voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items106" xml:space="preserve">
+    <value>146A |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items107" xml:space="preserve">
+    <value>146B |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items108" xml:space="preserve">
+    <value>146C |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items109" xml:space="preserve">
+    <value>146D | T-case switch voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items110" xml:space="preserve">
+    <value>146E |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items111" xml:space="preserve">
+    <value>146F |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items112" xml:space="preserve">
+    <value>1470 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items113" xml:space="preserve">
+    <value>1471 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items114" xml:space="preserve">
+    <value>1472 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items115" xml:space="preserve">
+    <value>1473 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items116" xml:space="preserve">
+    <value>1474 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items117" xml:space="preserve">
+    <value>1475 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items118" xml:space="preserve">
+    <value>1476 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items119" xml:space="preserve">
+    <value>1477 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items120" xml:space="preserve">
+    <value>1478 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items121" xml:space="preserve">
+    <value>1479 |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items122" xml:space="preserve">
+    <value>147A | FCA current</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items123" xml:space="preserve">
+    <value>147B |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items124" xml:space="preserve">
+    <value>147C | Oil temperature sensor voltage</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items125" xml:space="preserve">
+    <value>147D | Oil temperature</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items126" xml:space="preserve">
+    <value>147E |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Items127" xml:space="preserve">
+    <value>147F |</value>
+  </data>
+  <data name="DiagnosticDataListBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>7, 17</value>
+  </data>
+  <data name="DiagnosticDataListBox.ScrollAlwaysVisible" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="DiagnosticDataListBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>365, 116</value>
+  </data>
+  <data name="DiagnosticDataListBox.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataListBox.Name" xml:space="preserve">
+    <value>DiagnosticDataListBox</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataListBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ListBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataListBox.Parent" xml:space="preserve">
+    <value>DiagnosticDataGroupBox</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataListBox.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="DiagnosticDataReadButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 138</value>
+  </data>
+  <data name="DiagnosticDataReadButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="DiagnosticDataReadButton.TabIndex" type="System.Int32, mscorlib">
+    <value>21</value>
+  </data>
+  <data name="DiagnosticDataReadButton.Text" xml:space="preserve">
+    <value>Read</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataReadButton.Name" xml:space="preserve">
+    <value>DiagnosticDataReadButton</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataReadButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataReadButton.Parent" xml:space="preserve">
+    <value>DiagnosticDataGroupBox</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataReadButton.ZOrder" xml:space="preserve">
+    <value>7</value>
+  </data>
+  <data name="DiagnosticDataGroupBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>9, 158</value>
+  </data>
+  <data name="DiagnosticDataGroupBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>379, 168</value>
+  </data>
+  <data name="DiagnosticDataGroupBox.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="DiagnosticDataGroupBox.Text" xml:space="preserve">
+    <value>Diagnostic data</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataGroupBox.Name" xml:space="preserve">
+    <value>DiagnosticDataGroupBox</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataGroupBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataGroupBox.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;DiagnosticDataGroupBox.ZOrder" xml:space="preserve">
+    <value>7</value>
+  </data>
+  <data name="IdleSpeedNoteLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="IdleSpeedNoteLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>121, 70</value>
+  </data>
+  <data name="IdleSpeedNoteLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>193, 13</value>
+  </data>
+  <data name="IdleSpeedNoteLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>27</value>
+  </data>
+  <data name="IdleSpeedNoteLabel.Text" xml:space="preserve">
+    <value>Default idle speed is restored after stop.</value>
+  </data>
+  <data name="&gt;&gt;IdleSpeedNoteLabel.Name" xml:space="preserve">
+    <value>IdleSpeedNoteLabel</value>
+  </data>
+  <data name="&gt;&gt;IdleSpeedNoteLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;IdleSpeedNoteLabel.Parent" xml:space="preserve">
+    <value>SetIdleSpeedGroupBox</value>
+  </data>
+  <data name="&gt;&gt;IdleSpeedNoteLabel.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="RPMLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="RPMLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>9, 49</value>
+  </data>
+  <data name="RPMLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>31, 13</value>
+  </data>
+  <data name="RPMLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>27</value>
+  </data>
+  <data name="RPMLabel.Text" xml:space="preserve">
+    <value>RPM</value>
+  </data>
+  <data name="&gt;&gt;RPMLabel.Name" xml:space="preserve">
+    <value>RPMLabel</value>
+  </data>
+  <data name="&gt;&gt;RPMLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;RPMLabel.Parent" xml:space="preserve">
+    <value>SetIdleSpeedGroupBox</value>
+  </data>
+  <data name="&gt;&gt;RPMLabel.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="SetIdleSpeedTextBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="SetIdleSpeedTextBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>7, 24</value>
+  </data>
+  <data name="SetIdleSpeedTextBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>34, 21</value>
+  </data>
+  <data name="SetIdleSpeedTextBox.TabIndex" type="System.Int32, mscorlib">
+    <value>27</value>
+  </data>
+  <data name="SetIdleSpeedTextBox.Text" xml:space="preserve">
+    <value>1500</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedTextBox.Name" xml:space="preserve">
+    <value>SetIdleSpeedTextBox</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedTextBox.Parent" xml:space="preserve">
+    <value>SetIdleSpeedGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedTextBox.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="SetIdleSpeedTrackBar.Location" type="System.Drawing.Point, System.Drawing">
+    <value>39, 14</value>
+  </data>
+  <data name="SetIdleSpeedTrackBar.Size" type="System.Drawing.Size, System.Drawing">
+    <value>337, 45</value>
+  </data>
+  <data name="SetIdleSpeedTrackBar.TabIndex" type="System.Int32, mscorlib">
+    <value>21</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedTrackBar.Name" xml:space="preserve">
+    <value>SetIdleSpeedTrackBar</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedTrackBar.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TrackBar, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedTrackBar.Parent" xml:space="preserve">
+    <value>SetIdleSpeedGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedTrackBar.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="SetIdleSpeedStopButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>65, 65</value>
+  </data>
+  <data name="SetIdleSpeedStopButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="SetIdleSpeedStopButton.TabIndex" type="System.Int32, mscorlib">
+    <value>20</value>
+  </data>
+  <data name="SetIdleSpeedStopButton.Text" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedStopButton.Name" xml:space="preserve">
+    <value>SetIdleSpeedStopButton</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedStopButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedStopButton.Parent" xml:space="preserve">
+    <value>SetIdleSpeedGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedStopButton.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="SetIdleSpeedSetButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 65</value>
+  </data>
+  <data name="SetIdleSpeedSetButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="SetIdleSpeedSetButton.TabIndex" type="System.Int32, mscorlib">
+    <value>19</value>
+  </data>
+  <data name="SetIdleSpeedSetButton.Text" xml:space="preserve">
+    <value>Set</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedSetButton.Name" xml:space="preserve">
+    <value>SetIdleSpeedSetButton</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedSetButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedSetButton.Parent" xml:space="preserve">
+    <value>SetIdleSpeedGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedSetButton.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="SetIdleSpeedGroupBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>9, 328</value>
+  </data>
+  <data name="SetIdleSpeedGroupBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>379, 95</value>
+  </data>
+  <data name="SetIdleSpeedGroupBox.TabIndex" type="System.Int32, mscorlib">
+    <value>28</value>
+  </data>
+  <data name="SetIdleSpeedGroupBox.Text" xml:space="preserve">
+    <value>Set idle speed</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedGroupBox.Name" xml:space="preserve">
+    <value>SetIdleSpeedGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedGroupBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedGroupBox.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;SetIdleSpeedGroupBox.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="ResetMemoryStatusLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="ResetMemoryStatusLabel.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="ResetMemoryStatusLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>63, 48</value>
+  </data>
+  <data name="ResetMemoryStatusLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>67, 13</value>
+  </data>
+  <data name="ResetMemoryStatusLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>31</value>
+  </data>
+  <data name="ResetMemoryStatusLabel.Text" xml:space="preserve">
+    <value>Status: none</value>
+  </data>
+  <data name="&gt;&gt;ResetMemoryStatusLabel.Name" xml:space="preserve">
+    <value>ResetMemoryStatusLabel</value>
+  </data>
+  <data name="&gt;&gt;ResetMemoryStatusLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ResetMemoryStatusLabel.Parent" xml:space="preserve">
+    <value>ResetMemoryGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ResetMemoryStatusLabel.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="ResetMemoryComboBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 8.25pt</value>
+  </data>
+  <data name="ResetMemoryComboBox.IntegralHeight" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items" xml:space="preserve">
+    <value>2300 |</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items1" xml:space="preserve">
+    <value>2301 | All fault data</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items2" xml:space="preserve">
+    <value>2302 | Long term fuel trim</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items3" xml:space="preserve">
+    <value>2303 | IAC counter</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items4" xml:space="preserve">
+    <value>2304 | Minimum TPS volts</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items5" xml:space="preserve">
+    <value>2305 | Flex fuel percent</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items6" xml:space="preserve">
+    <value>2306 | Cam/Crank sync</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items7" xml:space="preserve">
+    <value>2307 | Fuel shutoff</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items8" xml:space="preserve">
+    <value>2308 | Runtime at stall</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items9" xml:space="preserve">
+    <value>2309 | Door lock enable</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items10" xml:space="preserve">
+    <value>230A | Door lock disable</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items11" xml:space="preserve">
+    <value>230B | CMP/CKP timing ref.</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items12" xml:space="preserve">
+    <value>230C | A/C fault enable</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items13" xml:space="preserve">
+    <value>230D | A/C fault disable</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items14" xml:space="preserve">
+    <value>230E | Cruise fault enable</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items15" xml:space="preserve">
+    <value>230F | Cruise fault disable</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items16" xml:space="preserve">
+    <value>2310 | PS fault enable</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items17" xml:space="preserve">
+    <value>2311 | PS fault disable</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items18" xml:space="preserve">
+    <value>2312 | EEPROM / Adaptive num.</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items19" xml:space="preserve">
+    <value>2313 | SKIM (w/Lvl 2 access!)</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items20" xml:space="preserve">
+    <value>2314 | Duty cycle monitor</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items21" xml:space="preserve">
+    <value>2315 |</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items22" xml:space="preserve">
+    <value>2316 |</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items23" xml:space="preserve">
+    <value>2317 |</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items24" xml:space="preserve">
+    <value>2318 |</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items25" xml:space="preserve">
+    <value>2319 |</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items26" xml:space="preserve">
+    <value>231A |</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items27" xml:space="preserve">
+    <value>231B |</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items28" xml:space="preserve">
+    <value>231C |</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items29" xml:space="preserve">
+    <value>231D |</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items30" xml:space="preserve">
+    <value>231E |</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items31" xml:space="preserve">
+    <value>231F |</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items32" xml:space="preserve">
+    <value>2320 | TPS adaptive for ETC</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items33" xml:space="preserve">
+    <value>2321 | Minimum TPS</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items34" xml:space="preserve">
+    <value>2322 | Learned knock corr.</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items35" xml:space="preserve">
+    <value>2323 | Learned misfire corr.</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items36" xml:space="preserve">
+    <value>2324 | Idle adaptation</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items37" xml:space="preserve">
+    <value>2325 |</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items38" xml:space="preserve">
+    <value>2326 |</value>
+  </data>
+  <data name="ResetMemoryComboBox.Items39" xml:space="preserve">
+    <value>2327 |</value>
+  </data>
+  <data name="ResetMemoryComboBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>7, 16</value>
+  </data>
+  <data name="ResetMemoryComboBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>227, 22</value>
+  </data>
+  <data name="ResetMemoryComboBox.TabIndex" type="System.Int32, mscorlib">
+    <value>29</value>
+  </data>
+  <data name="&gt;&gt;ResetMemoryComboBox.Name" xml:space="preserve">
+    <value>ResetMemoryComboBox</value>
+  </data>
+  <data name="&gt;&gt;ResetMemoryComboBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ResetMemoryComboBox.Parent" xml:space="preserve">
+    <value>ResetMemoryGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ResetMemoryComboBox.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="ResetMemoryOKButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 43</value>
+  </data>
+  <data name="ResetMemoryOKButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="ResetMemoryOKButton.TabIndex" type="System.Int32, mscorlib">
+    <value>19</value>
+  </data>
+  <data name="ResetMemoryOKButton.Text" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="&gt;&gt;ResetMemoryOKButton.Name" xml:space="preserve">
+    <value>ResetMemoryOKButton</value>
+  </data>
+  <data name="&gt;&gt;ResetMemoryOKButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ResetMemoryOKButton.Parent" xml:space="preserve">
+    <value>ResetMemoryGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ResetMemoryOKButton.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="ResetMemoryGroupBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>9, 425</value>
+  </data>
+  <data name="ResetMemoryGroupBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>241, 73</value>
+  </data>
+  <data name="ResetMemoryGroupBox.TabIndex" type="System.Int32, mscorlib">
+    <value>30</value>
+  </data>
+  <data name="ResetMemoryGroupBox.Text" xml:space="preserve">
+    <value>Reset memory</value>
+  </data>
+  <data name="&gt;&gt;ResetMemoryGroupBox.Name" xml:space="preserve">
+    <value>ResetMemoryGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ResetMemoryGroupBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ResetMemoryGroupBox.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;ResetMemoryGroupBox.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="LegacySecurityCheckBox.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="LegacySecurityCheckBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>66, 47</value>
+  </data>
+  <data name="LegacySecurityCheckBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>61, 17</value>
+  </data>
+  <data name="LegacySecurityCheckBox.TabIndex" type="System.Int32, mscorlib">
+    <value>27</value>
+  </data>
+  <data name="LegacySecurityCheckBox.Text" xml:space="preserve">
+    <value>Legacy</value>
+  </data>
+  <data name="&gt;&gt;LegacySecurityCheckBox.Name" xml:space="preserve">
+    <value>LegacySecurityCheckBox</value>
+  </data>
+  <data name="&gt;&gt;LegacySecurityCheckBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;LegacySecurityCheckBox.Parent" xml:space="preserve">
+    <value>SecurityGroupBox</value>
+  </data>
+  <data name="&gt;&gt;LegacySecurityCheckBox.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="SecurityLevelComboBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 8.25pt</value>
+  </data>
+  <data name="SecurityLevelComboBox.IntegralHeight" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="SecurityLevelComboBox.Items" xml:space="preserve">
+    <value>2B | Lvl 1</value>
+  </data>
+  <data name="SecurityLevelComboBox.Items1" xml:space="preserve">
+    <value>3502 | Lvl 2</value>
+  </data>
+  <data name="SecurityLevelComboBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>7, 16</value>
+  </data>
+  <data name="SecurityLevelComboBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>115, 22</value>
+  </data>
+  <data name="SecurityLevelComboBox.TabIndex" type="System.Int32, mscorlib">
+    <value>29</value>
+  </data>
+  <data name="&gt;&gt;SecurityLevelComboBox.Name" xml:space="preserve">
+    <value>SecurityLevelComboBox</value>
+  </data>
+  <data name="&gt;&gt;SecurityLevelComboBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SecurityLevelComboBox.Parent" xml:space="preserve">
+    <value>SecurityGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SecurityLevelComboBox.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="SecurityUnlockButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 43</value>
+  </data>
+  <data name="SecurityUnlockButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="SecurityUnlockButton.TabIndex" type="System.Int32, mscorlib">
+    <value>19</value>
+  </data>
+  <data name="SecurityUnlockButton.Text" xml:space="preserve">
+    <value>Unlock</value>
+  </data>
+  <data name="&gt;&gt;SecurityUnlockButton.Name" xml:space="preserve">
+    <value>SecurityUnlockButton</value>
+  </data>
+  <data name="&gt;&gt;SecurityUnlockButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SecurityUnlockButton.Parent" xml:space="preserve">
+    <value>SecurityGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SecurityUnlockButton.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="SecurityGroupBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>259, 425</value>
+  </data>
+  <data name="SecurityGroupBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>129, 73</value>
+  </data>
+  <data name="SecurityGroupBox.TabIndex" type="System.Int32, mscorlib">
+    <value>31</value>
+  </data>
+  <data name="SecurityGroupBox.Text" xml:space="preserve">
+    <value>Security</value>
+  </data>
+  <data name="&gt;&gt;SecurityGroupBox.Name" xml:space="preserve">
+    <value>SecurityGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SecurityGroupBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SecurityGroupBox.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;SecurityGroupBox.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="ConfigurationGetPartNumberButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>65, 43</value>
+  </data>
+  <data name="ConfigurationGetPartNumberButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>111, 23</value>
+  </data>
+  <data name="ConfigurationGetPartNumberButton.TabIndex" type="System.Int32, mscorlib">
+    <value>31</value>
+  </data>
+  <data name="ConfigurationGetPartNumberButton.Text" xml:space="preserve">
+    <value>Get part number</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationGetPartNumberButton.Name" xml:space="preserve">
+    <value>ConfigurationGetPartNumberButton</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationGetPartNumberButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationGetPartNumberButton.Parent" xml:space="preserve">
+    <value>ConfigurationGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationGetPartNumberButton.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="ConfigurationGetAllButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>180, 43</value>
+  </data>
+  <data name="ConfigurationGetAllButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="ConfigurationGetAllButton.TabIndex" type="System.Int32, mscorlib">
+    <value>30</value>
+  </data>
+  <data name="ConfigurationGetAllButton.Text" xml:space="preserve">
+    <value>Get all</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationGetAllButton.Name" xml:space="preserve">
+    <value>ConfigurationGetAllButton</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationGetAllButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationGetAllButton.Parent" xml:space="preserve">
+    <value>ConfigurationGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationGetAllButton.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="ConfigurationComboBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 8.25pt</value>
+  </data>
+  <data name="ConfigurationComboBox.IntegralHeight" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="ConfigurationComboBox.Items" xml:space="preserve">
+    <value>2A00 |</value>
+  </data>
+  <data name="ConfigurationComboBox.Items1" xml:space="preserve">
+    <value>2A01 | Part number 1-2</value>
+  </data>
+  <data name="ConfigurationComboBox.Items2" xml:space="preserve">
+    <value>2A02 | Part number 3-4</value>
+  </data>
+  <data name="ConfigurationComboBox.Items3" xml:space="preserve">
+    <value>2A03 | Part number 5-6</value>
+  </data>
+  <data name="ConfigurationComboBox.Items4" xml:space="preserve">
+    <value>2A04 | Part number 7-8</value>
+  </data>
+  <data name="ConfigurationComboBox.Items5" xml:space="preserve">
+    <value>2A05 | N/A</value>
+  </data>
+  <data name="ConfigurationComboBox.Items6" xml:space="preserve">
+    <value>2A06 | Emission type info</value>
+  </data>
+  <data name="ConfigurationComboBox.Items7" xml:space="preserve">
+    <value>2A07 | Chassis type info</value>
+  </data>
+  <data name="ConfigurationComboBox.Items8" xml:space="preserve">
+    <value>2A08 | Aspiration type info</value>
+  </data>
+  <data name="ConfigurationComboBox.Items9" xml:space="preserve">
+    <value>2A09 | Injection type info</value>
+  </data>
+  <data name="ConfigurationComboBox.Items10" xml:space="preserve">
+    <value>2A0A | Fuel type info</value>
+  </data>
+  <data name="ConfigurationComboBox.Items11" xml:space="preserve">
+    <value>2A0B | Model year info</value>
+  </data>
+  <data name="ConfigurationComboBox.Items12" xml:space="preserve">
+    <value>2A0C | Engine displacement</value>
+  </data>
+  <data name="ConfigurationComboBox.Items13" xml:space="preserve">
+    <value>2A0D | A/C system type info</value>
+  </data>
+  <data name="ConfigurationComboBox.Items14" xml:space="preserve">
+    <value>2A0E | Engine mfg info</value>
+  </data>
+  <data name="ConfigurationComboBox.Items15" xml:space="preserve">
+    <value>2A0F | Controller hw info</value>
+  </data>
+  <data name="ConfigurationComboBox.Items16" xml:space="preserve">
+    <value>2A10 | Body style info</value>
+  </data>
+  <data name="ConfigurationComboBox.Items17" xml:space="preserve">
+    <value>2A11 | Module software phase</value>
+  </data>
+  <data name="ConfigurationComboBox.Items18" xml:space="preserve">
+    <value>2A12 | Module software ver.</value>
+  </data>
+  <data name="ConfigurationComboBox.Items19" xml:space="preserve">
+    <value>2A13 | Module software family</value>
+  </data>
+  <data name="ConfigurationComboBox.Items20" xml:space="preserve">
+    <value>2A14 | Module software month</value>
+  </data>
+  <data name="ConfigurationComboBox.Items21" xml:space="preserve">
+    <value>2A15 | Module software day</value>
+  </data>
+  <data name="ConfigurationComboBox.Items22" xml:space="preserve">
+    <value>2A16 | Transmission type info</value>
+  </data>
+  <data name="ConfigurationComboBox.Items23" xml:space="preserve">
+    <value>2A17 | Part number rev 1</value>
+  </data>
+  <data name="ConfigurationComboBox.Items24" xml:space="preserve">
+    <value>2A18 | Part number rev 2</value>
+  </data>
+  <data name="ConfigurationComboBox.Items25" xml:space="preserve">
+    <value>2A19 | Software rev level</value>
+  </data>
+  <data name="ConfigurationComboBox.Items26" xml:space="preserve">
+    <value>2A1A | Homologation ID 1</value>
+  </data>
+  <data name="ConfigurationComboBox.Items27" xml:space="preserve">
+    <value>2A1B | Homologation ID 2</value>
+  </data>
+  <data name="ConfigurationComboBox.Items28" xml:space="preserve">
+    <value>2A1C | Homologation ID 3</value>
+  </data>
+  <data name="ConfigurationComboBox.Items29" xml:space="preserve">
+    <value>2A1D | Homologation ID 4</value>
+  </data>
+  <data name="ConfigurationComboBox.Items30" xml:space="preserve">
+    <value>2A1E | Homologation ID 5</value>
+  </data>
+  <data name="ConfigurationComboBox.Items31" xml:space="preserve">
+    <value>2A1F | Homologation ID 6</value>
+  </data>
+  <data name="ConfigurationComboBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>7, 16</value>
+  </data>
+  <data name="ConfigurationComboBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>227, 22</value>
+  </data>
+  <data name="ConfigurationComboBox.TabIndex" type="System.Int32, mscorlib">
+    <value>29</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationComboBox.Name" xml:space="preserve">
+    <value>ConfigurationComboBox</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationComboBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationComboBox.Parent" xml:space="preserve">
+    <value>ConfigurationGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationComboBox.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="ConfigurationGetButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 43</value>
+  </data>
+  <data name="ConfigurationGetButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="ConfigurationGetButton.TabIndex" type="System.Int32, mscorlib">
+    <value>19</value>
+  </data>
+  <data name="ConfigurationGetButton.Text" xml:space="preserve">
+    <value>Get</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationGetButton.Name" xml:space="preserve">
+    <value>ConfigurationGetButton</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationGetButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationGetButton.Parent" xml:space="preserve">
+    <value>ConfigurationGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationGetButton.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="ConfigurationGroupBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>397, 7</value>
+  </data>
+  <data name="ConfigurationGroupBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>241, 73</value>
+  </data>
+  <data name="ConfigurationGroupBox.TabIndex" type="System.Int32, mscorlib">
+    <value>32</value>
+  </data>
+  <data name="ConfigurationGroupBox.Text" xml:space="preserve">
+    <value>Configuration</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationGroupBox.Name" xml:space="preserve">
+    <value>ConfigurationGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationGroupBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationGroupBox.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;ConfigurationGroupBox.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="RAMTableComboBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 8.25pt</value>
+  </data>
+  <data name="RAMTableComboBox.IntegralHeight" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="RAMTableComboBox.Items" xml:space="preserve">
+    <value>F0</value>
+  </data>
+  <data name="RAMTableComboBox.Items1" xml:space="preserve">
+    <value>F1</value>
+  </data>
+  <data name="RAMTableComboBox.Items2" xml:space="preserve">
+    <value>F2</value>
+  </data>
+  <data name="RAMTableComboBox.Items3" xml:space="preserve">
+    <value>F3</value>
+  </data>
+  <data name="RAMTableComboBox.Items4" xml:space="preserve">
+    <value>F4</value>
+  </data>
+  <data name="RAMTableComboBox.Items5" xml:space="preserve">
+    <value>F5</value>
+  </data>
+  <data name="RAMTableComboBox.Items6" xml:space="preserve">
+    <value>F6</value>
+  </data>
+  <data name="RAMTableComboBox.Items7" xml:space="preserve">
+    <value>F7</value>
+  </data>
+  <data name="RAMTableComboBox.Items8" xml:space="preserve">
+    <value>F8</value>
+  </data>
+  <data name="RAMTableComboBox.Items9" xml:space="preserve">
+    <value>F9</value>
+  </data>
+  <data name="RAMTableComboBox.Items10" xml:space="preserve">
+    <value>FA</value>
+  </data>
+  <data name="RAMTableComboBox.Items11" xml:space="preserve">
+    <value>FB</value>
+  </data>
+  <data name="RAMTableComboBox.Items12" xml:space="preserve">
+    <value>FC</value>
+  </data>
+  <data name="RAMTableComboBox.Items13" xml:space="preserve">
+    <value>FD</value>
+  </data>
+  <data name="RAMTableComboBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>7, 16</value>
+  </data>
+  <data name="RAMTableComboBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>53, 22</value>
+  </data>
+  <data name="RAMTableComboBox.TabIndex" type="System.Int32, mscorlib">
+    <value>30</value>
+  </data>
+  <data name="&gt;&gt;RAMTableComboBox.Name" xml:space="preserve">
+    <value>RAMTableComboBox</value>
+  </data>
+  <data name="&gt;&gt;RAMTableComboBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;RAMTableComboBox.Parent" xml:space="preserve">
+    <value>RAMTableGroupBox</value>
+  </data>
+  <data name="&gt;&gt;RAMTableComboBox.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="RAMTableSelectButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 43</value>
+  </data>
+  <data name="RAMTableSelectButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="RAMTableSelectButton.TabIndex" type="System.Int32, mscorlib">
+    <value>20</value>
+  </data>
+  <data name="RAMTableSelectButton.Text" xml:space="preserve">
+    <value>Select</value>
+  </data>
+  <data name="&gt;&gt;RAMTableSelectButton.Name" xml:space="preserve">
+    <value>RAMTableSelectButton</value>
+  </data>
+  <data name="&gt;&gt;RAMTableSelectButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;RAMTableSelectButton.Parent" xml:space="preserve">
+    <value>RAMTableGroupBox</value>
+  </data>
+  <data name="&gt;&gt;RAMTableSelectButton.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="RAMTableGroupBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>313, 83</value>
+  </data>
+  <data name="RAMTableGroupBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>75, 73</value>
+  </data>
+  <data name="RAMTableGroupBox.TabIndex" type="System.Int32, mscorlib">
+    <value>21</value>
+  </data>
+  <data name="RAMTableGroupBox.Text" xml:space="preserve">
+    <value>RAM table</value>
+  </data>
+  <data name="&gt;&gt;RAMTableGroupBox.Name" xml:space="preserve">
+    <value>RAMTableGroupBox</value>
+  </data>
+  <data name="&gt;&gt;RAMTableGroupBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;RAMTableGroupBox.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;RAMTableGroupBox.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="CHTDetectButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 43</value>
+  </data>
+  <data name="CHTDetectButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="CHTDetectButton.TabIndex" type="System.Int32, mscorlib">
+    <value>32</value>
+  </data>
+  <data name="CHTDetectButton.Text" xml:space="preserve">
+    <value>Detect</value>
+  </data>
+  <data name="&gt;&gt;CHTDetectButton.Name" xml:space="preserve">
+    <value>CHTDetectButton</value>
+  </data>
+  <data name="&gt;&gt;CHTDetectButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CHTDetectButton.Parent" xml:space="preserve">
+    <value>CHTGroupBox</value>
+  </data>
+  <data name="&gt;&gt;CHTDetectButton.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="CHTComboBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 8.25pt</value>
+  </data>
+  <data name="CHTComboBox.IntegralHeight" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="CHTComboBox.Items" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="CHTComboBox.Items1" xml:space="preserve">
+    <value>FCC</value>
+  </data>
+  <data name="CHTComboBox.Items2" xml:space="preserve">
+    <value>SBEC1</value>
+  </data>
+  <data name="CHTComboBox.Items3" xml:space="preserve">
+    <value>SBEC2</value>
+  </data>
+  <data name="CHTComboBox.Items4" xml:space="preserve">
+    <value>SBEC2A</value>
+  </data>
+  <data name="CHTComboBox.Items5" xml:space="preserve">
+    <value>SBEC3</value>
+  </data>
+  <data name="CHTComboBox.Items6" xml:space="preserve">
+    <value>JTEC</value>
+  </data>
+  <data name="CHTComboBox.Items7" xml:space="preserve">
+    <value>SBEC3A</value>
+  </data>
+  <data name="CHTComboBox.Items8" xml:space="preserve">
+    <value>SBEC3+</value>
+  </data>
+  <data name="CHTComboBox.Items9" xml:space="preserve">
+    <value>CUMMINS</value>
+  </data>
+  <data name="CHTComboBox.Items10" xml:space="preserve">
+    <value>BOSCH</value>
+  </data>
+  <data name="CHTComboBox.Items11" xml:space="preserve">
+    <value>NORTHROP EV SCU</value>
+  </data>
+  <data name="CHTComboBox.Items12" xml:space="preserve">
+    <value>JTEC+</value>
+  </data>
+  <data name="CHTComboBox.Items13" xml:space="preserve">
+    <value>JTEC (TCM ONLY)</value>
+  </data>
+  <data name="CHTComboBox.Items14" xml:space="preserve">
+    <value>JTEC+ (TCM ONLY)</value>
+  </data>
+  <data name="CHTComboBox.Items15" xml:space="preserve">
+    <value>BOSCH EDC15-V</value>
+  </data>
+  <data name="CHTComboBox.Items16" xml:space="preserve">
+    <value>BOSCH EDC15-C5</value>
+  </data>
+  <data name="CHTComboBox.Items17" xml:space="preserve">
+    <value>SIEMENS SIM-70</value>
+  </data>
+  <data name="CHTComboBox.Items18" xml:space="preserve">
+    <value>SBEC3A+</value>
+  </data>
+  <data name="CHTComboBox.Items19" xml:space="preserve">
+    <value>SBEC3B</value>
+  </data>
+  <data name="CHTComboBox.Items20" xml:space="preserve">
+    <value>GENERIC JTEC</value>
+  </data>
+  <data name="CHTComboBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>7, 17</value>
+  </data>
+  <data name="CHTComboBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>146, 22</value>
+  </data>
+  <data name="CHTComboBox.TabIndex" type="System.Int32, mscorlib">
+    <value>31</value>
+  </data>
+  <data name="&gt;&gt;CHTComboBox.Name" xml:space="preserve">
+    <value>CHTComboBox</value>
+  </data>
+  <data name="&gt;&gt;CHTComboBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CHTComboBox.Parent" xml:space="preserve">
+    <value>CHTGroupBox</value>
+  </data>
+  <data name="&gt;&gt;CHTComboBox.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="CHTGroupBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>9, 7</value>
+  </data>
+  <data name="CHTGroupBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>160, 74</value>
+  </data>
+  <data name="CHTGroupBox.TabIndex" type="System.Int32, mscorlib">
+    <value>33</value>
+  </data>
+  <data name="CHTGroupBox.Text" xml:space="preserve">
+    <value>Controller hardware type</value>
+  </data>
+  <data name="&gt;&gt;CHTGroupBox.Name" xml:space="preserve">
+    <value>CHTGroupBox</value>
+  </data>
+  <data name="&gt;&gt;CHTGroupBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CHTGroupBox.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;CHTGroupBox.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
   <metadata name="EngineToolsStatusStrip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <data name="EngineToolsStatusStrip.AutoSize" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="EngineToolsStatusStrip.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 8.25pt</value>
+  </data>
+  <data name="EnginePropertiesLabel.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 8.25pt</value>
+  </data>
+  <data name="EnginePropertiesLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>126, 14</value>
+  </data>
+  <data name="EnginePropertiesLabel.Text" xml:space="preserve">
+    <value>Engine properties</value>
+  </data>
+  <data name="EnginePropertiesLabel.TextAlign" type="System.Drawing.ContentAlignment, System.Drawing">
+    <value>TopLeft</value>
+  </data>
+  <data name="EngineToolsStatusStrip.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 506</value>
+  </data>
+  <data name="EngineToolsStatusStrip.Size" type="System.Drawing.Size, System.Drawing">
+    <value>647, 34</value>
+  </data>
+  <data name="EngineToolsStatusStrip.TabIndex" type="System.Int32, mscorlib">
+    <value>34</value>
+  </data>
+  <data name="&gt;&gt;EngineToolsStatusStrip.Name" xml:space="preserve">
+    <value>EngineToolsStatusStrip</value>
+  </data>
+  <data name="&gt;&gt;EngineToolsStatusStrip.Type" xml:space="preserve">
+    <value>System.Windows.Forms.StatusStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;EngineToolsStatusStrip.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;EngineToolsStatusStrip.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
+    <value>6, 13</value>
+  </data>
+  <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
+    <value>647, 540</value>
+  </data>
+  <data name="$this.Text" xml:space="preserve">
+    <value>Engine tools</value>
+  </data>
+  <data name="&gt;&gt;EnginePropertiesLabel.Name" xml:space="preserve">
+    <value>EnginePropertiesLabel</value>
+  </data>
+  <data name="&gt;&gt;EnginePropertiesLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripStatusLabel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;$this.Name" xml:space="preserve">
+    <value>EngineToolsForm</value>
+  </data>
+  <data name="&gt;&gt;$this.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Form, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
 </root>

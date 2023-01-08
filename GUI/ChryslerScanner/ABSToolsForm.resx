@@ -117,4 +117,202 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="EraseFaultCodesButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>65, 16</value>
+  </data>
+  <data name="EraseFaultCodesButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="EraseFaultCodesButton.TabIndex" type="System.Int32, mscorlib">
+    <value>16</value>
+  </data>
+  <data name="EraseFaultCodesButton.Text" xml:space="preserve">
+    <value>Erase</value>
+  </data>
+  <data name="&gt;&gt;EraseFaultCodesButton.Name" xml:space="preserve">
+    <value>EraseFaultCodesButton</value>
+  </data>
+  <data name="&gt;&gt;EraseFaultCodesButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;EraseFaultCodesButton.Parent" xml:space="preserve">
+    <value>FaultCodeGroupBox</value>
+  </data>
+  <data name="&gt;&gt;EraseFaultCodesButton.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="ReadFaultCodesButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 16</value>
+  </data>
+  <data name="ReadFaultCodesButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 23</value>
+  </data>
+  <data name="ReadFaultCodesButton.TabIndex" type="System.Int32, mscorlib">
+    <value>15</value>
+  </data>
+  <data name="ReadFaultCodesButton.Text" xml:space="preserve">
+    <value>Read</value>
+  </data>
+  <data name="&gt;&gt;ReadFaultCodesButton.Name" xml:space="preserve">
+    <value>ReadFaultCodesButton</value>
+  </data>
+  <data name="&gt;&gt;ReadFaultCodesButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ReadFaultCodesButton.Parent" xml:space="preserve">
+    <value>FaultCodeGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ReadFaultCodesButton.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="FaultCodeGroupBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>183, 7</value>
+  </data>
+  <data name="FaultCodeGroupBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>126, 46</value>
+  </data>
+  <data name="FaultCodeGroupBox.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="FaultCodeGroupBox.Text" xml:space="preserve">
+    <value>Fault code</value>
+  </data>
+  <data name="&gt;&gt;FaultCodeGroupBox.Name" xml:space="preserve">
+    <value>FaultCodeGroupBox</value>
+  </data>
+  <data name="&gt;&gt;FaultCodeGroupBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;FaultCodeGroupBox.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;FaultCodeGroupBox.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="ABSModuleIDReadButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 15</value>
+  </data>
+  <data name="ABSModuleIDReadButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>55, 24</value>
+  </data>
+  <data name="ABSModuleIDReadButton.TabIndex" type="System.Int32, mscorlib">
+    <value>19</value>
+  </data>
+  <data name="ABSModuleIDReadButton.Text" xml:space="preserve">
+    <value>Read</value>
+  </data>
+  <data name="&gt;&gt;ABSModuleIDReadButton.Name" xml:space="preserve">
+    <value>ABSModuleIDReadButton</value>
+  </data>
+  <data name="&gt;&gt;ABSModuleIDReadButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ABSModuleIDReadButton.Parent" xml:space="preserve">
+    <value>ABSModuleTypeGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ABSModuleIDReadButton.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="ABSModuleTypeGroupBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>9, 7</value>
+  </data>
+  <data name="ABSModuleTypeGroupBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>165, 46</value>
+  </data>
+  <data name="ABSModuleTypeGroupBox.TabIndex" type="System.Int32, mscorlib">
+    <value>6</value>
+  </data>
+  <data name="ABSModuleTypeGroupBox.Text" xml:space="preserve">
+    <value>Module type</value>
+  </data>
+  <data name="&gt;&gt;ABSModuleTypeGroupBox.Name" xml:space="preserve">
+    <value>ABSModuleTypeGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ABSModuleTypeGroupBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ABSModuleTypeGroupBox.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;ABSModuleTypeGroupBox.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="ABSToolsInfoTextBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="ABSToolsInfoTextBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>318, 13</value>
+  </data>
+  <data name="ABSToolsInfoTextBox.Multiline" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="ABSToolsInfoTextBox.ScrollBars" type="System.Windows.Forms.ScrollBars, System.Windows.Forms">
+    <value>Vertical</value>
+  </data>
+  <data name="ABSToolsInfoTextBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>400, 246</value>
+  </data>
+  <data name="ABSToolsInfoTextBox.TabIndex" type="System.Int32, mscorlib">
+    <value>28</value>
+  </data>
+  <data name="&gt;&gt;ABSToolsInfoTextBox.Name" xml:space="preserve">
+    <value>ABSToolsInfoTextBox</value>
+  </data>
+  <data name="&gt;&gt;ABSToolsInfoTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ABSToolsInfoTextBox.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;ABSToolsInfoTextBox.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="ABSToolsHelpButton.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="ABSToolsHelpButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>654, 275</value>
+  </data>
+  <data name="ABSToolsHelpButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>65, 23</value>
+  </data>
+  <data name="ABSToolsHelpButton.TabIndex" type="System.Int32, mscorlib">
+    <value>30</value>
+  </data>
+  <data name="ABSToolsHelpButton.Text" xml:space="preserve">
+    <value>Help</value>
+  </data>
+  <data name="&gt;&gt;ABSToolsHelpButton.Name" xml:space="preserve">
+    <value>ABSToolsHelpButton</value>
+  </data>
+  <data name="&gt;&gt;ABSToolsHelpButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ABSToolsHelpButton.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;ABSToolsHelpButton.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
+    <value>6, 13</value>
+  </data>
+  <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
+    <value>727, 313</value>
+  </data>
+  <data name="$this.Text" xml:space="preserve">
+    <value>ABS tools</value>
+  </data>
+  <data name="&gt;&gt;$this.Name" xml:space="preserve">
+    <value>ABSToolsForm</value>
+  </data>
+  <data name="&gt;&gt;$this.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Form, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
 </root>

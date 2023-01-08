@@ -87,8 +87,8 @@ namespace ChryslerScanner
             OriginalForm = IncomingForm;
             InitializeComponent();
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-
             MainForm.Packet.PacketReceived += PacketReceivedHandler; // subscribe to the OnPacketReceived event
+            OriginalForm.ChangeLanguage();
 
             CCDBusAliveTimer.Elapsed += new ElapsedEventHandler(CCDBusAliveHandler);
             CCDBusAliveTimer.Interval = 1000; // ms

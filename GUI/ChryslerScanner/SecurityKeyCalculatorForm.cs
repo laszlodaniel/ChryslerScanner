@@ -27,6 +27,7 @@ namespace ChryslerScanner
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
             NormalModeSeedTextBox_TextChanged(this, EventArgs.Empty);
             BootstrapModeSeedTextBox_TextChanged(this, EventArgs.Empty);
+            OriginalForm.ChangeLanguage();
             ActiveControl = NormalModeGetKeyButton;
         }
 

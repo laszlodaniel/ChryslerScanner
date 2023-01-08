@@ -172,6 +172,7 @@ namespace ChryslerScanner
             InitializeComponent();
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
             MainForm.Packet.PacketReceived += PacketReceivedHandler; // subscribe to the OnPacketReceived event
+            OriginalForm.ChangeLanguage();
 
             BootloaderComboBox.SelectedIndex = 3;
             WorkerFunctionComboBox.SelectedIndex = 0;

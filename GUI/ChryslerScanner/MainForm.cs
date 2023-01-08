@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Resources;
 using System.Text;
 using System.Threading;
 using System.Timers;
@@ -73,7 +75,7 @@ namespace ChryslerScanner
         private List<int> TCMTableRowCountHistory = new List<int>();
 
         private ReadMemoryForm ReadMemory;
-        private WriteMemoryForm WriteMemory;
+        private ReadWriteMemoryForm ReadWriteMemory;
         private SecurityKeyCalculatorForm SecurityKeyCalculator;
         private BootstrapToolsForm BootstrapTools;
         private EngineToolsForm EngineTools;
@@ -190,6 +192,19 @@ namespace ChryslerScanner
                 MetricUnitsToolStripMenuItem.Checked = false;
                 ImperialUnitsToolStripMenuItem.Checked = true;
             }
+
+            if (Properties.Settings.Default.Language == "English")
+            {
+                EnglishLangToolStripMenuItem.Checked = true;
+                SpanishLangToolStripMenuItem.Checked = false;
+            }
+            else if (Properties.Settings.Default.Language == "Spanish")
+            {
+                EnglishLangToolStripMenuItem.Checked = false;
+                SpanishLangToolStripMenuItem.Checked = true;
+            }
+
+            ChangeLanguage();
 
             if (Properties.Settings.Default.Timestamp == true)
             {
@@ -2647,14 +2662,14 @@ namespace ChryslerScanner
                     }
                     break;
                 case (byte)Packet.Bus.ccd:
-                    if (CCDBusOnDemandToolStripMenuItem.Checked && (DeviceTabControl.SelectedTab.Name == "CCDBusControlTabPage") || !CCDBusOnDemandToolStripMenuItem.Checked)
+                    if (CCDBusOnDemandToolStripMenuItem.Checked && (ScannerTabControl.SelectedTab.Name == "CCDBusControlTabPage") || !CCDBusOnDemandToolStripMenuItem.Checked)
                     {
                         Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message:", Packet.rx.buffer);
                         CCD.AddMessage(Packet.rx.payload.ToArray());
                     }
                     break;
                 case (byte)Packet.Bus.pci:
-                    if (PCIBusOnDemandToolStripMenuItem.Checked && (DeviceTabControl.SelectedTab.Name == "PCIBusControlTabPage") || !PCIBusOnDemandToolStripMenuItem.Checked)
+                    if (PCIBusOnDemandToolStripMenuItem.Checked && (ScannerTabControl.SelectedTab.Name == "PCIBusControlTabPage") || !PCIBusOnDemandToolStripMenuItem.Checked)
                     {
                         Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus message:", Packet.rx.buffer);
                         PCI.AddMessage(Packet.rx.payload.ToArray());
@@ -2699,11 +2714,11 @@ namespace ChryslerScanner
 
                                                 foreach (byte code in StoredFaultCodeList)
                                                 {
-                                                    int index = PCM.EngineDTC.Rows.IndexOf(PCM.EngineDTC.Rows.Find(code));
+                                                    int index = PCM.SBEC3EngineDTC.Rows.IndexOf(PCM.SBEC3EngineDTC.Rows.Find(code));
 
                                                     if (index > -1) // DTC description found
                                                     {
-                                                        sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": " + PCM.EngineDTC.Rows[index]["description"] + Environment.NewLine);
+                                                        sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": " + PCM.SBEC3EngineDTC.Rows[index]["description"] + Environment.NewLine);
                                                     }
                                                     else // no DTC description found
                                                     {
@@ -2749,11 +2764,11 @@ namespace ChryslerScanner
                                             {
                                                 if (code == 0) continue; // skip zero code, empty slot
 
-                                                int index = PCM.EngineDTC.Rows.IndexOf(PCM.EngineDTC.Rows.Find(code));
+                                                int index = PCM.SBEC3EngineDTC.Rows.IndexOf(PCM.SBEC3EngineDTC.Rows.Find(code));
 
                                                 if (index > -1) // DTC description found
                                                 {
-                                                    sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": " + PCM.EngineDTC.Rows[index]["description"] + Environment.NewLine);
+                                                    sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": " + PCM.SBEC3EngineDTC.Rows[index]["description"] + Environment.NewLine);
                                                 }
                                                 else // no DTC description found
                                                 {
@@ -2793,11 +2808,11 @@ namespace ChryslerScanner
 
                                                     foreach (byte code in FaultCode1TList)
                                                     {
-                                                        int index = PCM.EngineDTC.Rows.IndexOf(PCM.EngineDTC.Rows.Find(code));
+                                                        int index = PCM.SBEC3EngineDTC.Rows.IndexOf(PCM.SBEC3EngineDTC.Rows.Find(code));
 
                                                         if (index > -1) // DTC description found
                                                         {
-                                                            sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": " + PCM.EngineDTC.Rows[index]["description"] + Environment.NewLine);
+                                                            sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": " + PCM.SBEC3EngineDTC.Rows[index]["description"] + Environment.NewLine);
                                                         }
                                                         else // no DTC description found
                                                         {
@@ -3032,10 +3047,10 @@ namespace ChryslerScanner
         {
             Util.UpdateTextBox(USBTextBox, "[INFO] GUI is now running in demo mode." + Environment.NewLine + "       Explore features without scanner.");
             USBCommunicationGroupBox.Enabled = true;
-            DeviceTabControl.Enabled = true;
+            ScannerTabControl.Enabled = true;
             DiagnosticsGroupBox.Enabled = true;
             ReadMemoryToolStripMenuItem.Enabled = true;
-            WriteMemoryToolStripMenuItem.Enabled = true;
+            ReadWriteMemoryToolStripMenuItem.Enabled = true;
             BootstrapToolsToolStripMenuItem.Enabled = true;
             EngineToolsToolStripMenuItem.Enabled = true;
             ABSToolsToolStripMenuItem.Enabled = true;
@@ -3052,7 +3067,7 @@ namespace ChryslerScanner
 
             if ((COMPortsComboBox.Text != "N/A") && (COMPortsComboBox.Text != string.Empty))
             {
-                if (ConnectButton.Text == "Connect")
+                if (ConnectButton.Text == Languages.strings.Connect)
                 {
                     byte ConnectionCounter = 0;
 
@@ -3129,10 +3144,10 @@ namespace ChryslerScanner
                                         COMPortsComboBox.Enabled = false;
                                         COMPortsRefreshButton.Enabled = false;
                                         USBCommunicationGroupBox.Enabled = true;
-                                        DeviceTabControl.Enabled = true;
+                                        ScannerTabControl.Enabled = true;
                                         DiagnosticsGroupBox.Enabled = true;
                                         ReadMemoryToolStripMenuItem.Enabled = true;
-                                        WriteMemoryToolStripMenuItem.Enabled = true;
+                                        ReadWriteMemoryToolStripMenuItem.Enabled = true;
                                         BootstrapToolsToolStripMenuItem.Enabled = true;
                                         EngineToolsToolStripMenuItem.Enabled = true;
                                         ABSToolsToolStripMenuItem.Enabled = true;
@@ -3191,10 +3206,10 @@ namespace ChryslerScanner
                         COMPortsComboBox.Enabled = true;
                         COMPortsRefreshButton.Enabled = true;
                         USBCommunicationGroupBox.Enabled = false;
-                        DeviceTabControl.Enabled = false;
+                        ScannerTabControl.Enabled = false;
                         DiagnosticsGroupBox.Enabled = false;
                         ReadMemoryToolStripMenuItem.Enabled = false;
-                        WriteMemoryToolStripMenuItem.Enabled = false;
+                        ReadWriteMemoryToolStripMenuItem.Enabled = false;
                         BootstrapToolsToolStripMenuItem.Enabled = false;
                         EngineToolsToolStripMenuItem.Enabled = false;
                         ABSToolsToolStripMenuItem.Enabled = false;
@@ -3210,19 +3225,19 @@ namespace ChryslerScanner
 
         private void ExpandButton_Click(object sender, EventArgs e)
         {
-            if (ExpandButton.Text == "Expand >>")
+            if (ExpandButton.Text == Languages.strings.Expand)
             {
                 DiagnosticsGroupBox.Visible = true;
                 Size = new Size(1300, 650);
                 CenterToScreen();
-                ExpandButton.Text = "<< Collapse";
+                ExpandButton.Text = Languages.strings.Collapse;
             }
-            else if (ExpandButton.Text == "<< Collapse")
+            else if (ExpandButton.Text == Languages.strings.Collapse)
             {
                 Size = new Size(405, 650);
                 CenterToScreen();
                 DiagnosticsGroupBox.Visible = false;
-                ExpandButton.Text = "Expand >>";
+                ExpandButton.Text = Languages.strings.Expand;
             }
         }
 
@@ -5921,29 +5936,29 @@ namespace ChryslerScanner
             }
         }
 
-        private void WriteMemoryToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ReadWriteMemoryToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (WriteMemory == null)
+            if (ReadWriteMemory == null)
             {
-                WriteMemory = new WriteMemoryForm(this)
+                ReadWriteMemory = new ReadWriteMemoryForm(this)
                 {
                     StartPosition = FormStartPosition.CenterParent
                 };
 
-                WriteMemory.FormClosed += delegate { WriteMemory = null; };
-                WriteMemory.Show(this);
+                ReadWriteMemory.FormClosed += delegate { ReadWriteMemory = null; };
+                ReadWriteMemory.Show(this);
 
-                if (WriteMemory.StartPosition == FormStartPosition.CenterParent)
+                if (ReadWriteMemory.StartPosition == FormStartPosition.CenterParent)
                 {
-                    var x = Location.X + (Width - WriteMemory.Width) / 2;
-                    var y = Location.Y + (Height - WriteMemory.Height) / 2;
-                    WriteMemory.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
+                    var x = Location.X + (Width - ReadWriteMemory.Width) / 2;
+                    var y = Location.Y + (Height - ReadWriteMemory.Height) / 2;
+                    ReadWriteMemory.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
                 }
             }
             else
             {
-                WriteMemory.WindowState = FormWindowState.Normal;
-                WriteMemory.Focus();
+                ReadWriteMemory.WindowState = FormWindowState.Normal;
+                ReadWriteMemory.Focus();
             }
         }
 
@@ -5953,7 +5968,7 @@ namespace ChryslerScanner
             {
                 SuspendLayout();
 
-                DeviceTabControl.SelectedTab = SCIBusControlTabPage;
+                ScannerTabControl.SelectedTab = SCIBusControlTabPage;
 
                 if (SCIBusModuleComboBox.SelectedIndex == 0) DiagnosticsTabControl.SelectedTab = SCIBusPCMDiagnosticsTabPage;
                 else if (SCIBusModuleComboBox.SelectedIndex == 1) DiagnosticsTabControl.SelectedTab = SCIBusTCMDiagnosticsTabPage;
@@ -5988,7 +6003,7 @@ namespace ChryslerScanner
             {
                 SuspendLayout();
 
-                DeviceTabControl.SelectedTab = SCIBusControlTabPage;
+                ScannerTabControl.SelectedTab = SCIBusControlTabPage;
                 DiagnosticsTabControl.SelectedTab = SCIBusPCMDiagnosticsTabPage;
 
                 ResumeLayout();
@@ -6021,7 +6036,7 @@ namespace ChryslerScanner
             {
                 SuspendLayout();
 
-                DeviceTabControl.SelectedTab = CCDBusControlTabPage;
+                ScannerTabControl.SelectedTab = CCDBusControlTabPage;
                 DiagnosticsTabControl.SelectedTab = CCDBusDiagnosticsTabPage;
 
                 ResumeLayout();
@@ -6056,7 +6071,7 @@ namespace ChryslerScanner
             Properties.Settings.Default.Units = "metric";
             Properties.Settings.Default.Save(); // save setting in application configuration file
 
-            if (WriteMemory != null) WriteMemory.UpdateMileageUnit();
+            if (ReadWriteMemory != null) ReadWriteMemory.UpdateMileageUnit();
         }
 
         private void ImperialUnitsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -6067,7 +6082,141 @@ namespace ChryslerScanner
             Properties.Settings.Default.Units = "imperial";
             Properties.Settings.Default.Save(); // save setting in application configuration file
 
-            if (WriteMemory != null) WriteMemory.UpdateMileageUnit();
+            if (ReadWriteMemory != null) ReadWriteMemory.UpdateMileageUnit();
+        }
+
+        private void EnglishLangToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            EnglishLangToolStripMenuItem.Checked = true;
+            SpanishLangToolStripMenuItem.Checked = false;
+
+            Properties.Settings.Default.Language = "English";
+            Properties.Settings.Default.Save(); // save setting in application configuration file
+
+            ChangeLanguage();
+        }
+
+        private void SpanishLangToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            EnglishLangToolStripMenuItem.Checked = false;
+            SpanishLangToolStripMenuItem.Checked = true;
+
+            Properties.Settings.Default.Language = "Spanish";
+            Properties.Settings.Default.Save(); // save setting in application configuration file
+
+            ChangeLanguage();
+        }
+
+        public void ChangeLanguage()
+        {
+            if (Properties.Settings.Default.Language == "English")
+            {
+                CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.GetCultureInfo("en");
+            }
+            else if (Properties.Settings.Default.Language == "Spanish")
+            {
+                CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.GetCultureInfo("es");
+            }
+
+            // To add more translations create/edit "Languages/strings.xx.resx" file.
+            // Do NOT edit lines below.
+
+            ToolsToolStripMenuItem.Text = Languages.strings.Tools;
+            SettingsToolStripMenuItem.Text = Languages.strings.Settings;
+            AboutToolStripMenuItem.Text = Languages.strings.About;
+            UpdateToolStripMenuItem.Text = Languages.strings.Update;
+            ReadMemoryToolStripMenuItem.Text = Languages.strings.ReadMemory;
+            ReadWriteMemoryToolStripMenuItem.Text = Languages.strings.ReadWriteMemory;
+            BootstrapToolsToolStripMenuItem.Text = Languages.strings.BootstrapTools;
+            EngineToolsToolStripMenuItem.Text = Languages.strings.EngineTools;
+            ABSToolsToolStripMenuItem.Text = Languages.strings.ABSTools;
+            UnitToolStripMenuItem.Text = Languages.strings.Unit;
+            LanguageToolStripMenuItem.Text = Languages.strings.Language;
+            IncludeTimestampInLogFilesToolStripMenuItem.Text = Languages.strings.IncludeTimestampInLogFiles;
+            CCDBusOnDemandToolStripMenuItem.Text = Languages.strings.CCDBusOnDemand;
+            PCIBusOnDemandToolStripMenuItem.Text = Languages.strings.PCIBusOnDemand;
+            SortMessagesByIDByteToolStripMenuItem.Text = Languages.strings.SortMessagesByIDByte;
+            MetricUnitsToolStripMenuItem.Text = Languages.strings.Metric;
+            ImperialUnitsToolStripMenuItem.Text = Languages.strings.Imperial;
+            EnglishLangToolStripMenuItem.Text = Languages.strings.English;
+            SpanishLangToolStripMenuItem.Text = Languages.strings.Spanish;
+
+            USBCommunicationGroupBox.Text = Languages.strings.USBCommunication;
+            ControlPanelGroupBox.Text = Languages.strings.ControlPanel;
+            DiagnosticsGroupBox.Text = Languages.strings.Diagnostics;
+
+            USBSendPacketButton.Text = Languages.strings.SendPacket;
+            ConnectButton.Text = Languages.strings.Connect;
+            COMPortsRefreshButton.Text = Languages.strings.Refresh;
+            DemoButton.Text = Languages.strings.Demo;
+
+            if (Size == new Size(405, 650))
+            {
+                ExpandButton.Text = Languages.strings.Expand;
+            }
+            else if (Size == new Size(1300, 650))
+            {
+                ExpandButton.Text = Languages.strings.Collapse;
+            }
+
+            MainLabel.Text = Languages.strings.Main;
+            ResetButton.Text = Languages.strings.Reset;
+            HandshakeButton.Text = Languages.strings.Handshake;
+            StatusButton.Text = Languages.strings.Status;
+
+            RequestLabel.Text = Languages.strings.Request;
+            VersionInfoButton.Text = Languages.strings.VersionInfo;
+            TimestampButton.Text = Languages.strings.Timestamp;
+            BatteryVoltageButton.Text = Languages.strings.BatteryVoltage;
+
+            SettingsLabel.Text = Languages.strings.SettingsLabel;
+            SetLEDsButton.Text = Languages.strings.SetLEDs;
+            HeartbeatIntervalLabel.Text = Languages.strings.HeartbeatInterval;
+            LEDBlinkDurationLabel.Text = Languages.strings.BlinkDuration;
+
+            SCIBusPCMDiagnosticsTabPage.Text = Languages.strings.SCIBusEngine;
+            SCIBusTCMDiagnosticsTabPage.Text = Languages.strings.SCIBusTransmission;
+
+            DiagnosticsRefreshButton.Text = Languages.strings.Refresh;
+            DiagnosticsResetViewButton.Text = Languages.strings.ResetView;
+            DiagnosticsCopyToClipboardButton.Text = Languages.strings.CopyTableToClipboard;
+            DiagnosticsSnapshotButton.Text = Languages.strings.Snapshot;
+
+            if (About != null)
+            {
+                About.Text = Languages.strings.About;
+                // TODO
+            }
+
+            if (ReadMemory != null)
+            {
+                ReadMemory.Text = Languages.strings.ReadMemory;
+                // TODO
+            }
+
+            if (ReadWriteMemory != null)
+            {
+                ReadWriteMemory.Text = Languages.strings.ReadWriteMemory;
+                // TODO
+            }
+
+            if (BootstrapTools != null)
+            {
+                BootstrapTools.Text = Languages.strings.BootstrapTools;
+                // TODO
+            }
+
+            if (EngineTools != null)
+            {
+                EngineTools.Text = Languages.strings.EngineTools;
+                // TODO
+            }
+
+            if (ABSTools != null)
+            {
+                ABSTools.Text = Languages.strings.ABSTools;
+                // TODO
+            }
         }
 
         private void IncludeTimestampInLogFilesToolStripMenuItem_Click(object sender, EventArgs e)
@@ -6135,6 +6284,8 @@ namespace ChryslerScanner
 
             About.FormClosed += delegate { About = null; };
             About.ShowDialog(this);
+
+            ChangeLanguage();
         }
 
         #endregion

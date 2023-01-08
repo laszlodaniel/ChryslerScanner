@@ -1,0 +1,1719 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="groupBox2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>9, 3</value>
+  </data>
+  <data name="groupBox2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>265, 53</value>
+  </data>
+  <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="groupBox2.TabIndex" type="System.Int32, mscorlib">
+    <value>42</value>
+  </data>
+  <data name="groupBox2.Text" xml:space="preserve">
+    <value>groupBox2</value>
+  </data>
+  <data name="&gt;&gt;groupBox2.Name" xml:space="preserve">
+    <value>groupBox2</value>
+  </data>
+  <data name="&gt;&gt;groupBox2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox2.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;groupBox2.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="button2.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="button2.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 8.25pt</value>
+  </data>
+  <data name="button2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>214, 12</value>
+  </data>
+  <data name="button2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="button2.TabIndex" type="System.Int32, mscorlib">
+    <value>26</value>
+  </data>
+  <data name="button2.Text" xml:space="preserve">
+    <value>RES</value>
+  </data>
+  <data name="button2.Visible" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="&gt;&gt;button2.Name" xml:space="preserve">
+    <value>button2</value>
+  </data>
+  <data name="&gt;&gt;button2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;button2.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;button2.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="button3.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 8.25pt</value>
+  </data>
+  <data name="button3.Location" type="System.Drawing.Point, System.Drawing">
+    <value>164, 12</value>
+  </data>
+  <data name="button3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="button3.TabIndex" type="System.Int32, mscorlib">
+    <value>25</value>
+  </data>
+  <data name="button3.Text" xml:space="preserve">
+    <value>BAK</value>
+  </data>
+  <data name="&gt;&gt;button3.Name" xml:space="preserve">
+    <value>button3</value>
+  </data>
+  <data name="&gt;&gt;button3.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;button3.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;button3.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="label1.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>108, 17</value>
+  </data>
+  <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>16, 13</value>
+  </data>
+  <data name="label1.TabIndex" type="System.Int32, mscorlib">
+    <value>19</value>
+  </data>
+  <data name="label1.Text" xml:space="preserve">
+    <value>n:</value>
+  </data>
+  <data name="&gt;&gt;label1.Name" xml:space="preserve">
+    <value>label1</value>
+  </data>
+  <data name="&gt;&gt;label1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label1.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="textBox2.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="textBox2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>125, 13</value>
+  </data>
+  <data name="textBox2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>34, 21</value>
+  </data>
+  <data name="textBox2.TabIndex" type="System.Int32, mscorlib">
+    <value>20</value>
+  </data>
+  <data name="textBox2.Text" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;textBox2.Name" xml:space="preserve">
+    <value>textBox2</value>
+  </data>
+  <data name="&gt;&gt;textBox2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;textBox2.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;textBox2.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="button4.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="button4.Location" type="System.Drawing.Point, System.Drawing">
+    <value>214, 39</value>
+  </data>
+  <data name="button4.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="button4.TabIndex" type="System.Int32, mscorlib">
+    <value>24</value>
+  </data>
+  <data name="button4.Text" xml:space="preserve">
+    <value>Write</value>
+  </data>
+  <data name="&gt;&gt;button4.Name" xml:space="preserve">
+    <value>button4</value>
+  </data>
+  <data name="&gt;&gt;button4.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;button4.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;button4.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="button5.Location" type="System.Drawing.Point, System.Drawing">
+    <value>164, 39</value>
+  </data>
+  <data name="button5.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="button5.TabIndex" type="System.Int32, mscorlib">
+    <value>21</value>
+  </data>
+  <data name="button5.Text" xml:space="preserve">
+    <value>Read</value>
+  </data>
+  <data name="&gt;&gt;button5.Name" xml:space="preserve">
+    <value>button5</value>
+  </data>
+  <data name="&gt;&gt;button5.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;button5.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;button5.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="label3.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="label3.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 44</value>
+  </data>
+  <data name="label3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>48, 13</value>
+  </data>
+  <data name="label3.TabIndex" type="System.Int32, mscorlib">
+    <value>22</value>
+  </data>
+  <data name="label3.Text" xml:space="preserve">
+    <value>Value(s):</value>
+  </data>
+  <data name="&gt;&gt;label3.Name" xml:space="preserve">
+    <value>label3</value>
+  </data>
+  <data name="&gt;&gt;label3.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label3.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;label3.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="textBox3.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="textBox3.Location" type="System.Drawing.Point, System.Drawing">
+    <value>55, 40</value>
+  </data>
+  <data name="textBox3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>104, 21</value>
+  </data>
+  <data name="textBox3.TabIndex" type="System.Int32, mscorlib">
+    <value>23</value>
+  </data>
+  <data name="&gt;&gt;textBox3.Name" xml:space="preserve">
+    <value>textBox3</value>
+  </data>
+  <data name="&gt;&gt;textBox3.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;textBox3.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;textBox3.ZOrder" xml:space="preserve">
+    <value>7</value>
+  </data>
+  <data name="label4.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="label4.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 17</value>
+  </data>
+  <data name="label4.Size" type="System.Drawing.Size, System.Drawing">
+    <value>38, 13</value>
+  </data>
+  <data name="label4.TabIndex" type="System.Int32, mscorlib">
+    <value>17</value>
+  </data>
+  <data name="label4.Text" xml:space="preserve">
+    <value>Offset:</value>
+  </data>
+  <data name="&gt;&gt;label4.Name" xml:space="preserve">
+    <value>label4</value>
+  </data>
+  <data name="&gt;&gt;label4.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label4.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;label4.ZOrder" xml:space="preserve">
+    <value>8</value>
+  </data>
+  <data name="textBox4.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="textBox4.Location" type="System.Drawing.Point, System.Drawing">
+    <value>55, 13</value>
+  </data>
+  <data name="textBox4.Size" type="System.Drawing.Size, System.Drawing">
+    <value>41, 21</value>
+  </data>
+  <data name="textBox4.TabIndex" type="System.Int32, mscorlib">
+    <value>18</value>
+  </data>
+  <data name="textBox4.Text" xml:space="preserve">
+    <value>00 00</value>
+  </data>
+  <data name="&gt;&gt;textBox4.Name" xml:space="preserve">
+    <value>textBox4</value>
+  </data>
+  <data name="&gt;&gt;textBox4.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;textBox4.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;textBox4.ZOrder" xml:space="preserve">
+    <value>9</value>
+  </data>
+  <data name="groupBox1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>9, 63</value>
+  </data>
+  <data name="groupBox1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>266, 69</value>
+  </data>
+  <data name="groupBox1.TabIndex" type="System.Int32, mscorlib">
+    <value>41</value>
+  </data>
+  <data name="groupBox1.Text" xml:space="preserve">
+    <value>EEPROM</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.Name" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="button1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>443, 240</value>
+  </data>
+  <data name="button1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>65, 23</value>
+  </data>
+  <data name="button1.TabIndex" type="System.Int32, mscorlib">
+    <value>40</value>
+  </data>
+  <data name="button1.Text" xml:space="preserve">
+    <value>Help</value>
+  </data>
+  <data name="&gt;&gt;button1.Name" xml:space="preserve">
+    <value>button1</value>
+  </data>
+  <data name="&gt;&gt;button1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;button1.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;button1.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="textBox1.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="textBox1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>283, 9</value>
+  </data>
+  <data name="textBox1.Multiline" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="textBox1.ScrollBars" type="System.Windows.Forms.ScrollBars, System.Windows.Forms">
+    <value>Vertical</value>
+  </data>
+  <data name="textBox1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>224, 224</value>
+  </data>
+  <data name="textBox1.TabIndex" type="System.Int32, mscorlib">
+    <value>39</value>
+  </data>
+  <data name="&gt;&gt;textBox1.Name" xml:space="preserve">
+    <value>textBox1</value>
+  </data>
+  <data name="&gt;&gt;textBox1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;textBox1.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;textBox1.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="CCDBusTabPage.Location" type="System.Drawing.Point, System.Drawing">
+    <value>4, 22</value>
+  </data>
+  <data name="CCDBusTabPage.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 3, 3, 3</value>
+  </data>
+  <data name="CCDBusTabPage.Size" type="System.Drawing.Size, System.Drawing">
+    <value>516, 271</value>
+  </data>
+  <data name="CCDBusTabPage.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="CCDBusTabPage.Text" xml:space="preserve">
+    <value>CCD-bus</value>
+  </data>
+  <data name="&gt;&gt;CCDBusTabPage.Name" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusTabPage.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusTabPage.Parent" xml:space="preserve">
+    <value>WriteMemoryTabControl</value>
+  </data>
+  <data name="&gt;&gt;CCDBusTabPage.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryCopyBCMMileageButton.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryCopyBCMMileageButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>282, 240</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryCopyBCMMileageButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>110, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryCopyBCMMileageButton.TabIndex" type="System.Int32, mscorlib">
+    <value>37</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryCopyBCMMileageButton.Text" xml:space="preserve">
+    <value>Copy BCM Mileage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryCopyBCMMileageButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryCopyBCMMileageButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryCopyBCMMileageButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryCopyBCMMileageButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryCopyBCMMileageButton.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMRestoreButton.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 8.25pt</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMRestoreButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>214, 131</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMRestoreButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMRestoreButton.TabIndex" type="System.Int32, mscorlib">
+    <value>26</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMRestoreButton.Text" xml:space="preserve">
+    <value>RES</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMRestoreButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMRestoreButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMRestoreButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMRestoreButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMRestoreButton.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMBackupButton.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 8.25pt</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMBackupButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>164, 131</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMBackupButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMBackupButton.TabIndex" type="System.Int32, mscorlib">
+    <value>25</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMBackupButton.Text" xml:space="preserve">
+    <value>BAK</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMBackupButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMBackupButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMBackupButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMBackupButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMBackupButton.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueCountLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueCountLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>108, 136</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueCountLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>16, 13</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueCountLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>19</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueCountLabel.Text" xml:space="preserve">
+    <value>n:</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMValueCountLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMValueCountLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMValueCountLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMValueCountLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMValueCountLabel.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueCountTextBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueCountTextBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>125, 132</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueCountTextBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>34, 21</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueCountTextBox.TabIndex" type="System.Int32, mscorlib">
+    <value>20</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueCountTextBox.Text" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMValueCountTextBox.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMValueCountTextBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMValueCountTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMValueCountTextBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMValueCountTextBox.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMSeparatorLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 123</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMSeparatorLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>254, 1</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMSeparatorLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMSeparatorLabel.Text" xml:space="preserve">
+    <value>EEPROM separator</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMSeparatorLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMSeparatorLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMSeparatorLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMSeparatorLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMSeparatorLabel.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMWriteButton.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMWriteButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>214, 158</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMWriteButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMWriteButton.TabIndex" type="System.Int32, mscorlib">
+    <value>24</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMWriteButton.Text" xml:space="preserve">
+    <value>Write</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMWriteButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMWriteButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMWriteButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMWriteButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMWriteButton.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMReadButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>164, 158</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMReadButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMReadButton.TabIndex" type="System.Int32, mscorlib">
+    <value>21</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMReadButton.Text" xml:space="preserve">
+    <value>Read</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMReadButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMReadButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMReadButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMReadButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMReadButton.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 163</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>48, 13</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>22</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueLabel.Text" xml:space="preserve">
+    <value>Value(s):</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMValueLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMValueLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMValueLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMValueLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMValueLabel.ZOrder" xml:space="preserve">
+    <value>7</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueTextBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueTextBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>55, 159</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueTextBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>104, 21</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMValueTextBox.TabIndex" type="System.Int32, mscorlib">
+    <value>23</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMValueTextBox.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMValueTextBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMValueTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMValueTextBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMValueTextBox.ZOrder" xml:space="preserve">
+    <value>8</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMOffsetLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMOffsetLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 136</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMOffsetLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>38, 13</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMOffsetLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>17</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMOffsetLabel.Text" xml:space="preserve">
+    <value>Offset:</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMOffsetLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMOffsetLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMOffsetLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMOffsetLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMOffsetLabel.ZOrder" xml:space="preserve">
+    <value>9</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMOffsetTextBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMOffsetTextBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>55, 132</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMOffsetTextBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>41, 21</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMOffsetTextBox.TabIndex" type="System.Int32, mscorlib">
+    <value>18</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMOffsetTextBox.Text" xml:space="preserve">
+    <value>00 00</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMOffsetTextBox.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMOffsetTextBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMOffsetTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMOffsetTextBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMOffsetTextBox.ZOrder" xml:space="preserve">
+    <value>10</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>10, 17</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>68, 13</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageLabel.Text" xml:space="preserve">
+    <value>SRI Mileage:</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemorySRIMileageLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageLabel.ZOrder" xml:space="preserve">
+    <value>11</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>18, 44</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>36, 13</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>6</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSLabel.Text" xml:space="preserve">
+    <value>SKIM:</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySKIMVTSSLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemorySKIMVTSSLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySKIMVTSSLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySKIMVTSSLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySKIMVTSSLabel.ZOrder" xml:space="preserve">
+    <value>12</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageUnitLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageUnitLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>142, 17</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageUnitLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>17, 13</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageUnitLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageUnitLabel.Text" xml:space="preserve">
+    <value>mi</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageUnitLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemorySRIMileageUnitLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageUnitLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageUnitLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageUnitLabel.ZOrder" xml:space="preserve">
+    <value>13</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>4, 71</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>28, 13</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>10</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINLabel.Text" xml:space="preserve">
+    <value>VIN:</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryVINLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryVINLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryVINLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryVINLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryVINLabel.ZOrder" xml:space="preserve">
+    <value>14</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>12, 98</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>69, 13</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>14</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberLabel.Text" xml:space="preserve">
+    <value>Part Number:</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryPartNumberLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryPartNumberLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryPartNumberLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryPartNumberLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryPartNumberLabel.ZOrder" xml:space="preserve">
+    <value>15</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberWriteButton.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberWriteButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>214, 93</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberWriteButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberWriteButton.TabIndex" type="System.Int32, mscorlib">
+    <value>16</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberWriteButton.Text" xml:space="preserve">
+    <value>Write</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryPartNumberWriteButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryPartNumberWriteButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryPartNumberWriteButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryPartNumberWriteButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryPartNumberWriteButton.ZOrder" xml:space="preserve">
+    <value>16</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageTextBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageTextBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>79, 13</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageTextBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>62, 21</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageTextBox.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageTextBox.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemorySRIMileageTextBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageTextBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageTextBox.ZOrder" xml:space="preserve">
+    <value>17</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberReadButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>164, 93</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberReadButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberReadButton.TabIndex" type="System.Int32, mscorlib">
+    <value>13</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberReadButton.Text" xml:space="preserve">
+    <value>Read</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryPartNumberReadButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryPartNumberReadButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryPartNumberReadButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryPartNumberReadButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryPartNumberReadButton.ZOrder" xml:space="preserve">
+    <value>18</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSComboBox.Items" xml:space="preserve">
+    <value>Fuel enabled</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSComboBox.Items1" xml:space="preserve">
+    <value>Fuel disabled</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSComboBox.Items2" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSComboBox.Items3" xml:space="preserve">
+    <value>Reset to OK</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSComboBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>55, 40</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSComboBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>104, 21</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSComboBox.TabIndex" type="System.Int32, mscorlib">
+    <value>7</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySKIMVTSSComboBox.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemorySKIMVTSSComboBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySKIMVTSSComboBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySKIMVTSSComboBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySKIMVTSSComboBox.ZOrder" xml:space="preserve">
+    <value>19</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINWriteButton.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINWriteButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>214, 66</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINWriteButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINWriteButton.TabIndex" type="System.Int32, mscorlib">
+    <value>12</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINWriteButton.Text" xml:space="preserve">
+    <value>Write</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryVINWriteButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryVINWriteButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryVINWriteButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryVINWriteButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryVINWriteButton.ZOrder" xml:space="preserve">
+    <value>20</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINTextBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINTextBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>33, 67</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINTextBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>126, 21</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINTextBox.TabIndex" type="System.Int32, mscorlib">
+    <value>11</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryVINTextBox.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryVINTextBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryVINTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryVINTextBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryVINTextBox.ZOrder" xml:space="preserve">
+    <value>21</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINReadButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>164, 66</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINReadButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINReadButton.TabIndex" type="System.Int32, mscorlib">
+    <value>9</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryVINReadButton.Text" xml:space="preserve">
+    <value>Read</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryVINReadButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryVINReadButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryVINReadButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryVINReadButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryVINReadButton.ZOrder" xml:space="preserve">
+    <value>22</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberTextBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberTextBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>82, 94</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberTextBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>77, 21</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryPartNumberTextBox.TabIndex" type="System.Int32, mscorlib">
+    <value>15</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryPartNumberTextBox.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryPartNumberTextBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryPartNumberTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryPartNumberTextBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryPartNumberTextBox.ZOrder" xml:space="preserve">
+    <value>23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSWriteButton.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSWriteButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>214, 39</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSWriteButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSWriteButton.TabIndex" type="System.Int32, mscorlib">
+    <value>8</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSWriteButton.Text" xml:space="preserve">
+    <value>Write</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySKIMVTSSWriteButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemorySKIMVTSSWriteButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySKIMVTSSWriteButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySKIMVTSSWriteButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySKIMVTSSWriteButton.ZOrder" xml:space="preserve">
+    <value>24</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageReadButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>164, 12</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageReadButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageReadButton.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageReadButton.Text" xml:space="preserve">
+    <value>Read</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageReadButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemorySRIMileageReadButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageReadButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageReadButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageReadButton.ZOrder" xml:space="preserve">
+    <value>25</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSReadButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>164, 39</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSReadButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSReadButton.TabIndex" type="System.Int32, mscorlib">
+    <value>5</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySKIMVTSSReadButton.Text" xml:space="preserve">
+    <value>Read</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySKIMVTSSReadButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemorySKIMVTSSReadButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySKIMVTSSReadButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySKIMVTSSReadButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySKIMVTSSReadButton.ZOrder" xml:space="preserve">
+    <value>26</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageWriteButton.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageWriteButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>214, 12</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageWriteButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageWriteButton.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="SCIBusPCMWriteMemorySRIMileageWriteButton.Text" xml:space="preserve">
+    <value>Write</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageWriteButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemorySRIMileageWriteButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageWriteButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageWriteButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemorySRIMileageWriteButton.ZOrder" xml:space="preserve">
+    <value>27</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMGroupBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>9, 3</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMGroupBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>266, 188</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMGroupBox.TabIndex" type="System.Int32, mscorlib">
+    <value>25</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryEEPROMGroupBox.Text" xml:space="preserve">
+    <value>EEPROM</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMGroupBox.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryEEPROMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMGroupBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMGroupBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryEEPROMGroupBox.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMRestoreButton.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMRestoreButton.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 8.25pt</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMRestoreButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>214, 12</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMRestoreButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMRestoreButton.TabIndex" type="System.Int32, mscorlib">
+    <value>35</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMRestoreButton.Text" xml:space="preserve">
+    <value>RES</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMRestoreButton.Visible" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMRestoreButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMRestoreButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMRestoreButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMRestoreButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMRestoreButton.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMBackupButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>164, 12</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMBackupButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMBackupButton.TabIndex" type="System.Int32, mscorlib">
+    <value>34</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMBackupButton.Text" xml:space="preserve">
+    <value>BAK</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMBackupButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMBackupButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMBackupButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMBackupButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMBackupButton.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueCountLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueCountLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>108, 17</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueCountLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>16, 13</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueCountLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>29</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueCountLabel.Text" xml:space="preserve">
+    <value>n:</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMValueCountLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMValueCountLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMValueCountLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMValueCountLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMValueCountLabel.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMWriteButton.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMWriteButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>214, 39</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMWriteButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMWriteButton.TabIndex" type="System.Int32, mscorlib">
+    <value>33</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMWriteButton.Text" xml:space="preserve">
+    <value>Write</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMWriteButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMWriteButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMWriteButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMWriteButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMWriteButton.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueCountTextBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueCountTextBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>125, 13</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueCountTextBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>34, 21</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueCountTextBox.TabIndex" type="System.Int32, mscorlib">
+    <value>30</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueCountTextBox.Text" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMValueCountTextBox.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMValueCountTextBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMValueCountTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMValueCountTextBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMValueCountTextBox.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMOffsetTextBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMOffsetTextBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>55, 13</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMOffsetTextBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>41, 21</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMOffsetTextBox.TabIndex" type="System.Int32, mscorlib">
+    <value>28</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMOffsetTextBox.Text" xml:space="preserve">
+    <value>00 00</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMOffsetTextBox.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMOffsetTextBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMOffsetTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMOffsetTextBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMOffsetTextBox.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMReadButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>164, 39</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMReadButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMReadButton.TabIndex" type="System.Int32, mscorlib">
+    <value>31</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMReadButton.Text" xml:space="preserve">
+    <value>Read</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMReadButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMReadButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMReadButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMReadButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMReadButton.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueTextBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueTextBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>55, 40</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueTextBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>104, 21</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueTextBox.TabIndex" type="System.Int32, mscorlib">
+    <value>32</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMValueTextBox.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMValueTextBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMValueTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMValueTextBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMValueTextBox.ZOrder" xml:space="preserve">
+    <value>7</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMOffsetLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMOffsetLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 17</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMOffsetLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>38, 13</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMOffsetLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>27</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMOffsetLabel.Text" xml:space="preserve">
+    <value>Offset:</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMOffsetLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMOffsetLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMOffsetLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMOffsetLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMOffsetLabel.ZOrder" xml:space="preserve">
+    <value>8</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 44</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>48, 13</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>30</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMValueLabel.Text" xml:space="preserve">
+    <value>Value(s):</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMValueLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMValueLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMValueLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMValueLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMValueLabel.ZOrder" xml:space="preserve">
+    <value>9</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMGroupBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>9, 192</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMGroupBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>266, 71</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMGroupBox.TabIndex" type="System.Int32, mscorlib">
+    <value>24</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryRAMGroupBox.Text" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMGroupBox.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryRAMGroupBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMGroupBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMGroupBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryRAMGroupBox.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryHelpButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>443, 240</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryHelpButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>65, 23</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryHelpButton.TabIndex" type="System.Int32, mscorlib">
+    <value>38</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryHelpButton.Text" xml:space="preserve">
+    <value>Help</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryHelpButton.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryHelpButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryHelpButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryHelpButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryHelpButton.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryInfoTextBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryInfoTextBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>283, 9</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryInfoTextBox.Multiline" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryInfoTextBox.ScrollBars" type="System.Windows.Forms.ScrollBars, System.Windows.Forms">
+    <value>Vertical</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryInfoTextBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>224, 224</value>
+  </data>
+  <data name="SCIBusPCMWriteMemoryInfoTextBox.TabIndex" type="System.Int32, mscorlib">
+    <value>36</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryInfoTextBox.Name" xml:space="preserve">
+    <value>SCIBusPCMWriteMemoryInfoTextBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryInfoTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryInfoTextBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMWriteMemoryInfoTextBox.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="SCIBusPCMTabPage.Location" type="System.Drawing.Point, System.Drawing">
+    <value>4, 22</value>
+  </data>
+  <data name="SCIBusPCMTabPage.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 3, 3, 3</value>
+  </data>
+  <data name="SCIBusPCMTabPage.Size" type="System.Drawing.Size, System.Drawing">
+    <value>516, 271</value>
+  </data>
+  <data name="SCIBusPCMTabPage.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="SCIBusPCMTabPage.Text" xml:space="preserve">
+    <value>SCI-bus (Engine)</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMTabPage.Name" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMTabPage.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMTabPage.Parent" xml:space="preserve">
+    <value>WriteMemoryTabControl</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMTabPage.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="WriteMemoryTabControl.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 6</value>
+  </data>
+  <data name="WriteMemoryTabControl.Size" type="System.Drawing.Size, System.Drawing">
+    <value>524, 297</value>
+  </data>
+  <data name="WriteMemoryTabControl.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;WriteMemoryTabControl.Name" xml:space="preserve">
+    <value>WriteMemoryTabControl</value>
+  </data>
+  <data name="&gt;&gt;WriteMemoryTabControl.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabControl, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;WriteMemoryTabControl.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;WriteMemoryTabControl.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
+    <value>6, 13</value>
+  </data>
+  <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
+    <value>534, 308</value>
+  </data>
+  <data name="$this.StartPosition" type="System.Windows.Forms.FormStartPosition, System.Windows.Forms">
+    <value>CenterParent</value>
+  </data>
+  <data name="$this.Text" xml:space="preserve">
+    <value>Read/Write memory</value>
+  </data>
+  <data name="&gt;&gt;$this.Name" xml:space="preserve">
+    <value>ReadWriteMemoryForm</value>
+  </data>
+  <data name="&gt;&gt;$this.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Form, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+</root>

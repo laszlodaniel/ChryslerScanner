@@ -117,4 +117,193 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="GUIFWHWVersionLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="GUIFWHWVersionLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>12, 38</value>
+  </data>
+  <data name="GUIFWHWVersionLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>189, 13</value>
+  </data>
+  <data name="GUIFWHWVersionLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="GUIFWHWVersionLabel.Text" xml:space="preserve">
+    <value>GUI v0.0.0  |  FW v0.0.0  |  HW v0.0.0</value>
+  </data>
+  <data name="&gt;&gt;GUIFWHWVersionLabel.Name" xml:space="preserve">
+    <value>GUIFWHWVersionLabel</value>
+  </data>
+  <data name="&gt;&gt;GUIFWHWVersionLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;GUIFWHWVersionLabel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;GUIFWHWVersionLabel.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="AboutDescriptionLabel01.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="AboutDescriptionLabel01.Location" type="System.Drawing.Point, System.Drawing">
+    <value>12, 66</value>
+  </data>
+  <data name="AboutDescriptionLabel01.Size" type="System.Drawing.Size, System.Drawing">
+    <value>266, 13</value>
+  </data>
+  <data name="AboutDescriptionLabel01.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="AboutDescriptionLabel01.Text" xml:space="preserve">
+    <value>A user interface to interact with the diagnostic scanner.</value>
+  </data>
+  <data name="&gt;&gt;AboutDescriptionLabel01.Name" xml:space="preserve">
+    <value>AboutDescriptionLabel01</value>
+  </data>
+  <data name="&gt;&gt;AboutDescriptionLabel01.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;AboutDescriptionLabel01.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;AboutDescriptionLabel01.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="AboutTitleLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="AboutTitleLabel.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Calibri, 15.75pt, style=Bold</value>
+  </data>
+  <data name="AboutTitleLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>9, 9</value>
+  </data>
+  <data name="AboutTitleLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>156, 26</value>
+  </data>
+  <data name="AboutTitleLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="AboutTitleLabel.Text" xml:space="preserve">
+    <value>Chrysler Scanner</value>
+  </data>
+  <data name="&gt;&gt;AboutTitleLabel.Name" xml:space="preserve">
+    <value>AboutTitleLabel</value>
+  </data>
+  <data name="&gt;&gt;AboutTitleLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;AboutTitleLabel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;AboutTitleLabel.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="AboutDescriptionLabel02.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="AboutDescriptionLabel02.Location" type="System.Drawing.Point, System.Drawing">
+    <value>12, 84</value>
+  </data>
+  <data name="AboutDescriptionLabel02.Size" type="System.Drawing.Size, System.Drawing">
+    <value>266, 13</value>
+  </data>
+  <data name="AboutDescriptionLabel02.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="AboutDescriptionLabel02.Text" xml:space="preserve">
+    <value>Compatible vehicles: 1983-2003 Chrysler/Dodge/Jeep.</value>
+  </data>
+  <data name="&gt;&gt;AboutDescriptionLabel02.Name" xml:space="preserve">
+    <value>AboutDescriptionLabel02</value>
+  </data>
+  <data name="&gt;&gt;AboutDescriptionLabel02.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;AboutDescriptionLabel02.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;AboutDescriptionLabel02.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="AboutDescriptionLabel03.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="AboutDescriptionLabel03.Location" type="System.Drawing.Point, System.Drawing">
+    <value>12, 112</value>
+  </data>
+  <data name="AboutDescriptionLabel03.Size" type="System.Drawing.Size, System.Drawing">
+    <value>251, 13</value>
+  </data>
+  <data name="AboutDescriptionLabel03.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="AboutDescriptionLabel03.Text" xml:space="preserve">
+    <value>Developed by Daniel Laszlo @ Boundary Condition.</value>
+  </data>
+  <data name="&gt;&gt;AboutDescriptionLabel03.Name" xml:space="preserve">
+    <value>AboutDescriptionLabel03</value>
+  </data>
+  <data name="&gt;&gt;AboutDescriptionLabel03.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;AboutDescriptionLabel03.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;AboutDescriptionLabel03.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="BlogLinkLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="BlogLinkLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>13, 130</value>
+  </data>
+  <data name="BlogLinkLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>189, 13</value>
+  </data>
+  <data name="BlogLinkLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="BlogLinkLabel.Text" xml:space="preserve">
+    <value>https://chryslerccdsci.wordpress.com/</value>
+  </data>
+  <data name="&gt;&gt;BlogLinkLabel.Name" xml:space="preserve">
+    <value>BlogLinkLabel</value>
+  </data>
+  <data name="&gt;&gt;BlogLinkLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LinkLabel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;BlogLinkLabel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;BlogLinkLabel.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
+    <value>6, 13</value>
+  </data>
+  <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
+    <value>294, 161</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="$this.StartPosition" type="System.Windows.Forms.FormStartPosition, System.Windows.Forms">
+    <value>CenterParent</value>
+  </data>
+  <data name="$this.Text" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="&gt;&gt;$this.Name" xml:space="preserve">
+    <value>AboutForm</value>
+  </data>
+  <data name="&gt;&gt;$this.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Form, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
 </root>
