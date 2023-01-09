@@ -58,6 +58,7 @@
             this.SetIdleSpeedStopButton = new System.Windows.Forms.Button();
             this.SetIdleSpeedSetButton = new System.Windows.Forms.Button();
             this.ResetMemoryGroupBox = new System.Windows.Forms.GroupBox();
+            this.ResetMemoryStatusLabel = new System.Windows.Forms.Label();
             this.ResetMemoryComboBox = new System.Windows.Forms.ComboBox();
             this.ResetMemoryOKButton = new System.Windows.Forms.Button();
             this.SecurityGroupBox = new System.Windows.Forms.GroupBox();
@@ -77,7 +78,6 @@
             this.CHTComboBox = new System.Windows.Forms.ComboBox();
             this.EngineToolsStatusStrip = new System.Windows.Forms.StatusStrip();
             this.EnginePropertiesLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            this.ResetMemoryStatusLabel = new System.Windows.Forms.Label();
             this.FaultCodeGroupBox.SuspendLayout();
             this.BaudrateGroupBox.SuspendLayout();
             this.ActuatorTestGroupBox.SuspendLayout();
@@ -568,6 +568,11 @@
             this.ResetMemoryGroupBox.Name = "ResetMemoryGroupBox";
             this.ResetMemoryGroupBox.TabStop = false;
             // 
+            // ResetMemoryStatusLabel
+            // 
+            resources.ApplyResources(this.ResetMemoryStatusLabel, "ResetMemoryStatusLabel");
+            this.ResetMemoryStatusLabel.Name = "ResetMemoryStatusLabel";
+            // 
             // ResetMemoryComboBox
             // 
             this.ResetMemoryComboBox.DropDownHeight = 226;
@@ -812,7 +817,16 @@
             resources.GetString("CHTComboBox.Items17"),
             resources.GetString("CHTComboBox.Items18"),
             resources.GetString("CHTComboBox.Items19"),
-            resources.GetString("CHTComboBox.Items20")});
+            resources.GetString("CHTComboBox.Items20"),
+            resources.GetString("CHTComboBox.Items21"),
+            resources.GetString("CHTComboBox.Items22"),
+            resources.GetString("CHTComboBox.Items23"),
+            resources.GetString("CHTComboBox.Items24"),
+            resources.GetString("CHTComboBox.Items25"),
+            resources.GetString("CHTComboBox.Items26"),
+            resources.GetString("CHTComboBox.Items27"),
+            resources.GetString("CHTComboBox.Items28"),
+            resources.GetString("CHTComboBox.Items29")});
             this.CHTComboBox.Name = "CHTComboBox";
             this.CHTComboBox.SelectedIndexChanged += new System.EventHandler(this.CHTComboBox_SelectedIndexChanged);
             // 
@@ -829,11 +843,6 @@
             this.EnginePropertiesLabel.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             resources.ApplyResources(this.EnginePropertiesLabel, "EnginePropertiesLabel");
             this.EnginePropertiesLabel.Name = "EnginePropertiesLabel";
-            // 
-            // ResetMemoryStatusLabel
-            // 
-            resources.ApplyResources(this.ResetMemoryStatusLabel, "ResetMemoryStatusLabel");
-            this.ResetMemoryStatusLabel.Name = "ResetMemoryStatusLabel";
             // 
             // EngineToolsForm
             // 

@@ -3269,68 +3269,83 @@ namespace ChryslerScanner
 
                                 switch (payload[1])
                                 {
-                                    case 0x01:
+                                    case 0x00:
                                         ValueToInsert = "FEDERAL HIGH ALTITUDE";
                                         break;
-                                    case 0x02:
+                                    case 0x01:
                                         ValueToInsert = "TRUCK MODULE";
                                         break;
-                                    case 0x03:
+                                    case 0x02:
                                         ValueToInsert = "MEXICAN MODULE";
                                         break;
+                                    case 0x03:
+                                        ValueToInsert = "CA/NY/MA/CT STATE";
+                                        break;
                                     case 0x04:
-                                        ValueToInsert = "CA/NY/MA/CT STATE MOD";
+                                        ValueToInsert = "FEDERAL/CANADIAN";
                                         break;
                                     case 0x05:
-                                        ValueToInsert = "FEDERAL/CANADIAN MODULE";
+                                        ValueToInsert = "BUX/ECE";
                                         break;
                                     case 0x06:
-                                        ValueToInsert = "BUX/ECE MODULE";
+                                        ValueToInsert = "GULF STATES";
                                         break;
                                     case 0x07:
-                                        ValueToInsert = "GULF STATES MODULE";
+                                        ValueToInsert = "50 STATE/CANADIAN";
                                         break;
                                     case 0x08:
-                                        ValueToInsert = "50 STATE/CANADIAN MOD";
+                                        ValueToInsert = "TRANSITORY LOW-EM (NBT)";
                                         break;
                                     case 0x09:
-                                        ValueToInsert = "CA/NY/MA/CT STATE TLEV";
+                                        ValueToInsert = "LOW EMISSION VEH (NBV)";
                                         break;
                                     case 0x0A:
-                                        ValueToInsert = "CA/NY/MA/CT STATE LEV";
-                                        break;
-                                    case 0x0B:
                                         ValueToInsert = "CARB OBD2 TRUCK MODULE";
                                         break;
-                                    case 0x0C:
+                                    case 0x0B:
                                         ValueToInsert = "EPA FEDERAL OBD TRUCK M";
                                         break;
-                                    case 0x0D:
+                                    case 0x0C:
                                         ValueToInsert = "HEAVY DUTY TRUCK MODULE";
                                         break;
-                                    case 0x0E:
+                                    case 0x0D:
                                         ValueToInsert = "CANADIAN ONLY";
                                         break;
-                                    case 0x0F:
+                                    case 0x0E:
                                         ValueToInsert = "FEDERAL ONLY";
                                         break;
-                                    case 0x10:
+                                    case 0x0F:
                                         ValueToInsert = "50 STATE ONLY";
                                         break;
+                                    case 0x10:
+                                        ValueToInsert = "ZERO EMISSION VEH (NBZ)";
+                                        break;
                                     case 0x11:
-                                        ValueToInsert = "ZERO EMISSION VEHICLE";
+                                        ValueToInsert = "ULTRA LOW-EM VEH (NBU)";
                                         break;
                                     case 0x12:
-                                        ValueToInsert = "CA/NY/MA STATE ULEV MOD";
+                                        ValueToInsert = "JAPAN EMISSIONS (NGJ)";
                                         break;
                                     case 0x13:
-                                        ValueToInsert = "JAPAN EMISSIONS CALIBR.";
+                                        ValueToInsert = "EURO STAGE 3 OBD (NB3)";
                                         break;
                                     case 0x14:
-                                        ValueToInsert = "EURO STAGE 3 OBD";
+                                        ValueToInsert = "NATIONAL LOW EMS (NLEV)";
                                         break;
                                     case 0x15:
-                                        ValueToInsert = "NATIONAL LOW EMS (NLEV)";
+                                        ValueToInsert = "EURO STAGE 2 (NB2)";
+                                        break;
+                                    case 0x16:
+                                        ValueToInsert = "EURO STAGE 4 (NB4)";
+                                        break;
+                                    case 0x17:
+                                        ValueToInsert = "SUPER ULTRA LO-EM (NBS)";
+                                        break;
+                                    case 0x18:
+                                        ValueToInsert = "ENHARENTLY LOW-EM (NBI)";
+                                        break;
+                                    case 0x19:
+                                        ValueToInsert = "PARTIAL ZERO-EM (NBP)";
                                         break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);
@@ -3450,7 +3465,7 @@ namespace ChryslerScanner
                                         ValueToInsert = "MPI BANKED";
                                         break;
                                     case 0x04:
-                                        ValueToInsert = "SEQUENTIAL";
+                                        ValueToInsert = "SFI";
                                         break;
                                     case 0x05:
                                         ValueToInsert = "DIRECT";
@@ -3462,7 +3477,6 @@ namespace ChryslerScanner
 
                                 EngineToolsStatusBarTextItems[5] = ValueToInsert;
 
-                                if (EngineToolsStatusBarTextItems[5] == "SEQUENTIAL") EngineToolsStatusBarTextItems[5] = "SFI";
                                 if (EngineToolsStatusBarTextItems[5] == "DIRECT") EngineToolsStatusBarTextItems[5] = "DIRECT INJ";
 
                                 break;
@@ -3668,22 +3682,37 @@ namespace ChryslerScanner
                                         ValueToInsert = "NO ELECTRIC FAN";
                                         break;
                                     case 0x02:
-                                        ValueToInsert = "SINGLE FAN CYCLING A/C";
+                                        ValueToInsert = "SINGLE FAN SINGLE SPEED";
                                         break;
                                     case 0x03:
-                                        ValueToInsert = "DUAL FAN CYCLING A/C";
+                                        ValueToInsert = "SINGLE FAN TWO SPEED";
                                         break;
                                     case 0x04:
-                                        ValueToInsert = "SINGLE FAN VAR A/C";
+                                        ValueToInsert = "SINGLE FAN VAR SPEED";
                                         break;
                                     case 0x05:
-                                        ValueToInsert = "DUAL FAN VAR A/C";
+                                        ValueToInsert = "TWO FANS SINGLE SPEED";
                                         break;
                                     case 0x06:
-                                        ValueToInsert = "TWO-SPEED FAN";
+                                        ValueToInsert = "TWO FANS TWO SPEED";
                                         break;
                                     case 0x07:
-                                        ValueToInsert = "PWM FAN VAR A/C";
+                                        ValueToInsert = "TWO FANS VAR SPEED";
+                                        break;
+                                    case 0x08:
+                                        ValueToInsert = "THREE FANS SINGLE SPD";
+                                        break;
+                                    case 0x09:
+                                        ValueToInsert = "THREE FANS TWO SPEED";
+                                        break;
+                                    case 0x0A:
+                                        ValueToInsert = "THREE FANS VAR SPEED";
+                                        break;
+                                    case 0x0B:
+                                        ValueToInsert = "AUX COOLING FAN";
+                                        break;
+                                    case 0x0C:
+                                        ValueToInsert = "SINGLE FAN VAR HYDR";
                                         break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);
@@ -3725,7 +3754,7 @@ namespace ChryslerScanner
                                         ValueToInsert = "VM MOTORI";
                                         break;
                                     case 0x0A:
-                                        ValueToInsert = "SEIMENS";
+                                        ValueToInsert = "MERCEDES DIESEL";
                                         break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);
@@ -3798,6 +3827,33 @@ namespace ChryslerScanner
                                         break;
                                     case 0x14:
                                         ValueToInsert = "GENERIC JTEC";
+                                        break;
+                                    case 0x15:
+                                        ValueToInsert = "CUMMINS 845";
+                                        break;
+                                    case 0x16:
+                                        ValueToInsert = "CUMMINS 846";
+                                        break;
+                                    case 0x17:
+                                        ValueToInsert = "GENERIC CUMMINS";
+                                        break;
+                                    case 0x18:
+                                        ValueToInsert = "CUMMINS 848";
+                                        break;
+                                    case 0x19:
+                                        ValueToInsert = "EDC16-C2";
+                                        break;
+                                    case 0x1A:
+                                        ValueToInsert = "";
+                                        break;
+                                    case 0x1B:
+                                        ValueToInsert = "NGC";
+                                        break;
+                                    case 0x1C:
+                                        ValueToInsert = "EDC16-C2";
+                                        break;
+                                    case 0x1D:
+                                        ValueToInsert = "CUMMINS 2";
                                         break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);

@@ -26,6 +26,8 @@ namespace ChryslerScanner
         private List<byte[]> DWordRequestFilter = new List<byte[]>();
         private byte DWordRequestCount = 0;
 
+        private bool CumminsSelected = false;
+
         private enum SCI_ID
         {
             SCIHiSpeed = 0x12,
@@ -117,13 +119,21 @@ namespace ChryslerScanner
 
         private void CHTComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (CHTComboBox.SelectedIndex == 9) // CUMMINS
+            switch (CHTComboBox.SelectedIndex)
             {
-                RAMTableComboBox.SelectedIndex = 11; // FB
-            }
-            else
-            {
-                RAMTableComboBox.SelectedIndex = 4; // F4
+                case 9: // CUMMINS
+                case 21:
+                case 22:
+                case 23:
+                case 24:
+                case 29:
+                    RAMTableComboBox.SelectedIndex = 11; // FB
+                    CumminsSelected = true;
+                    break;
+                default:
+                    RAMTableComboBox.SelectedIndex = 4; // F4
+                    CumminsSelected = false;
+                    break;
             }
 
             OriginalForm.PCM.ControllerHardwareType = (byte)CHTComboBox.SelectedIndex;
@@ -137,11 +147,11 @@ namespace ChryslerScanner
                 MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
                 MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.list;
 
-                if (CHTComboBox.SelectedIndex == 9) // CUMMINS
+                if (CumminsSelected)
                 {                                           // cnt   len   msg   len   msg
                     MainForm.Packet.tx.payload = new byte[5] { 0x02, 0x01, 0x32, 0x01, 0x33 }; // request stored and one-trip fault codes
                 }
-                else // SBEC
+                else
                 {                                           // cnt   len   msg   len   msg   len   msg
                     MainForm.Packet.tx.payload = new byte[7] { 0x03, 0x01, 0x10, 0x01, 0x11, 0x01, 0x2E }; // request stored, pending and one-trip fault codes
                 }
@@ -176,11 +186,11 @@ namespace ChryslerScanner
                 MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
                 MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.list;
 
-                if (CHTComboBox.SelectedIndex == 9) // CUMMINS
+                if (CumminsSelected)
                 {
                     MainForm.Packet.tx.payload = new byte[25] { 0x08, 0x02, 0xFB, 0xBB, 0x02, 0xFB, 0xBC, 0x02, 0xFB, 0xBD, 0x02, 0xFB, 0xBE, 0x02, 0xFB, 0xBF, 0x02, 0xFB, 0xC0, 0x02, 0xFB, 0xC1, 0x02, 0xFB, 0xC2 };
                 }
-                else // SBEC
+                else
                 {
                     MainForm.Packet.tx.payload = new byte[25] { 0x08, 0x02, 0xF4, 0x01, 0x02, 0xF4, 0x02, 0x02, 0xF4, 0x74, 0x02, 0xF4, 0x75, 0x02, 0xF4, 0x76, 0x02, 0xF4, 0x77, 0x02, 0xF4, 0x78, 0x02, 0xF4, 0x79 };
                 }
@@ -205,11 +215,11 @@ namespace ChryslerScanner
                 MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
                 MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
 
-                if (CHTComboBox.SelectedIndex == 9) // CUMMINS
+                if (CumminsSelected)
                 {
                     MainForm.Packet.tx.payload = new byte[2] { 0x25, 0x01 };
                 }
-                else // SBEC
+                else
                 {
                     MainForm.Packet.tx.payload = new byte[1] { 0x17 }; // 23 01 works as well
                 }
@@ -225,7 +235,7 @@ namespace ChryslerScanner
 
         private void ReadFaultCodeFreezeFrameButton_Click(object sender, EventArgs e)
         {
-            if (CHTComboBox.SelectedIndex == 9) // CUMMINS
+            if (CumminsSelected)
             {
                 MessageBox.Show("This feature is not supported yet.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
@@ -1441,7 +1451,7 @@ namespace ChryslerScanner
                     "F700 |"});
                     break;
                 case 0xF8:
-                    if ((OriginalForm.PCM.Year < 2003) && (OriginalForm.PCM.ControllerHardwareType == 9))
+                    if ((OriginalForm.PCM.Year < 2003) && CumminsSelected)
                     {
                         DiagnosticDataListBox.Items.AddRange(new object[] {
                         "F800 | CUMMINS DTC FREEZE FRAMES",
@@ -1685,7 +1695,7 @@ namespace ChryslerScanner
                         "F8EE |",
                         "F8EF |"});
                     }
-                    else if ((OriginalForm.PCM.Year >= 2003) && (OriginalForm.PCM.ControllerHardwareType == 9))
+                    else if ((OriginalForm.PCM.Year >= 2003) && CumminsSelected)
                     {
                         DiagnosticDataListBox.Items.AddRange(new object[] {
                         "F800 | CUMMINS DTC FREEZE FRAMES",
@@ -1944,7 +1954,7 @@ namespace ChryslerScanner
                     "FA00 |"});
                     break;
                 case 0xFB:
-                    if ((OriginalForm.PCM.Year < 2003) && (OriginalForm.PCM.ControllerHardwareType == 9))
+                    if ((OriginalForm.PCM.Year < 2003) && CumminsSelected)
                     {
                         DiagnosticDataListBox.Items.AddRange(new object[] {
                         "FB00 | CUMMINS SENSORS",
@@ -2188,7 +2198,7 @@ namespace ChryslerScanner
                         "FBEE |",
                         "FBEF |"});
                     }
-                    else if ((OriginalForm.PCM.Year >= 2003) && (OriginalForm.PCM.ControllerHardwareType == 9))
+                    else if ((OriginalForm.PCM.Year >= 2003) && CumminsSelected)
                     {
                         DiagnosticDataListBox.Items.AddRange(new object[] {
                         "FB00 | CUMMINS SENSORS",
