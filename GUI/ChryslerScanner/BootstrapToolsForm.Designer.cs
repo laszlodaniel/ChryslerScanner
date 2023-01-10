@@ -342,7 +342,6 @@ namespace ChryslerScanner
             this.Controls.Add(this.SCIBusBootstrapInfoTextBox);
             this.Controls.Add(this.UploadWorkerFunctionGroupBox);
             this.Controls.Add(this.InitializeBootstrapModeGroupBox);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Name = "BootstrapToolsForm";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.BootstrapToolsForm_FormClosing);
             this.InitializeBootstrapModeGroupBox.ResumeLayout(false);

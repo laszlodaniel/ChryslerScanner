@@ -542,7 +542,6 @@ namespace ChryslerScanner
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.WriteMemoryTabControl);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Name = "ReadWriteMemoryForm";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.WriteMemoryForm_FormClosing);
             this.WriteMemoryTabControl.ResumeLayout(false);

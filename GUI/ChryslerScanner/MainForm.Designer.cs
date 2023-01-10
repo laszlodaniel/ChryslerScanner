@@ -177,12 +177,12 @@
             this.DiagnosticsResetViewButton = new System.Windows.Forms.Button();
             this.DiagnosticsTabControl = new System.Windows.Forms.TabControl();
             this.CCDBusDiagnosticsTabPage = new System.Windows.Forms.TabPage();
-            this.CCDBusDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
             this.PCIBusDiagnosticsTabPage = new System.Windows.Forms.TabPage();
-            this.PCIBusDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
             this.SCIBusPCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
-            this.SCIBusPCMDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
             this.SCIBusTCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
+            this.CCDBusDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
+            this.PCIBusDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
+            this.SCIBusPCMDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
             this.SCIBusTCMDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
             this.MenuStrip.SuspendLayout();
             this.USBCommunicationGroupBox.SuspendLayout();
@@ -1303,24 +1303,12 @@
             resources.ApplyResources(this.CCDBusDiagnosticsTabPage, "CCDBusDiagnosticsTabPage");
             this.CCDBusDiagnosticsTabPage.Name = "CCDBusDiagnosticsTabPage";
             // 
-            // CCDBusDiagnosticsListBox
-            // 
-            this.CCDBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
-            resources.ApplyResources(this.CCDBusDiagnosticsListBox, "CCDBusDiagnosticsListBox");
-            this.CCDBusDiagnosticsListBox.Name = "CCDBusDiagnosticsListBox";
-            // 
             // PCIBusDiagnosticsTabPage
             // 
             this.PCIBusDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
             this.PCIBusDiagnosticsTabPage.Controls.Add(this.PCIBusDiagnosticsListBox);
             resources.ApplyResources(this.PCIBusDiagnosticsTabPage, "PCIBusDiagnosticsTabPage");
             this.PCIBusDiagnosticsTabPage.Name = "PCIBusDiagnosticsTabPage";
-            // 
-            // PCIBusDiagnosticsListBox
-            // 
-            this.PCIBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
-            resources.ApplyResources(this.PCIBusDiagnosticsListBox, "PCIBusDiagnosticsListBox");
-            this.PCIBusDiagnosticsListBox.Name = "PCIBusDiagnosticsListBox";
             // 
             // SCIBusPCMDiagnosticsTabPage
             // 
@@ -1329,19 +1317,31 @@
             resources.ApplyResources(this.SCIBusPCMDiagnosticsTabPage, "SCIBusPCMDiagnosticsTabPage");
             this.SCIBusPCMDiagnosticsTabPage.Name = "SCIBusPCMDiagnosticsTabPage";
             // 
-            // SCIBusPCMDiagnosticsListBox
-            // 
-            this.SCIBusPCMDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
-            resources.ApplyResources(this.SCIBusPCMDiagnosticsListBox, "SCIBusPCMDiagnosticsListBox");
-            this.SCIBusPCMDiagnosticsListBox.Name = "SCIBusPCMDiagnosticsListBox";
-            this.SCIBusPCMDiagnosticsListBox.SelectionMode = System.Windows.Forms.SelectionMode.None;
-            // 
             // SCIBusTCMDiagnosticsTabPage
             // 
             this.SCIBusTCMDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
             this.SCIBusTCMDiagnosticsTabPage.Controls.Add(this.SCIBusTCMDiagnosticsListBox);
             resources.ApplyResources(this.SCIBusTCMDiagnosticsTabPage, "SCIBusTCMDiagnosticsTabPage");
             this.SCIBusTCMDiagnosticsTabPage.Name = "SCIBusTCMDiagnosticsTabPage";
+            // 
+            // CCDBusDiagnosticsListBox
+            // 
+            this.CCDBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
+            resources.ApplyResources(this.CCDBusDiagnosticsListBox, "CCDBusDiagnosticsListBox");
+            this.CCDBusDiagnosticsListBox.Name = "CCDBusDiagnosticsListBox";
+            // 
+            // PCIBusDiagnosticsListBox
+            // 
+            this.PCIBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
+            resources.ApplyResources(this.PCIBusDiagnosticsListBox, "PCIBusDiagnosticsListBox");
+            this.PCIBusDiagnosticsListBox.Name = "PCIBusDiagnosticsListBox";
+            // 
+            // SCIBusPCMDiagnosticsListBox
+            // 
+            this.SCIBusPCMDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
+            resources.ApplyResources(this.SCIBusPCMDiagnosticsListBox, "SCIBusPCMDiagnosticsListBox");
+            this.SCIBusPCMDiagnosticsListBox.Name = "SCIBusPCMDiagnosticsListBox";
+            this.SCIBusPCMDiagnosticsListBox.SelectionMode = System.Windows.Forms.SelectionMode.None;
             // 
             // SCIBusTCMDiagnosticsListBox
             // 
@@ -1352,14 +1352,13 @@
             // 
             // MainForm
             // 
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             resources.ApplyResources(this, "$this");
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.DiagnosticsGroupBox);
             this.Controls.Add(this.ControlPanelGroupBox);
             this.Controls.Add(this.USBCommunicationGroupBox);
             this.Controls.Add(this.MenuStrip);
             this.DoubleBuffered = true;
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.KeyPreview = true;
             this.MainMenuStrip = this.MenuStrip;
             this.Name = "MainForm";

@@ -156,7 +156,6 @@ namespace ChryslerScanner
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.BootstrapModeGroupBox);
             this.Controls.Add(this.NormalModeGroupBox);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Name = "SecurityKeyCalculatorForm";
             this.NormalModeGroupBox.ResumeLayout(false);
             this.NormalModeGroupBox.PerformLayout();
