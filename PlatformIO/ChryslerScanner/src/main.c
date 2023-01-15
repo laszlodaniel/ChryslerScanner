@@ -1965,11 +1965,11 @@ void usb_msg_task(void *pvParameters)
     {
         begin:
 
-        if (usb_rx_available() >= 3)
+        if (usb_rx_available() >= 6)
         {
             blink_led(RX_LED_PIN);
 
-            item = (uint8_t *)xRingbufferReceiveUpTo(usb_rx_ringbuf_handle, &item_size, pdMS_TO_TICKS(50), 3);
+            item = (uint8_t *)xRingbufferReceiveUpTo(usb_rx_ringbuf_handle, &item_size, pdMS_TO_TICKS(50), 6);
 
             if (item == NULL)
             {
@@ -1984,9 +1984,9 @@ void usb_msg_task(void *pvParameters)
 
             vRingbufferReturnItem(usb_rx_ringbuf_handle, (void *)item);
 
-            if (item_size < 3) // data wrapped around
+            if (item_size < 6) // data wrapped around
             {
-                item2 = (uint8_t *)xRingbufferReceiveUpTo(usb_rx_ringbuf_handle, &item_size2, pdMS_TO_TICKS(50), (3 - item_size));
+                item2 = (uint8_t *)xRingbufferReceiveUpTo(usb_rx_ringbuf_handle, &item_size2, pdMS_TO_TICKS(50), (6 - item_size));
 
                 if (item2 == NULL)
                 {
@@ -2004,94 +2004,109 @@ void usb_msg_task(void *pvParameters)
 
             if (rx_buf[0] != PACKET_SYNC_BYTE)
             {
+                if (usb_rx_available() > 0)
+                {
+                    item = (uint8_t *)xRingbufferReceiveUpTo(usb_rx_ringbuf_handle, &item_size, pdMS_TO_TICKS(50), usb_rx_available()); // clear buffer
+                    vRingbufferReturnItem(usb_rx_ringbuf_handle, (void *)item);
+                }
+                
                 goto begin;
             }
 
             usb_packet.sync = PACKET_SYNC_BYTE;
             usb_packet.length = to_uint16(rx_buf[1], rx_buf[2]);
+            usb_packet.datacode = rx_buf[3];
+            usb_packet.subdatacode = rx_buf[4];
             usb_packet.payload_length = usb_packet.length - 2;
 
-            timeout = 0;
-
-            while (usb_rx_available() < (usb_packet.payload_length + 3)) // wait for datacode, subdatacode, payload (if any) and checksum bytes as well
+            if (usb_packet.payload_length == 0)
             {
-                vTaskDelay(pdMS_TO_TICKS(1));
-                timeout++;
+                usb_packet.checksum = rx_buf[5];
 
-                if (timeout >= 200)
+                uint8_t checksum = usb_packet.sync + ((usb_packet.length >> 8) & 0xFF) + (usb_packet.length & 0xFF) + usb_packet.datacode + usb_packet.subdatacode;
+
+                if (usb_packet.checksum == checksum)
                 {
-                    send_usb_packet(Bus_USB, Command_Error, Error_Timeout, err, sizeof(err));
-                    goto begin;
+                    usb_packet.available = true;
                 }
-            }
-
-            item = (uint8_t *)xRingbufferReceiveUpTo(usb_rx_ringbuf_handle, &item_size, pdMS_TO_TICKS(50), (usb_packet.payload_length + 3));
-
-            if (item == NULL)
-            {
-                send_usb_packet(Bus_USB, Command_Error, Error_Timeout, err, sizeof(err));
-                goto begin;
-            }
-
-            for (int i = 0; i < item_size; i++)
-            {
-                rx_buf[i] = item[i];
-            }
-
-            vRingbufferReturnItem(usb_rx_ringbuf_handle, (void *)item);
-
-            if (item_size < (usb_packet.payload_length + 3))
-            {
-                item2 = (uint8_t *)xRingbufferReceiveUpTo(usb_rx_ringbuf_handle, &item_size2, pdMS_TO_TICKS(50), ((usb_packet.payload_length + 3) - item_size));
-
-                if (item2 == NULL)
+                else
                 {
-                    send_usb_packet(Bus_USB, Command_Error, Error_Timeout, err, sizeof(err));
-                    goto begin;
+                    send_usb_packet(Bus_USB, Command_Error, Error_Checksum, err, sizeof(err));
                 }
-
-                for (int i = 0; i < item_size2; i++)
-                {
-                    rx_buf[item_size + i] = item2[i];
-                }
-
-                vRingbufferReturnItem(usb_rx_ringbuf_handle, (void *)item2);
-            }
-
-            usb_packet.datacode = rx_buf[0];
-            usb_packet.subdatacode = rx_buf[1];
-
-            if (usb_packet.payload_length > 0)
-            {
-                for (int i = 0; i < usb_packet.payload_length; i++)
-                {
-                    usb_packet.payload[i] = rx_buf[2 + i];
-                }
-
-                usb_packet.checksum = rx_buf[2 + usb_packet.payload_length];
             }
             else
             {
-                usb_packet.checksum = rx_buf[2];
-            }
+                usb_packet.payload[0] = rx_buf[5];
 
-            uint8_t checksum = usb_packet.sync + ((usb_packet.length >> 8) & 0xFF) + (usb_packet.length & 0xFF) + usb_packet.datacode + usb_packet.subdatacode;
+                timeout = 0;
 
-            if (usb_packet.payload_length > 0)
-            {
+                while (usb_rx_available() < (usb_packet.payload_length)) // wait for payload byte(s) and checksum byte
+                {
+                    vTaskDelay(pdMS_TO_TICKS(1));
+                    timeout++;
+
+                    if (timeout >= 200)
+                    {
+                        send_usb_packet(Bus_USB, Command_Error, Error_Timeout, err, sizeof(err));
+                        goto begin;
+                    }
+                }
+
+                item = (uint8_t *)xRingbufferReceiveUpTo(usb_rx_ringbuf_handle, &item_size, pdMS_TO_TICKS(50), (usb_packet.payload_length ));
+
+                if (item == NULL)
+                {
+                    send_usb_packet(Bus_USB, Command_Error, Error_Timeout, err, sizeof(err));
+                    goto begin;
+                }
+
+                for (int i = 0; i < item_size; i++)
+                {
+                    rx_buf[i] = item[i];
+                }
+
+                vRingbufferReturnItem(usb_rx_ringbuf_handle, (void *)item);
+
+                if (item_size < (usb_packet.payload_length))
+                {
+                    item2 = (uint8_t *)xRingbufferReceiveUpTo(usb_rx_ringbuf_handle, &item_size2, pdMS_TO_TICKS(50), (usb_packet.payload_length - item_size));
+
+                    if (item2 == NULL)
+                    {
+                        send_usb_packet(Bus_USB, Command_Error, Error_Timeout, err, sizeof(err));
+                        goto begin;
+                    }
+
+                    for (int i = 0; i < item_size2; i++)
+                    {
+                        rx_buf[item_size + i] = item2[i];
+                    }
+
+                    vRingbufferReturnItem(usb_rx_ringbuf_handle, (void *)item2);
+                }
+
+                for (int i = 0; i < (usb_packet.payload_length - 1); i++)
+                {
+                    usb_packet.payload[i + 1] = rx_buf[i];
+                }
+
+                usb_packet.checksum = rx_buf[usb_packet.payload_length - 1];
+
+                uint8_t checksum = usb_packet.sync + ((usb_packet.length >> 8) & 0xFF) + (usb_packet.length & 0xFF) + usb_packet.datacode + usb_packet.subdatacode;
+
                 for (int i = 0; i < usb_packet.payload_length; i++)
                 {
                     checksum += usb_packet.payload[i];
                 }
-            }
 
-            if (usb_packet.checksum == checksum)
-            {
-                usb_packet.available = true;
-            }
-            else
-            {
-                send_usb_packet(Bus_USB, Command_Error, Error_Checksum, err, sizeof(err));
+                if (usb_packet.checksum == checksum)
+                {
+                    usb_packet.available = true;
+                }
+                else
+                {
+                    send_usb_packet(Bus_USB, Command_Error, Error_Checksum, err, sizeof(err));
+                }
             }
         }
 
