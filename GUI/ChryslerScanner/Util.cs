@@ -87,10 +87,6 @@ namespace ChryslerScanner
                 {
                     ret.Append(Environment.NewLine + Environment.NewLine);
                 }
-                else
-                {
-                    ret.Append(Environment.NewLine + Environment.NewLine);
-                }
 
                 ret.Append(text);
 

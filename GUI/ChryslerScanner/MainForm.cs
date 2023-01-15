@@ -6301,6 +6301,11 @@ namespace ChryslerScanner
 
         #endregion
 
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            Util.UpdateTextBox(USBTextBox, "[INFO] GUI started.");
+        }
+
         private void MainForm_KeyDown(object sender, KeyEventArgs e)
         {
             if (DeviceFound)

@@ -48,6 +48,7 @@
             this.CCDBusOnDemandToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.PCIBusOnDemandToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.SortMessagesByIDByteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.DisplayRawBusPacketsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.AboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.USBCommunicationGroupBox = new System.Windows.Forms.GroupBox();
             this.USBSendPacketButton = new System.Windows.Forms.Button();
@@ -179,7 +180,6 @@
             this.PCIBusDiagnosticsTabPage = new System.Windows.Forms.TabPage();
             this.SCIBusPCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
             this.SCIBusTCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
-            this.DisplayRawBusPacketsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.CCDBusDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
             this.PCIBusDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
             this.SCIBusPCMDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
@@ -347,6 +347,15 @@
             this.SortMessagesByIDByteToolStripMenuItem.Name = "SortMessagesByIDByteToolStripMenuItem";
             resources.ApplyResources(this.SortMessagesByIDByteToolStripMenuItem, "SortMessagesByIDByteToolStripMenuItem");
             this.SortMessagesByIDByteToolStripMenuItem.Click += new System.EventHandler(this.SortMessagesByIDByteToolStripMenuItem_Click);
+            // 
+            // DisplayRawBusPacketsToolStripMenuItem
+            // 
+            this.DisplayRawBusPacketsToolStripMenuItem.Checked = true;
+            this.DisplayRawBusPacketsToolStripMenuItem.CheckOnClick = true;
+            this.DisplayRawBusPacketsToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.DisplayRawBusPacketsToolStripMenuItem.Name = "DisplayRawBusPacketsToolStripMenuItem";
+            resources.ApplyResources(this.DisplayRawBusPacketsToolStripMenuItem, "DisplayRawBusPacketsToolStripMenuItem");
+            this.DisplayRawBusPacketsToolStripMenuItem.Click += new System.EventHandler(this.DisplayRawBusPacketsToolStripMenuItem_Click);
             // 
             // AboutToolStripMenuItem
             // 
@@ -1325,15 +1334,6 @@
             resources.ApplyResources(this.SCIBusTCMDiagnosticsTabPage, "SCIBusTCMDiagnosticsTabPage");
             this.SCIBusTCMDiagnosticsTabPage.Name = "SCIBusTCMDiagnosticsTabPage";
             // 
-            // DisplayRawBusPacketsToolStripMenuItem
-            // 
-            this.DisplayRawBusPacketsToolStripMenuItem.Checked = true;
-            this.DisplayRawBusPacketsToolStripMenuItem.CheckOnClick = true;
-            this.DisplayRawBusPacketsToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.DisplayRawBusPacketsToolStripMenuItem.Name = "DisplayRawBusPacketsToolStripMenuItem";
-            resources.ApplyResources(this.DisplayRawBusPacketsToolStripMenuItem, "DisplayRawBusPacketsToolStripMenuItem");
-            this.DisplayRawBusPacketsToolStripMenuItem.Click += new System.EventHandler(this.DisplayRawBusPacketsToolStripMenuItem_Click);
-            // 
             // CCDBusDiagnosticsListBox
             // 
             this.CCDBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
@@ -1373,6 +1373,7 @@
             this.MainMenuStrip = this.MenuStrip;
             this.Name = "MainForm";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
+            this.Load += new System.EventHandler(this.MainForm_Load);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.MainForm_KeyDown);
             this.MenuStrip.ResumeLayout(false);
             this.MenuStrip.PerformLayout();
