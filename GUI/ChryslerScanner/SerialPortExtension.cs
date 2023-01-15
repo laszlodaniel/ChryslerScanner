@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.IO.Ports;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace ChryslerScanner
@@ -13,26 +14,22 @@ namespace ChryslerScanner
         /// <remarks>
         /// Read the input one byte at a time, add byte to the overall response byte array, once the packet ends then wait for another packet to start.
         /// </remarks>
-        /// <param name="serialPort">The port to read data from.</param>
+        /// <param name="_stream">Underlying BaseStream of Serial port.</param>
         /// <returns>A packet read from the input.</returns>
-        public static async Task<byte[]> ReadPacketAsync(this SerialPort serialPort)
+        public static async Task<byte[]> ReadPacketAsync(Stream _stream)
         {
             byte[] buffer = new byte[1];
             List<byte> packet = new List<byte>();
 
-            while (true)
+            while (MainForm.Packet.SP.IsOpen)
             {
                 try
                 {
-                    await serialPort.BaseStream.ReadAsync(buffer, 0, 1);
+                    await _stream.ReadAsync(buffer, 0, 1);
                 }
                 catch
                 {
-                    // TODO
-                }
-                finally
-                {
-                    // TODO
+                    return null;
                 }
                 
                 packet.Add(buffer[0]);
@@ -41,20 +38,22 @@ namespace ChryslerScanner
 
                 if (Packet.IsPacketComplete(packet.ToArray())) return packet.ToArray();
             }
+
+            return null;
         }
 
         /// <summary>
         /// Write a packet to the SerialPort asynchronously.
         /// </summary>
-        /// <param name="serialPort">The port to send packet to.</param>
+        /// <param name="_stream">Underlying BaseStream of Serial port.</param>
         /// <param name="packet">The packet to send.</param>
         /// <returns></returns>
-        public static async Task WritePacketAsync(this SerialPort serialPort, byte[] packet)
+        public static async Task WritePacketAsync(Stream _stream, byte[] packet)
         {
             try
             {
-                await serialPort.BaseStream.WriteAsync(packet, 0, packet.Length);
-                await serialPort.BaseStream.FlushAsync();
+                await _stream.WriteAsync(packet, 0, packet.Length);
+                //await _stream.FlushAsync();
             }
             catch
             {

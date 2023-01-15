@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.OleDb;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -26,8 +27,6 @@ namespace ChryslerScanner
         private List<byte[]> DWordRequestFilter = new List<byte[]>();
         private byte DWordRequestCount = 0;
 
-        private bool CumminsSelected = false;
-
         private enum SCI_ID
         {
             SCIHiSpeed = 0x12,
@@ -49,7 +48,7 @@ namespace ChryslerScanner
             MainForm.Packet.PacketReceived += PacketReceivedHandler; // subscribe to the OnPacketReceived event
             OriginalForm.ChangeLanguage();
 
-            CHTComboBox.SelectedIndex = 0;
+            CHTComboBox.SelectedIndex = OriginalForm.PCM.ControllerHardwareType;
             RAMTableComboBox.SelectedIndex = 4;
             ActuatorTestComboBox.SelectedIndex = 1;
             ResetMemoryComboBox.SelectedIndex = 1;
@@ -100,10 +99,13 @@ namespace ChryslerScanner
             DWordRequestFilter.Add(new byte[] { 0x01, 0x05, 0x09, 0x0D, 0x11, 0x15, 0x19, 0x1D, 0x21, 0x25, 0x2B, 0x2F }); // FC RAM table
             DWordRequestFilter.Add(new byte[] { 0x7C }); // FD RAM table
 
+            ActiveControl = CHTDetectButton;
+        }
+
+        private void EngineToolsForm_Load(object sender, EventArgs e)
+        {
             UpdateCHTGroup();
             UpdateStatusBar();
-
-            ActiveControl = CHTDetectButton;
         }
 
         private void CHTDetectButton_Click(object sender, EventArgs e)
@@ -128,11 +130,11 @@ namespace ChryslerScanner
                 case 24:
                 case 29:
                     RAMTableComboBox.SelectedIndex = 11; // FB
-                    CumminsSelected = true;
+                    OriginalForm.PCM.CumminsSelected = true;
                     break;
                 default:
                     RAMTableComboBox.SelectedIndex = 4; // F4
-                    CumminsSelected = false;
+                    OriginalForm.PCM.CumminsSelected = false;
                     break;
             }
 
@@ -147,7 +149,7 @@ namespace ChryslerScanner
                 MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
                 MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.list;
 
-                if (CumminsSelected)
+                if (OriginalForm.PCM.CumminsSelected)
                 {                                           // cnt   len   msg   len   msg
                     MainForm.Packet.tx.payload = new byte[5] { 0x02, 0x01, 0x32, 0x01, 0x33 }; // request stored and one-trip fault codes
                 }
@@ -186,7 +188,7 @@ namespace ChryslerScanner
                 MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
                 MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.list;
 
-                if (CumminsSelected)
+                if (OriginalForm.PCM.CumminsSelected)
                 {
                     MainForm.Packet.tx.payload = new byte[25] { 0x08, 0x02, 0xFB, 0xBB, 0x02, 0xFB, 0xBC, 0x02, 0xFB, 0xBD, 0x02, 0xFB, 0xBE, 0x02, 0xFB, 0xBF, 0x02, 0xFB, 0xC0, 0x02, 0xFB, 0xC1, 0x02, 0xFB, 0xC2 };
                 }
@@ -215,7 +217,7 @@ namespace ChryslerScanner
                 MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
                 MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
 
-                if (CumminsSelected)
+                if (OriginalForm.PCM.CumminsSelected)
                 {
                     MainForm.Packet.tx.payload = new byte[2] { 0x25, 0x01 };
                 }
@@ -235,7 +237,7 @@ namespace ChryslerScanner
 
         private void ReadFaultCodeFreezeFrameButton_Click(object sender, EventArgs e)
         {
-            if (CumminsSelected)
+            if (OriginalForm.PCM.CumminsSelected)
             {
                 MessageBox.Show("This feature is not supported yet.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
@@ -750,249 +752,252 @@ namespace ChryslerScanner
 
         private void PacketReceivedHandler(object sender, EventArgs e)
         {
-            switch (MainForm.Packet.rx.bus)
+            Invoke((MethodInvoker)delegate
             {
-                case (byte)Packet.Bus.pcm:
-                case (byte)Packet.Bus.tcm:
-                    byte[] SCIBusResponseBytes = MainForm.Packet.rx.payload.Skip(4).ToArray(); // skip 4 timestamp bytes
+                switch (MainForm.Packet.rx.bus)
+                {
+                    case (byte)Packet.Bus.pcm:
+                    case (byte)Packet.Bus.tcm:
+                        byte[] SCIBusResponseBytes = MainForm.Packet.rx.payload.Skip(4).ToArray(); // skip 4 timestamp bytes
 
-                    if (SCIBusResponseBytes.Length == 0) break;
+                        if (SCIBusResponseBytes.Length == 0) break;
 
-                    if (OriginalForm.PCM.speed == "7812.5 baud")
-                    {
-                        switch (SCIBusResponseBytes[0])
+                        if (OriginalForm.PCM.speed == "7812.5 baud")
                         {
-                            case (byte)SCI_ID.SCIHiSpeed:
-                                HighSpeedLayout();
-                                AddHighSpeedDiagnosticData((byte)(0xF0 + RAMTableComboBox.SelectedIndex));
-                                break;
-                            case (byte)SCI_ID.DiagnosticData:
-                                if (SCIBusResponseBytes.Length < 3)
+                            switch (SCIBusResponseBytes[0])
+                            {
+                                case (byte)SCI_ID.SCIHiSpeed:
+                                    HighSpeedLayout();
+                                    AddHighSpeedDiagnosticData((byte)(0xF0 + RAMTableComboBox.SelectedIndex));
+                                    break;
+                                case (byte)SCI_ID.DiagnosticData:
+                                    if (SCIBusResponseBytes.Length < 3)
+                                    {
+                                        if (DiagnosticDataCSVCheckBox.Checked)
+                                        {
+                                            DiagnosticItems.Add(new byte[3] { 0x14, 0x00, 0x00 }); // an invalid response would break the CSV-file format, add an empty response instead
+                                        }
+                                        break;
+                                    }
+
+                                    if (DiagnosticDataCSVCheckBox.Checked && (DiagnosticItemCount > 0))
+                                    {
+                                        DiagnosticItems.Add(SCIBusResponseBytes);
+
+                                        if ((DiagnosticItems.Count == 1) && (SCIBusResponseBytes[1] != FirstDiagnosticItemID)) // keep columns ordered
+                                        {
+                                            DiagnosticItems.Clear();
+                                        }
+                                    }
+
+                                    if ((DiagnosticItems.Count == DiagnosticItemCount) && (DiagnosticItemCount > 0))
+                                    {
+                                        uint Millis = (uint)((MainForm.Packet.rx.payload[0] << 24) + (MainForm.Packet.rx.payload[1] << 16) + (MainForm.Packet.rx.payload[2] << 8) + MainForm.Packet.rx.payload[3]);
+                                        CSVLine = Millis.ToString();
+
+                                        foreach (var item in DiagnosticItems)
+                                        {
+                                            CSVLine += "," + item[2].ToString();
+                                        }
+
+                                        File.AppendAllText(CSVFilename, Environment.NewLine + CSVLine);
+                                        DiagnosticItems.Clear();
+                                    }
+                                    break;
+                                case (byte)SCI_ID.ActuatorTest:
+                                    if (SCIBusResponseBytes.Length < 3) break;
+
+                                    if ((SCIBusResponseBytes.Length == 4) && (SCIBusResponseBytes[2] == 0))
+                                    {
+                                        ActuatorTestStatusLabel.Text = "Status: mode not available";
+                                        break;
+                                    }
+
+                                    if ((SCIBusResponseBytes[1] == 0) && (SCIBusResponseBytes[2] == 0))
+                                    {
+                                        ActuatorTestStatusLabel.Text = "Status: stopped";
+                                        break;
+                                    }
+
+                                    ActuatorTestStatusLabel.Text = "Status: running";
+                                    break;
+                                case (byte)SCI_ID.ResetMemory:
+                                    if (SCIBusResponseBytes.Length < 3) break;
+
+                                    switch (SCIBusResponseBytes[2])
+                                    {
+                                        case 0x00:
+                                            ResetMemoryStatusLabel.Text = "Status: stop engine";
+                                            break;
+                                        case 0x01:
+                                            ResetMemoryStatusLabel.Text = "Status: mode not available";
+                                            break;
+                                        case 0x02:
+                                            ResetMemoryStatusLabel.Text = "Status: denied (module busy)";
+                                            break;
+                                        case 0x03:
+                                            ResetMemoryStatusLabel.Text = "Status: denied (security level)";
+                                            break;
+                                        case 0xF0:
+                                            ResetMemoryStatusLabel.Text = "Status: ok";
+                                            break;
+                                        default:
+                                            ResetMemoryStatusLabel.Text = "Status: unknown";
+                                            break;
+                                    }
+                                    break;
+                                case (byte)SCI_ID.ConfigData:
+                                    if (SCIBusResponseBytes.Length < 3) break;
+
+                                    UpdateCHTGroup();
+                                    UpdateStatusBar();
+                                    break;
+                                case (byte)SCI_ID.GetSecuritySeedLegacy:
+                                    if (SCIBusResponseBytes.Length < 4) break;
+
+                                    byte ChecksumA = (byte)(SCIBusResponseBytes[0] + SCIBusResponseBytes[1] + SCIBusResponseBytes[2]);
+
+                                    if (SCIBusResponseBytes[3] != ChecksumA) break;
+
+                                    ushort SeedA = (ushort)((SCIBusResponseBytes[1] << 8) + SCIBusResponseBytes[2]);
+
+                                    if (SeedA == 0) break;
+
+                                    ushort KeyA = (ushort)((SeedA << 2) + 0x9018);
+                                    byte KeyHBA = (byte)(KeyA >> 8);
+                                    byte KeyLBA = (byte)(KeyA);
+                                    byte KeyChecksumA = (byte)(0x2C + KeyHBA + KeyLBA);
+                                    byte[] KeyArrayA = { (byte)SCI_ID.SendSecurityKey, KeyHBA, KeyLBA, KeyChecksumA };
+
+                                    MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+                                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                                    MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+                                    MainForm.Packet.tx.payload = KeyArrayA;
+                                    MainForm.Packet.GeneratePacket();
+                                    OriginalForm.TransmitUSBPacket("[<-TX] Send level 1 security key:");
+                                    break;
+                                case (byte)SCI_ID.GetSecuritySeed:
+                                    if (SCIBusResponseBytes.Length < 5) break;
+
+                                    if (SCIBusResponseBytes[1] == 0x01)
+                                    {
+                                        byte ChecksumB = (byte)(SCIBusResponseBytes[0] + SCIBusResponseBytes[1] + SCIBusResponseBytes[2] + SCIBusResponseBytes[3]);
+
+                                        if (SCIBusResponseBytes[4] != ChecksumB) break;
+
+                                        ushort SeedB = (ushort)((SCIBusResponseBytes[2] << 8) + SCIBusResponseBytes[3]);
+
+                                        if (SeedB == 0) break;
+
+                                        ushort KeyB = (ushort)((SeedB << 2) + 0x9018);
+                                        byte KeyHBB = (byte)(KeyB >> 8);
+                                        byte KeyLBB = (byte)(KeyB);
+                                        byte KeyChecksumB = (byte)(0x2C + KeyHBB + KeyLBB);
+                                        byte[] KeyArrayB = { (byte)SCI_ID.SendSecurityKey, KeyHBB, KeyLBB, KeyChecksumB };
+
+                                        MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+                                        MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                                        MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+                                        MainForm.Packet.tx.payload = KeyArrayB;
+                                        MainForm.Packet.GeneratePacket();
+                                        OriginalForm.TransmitUSBPacket("[<-TX] Send level 1 security key:");
+                                    }
+                                    else if (SCIBusResponseBytes[1] == 0x02)
+                                    {
+                                        byte ChecksumC = (byte)(SCIBusResponseBytes[0] + SCIBusResponseBytes[1] + SCIBusResponseBytes[2] + SCIBusResponseBytes[3]);
+
+                                        if (SCIBusResponseBytes[4] != ChecksumC) break;
+
+                                        ushort SeedC = (ushort)((SCIBusResponseBytes[2] << 8) + SCIBusResponseBytes[3]);
+
+                                        if (SeedC == 0) break;
+
+                                        ushort KeyC = (ushort)(SeedC & 0xFF00);
+                                        KeyC |= (ushort)(KeyC >> 8);
+
+                                        ushort mask = (ushort)(SeedC & 0xFF);
+                                        mask |= (ushort)(mask << 8);
+                                        KeyC ^= 0x9340; // polinom
+                                        KeyC += 0x1010;
+                                        KeyC ^= mask;
+                                        KeyC += 0x1911;
+                                        uint tmp = (uint)((KeyC << 16) | KeyC);
+                                        KeyC += (ushort)(tmp >> 3);
+                                        byte KeyHBC = (byte)(KeyC >> 8);
+                                        byte KeyLBC = (byte)(KeyC);
+                                        byte KeyChecksumC = (byte)(0x2C + KeyHBC + KeyLBC);
+                                        byte[] KeyArrayC = { 0x2C, KeyHBC, KeyLBC, KeyChecksumC };
+
+                                        MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
+                                        MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                                        MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+                                        MainForm.Packet.tx.payload = KeyArrayC;
+                                        MainForm.Packet.GeneratePacket();
+                                        OriginalForm.TransmitUSBPacket("[<-TX] Send level 2 security key:");
+                                    }
+                                    break;
+                            }
+                        }
+                        else if (OriginalForm.PCM.speed == "62500 baud")
+                        {
+                            if ((SCIBusResponseBytes[0] >= 0xF0) && (SCIBusResponseBytes[0] <= 0xFD))
+                            {
+                                if (SCIBusResponseBytes.Length >= 3)
+                                {
+                                    if (DiagnosticDataCSVCheckBox.Checked && (DiagnosticItemCount > 0))
+                                    {
+                                        DiagnosticItems.Add(SCIBusResponseBytes);
+
+                                        if ((DiagnosticItems.Count == 1) && (SCIBusResponseBytes[1] != FirstDiagnosticItemID)) // keep columns ordered
+                                        {
+                                            DiagnosticItems.Clear();
+                                        }
+                                    }
+
+                                    if ((DiagnosticItems.Count == DiagnosticItemCount) && (DiagnosticItemCount > 0))
+                                    {
+                                        uint Millis = (uint)((MainForm.Packet.rx.payload[0] << 24) + (MainForm.Packet.rx.payload[1] << 16) + (MainForm.Packet.rx.payload[2] << 8) + MainForm.Packet.rx.payload[3]);
+                                        CSVLine = Millis.ToString();
+
+                                        foreach (var item in DiagnosticItems)
+                                        {
+                                            CSVLine += ",";
+
+                                            if ((item.Length >= 5) && WordRequestFilter[item[0] - 0xF0].Contains(item[1]))
+                                            {
+                                                CSVLine += ((item[2] << 8) + item[4]).ToString();
+                                            }
+                                            else if ((item.Length >= 9) && DWordRequestFilter[item[0] - 0xF0].Contains(item[1]))
+                                            {
+                                                CSVLine += ((uint)(item[2] << 24 | item[4] << 16 | item[6] << 8 | item[8])).ToString();
+                                            }
+                                            else
+                                            {
+                                                CSVLine += item[2].ToString();
+                                            }
+                                        }
+
+                                        File.AppendAllText(CSVFilename, Environment.NewLine + CSVLine);
+                                        DiagnosticItems.Clear();
+                                    }
+                                }
+                                else if (SCIBusResponseBytes.Length < 3)
                                 {
                                     if (DiagnosticDataCSVCheckBox.Checked)
                                     {
-                                        DiagnosticItems.Add(new byte[3] { 0x14, 0x00, 0x00 }); // an invalid response would break the CSV-file format, add an empty response instead
+                                        DiagnosticItems.Add(new byte[3] { (byte)(0xF0 + RAMTableComboBox.SelectedIndex), 0x00, 0x00 }); // an invalid response would break the CSV-file format, add an empty response instead
                                     }
-                                    break;
-                                }
-
-                                if (DiagnosticDataCSVCheckBox.Checked && (DiagnosticItemCount > 0))
-                                {
-                                    DiagnosticItems.Add(SCIBusResponseBytes);
-
-                                    if ((DiagnosticItems.Count == 1) && (SCIBusResponseBytes[1] != FirstDiagnosticItemID)) // keep columns ordered
-                                    {
-                                        DiagnosticItems.Clear();
-                                    }
-                                }
-
-                                if ((DiagnosticItems.Count == DiagnosticItemCount) && (DiagnosticItemCount > 0))
-                                {
-                                    uint Millis = (uint)((MainForm.Packet.rx.payload[0] << 24) + (MainForm.Packet.rx.payload[1] << 16) + (MainForm.Packet.rx.payload[2] << 8) + MainForm.Packet.rx.payload[3]);
-                                    CSVLine = Millis.ToString();
-
-                                    foreach (var item in DiagnosticItems)
-                                    {
-                                        CSVLine += "," + item[2].ToString();
-                                    }
-
-                                    File.AppendAllText(CSVFilename, Environment.NewLine + CSVLine);
-                                    DiagnosticItems.Clear();
-                                }
-                                break;
-                            case (byte)SCI_ID.ActuatorTest:
-                                if (SCIBusResponseBytes.Length < 3) break;
-
-                                if ((SCIBusResponseBytes.Length == 4) && (SCIBusResponseBytes[2] == 0))
-                                {
-                                    ActuatorTestStatusLabel.Text = "Status: mode not available";
-                                    break;
-                                }
-
-                                if ((SCIBusResponseBytes[1] == 0) && (SCIBusResponseBytes[2] == 0))
-                                {
-                                    ActuatorTestStatusLabel.Text = "Status: stopped";
-                                    break;
-                                }
-
-                                ActuatorTestStatusLabel.Text = "Status: running";
-                                break;
-                            case (byte)SCI_ID.ResetMemory:
-                                if (SCIBusResponseBytes.Length < 3) break;
-
-                                switch (SCIBusResponseBytes[2])
-                                {
-                                    case 0x00:
-                                        ResetMemoryStatusLabel.Text = "Status: stop engine";
-                                        break;
-                                    case 0x01:
-                                        ResetMemoryStatusLabel.Text = "Status: mode not available";
-                                        break;
-                                    case 0x02:
-                                        ResetMemoryStatusLabel.Text = "Status: denied (module busy)";
-                                        break;
-                                    case 0x03:
-                                        ResetMemoryStatusLabel.Text = "Status: denied (security level)";
-                                        break;
-                                    case 0xF0:
-                                        ResetMemoryStatusLabel.Text = "Status: ok";
-                                        break;
-                                    default:
-                                        ResetMemoryStatusLabel.Text = "Status: unknown";
-                                        break;
-                                }
-                                break;
-                            case (byte)SCI_ID.ConfigData:
-                                if (SCIBusResponseBytes.Length < 3) break;
-
-                                UpdateCHTGroup();
-                                UpdateStatusBar();
-                                break;
-                            case (byte)SCI_ID.GetSecuritySeedLegacy:
-                                if (SCIBusResponseBytes.Length < 4) break;
-
-                                byte ChecksumA = (byte)(SCIBusResponseBytes[0] + SCIBusResponseBytes[1] + SCIBusResponseBytes[2]);
-
-                                if (SCIBusResponseBytes[3] != ChecksumA) break;
-
-                                ushort SeedA = (ushort)((SCIBusResponseBytes[1] << 8) + SCIBusResponseBytes[2]);
-
-                                if (SeedA == 0) break;
-
-                                ushort KeyA = (ushort)((SeedA << 2) + 0x9018);
-                                byte KeyHBA = (byte)(KeyA >> 8);
-                                byte KeyLBA = (byte)(KeyA);
-                                byte KeyChecksumA = (byte)(0x2C + KeyHBA + KeyLBA);
-                                byte[] KeyArrayA = { (byte)SCI_ID.SendSecurityKey, KeyHBA, KeyLBA, KeyChecksumA };
-
-                                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                                MainForm.Packet.tx.payload = KeyArrayA;
-                                MainForm.Packet.GeneratePacket();
-                                OriginalForm.TransmitUSBPacket("[<-TX] Send level 1 security key:");
-                                break;
-                            case (byte)SCI_ID.GetSecuritySeed:
-                                if (SCIBusResponseBytes.Length < 5) break;
-
-                                if (SCIBusResponseBytes[1] == 0x01)
-                                {
-                                    byte ChecksumB = (byte)(SCIBusResponseBytes[0] + SCIBusResponseBytes[1] + SCIBusResponseBytes[2] + SCIBusResponseBytes[3]);
-
-                                    if (SCIBusResponseBytes[4] != ChecksumB) break;
-
-                                    ushort SeedB = (ushort)((SCIBusResponseBytes[2] << 8) + SCIBusResponseBytes[3]);
-
-                                    if (SeedB == 0) break;
-
-                                    ushort KeyB = (ushort)((SeedB << 2) + 0x9018);
-                                    byte KeyHBB = (byte)(KeyB >> 8);
-                                    byte KeyLBB = (byte)(KeyB);
-                                    byte KeyChecksumB = (byte)(0x2C + KeyHBB + KeyLBB);
-                                    byte[] KeyArrayB = { (byte)SCI_ID.SendSecurityKey, KeyHBB, KeyLBB, KeyChecksumB };
-
-                                    MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                                    MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                                    MainForm.Packet.tx.payload = KeyArrayB;
-                                    MainForm.Packet.GeneratePacket();
-                                    OriginalForm.TransmitUSBPacket("[<-TX] Send level 1 security key:");
-                                }
-                                else if (SCIBusResponseBytes[1] == 0x02)
-                                {
-                                    byte ChecksumC = (byte)(SCIBusResponseBytes[0] + SCIBusResponseBytes[1] + SCIBusResponseBytes[2] + SCIBusResponseBytes[3]);
-
-                                    if (SCIBusResponseBytes[4] != ChecksumC) break;
-
-                                    ushort SeedC = (ushort)((SCIBusResponseBytes[2] << 8) + SCIBusResponseBytes[3]);
-
-                                    if (SeedC == 0) break;
-
-                                    ushort KeyC = (ushort)(SeedC & 0xFF00);
-                                    KeyC |= (ushort)(KeyC >> 8);
-
-                                    ushort mask = (ushort)(SeedC & 0xFF);
-                                    mask |= (ushort)(mask << 8);
-                                    KeyC ^= 0x9340; // polinom
-                                    KeyC += 0x1010;
-                                    KeyC ^= mask;
-                                    KeyC += 0x1911;
-                                    uint tmp = (uint)((KeyC << 16) | KeyC);
-                                    KeyC += (ushort)(tmp >> 3);
-                                    byte KeyHBC = (byte)(KeyC >> 8);
-                                    byte KeyLBC = (byte)(KeyC);
-                                    byte KeyChecksumC = (byte)(0x2C + KeyHBC + KeyLBC);
-                                    byte[] KeyArrayC = { 0x2C, KeyHBC, KeyLBC, KeyChecksumC };
-
-                                    MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                                    MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                                    MainForm.Packet.tx.payload = KeyArrayC;
-                                    MainForm.Packet.GeneratePacket();
-                                    OriginalForm.TransmitUSBPacket("[<-TX] Send level 2 security key:");
-                                }
-                                break;
-                        }
-                    }
-                    else if (OriginalForm.PCM.speed == "62500 baud")
-                    {
-                        if ((SCIBusResponseBytes[0] >= 0xF0) && (SCIBusResponseBytes[0] <= 0xFD))
-                        {
-                            if (SCIBusResponseBytes.Length >= 3)
-                            {
-                                if (DiagnosticDataCSVCheckBox.Checked && (DiagnosticItemCount > 0))
-                                {
-                                    DiagnosticItems.Add(SCIBusResponseBytes);
-
-                                    if ((DiagnosticItems.Count == 1) && (SCIBusResponseBytes[1] != FirstDiagnosticItemID)) // keep columns ordered
-                                    {
-                                        DiagnosticItems.Clear();
-                                    }
-                                }
-
-                                if ((DiagnosticItems.Count == DiagnosticItemCount) && (DiagnosticItemCount > 0))
-                                {
-                                    uint Millis = (uint)((MainForm.Packet.rx.payload[0] << 24) + (MainForm.Packet.rx.payload[1] << 16) + (MainForm.Packet.rx.payload[2] << 8) + MainForm.Packet.rx.payload[3]);
-                                    CSVLine = Millis.ToString();
-
-                                    foreach (var item in DiagnosticItems)
-                                    {
-                                        CSVLine += ",";
-
-                                        if ((item.Length >= 5) && WordRequestFilter[item[0] - 0xF0].Contains(item[1]))
-                                        {
-                                            CSVLine += ((item[2] << 8) + item[4]).ToString();
-                                        }
-                                        else if ((item.Length >= 9) && DWordRequestFilter[item[0] - 0xF0].Contains(item[1]))
-                                        {
-                                            CSVLine += ((uint)(item[2] << 24 | item[4] << 16 | item[6] << 8 | item[8])).ToString();
-                                        }
-                                        else
-                                        {
-                                            CSVLine += item[2].ToString();
-                                        }
-                                    }
-
-                                    File.AppendAllText(CSVFilename, Environment.NewLine + CSVLine);
-                                    DiagnosticItems.Clear();
                                 }
                             }
-                            else if (SCIBusResponseBytes.Length < 3)
+                            else if (SCIBusResponseBytes[0] == (byte)SCI_ID.SCILoSpeed)
                             {
-                                if (DiagnosticDataCSVCheckBox.Checked)
-                                {
-                                    DiagnosticItems.Add(new byte[3] { (byte)(0xF0 + RAMTableComboBox.SelectedIndex), 0x00, 0x00 }); // an invalid response would break the CSV-file format, add an empty response instead
-                                }
+                                LowSpeedLayout();
+                                AddLowSpeedDiagnosticData();
                             }
                         }
-                        else if (SCIBusResponseBytes[0] == (byte)SCI_ID.SCILoSpeed)
-                        {
-                            LowSpeedLayout();
-                            AddLowSpeedDiagnosticData();
-                        }
-                    }
-                    break;
-            }
+                        break;
+                }
+            });
         }
 
         private void LowSpeedLayout()
@@ -1451,7 +1456,7 @@ namespace ChryslerScanner
                     "F700 |"});
                     break;
                 case 0xF8:
-                    if ((OriginalForm.PCM.Year < 2003) && CumminsSelected)
+                    if ((OriginalForm.PCM.Year < 2003) && OriginalForm.PCM.CumminsSelected)
                     {
                         DiagnosticDataListBox.Items.AddRange(new object[] {
                         "F800 | CUMMINS DTC FREEZE FRAMES",
@@ -1695,7 +1700,7 @@ namespace ChryslerScanner
                         "F8EE |",
                         "F8EF |"});
                     }
-                    else if ((OriginalForm.PCM.Year >= 2003) && CumminsSelected)
+                    else if ((OriginalForm.PCM.Year >= 2003) && OriginalForm.PCM.CumminsSelected)
                     {
                         DiagnosticDataListBox.Items.AddRange(new object[] {
                         "F800 | CUMMINS DTC FREEZE FRAMES",
@@ -1954,7 +1959,7 @@ namespace ChryslerScanner
                     "FA00 |"});
                     break;
                 case 0xFB:
-                    if ((OriginalForm.PCM.Year < 2003) && CumminsSelected)
+                    if ((OriginalForm.PCM.Year < 2003) && OriginalForm.PCM.CumminsSelected)
                     {
                         DiagnosticDataListBox.Items.AddRange(new object[] {
                         "FB00 | CUMMINS SENSORS",
@@ -2198,7 +2203,7 @@ namespace ChryslerScanner
                         "FBEE |",
                         "FBEF |"});
                     }
-                    else if ((OriginalForm.PCM.Year >= 2003) && CumminsSelected)
+                    else if ((OriginalForm.PCM.Year >= 2003) && OriginalForm.PCM.CumminsSelected)
                     {
                         DiagnosticDataListBox.Items.AddRange(new object[] {
                         "FB00 | CUMMINS SENSORS",
@@ -2969,7 +2974,10 @@ namespace ChryslerScanner
 
         private void UpdateCHTGroup()
         {
-            CHTComboBox.SelectedIndex = OriginalForm.PCM.ControllerHardwareType;
+            Invoke((MethodInvoker)delegate
+            {
+                CHTComboBox.SelectedIndex = OriginalForm.PCM.ControllerHardwareType;
+            });
         }
 
         private void UpdateStatusBar()

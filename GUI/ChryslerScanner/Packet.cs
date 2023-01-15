@@ -8,9 +8,10 @@ namespace ChryslerScanner
 {
     public class Packet : IDisposable
     {
-        public SerialPort Serial = new SerialPort();
+        public SerialPort SP = new SerialPort();
         public delegate void PacketReceivedEventHandler(object sender, EventArgs e);
         public event PacketReceivedEventHandler PacketReceived;
+        public Stream _stream;
 
         private bool isDisposed = false;
 
@@ -213,9 +214,9 @@ namespace ChryslerScanner
         {
             if (!isDisposed)
             {
-                if (disposing && (Serial != null))
+                if (disposing && (SP != null))
                 {
-                    Serial.Dispose();
+                    SP.Dispose();
                 }
 
                 isDisposed = true;
@@ -228,40 +229,36 @@ namespace ChryslerScanner
             GC.SuppressFinalize(this);
         }
 
-        public virtual void OnPacketReceived(EventArgs e)
-        {
-            PacketReceived?.Invoke(this, e);
-        }
-
         /// <summary>
         /// Read the current opened serial port asynchronously in an infinte loop and raise an event if a valid communication packet is received.
         /// </summary>
         /// <returns>None.</returns>
         public async void MonitorSerialPort()
         {
-            while (true)
+            _stream = SP.BaseStream;
+
+            while (SP.IsOpen)
             {
                 try
                 {
-                    rx.buffer = await SerialPortExtension.ReadPacketAsync(Serial);
+                    if (_stream == null)
+                        return;
                     
+                    rx.buffer = await SerialPortExtension.ReadPacketAsync(_stream);
+
+                    if (rx.buffer == null)
+                        return;
+
                     // Verify checksum.
-                    byte checksum = 0;
-                    int checksumLocation = rx.buffer.Length - 1;
+                    byte checksum = Util.ChecksumCalculator(rx.buffer, 0, rx.buffer.Length - 1);
 
-                    for (int i = 0; i < checksumLocation; i++) checksum += rx.buffer[i];
-
-                    if (checksum == rx.buffer[checksumLocation])
+                    if (checksum == rx.buffer[rx.buffer.Length - 1])
                     {
                         ParsePacket();
-                        OnPacketReceived(EventArgs.Empty); // raise OnPacketReceived event and start analyzing the received packet where subscribed
+                        PacketReceived?.Invoke(this, EventArgs.Empty); // raise OnPacketReceived event and start analyzing the received packet where subscribed
                     }
                 }
-                catch (IOException)
-                {
-                    return;
-                }
-                catch (InvalidOperationException)
+                catch
                 {
                     return;
                 }
@@ -325,8 +322,8 @@ namespace ChryslerScanner
             byte datacode = (byte)(((tx.bus << 4) & 0x70) + (tx.command & 0x0F));
             byte subdatacode = tx.mode;
 
-            packet.AddRange(new byte[] { 0x3D, lengthHB, lengthLB, datacode, subdatacode});
-            if (tx.payload != null)  packet.AddRange(tx.payload);
+            packet.AddRange(new byte[] { 0x3D, lengthHB, lengthLB, datacode, subdatacode });
+            if (tx.payload != null) packet.AddRange(tx.payload);
 
             for (int i = 0; i < packet.Count; i++)
             {

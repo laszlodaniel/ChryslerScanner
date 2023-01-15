@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ChryslerScanner
@@ -71,31 +72,40 @@ namespace ChryslerScanner
         /// <summary>
         /// Update a specific TextBox control with commentary line and a packet in hex-string format.
         /// </summary>
-        /// <param name="textBox">Target TextBox.</param>
+        /// <param name="TB">Target TextBox.</param>
         /// <param name="text">Commentary line to first appear.</param>
         /// <param name="bytes">Packet to display.</param>
-        public static void UpdateTextBox(TextBox textBox, string text, byte[] bytes = null)
+        public static void UpdateTextBox(TextBox TB, string text, byte[] bytes = null)
         {
-            if (!textBox.IsDisposed)
-            {
-                StringBuilder ret = new StringBuilder();
+            if (TB.IsDisposed) return;
 
-                if (textBox.Text != "") ret.Append(Environment.NewLine + Environment.NewLine);
+            StringBuilder ret = new StringBuilder();
+
+            TB.Invoke((MethodInvoker)delegate
+            {
+                if (TB.Text != "")
+                {
+                    ret.Append(Environment.NewLine + Environment.NewLine);
+                }
+                else
+                {
+                    ret.Append(Environment.NewLine + Environment.NewLine);
+                }
 
                 ret.Append(text);
 
                 if (bytes != null) ret.Append(Environment.NewLine + ByteToHexString(bytes, 0, bytes.Length));
 
-                if (textBox.TextLength + ret.Length > textBox.MaxLength)
+                if (TB.TextLength + ret.Length > TB.MaxLength)
                 {
-                    textBox.Clear();
+                    TB.Clear();
                     GC.Collect();
                 }
 
-                textBox.AppendText(ret.ToString());
+                TB.AppendText(ret.ToString());
 
                 // Save generated text to a logfile.
-                if (textBox.Name == "USBTextBox") File.AppendAllText(MainForm.USBTextLogFilename, ret.ToString());
+                if (TB.Name == "USBTextBox") File.AppendAllText(MainForm.USBTextLogFilename, ret.ToString());
 
                 // Save raw USB packet to a binary logfile.
                 using (BinaryWriter writer = new BinaryWriter(File.Open(MainForm.USBBinaryLogFilename, FileMode.Append)))
@@ -106,7 +116,7 @@ namespace ChryslerScanner
                         writer.Close();
                     }
                 }
-            }
+            });
         }
 
         /// <summary>
@@ -209,6 +219,19 @@ namespace ChryslerScanner
         public static bool IsBitClear(byte value, byte position)
         {
             return !IsBitSet(value, position);
+        }
+
+        /// <summary>
+        /// Determine operating system.
+        /// </summary>
+        /// <returns>True if Windows OS, false if Linux OS.</returns>
+        public static bool IsWindows
+        {
+            get
+            {
+                PlatformID id = Environment.OSVersion.Platform;
+                return id == PlatformID.Win32Windows || id == PlatformID.Win32NT; // WinCE not supported
+            }
         }
 
         /// <summary>

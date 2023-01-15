@@ -92,13 +92,14 @@
             // ABSToolsForm
             // 
             resources.ApplyResources(this, "$this");
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.Controls.Add(this.ABSToolsHelpButton);
             this.Controls.Add(this.ABSToolsInfoTextBox);
             this.Controls.Add(this.ABSModuleTypeGroupBox);
             this.Controls.Add(this.FaultCodeGroupBox);
             this.Name = "ABSToolsForm";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ABSToolsForm_FormClosing);
+            this.Load += new System.EventHandler(this.ABSToolsForm_Load);
             this.FaultCodeGroupBox.ResumeLayout(false);
             this.ABSModuleTypeGroupBox.ResumeLayout(false);
             this.ResumeLayout(false);

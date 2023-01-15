@@ -334,7 +334,7 @@ namespace ChryslerScanner
             // BootstrapToolsForm
             // 
             resources.ApplyResources(this, "$this");
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.Controls.Add(this.SCIBusBootstrapToolsHelpButton);
             this.Controls.Add(this.SCIBusBootstrapToolsProgressLabel);
             this.Controls.Add(this.EEPROMGroupBox);
@@ -344,6 +344,7 @@ namespace ChryslerScanner
             this.Controls.Add(this.InitializeBootstrapModeGroupBox);
             this.Name = "BootstrapToolsForm";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.BootstrapToolsForm_FormClosing);
+            this.Load += new System.EventHandler(this.BootstrapToolsForm_Load);
             this.InitializeBootstrapModeGroupBox.ResumeLayout(false);
             this.InitializeBootstrapModeGroupBox.PerformLayout();
             this.UploadWorkerFunctionGroupBox.ResumeLayout(false);

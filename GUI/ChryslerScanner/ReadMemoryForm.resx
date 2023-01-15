@@ -117,11 +117,324 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="&gt;&gt;CCDBusTabPage.Name" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusTabPage.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusTabPage.Parent" xml:space="preserve">
+    <value>ReadMemoryTabControl</value>
+  </data>
+  <data name="&gt;&gt;CCDBusTabPage.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMTabPage.Name" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMTabPage.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMTabPage.Parent" xml:space="preserve">
+    <value>ReadMemoryTabControl</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMTabPage.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="ReadMemoryTabControl.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 6</value>
+  </data>
+  <data name="ReadMemoryTabControl.Size" type="System.Drawing.Size, System.Drawing">
+    <value>524, 297</value>
+  </data>
   <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="ReadMemoryTabControl.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;ReadMemoryTabControl.Name" xml:space="preserve">
+    <value>ReadMemoryTabControl</value>
+  </data>
+  <data name="&gt;&gt;ReadMemoryTabControl.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabControl, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ReadMemoryTabControl.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;ReadMemoryTabControl.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryHelpButton.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryHelpButton</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryHelpButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryHelpButton.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryHelpButton.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryProgressLabel.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryProgressLabel</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryProgressLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryProgressLabel.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryProgressLabel.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryInfoTextBox.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryInfoTextBox</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryInfoTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryInfoTextBox.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryInfoTextBox.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryValueLabel.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryValueLabel</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryValueLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryValueLabel.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryValueLabel.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryValuesTextBox.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryValuesTextBox</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryValuesTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryValuesTextBox.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryValuesTextBox.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryCurrentOffsetLabel.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryCurrentOffsetLabel</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryCurrentOffsetLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryCurrentOffsetLabel.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryCurrentOffsetLabel.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryCurrentOffsetTextBox.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryCurrentOffsetTextBox</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryCurrentOffsetTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryCurrentOffsetTextBox.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryCurrentOffsetTextBox.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryStopButton.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryStopButton</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryStopButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryStopButton.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryStopButton.ZOrder" xml:space="preserve">
+    <value>7</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryStartButton.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryStartButton</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryStartButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryStartButton.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryStartButton.ZOrder" xml:space="preserve">
+    <value>8</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryIncrementLabel.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryIncrementLabel</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryIncrementLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryIncrementLabel.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryIncrementLabel.ZOrder" xml:space="preserve">
+    <value>9</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryIncrementTextBox.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryIncrementTextBox</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryIncrementTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryIncrementTextBox.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryIncrementTextBox.ZOrder" xml:space="preserve">
+    <value>10</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryEndOffsetLabel.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryEndOffsetLabel</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryEndOffsetLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryEndOffsetLabel.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryEndOffsetLabel.ZOrder" xml:space="preserve">
+    <value>11</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryEndOffsetTextBox.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryEndOffsetTextBox</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryEndOffsetTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryEndOffsetTextBox.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryEndOffsetTextBox.ZOrder" xml:space="preserve">
+    <value>12</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryStartOffsetLabel.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryStartOffsetLabel</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryStartOffsetLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryStartOffsetLabel.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryStartOffsetLabel.ZOrder" xml:space="preserve">
+    <value>13</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryStartOffsetTextBox.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryStartOffsetTextBox</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryStartOffsetTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryStartOffsetTextBox.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryStartOffsetTextBox.ZOrder" xml:space="preserve">
+    <value>14</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryCommandLabel.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryCommandLabel</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryCommandLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryCommandLabel.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryCommandLabel.ZOrder" xml:space="preserve">
+    <value>15</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryCommandTextBox.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryCommandTextBox</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryCommandTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryCommandTextBox.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryCommandTextBox.ZOrder" xml:space="preserve">
+    <value>16</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryModuleLabel.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryModuleLabel</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryModuleLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryModuleLabel.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryModuleLabel.ZOrder" xml:space="preserve">
+    <value>17</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryModuleTextBox.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryModuleTextBox</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryModuleTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryModuleTextBox.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryModuleTextBox.ZOrder" xml:space="preserve">
+    <value>18</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryInitializeSessionButton.Name" xml:space="preserve">
+    <value>CCDBusReadMemoryInitializeSessionButton</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryInitializeSessionButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryInitializeSessionButton.Parent" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusReadMemoryInitializeSessionButton.ZOrder" xml:space="preserve">
+    <value>19</value>
+  </data>
+  <data name="CCDBusTabPage.Location" type="System.Drawing.Point, System.Drawing">
+    <value>4, 22</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="CCDBusTabPage.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 3, 3, 3</value>
+  </data>
+  <data name="CCDBusTabPage.Size" type="System.Drawing.Size, System.Drawing">
+    <value>516, 271</value>
+  </data>
+  <data name="CCDBusTabPage.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="CCDBusTabPage.Text" xml:space="preserve">
+    <value>CCD-bus</value>
+  </data>
+  <data name="&gt;&gt;CCDBusTabPage.Name" xml:space="preserve">
+    <value>CCDBusTabPage</value>
+  </data>
+  <data name="&gt;&gt;CCDBusTabPage.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CCDBusTabPage.Parent" xml:space="preserve">
+    <value>ReadMemoryTabControl</value>
+  </data>
+  <data name="&gt;&gt;CCDBusTabPage.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
   <data name="CCDBusReadMemoryHelpButton.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
-  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="CCDBusReadMemoryHelpButton.Location" type="System.Drawing.Point, System.Drawing">
     <value>443, 240</value>
   </data>
@@ -182,7 +495,6 @@
   <data name="CCDBusReadMemoryInfoTextBox.Multiline" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="CCDBusReadMemoryInfoTextBox.ScrollBars" type="System.Windows.Forms.ScrollBars, System.Windows.Forms">
     <value>Vertical</value>
   </data>
@@ -660,32 +972,272 @@
   <data name="&gt;&gt;CCDBusReadMemoryInitializeSessionButton.ZOrder" xml:space="preserve">
     <value>19</value>
   </data>
-  <data name="CCDBusTabPage.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="&gt;&gt;SCIBusPCMReadMemoryPresetComboBox.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryPresetComboBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryPresetComboBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryPresetComboBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryPresetComboBox.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryHelpButton.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryHelpButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryHelpButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryHelpButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryHelpButton.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryProgressLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryProgressLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryProgressLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryProgressLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryProgressLabel.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryInfoTextBox.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryInfoTextBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryInfoTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryInfoTextBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryInfoTextBox.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryValueLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryValueLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryValueLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryValueLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryValueLabel.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryValueTextBox.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryValueTextBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryValueTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryValueTextBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryValueTextBox.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryCurrentOffsetLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryCurrentOffsetLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryCurrentOffsetLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryCurrentOffsetLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryCurrentOffsetLabel.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryCurrentOffsetTextBox.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryCurrentOffsetTextBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryCurrentOffsetTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryCurrentOffsetTextBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryCurrentOffsetTextBox.ZOrder" xml:space="preserve">
+    <value>7</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryStopButton.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryStopButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryStopButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryStopButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryStopButton.ZOrder" xml:space="preserve">
+    <value>8</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryStartButton.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryStartButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryStartButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryStartButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryStartButton.ZOrder" xml:space="preserve">
+    <value>9</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryIncrementLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryIncrementLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryIncrementLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryIncrementLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryIncrementLabel.ZOrder" xml:space="preserve">
+    <value>10</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryIncrementTextBox.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryIncrementTextBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryIncrementTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryIncrementTextBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryIncrementTextBox.ZOrder" xml:space="preserve">
+    <value>11</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryEndOffsetLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryEndOffsetLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryEndOffsetLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryEndOffsetLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryEndOffsetLabel.ZOrder" xml:space="preserve">
+    <value>12</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryEndOffsetTextBox.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryEndOffsetTextBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryEndOffsetTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryEndOffsetTextBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryEndOffsetTextBox.ZOrder" xml:space="preserve">
+    <value>13</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryStartOffsetLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryStartOffsetLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryStartOffsetLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryStartOffsetLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryStartOffsetLabel.ZOrder" xml:space="preserve">
+    <value>14</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryStartOffsetTextBox.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryStartOffsetTextBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryStartOffsetTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryStartOffsetTextBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryStartOffsetTextBox.ZOrder" xml:space="preserve">
+    <value>15</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryCommandLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryCommandLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryCommandLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryCommandLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryCommandLabel.ZOrder" xml:space="preserve">
+    <value>16</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryCommandTextBox.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryCommandTextBox</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryCommandTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryCommandTextBox.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryCommandTextBox.ZOrder" xml:space="preserve">
+    <value>17</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryPresetLabel.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryPresetLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryPresetLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryPresetLabel.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryPresetLabel.ZOrder" xml:space="preserve">
+    <value>18</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryInitializeSessionButton.Name" xml:space="preserve">
+    <value>SCIBusPCMReadMemoryInitializeSessionButton</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryInitializeSessionButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryInitializeSessionButton.Parent" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusPCMReadMemoryInitializeSessionButton.ZOrder" xml:space="preserve">
+    <value>19</value>
+  </data>
+  <data name="SCIBusPCMTabPage.Location" type="System.Drawing.Point, System.Drawing">
     <value>4, 22</value>
   </data>
-  <data name="CCDBusTabPage.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+  <data name="SCIBusPCMTabPage.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 3, 3, 3</value>
   </data>
-  <data name="CCDBusTabPage.Size" type="System.Drawing.Size, System.Drawing">
+  <data name="SCIBusPCMTabPage.Size" type="System.Drawing.Size, System.Drawing">
     <value>516, 271</value>
   </data>
-  <data name="CCDBusTabPage.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
+  <data name="SCIBusPCMTabPage.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
   </data>
-  <data name="CCDBusTabPage.Text" xml:space="preserve">
-    <value>CCD-bus</value>
+  <data name="SCIBusPCMTabPage.Text" xml:space="preserve">
+    <value>SCI-bus (Engine)</value>
   </data>
-  <data name="&gt;&gt;CCDBusTabPage.Name" xml:space="preserve">
-    <value>CCDBusTabPage</value>
+  <data name="&gt;&gt;SCIBusPCMTabPage.Name" xml:space="preserve">
+    <value>SCIBusPCMTabPage</value>
   </data>
-  <data name="&gt;&gt;CCDBusTabPage.Type" xml:space="preserve">
+  <data name="&gt;&gt;SCIBusPCMTabPage.Type" xml:space="preserve">
     <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;CCDBusTabPage.Parent" xml:space="preserve">
+  <data name="&gt;&gt;SCIBusPCMTabPage.Parent" xml:space="preserve">
     <value>ReadMemoryTabControl</value>
   </data>
-  <data name="&gt;&gt;CCDBusTabPage.ZOrder" xml:space="preserve">
-    <value>0</value>
+  <data name="&gt;&gt;SCIBusPCMTabPage.ZOrder" xml:space="preserve">
+    <value>1</value>
   </data>
   <data name="SCIBusPCMReadMemoryPresetComboBox.Items" xml:space="preserve">
     <value>ROM/32kB</value>
@@ -1239,59 +1791,11 @@
   <data name="&gt;&gt;SCIBusPCMReadMemoryInitializeSessionButton.ZOrder" xml:space="preserve">
     <value>19</value>
   </data>
-  <data name="SCIBusPCMTabPage.Location" type="System.Drawing.Point, System.Drawing">
-    <value>4, 22</value>
-  </data>
-  <data name="SCIBusPCMTabPage.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>3, 3, 3, 3</value>
-  </data>
-  <data name="SCIBusPCMTabPage.Size" type="System.Drawing.Size, System.Drawing">
-    <value>516, 271</value>
-  </data>
-  <data name="SCIBusPCMTabPage.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
-  </data>
-  <data name="SCIBusPCMTabPage.Text" xml:space="preserve">
-    <value>SCI-bus (Engine)</value>
-  </data>
-  <data name="&gt;&gt;SCIBusPCMTabPage.Name" xml:space="preserve">
-    <value>SCIBusPCMTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusPCMTabPage.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusPCMTabPage.Parent" xml:space="preserve">
-    <value>ReadMemoryTabControl</value>
-  </data>
-  <data name="&gt;&gt;SCIBusPCMTabPage.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="ReadMemoryTabControl.Location" type="System.Drawing.Point, System.Drawing">
-    <value>6, 6</value>
-  </data>
-  <data name="ReadMemoryTabControl.Size" type="System.Drawing.Size, System.Drawing">
-    <value>524, 297</value>
-  </data>
-  <data name="ReadMemoryTabControl.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;ReadMemoryTabControl.Name" xml:space="preserve">
-    <value>ReadMemoryTabControl</value>
-  </data>
-  <data name="&gt;&gt;ReadMemoryTabControl.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabControl, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;ReadMemoryTabControl.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;ReadMemoryTabControl.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>
   <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
-    <value>6, 13</value>
+    <value>96, 96</value>
   </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
     <value>534, 308</value>

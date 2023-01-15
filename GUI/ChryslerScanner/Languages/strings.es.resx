@@ -189,6 +189,10 @@
     <value>Diagnostics</value>
     <comment>+</comment>
   </data>
+  <data name="Disconnect" xml:space="preserve">
+    <value>Disconnect</value>
+    <comment>+</comment>
+  </data>
   <data name="Engine" xml:space="preserve">
     <value>Engine</value>
     <comment>+</comment>

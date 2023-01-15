@@ -249,6 +249,12 @@
   <data name="SortMessagesByIDByteToolStripMenuItem.Text" xml:space="preserve">
     <value>Sort messages by ID byte</value>
   </data>
+  <data name="DisplayRawBusPacketsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>230, 22</value>
+  </data>
+  <data name="DisplayRawBusPacketsToolStripMenuItem.Text" xml:space="preserve">
+    <value>Display raw bus packets</value>
+  </data>
   <data name="SettingsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>61, 20</value>
   </data>
@@ -353,6 +359,9 @@
   </data>
   <data name="USBTextBox.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
+  </data>
+  <data name="USBTextBox.Text" xml:space="preserve">
+    <value>[INFO] GUI started.</value>
   </data>
   <data name="&gt;&gt;USBTextBox.Name" xml:space="preserve">
     <value>USBTextBox</value>
@@ -4149,11 +4158,11 @@
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>
+  <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
+    <value>96, 96</value>
+  </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
     <value>1284, 611</value>
-  </data>
-  <data name="$this.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
   </data>
   <data name="$this.StartPosition" type="System.Windows.Forms.FormStartPosition, System.Windows.Forms">
     <value>CenterScreen</value>
@@ -4273,6 +4282,12 @@
     <value>AboutToolStripMenuItem</value>
   </data>
   <data name="&gt;&gt;AboutToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;DisplayRawBusPacketsToolStripMenuItem.Name" xml:space="preserve">
+    <value>DisplayRawBusPacketsToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;DisplayRawBusPacketsToolStripMenuItem.Type" xml:space="preserve">
     <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">

@@ -16,7 +16,6 @@
             if (disposing && (components != null))
             {
                 components.Dispose();
-                Packet.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -180,6 +179,7 @@
             this.PCIBusDiagnosticsTabPage = new System.Windows.Forms.TabPage();
             this.SCIBusPCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
             this.SCIBusTCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
+            this.DisplayRawBusPacketsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.CCDBusDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
             this.PCIBusDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
             this.SCIBusPCMDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
@@ -266,7 +266,8 @@
             this.IncludeTimestampInLogFilesToolStripMenuItem,
             this.CCDBusOnDemandToolStripMenuItem,
             this.PCIBusOnDemandToolStripMenuItem,
-            this.SortMessagesByIDByteToolStripMenuItem});
+            this.SortMessagesByIDByteToolStripMenuItem,
+            this.DisplayRawBusPacketsToolStripMenuItem});
             this.SettingsToolStripMenuItem.Name = "SettingsToolStripMenuItem";
             resources.ApplyResources(this.SettingsToolStripMenuItem, "SettingsToolStripMenuItem");
             // 
@@ -1324,6 +1325,15 @@
             resources.ApplyResources(this.SCIBusTCMDiagnosticsTabPage, "SCIBusTCMDiagnosticsTabPage");
             this.SCIBusTCMDiagnosticsTabPage.Name = "SCIBusTCMDiagnosticsTabPage";
             // 
+            // DisplayRawBusPacketsToolStripMenuItem
+            // 
+            this.DisplayRawBusPacketsToolStripMenuItem.Checked = true;
+            this.DisplayRawBusPacketsToolStripMenuItem.CheckOnClick = true;
+            this.DisplayRawBusPacketsToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.DisplayRawBusPacketsToolStripMenuItem.Name = "DisplayRawBusPacketsToolStripMenuItem";
+            resources.ApplyResources(this.DisplayRawBusPacketsToolStripMenuItem, "DisplayRawBusPacketsToolStripMenuItem");
+            this.DisplayRawBusPacketsToolStripMenuItem.Click += new System.EventHandler(this.DisplayRawBusPacketsToolStripMenuItem_Click);
+            // 
             // CCDBusDiagnosticsListBox
             // 
             this.CCDBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
@@ -1352,8 +1362,8 @@
             // 
             // MainForm
             // 
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             resources.ApplyResources(this, "$this");
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.Controls.Add(this.DiagnosticsGroupBox);
             this.Controls.Add(this.ControlPanelGroupBox);
             this.Controls.Add(this.USBCommunicationGroupBox);
@@ -1362,6 +1372,7 @@
             this.KeyPreview = true;
             this.MainMenuStrip = this.MenuStrip;
             this.Name = "MainForm";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.MainForm_KeyDown);
             this.MenuStrip.ResumeLayout(false);
             this.MenuStrip.PerformLayout();
@@ -1546,6 +1557,7 @@
         private System.Windows.Forms.ToolStripMenuItem LanguageToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem EnglishLangToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem SpanishLangToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem DisplayRawBusPacketsToolStripMenuItem;
     }
 }
 

@@ -113,9 +113,12 @@ namespace ChryslerScanner
             ABSToolsWorker.ProgressChanged += new ProgressChangedEventHandler(ABSTools_ProgressChanged);
             ABSToolsWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(ABSTools_RunWorkerCompleted);
 
-            UpdateTextBox(ABSToolsInfoTextBox, "Begin by identifying ABS module.");
-
             ActiveControl = ABSModuleIDReadButton;
+        }
+
+        private void ABSToolsForm_Load(object sender, EventArgs e)
+        {
+            UpdateTextBox(ABSToolsInfoTextBox, "Begin by identifying ABS module.");
         }
 
         private void CCDBusAliveHandler(object source, ElapsedEventArgs e) => CCDBusAlive = false;
@@ -367,7 +370,7 @@ namespace ChryslerScanner
                             UpdateTextBox(ABSToolsInfoTextBox, Environment.NewLine + Environment.NewLine + "Enter diagnostic mode.");
 
                             // Prepare next step.
-                                
+
                             switch (CurrentTask)
                             {
                                 case Task.ReadID:
@@ -503,7 +506,7 @@ namespace ChryslerScanner
                             UpdateTextBox(ABSToolsInfoTextBox, Environment.NewLine + "Version: " + Util.ByteToHexString(new byte[1] { ABSSoftwareVersion }).Insert(1, "."));
 
                             // Prepare part number reading.
-                                
+
                             switch (ABSSoftwareID)
                             {
                                 case 0x80:
@@ -557,7 +560,7 @@ namespace ChryslerScanner
                                 UpdateTextBox(ABSToolsInfoTextBox, Environment.NewLine + "Part number: " + Encoding.ASCII.GetString(ABSPartNumber));
 
                                 // Prepare software checksum reading.
-                                    
+
                                 CCDBusTxPayload = new byte[6] { 0xB2, 0x43, 0x24, 0x02, 0x00, 0x1B }; // read software checksum next
                             }
                         }
@@ -570,14 +573,14 @@ namespace ChryslerScanner
                             UpdateTextBox(ABSToolsInfoTextBox, Environment.NewLine + "Checksum: " + Util.ByteToHexString(new byte[1] { ABSSoftwareChecksum }));
 
                             // Prepare hardware ID reading.
-                                
+
                             CCDBusTxPayload = new byte[6] { 0xB2, 0x43, 0x24, 0x01, 0x00, 0x1A }; // read hardware ID next
                         }
 
                         if (ABSHardwareIDRequested && (CCDBusResponseBytes[1] == 0x43) && (CCDBusResponseBytes[2] == 0x24))
                         {
                             ABSHardwareIDRequested = false;
-                            DrivenWheels = (byte)((CCDBusResponseBytes[3] & 0xC0 ) >> 6);
+                            DrivenWheels = (byte)((CCDBusResponseBytes[3] & 0xC0) >> 6);
                             PumpValveCount = (byte)(CCDBusResponseBytes[4] & 0x0F);
 
                             switch (DrivenWheels)
@@ -600,14 +603,14 @@ namespace ChryslerScanner
                             UpdateTextBox(ABSToolsInfoTextBox, Environment.NewLine + "Pump valve count: " + PumpValveCount.ToString("0"));
 
                             // Prepare tattle tale reading.
-                                
+
                             CCDBusTxPayload = new byte[6] { 0xB2, 0x43, 0x24, 0x03, 0x00, 0x1C }; // read tattle tale status next
                         }
 
                         if (ABSTattleTaleRequested && (CCDBusResponseBytes[1] == 0x43) && (CCDBusResponseBytes[2] == 0x24))
                         {
                             ABSTattleTaleRequested = false;
-                                
+
                             if ((CCDBusResponseBytes[3] & 0x01) == 0x01)
                             {
                                 ABSTattleTaleStatus = "were read.";
@@ -631,7 +634,7 @@ namespace ChryslerScanner
                             ABSFaultCodePage++; // next fault code page
 
                             CCDBusTxPayload = new byte[6] { 0xB2, 0x43, 0x16, ABSFaultCodePage, 0x00, 0x00 }; // read next fault code page
-                                
+
                             if (((ABSSoftwareID == 0x80) || (ABSSoftwareID == 0x85)) && (ABSFaultCodePage >= 2)) // Jeep MK4-G has 2 fault code pages
                             {
                                 if ((ABSFaultCodes[0] == 0) && (ABSFaultCodes[1] == 0))
@@ -801,25 +804,29 @@ namespace ChryslerScanner
             }
         }
 
-        private void UpdateTextBox(TextBox textBox, string text)
+        private void UpdateTextBox(TextBox TB, string text)
         {
-            if (!textBox.IsDisposed)
+            if (TB.IsDisposed || !TB.IsHandleCreated)
+                return;
+
+            Invoke((MethodInvoker)delegate
             {
-                if (textBox.TextLength + text.Length > textBox.MaxLength)
+                if (TB.TextLength + text.Length > TB.MaxLength)
                 {
-                    textBox.Clear();
+                    TB.Clear();
                     GC.Collect();
                 }
 
-                textBox.AppendText(text);
+                TB.AppendText(text);
 
                 File.AppendAllText(ABSToolsLogFilename, text);
-            }
+            });
         }
 
         private void ABSToolsForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (ABSToolsWorker.IsBusy) ABSToolsWorker.CancelAsync();
+
             MainForm.Packet.PacketReceived -= PacketReceivedHandler; // unsubscribe from the OnPacketReceived event
         }
     }

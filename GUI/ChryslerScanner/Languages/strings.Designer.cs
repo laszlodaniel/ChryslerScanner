@@ -232,6 +232,15 @@ namespace ChryslerScanner.Languages {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Disconnect.
+        /// </summary>
+        public static string Disconnect {
+            get {
+                return ResourceManager.GetString("Disconnect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Engine.
         /// </summary>
         public static string Engine {

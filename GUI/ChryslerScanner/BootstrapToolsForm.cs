@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
+using System.Data.OleDb;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Timers;
 using System.Windows.Forms;
 
@@ -169,7 +173,9 @@ namespace ChryslerScanner
         public BootstrapToolsForm(MainForm IncomingForm)
         {
             OriginalForm = IncomingForm;
+
             InitializeComponent();
+
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
             MainForm.Packet.PacketReceived += PacketReceivedHandler; // subscribe to the OnPacketReceived event
             OriginalForm.ChangeLanguage();
@@ -203,9 +209,12 @@ namespace ChryslerScanner
             SCIBusBootstrapWorker.ProgressChanged += new ProgressChangedEventHandler(SCIBusBootstrap_ProgressChanged);
             SCIBusBootstrapWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(SCIBusBootstrap_RunWorkerCompleted);
 
-            UpdateTextBox(SCIBusBootstrapInfoTextBox, "Begin by bootstrapping ECU with selected bootloader.");
-
             ActiveControl = BootstrapButton;
+        }
+
+        private void BootstrapToolsForm_Load(object sender, EventArgs e)
+        {
+            UpdateTextBox(SCIBusBootstrapInfoTextBox, "Begin by bootstrapping ECU with selected bootloader.");
         }
 
         private void SCIBusNextRequestHandler(object source, ElapsedEventArgs e) => SCIBusNextRequest = true;
@@ -218,11 +227,11 @@ namespace ChryslerScanner
         {
             while (!SCIBusBootstrapFinished && !SCIBusBootstrapWorker.CancellationPending)
             {
-                Thread.Sleep(1);
+                Thread.Sleep(5);
 
                 while (!SCIBusNextRequest && !SCIBusBootstrapWorker.CancellationPending) // wait for next request message
                 {
-                    Thread.Sleep(1);
+                    Thread.Sleep(5);
                 }
 
                 if (SCIBusBootstrapWorker.CancellationPending) break;
@@ -234,7 +243,7 @@ namespace ChryslerScanner
 
                 while (!SCIBusResponse && !SCIBusRxTimeout && !SCIBusBootstrapWorker.CancellationPending)
                 {
-                    Thread.Sleep(1);
+                    Thread.Sleep(5);
                 }
 
                 if (SCIBusBootstrapWorker.CancellationPending) break;
@@ -270,7 +279,10 @@ namespace ChryslerScanner
 
         private void SCIBusBootstrap_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            if (e.ProgressPercentage == 0)
+            if (e.ProgressPercentage != 0)
+                return;
+
+            Invoke((MethodInvoker)delegate
             {
                 switch (CurrentTask)
                 {
@@ -425,7 +437,6 @@ namespace ChryslerScanner
                             switch (BootloaderComboBox.SelectedIndex)
                             {
                                 case (byte)Bootloader.JTEC_256k:
-                                    //WorkerFunctionComboBox.SelectedIndex = (byte)WorkerFunction.EEPROMWriteParallel;
                                     WorkerFunctionComboBox.SelectedIndex = (byte)WorkerFunction.EEPROMWrite;
                                     break;
                                 default:
@@ -459,7 +470,6 @@ namespace ChryslerScanner
                             switch (BootloaderComboBox.SelectedIndex)
                             {
                                 case (byte)Bootloader.JTEC_256k:
-                                    //WorkerFunctionComboBox.SelectedIndex = (byte)WorkerFunction.EEPROMReadParallel;
                                     WorkerFunctionComboBox.SelectedIndex = (byte)WorkerFunction.EEPROMRead;
                                     break;
                                 default:
@@ -492,7 +502,6 @@ namespace ChryslerScanner
                             switch (BootloaderComboBox.SelectedIndex)
                             {
                                 case (byte)Bootloader.JTEC_256k:
-                                    //WorkerFunctionComboBox.SelectedIndex = (byte)WorkerFunction.EEPROMWriteParallel;
                                     WorkerFunctionComboBox.SelectedIndex = (byte)WorkerFunction.EEPROMWrite;
                                     break;
                                 default:
@@ -564,7 +573,7 @@ namespace ChryslerScanner
                 }
 
                 SCIBusRxTimeoutTimer.Start();
-            }
+            });
         }
 
         private void SCIBusBootstrap_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -620,7 +629,7 @@ namespace ChryslerScanner
 
             UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Turn key to OFF/LOCKED position.");
 
-            if (MessageBox.Show("Turn key to OFF/LOCKED position." + Environment.NewLine + "Wait at least 10 seconds afterwards." + Environment.NewLine + Environment.NewLine + "Try again and wait more if bootstrap fails." + Environment.NewLine + "Click OK when done.", "Information", MessageBoxButtons.OKCancel, MessageBoxIcon.Information, MessageBoxDefaultButton.Button2) == DialogResult.OK)
+            if (MessageBox.Show("Turn key to OFF/LOCKED position." + Environment.NewLine + "Wait at least 10 seconds afterwards." + Environment.NewLine + "Click OK when done." + Environment.NewLine + Environment.NewLine + "Try again and wait more if bootstrap fails.", "Information", MessageBoxButtons.OKCancel, MessageBoxIcon.Information, MessageBoxDefaultButton.Button2) == DialogResult.OK)
             {
                 if (OriginalForm.PCM.speed != "62500 baud")
                 {
@@ -724,84 +733,99 @@ namespace ChryslerScanner
             MainForm.Packet.GeneratePacket();
             OriginalForm.TransmitUSBPacket("[<-TX] Upload worker function:");
 
-            switch ((byte)WorkerFunctionComboBox.SelectedIndex)
+            Invoke((MethodInvoker)delegate
             {
-                case (byte)WorkerFunction.PartNumberRead:
-                    OriginalForm.UpdateUSBTextBox("[INFO] Worker function: part number read.");
-                    break;
-                case (byte)WorkerFunction.FlashID:
-                    OriginalForm.UpdateUSBTextBox("[INFO] Worker function: flash ID.");
-                    break;
-                case (byte)WorkerFunction.FlashRead:
-                    OriginalForm.UpdateUSBTextBox("[INFO] Worker function: flash read.");
-                    break;
-                case (byte)WorkerFunction.FlashErase:
-                    OriginalForm.UpdateUSBTextBox("[INFO] Worker function: flash erase.");
-                    FlashEraseSuccess = false;
-                    break;
-                case (byte)WorkerFunction.FlashWrite:
-                    OriginalForm.UpdateUSBTextBox("[INFO] Worker function: flash write.");
-                    break;
-                case (byte)WorkerFunction.VerifyFlashChecksum:
-                    OriginalForm.UpdateUSBTextBox("[INFO] Worker function: verify flash checksum.");
-                    break;
-                case (byte)WorkerFunction.EEPROMRead:
-                    OriginalForm.UpdateUSBTextBox("[INFO] Worker function: EEPROM read.");
-                    break;
-                case (byte)WorkerFunction.EEPROMWrite:
-                    OriginalForm.UpdateUSBTextBox("[INFO] Worker function: EEPROM write.");
-                    break;
-                case (byte)WorkerFunction.Empty:
-                default:
-                    OriginalForm.UpdateUSBTextBox("[INFO] Worker function: empty.");
-                    break;
-            }
+                switch (WorkerFunctionComboBox.SelectedIndex)
+                {
+                    case (byte)WorkerFunction.PartNumberRead:
+                        OriginalForm.UpdateUSBTextBox("[INFO] Worker function: part number read.");
+                        break;
+                    case (byte)WorkerFunction.FlashID:
+                        OriginalForm.UpdateUSBTextBox("[INFO] Worker function: flash ID.");
+                        break;
+                    case (byte)WorkerFunction.FlashRead:
+                        OriginalForm.UpdateUSBTextBox("[INFO] Worker function: flash read.");
+                        break;
+                    case (byte)WorkerFunction.FlashErase:
+                        OriginalForm.UpdateUSBTextBox("[INFO] Worker function: flash erase.");
+                        FlashEraseSuccess = false;
+                        break;
+                    case (byte)WorkerFunction.FlashWrite:
+                        OriginalForm.UpdateUSBTextBox("[INFO] Worker function: flash write.");
+                        break;
+                    case (byte)WorkerFunction.VerifyFlashChecksum:
+                        OriginalForm.UpdateUSBTextBox("[INFO] Worker function: verify flash checksum.");
+                        break;
+                    case (byte)WorkerFunction.EEPROMRead:
+                        OriginalForm.UpdateUSBTextBox("[INFO] Worker function: EEPROM read.");
+                        break;
+                    case (byte)WorkerFunction.EEPROMWrite:
+                        OriginalForm.UpdateUSBTextBox("[INFO] Worker function: EEPROM write.");
+                        break;
+                    case (byte)WorkerFunction.Empty:
+                    default:
+                        OriginalForm.UpdateUSBTextBox("[INFO] Worker function: empty.");
+                        break;
+                }
+            });
         }
 
         private void StartButton_Click(object sender, EventArgs e)
         {
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
-            MainForm.Packet.tx.command = (byte)Packet.Command.debug;
-            MainForm.Packet.tx.mode = (byte)Packet.DebugMode.startWorkerFunction;
-            MainForm.Packet.tx.payload = new byte[2] { (byte)WorkerFunctionComboBox.SelectedIndex, (byte)FlashChipComboBox.SelectedIndex };
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Start worker function:");
+            Invoke((MethodInvoker)delegate
+            {
+                MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
+                MainForm.Packet.tx.command = (byte)Packet.Command.debug;
+                MainForm.Packet.tx.mode = (byte)Packet.DebugMode.startWorkerFunction;
+                MainForm.Packet.tx.payload = new byte[2] { (byte)WorkerFunctionComboBox.SelectedIndex, (byte)FlashChipComboBox.SelectedIndex };
+                MainForm.Packet.GeneratePacket();
+                OriginalForm.TransmitUSBPacket("[<-TX] Start worker function:");
+            });
         }
 
         private void ExitButton_Click(object sender, EventArgs e)
         {
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
-            MainForm.Packet.tx.command = (byte)Packet.Command.debug;
-            MainForm.Packet.tx.mode = (byte)Packet.DebugMode.exitWorkerFunction;
-            MainForm.Packet.tx.payload = new byte[2] { (byte)WorkerFunctionComboBox.SelectedIndex, (byte)FlashChipComboBox.SelectedIndex };
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Exit worker function:");
+            Invoke((MethodInvoker)delegate
+            {
+                MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
+                MainForm.Packet.tx.command = (byte)Packet.Command.debug;
+                MainForm.Packet.tx.mode = (byte)Packet.DebugMode.exitWorkerFunction;
+                MainForm.Packet.tx.payload = new byte[2] { (byte)WorkerFunctionComboBox.SelectedIndex, (byte)FlashChipComboBox.SelectedIndex };
+                MainForm.Packet.GeneratePacket();
+                OriginalForm.TransmitUSBPacket("[<-TX] Exit worker function:");
+            });
         }
 
         private void FlashChipComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (FlashChipComboBox.SelectedIndex == 0)
-            {
-                FlashChipSize = 0; // bytes
+            if (!FlashChipComboBox.IsHandleCreated)
                 return;
-            }
             
-            switch (FlashChipComboBox.SelectedIndex)
+            Invoke((MethodInvoker)delegate
             {
-                case 1:
-                case 2:
-                case 3:
-                    FlashChipSize = 131072; // bytes
-                    break;
-                case 4:
-                case 5:
-                case 6:
-                case 7:
-                case 8:
-                default:
-                    FlashChipSize = 262144; // bytes
-                    break;
-            }
+                if (FlashChipComboBox.SelectedIndex == 0)
+                {
+                    FlashChipSize = 0; // bytes
+                    return;
+                }
+
+                switch (FlashChipComboBox.SelectedIndex)
+                {
+                    case 1:
+                    case 2:
+                    case 3:
+                        FlashChipSize = 131072; // bytes
+                        break;
+                    case 4:
+                    case 5:
+                    case 6:
+                    case 7:
+                    case 8:
+                    default:
+                        FlashChipSize = 262144; // bytes
+                        break;
+                }
+            });
         }
 
         private void FlashChipDetectButton_Click(object sender, EventArgs e)
@@ -855,6 +879,12 @@ namespace ChryslerScanner
 
         private void FlashWriteButton_Click(object sender, EventArgs e)
         {
+            if (SCIBusBootstrapWorker.IsBusy)
+            {
+                MessageBox.Show("Busy!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
             WorkerFunctionComboBox.SelectedIndex = 0;
 
             if (FlashFileBuffer == null)
@@ -867,9 +897,7 @@ namespace ChryslerScanner
             {
                 return;
             }
-
-            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Start flash memory writing session.");
-
+            
             if (FlashChipComboBox.SelectedIndex != 0)
             {
                 if (MessageBox.Show("Do you want to use selected flash chip?" + Environment.NewLine + "Yes = use selected chip." + Environment.NewLine + "No = autodetect chip.", "Query", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) == DialogResult.No)
@@ -878,42 +906,47 @@ namespace ChryslerScanner
                 }
             }
 
-            if (!SCIBusBootstrapWorker.IsBusy)
-            {
-                CurrentTask = Task.CheckVoltages;
-                //CurrentTask = Task.VerifyFlashChecksum; // debug, skip time consuming stuff
-                SCIBusBootstrapFinished = false;
-                SCIBusNextRequest = true;
-                EEPROMStopButton.Enabled = false;
-                EEPROMReadButton.Enabled = false;
-                EEPROMWriteButton.Enabled = false;
-                EEPROMBrowseButton.Enabled = false;
-                FlashReadButton.Enabled = false;
-                FlashWriteButton.Enabled = false;
-                FlashBrowseButton.Enabled = false;
-                FlashChipDetectButton.Enabled = false;
-                FlashChipComboBox.Enabled = false;
-                ExitButton.Enabled = false;
-                StartButton.Enabled = false;
-                UploadButton.Enabled = false;
-                WorkerFunctionComboBox.Enabled = false;
-                BootstrapButton.Enabled = false;
-                BootloaderComboBox.Enabled = false;
-                SCIBusCurrentMemoryOffset = 0;
-                SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / (double)FlashChipSize * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/" + FlashChipSize.ToString() + " bytes)";
-                SCIBusBootstrapWorker.RunWorkerAsync();
-            }
+            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Start flash memory writing session.");
+
+            CurrentTask = Task.CheckVoltages;
+            //CurrentTask = Task.VerifyFlashChecksum; // debug, skip time consuming stuff
+            SCIBusBootstrapFinished = false;
+            SCIBusNextRequest = true;
+            EEPROMStopButton.Enabled = false;
+            EEPROMReadButton.Enabled = false;
+            EEPROMWriteButton.Enabled = false;
+            EEPROMBrowseButton.Enabled = false;
+            FlashReadButton.Enabled = false;
+            FlashWriteButton.Enabled = false;
+            FlashBrowseButton.Enabled = false;
+            FlashChipDetectButton.Enabled = false;
+            FlashChipComboBox.Enabled = false;
+            ExitButton.Enabled = false;
+            StartButton.Enabled = false;
+            UploadButton.Enabled = false;
+            WorkerFunctionComboBox.Enabled = false;
+            BootstrapButton.Enabled = false;
+            BootloaderComboBox.Enabled = false;
+            SCIBusCurrentMemoryOffset = 0;
+            SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / (double)FlashChipSize * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/" + FlashChipSize.ToString() + " bytes)";
+            SCIBusBootstrapWorker.RunWorkerAsync();
         }
 
         private void FlashReadButton_Click(object sender, EventArgs e)
         {
-            WorkerFunctionComboBox.SelectedIndex = 0;
-            
+            if (SCIBusBootstrapWorker.IsBusy)
+            {
+                MessageBox.Show("Busy!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             if (FlashChipComboBox.SelectedIndex == 0)
             {
                 MessageBox.Show("Detect flash memory chip first.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
+
+            WorkerFunctionComboBox.SelectedIndex = 0;
 
             UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Start flash memory reading session.");
 
@@ -978,12 +1011,12 @@ namespace ChryslerScanner
 
         private void FlashMemoryBackupCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            if (!FlashMemoryBackupCheckBox.Checked)
+            if (FlashMemoryBackupCheckBox.Checked)
+                return;
+
+            if (MessageBox.Show("Skipping flash memory backup could lead to data loss." + Environment.NewLine + "Do you really want to continue without backup?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.No)
             {
-                if (MessageBox.Show("Skipping flash memory backup could lead to data loss." + Environment.NewLine + "Do you really want to continue without backup?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.No)
-                {
-                    FlashMemoryBackupCheckBox.Checked = true;
-                }
+                FlashMemoryBackupCheckBox.Checked = true;
             }
         }
 
@@ -1038,6 +1071,24 @@ namespace ChryslerScanner
                 return;
             }
 
+            if (SCIBusBootstrapWorker.IsBusy)
+            {
+                MessageBox.Show("Busy!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (EEPROMFileBuffer == null)
+            {
+                MessageBox.Show("Browse EEPROM file first!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if ((EEPROMFileBuffer != null) && (EEPROMFileBuffer.Length != 512))
+            {
+                MessageBox.Show("EEPROM file size incorrect!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             WorkerFunctionComboBox.SelectedIndex = 0;
 
             UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Start EEPROM writing session.");
@@ -1053,30 +1104,27 @@ namespace ChryslerScanner
                 return;
             }
 
-            if (!SCIBusBootstrapWorker.IsBusy && (EEPROMFileBuffer.Length == 512))
-            {
-                CurrentTask = Task.WriteEEPROM;
-                SCIBusBootstrapFinished = false;
-                SCIBusNextRequest = true;
-                EEPROMReadButton.Enabled = false;
-                EEPROMWriteButton.Enabled = false;
-                EEPROMBrowseButton.Enabled = false;
-                FlashStopButton.Enabled = false;
-                FlashReadButton.Enabled = false;
-                FlashWriteButton.Enabled = false;
-                FlashBrowseButton.Enabled = false;
-                FlashChipDetectButton.Enabled = false;
-                FlashChipComboBox.Enabled = false;
-                ExitButton.Enabled = false;
-                StartButton.Enabled = false;
-                UploadButton.Enabled = false;
-                WorkerFunctionComboBox.Enabled = false;
-                BootstrapButton.Enabled = false;
-                BootloaderComboBox.Enabled = false;
-                SCIBusCurrentMemoryOffset = 0;
-                SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/512 bytes)";
-                SCIBusBootstrapWorker.RunWorkerAsync();
-            }
+            CurrentTask = Task.WriteEEPROM;
+            SCIBusBootstrapFinished = false;
+            SCIBusNextRequest = true;
+            EEPROMReadButton.Enabled = false;
+            EEPROMWriteButton.Enabled = false;
+            EEPROMBrowseButton.Enabled = false;
+            FlashStopButton.Enabled = false;
+            FlashReadButton.Enabled = false;
+            FlashWriteButton.Enabled = false;
+            FlashBrowseButton.Enabled = false;
+            FlashChipDetectButton.Enabled = false;
+            FlashChipComboBox.Enabled = false;
+            ExitButton.Enabled = false;
+            StartButton.Enabled = false;
+            UploadButton.Enabled = false;
+            WorkerFunctionComboBox.Enabled = false;
+            BootstrapButton.Enabled = false;
+            BootloaderComboBox.Enabled = false;
+            SCIBusCurrentMemoryOffset = 0;
+            SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/512 bytes)";
+            SCIBusBootstrapWorker.RunWorkerAsync();
         }
 
         private void EEPROMReadButton_Click(object sender, EventArgs e)
@@ -1086,7 +1134,13 @@ namespace ChryslerScanner
                 MessageBox.Show("JTEC EEPROM reading is not supported yet.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-            
+
+            if (SCIBusBootstrapWorker.IsBusy)
+            {
+                MessageBox.Show("Busy!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             WorkerFunctionComboBox.SelectedIndex = 0;
 
             UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Start EEPROM reading session.");
@@ -1152,12 +1206,12 @@ namespace ChryslerScanner
 
         private void EEPROMBackupCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            if (!EEPROMBackupCheckBox.Checked)
+            if (EEPROMBackupCheckBox.Checked)
+                return;
+
+            if (MessageBox.Show("Skipping EEPROM backup could lead to data loss." + Environment.NewLine + "Do you really want to continue without backup?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.No)
             {
-                if (MessageBox.Show("Skipping EEPROM backup could lead to data loss." + Environment.NewLine + "Do you really want to continue without backup?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.No)
-                {
-                    EEPROMBackupCheckBox.Checked = true;
-                }
+                EEPROMBackupCheckBox.Checked = true;
             }
         }
 
@@ -1185,1098 +1239,1096 @@ namespace ChryslerScanner
 
         private void PacketReceivedHandler(object sender, EventArgs e)
         {
-            switch (MainForm.Packet.rx.bus)
+            Invoke((MethodInvoker)delegate
             {
-                case (byte)Packet.Bus.usb:
-                    switch (MainForm.Packet.rx.command)
-                    {
-                        case (byte)Packet.Command.settings:
-                            switch (MainForm.Packet.rx.mode)
-                            {
-                                case (byte)Packet.SettingsMode.setProgVolt:
-                                    if (MainForm.Packet.rx.payload.Length == 0) break;
+                switch (MainForm.Packet.rx.bus)
+                {
+                    case (byte)Packet.Bus.usb:
+                        switch (MainForm.Packet.rx.command)
+                        {
+                            case (byte)Packet.Command.settings:
+                                switch (MainForm.Packet.rx.mode)
+                                {
+                                    case (byte)Packet.SettingsMode.setProgVolt:
+                                        if (MainForm.Packet.rx.payload.Length == 0) break;
 
-                                    if (MainForm.Packet.rx.payload[0] == 0)
-                                    {
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "VBB/VPP removed from SCI-RX pin.");
-
-                                        if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                                        switch (CurrentTask)
+                                        if (MainForm.Packet.rx.payload[0] == 0)
                                         {
-                                            case Task.DetectFlashMemoryType:
-                                                if (FlashMemoryBackupCheckBox.Checked)
-                                                {
-                                                    CurrentTask = Task.BackupFlashMemory;
-                                                }
-                                                else
-                                                {
-                                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 4. Backup flash memory." + Environment.NewLine + Environment.NewLine + "Skip flash memory backup.");
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "VBB/VPP removed from SCI-RX pin.");
 
-                                                    if (EEPROMBackupCheckBox.Checked)
+                                            if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                            switch (CurrentTask)
+                                            {
+                                                case Task.DetectFlashMemoryType:
+                                                    if (FlashMemoryBackupCheckBox.Checked)
                                                     {
-                                                        switch (BootloaderComboBox.SelectedIndex)
-                                                        {
-                                                            case (byte)Bootloader.JTEC_256k:
-                                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 5. Backup EEPROM." + Environment.NewLine + Environment.NewLine + "Skip EEPROM backup.");
-                                                                CurrentTask = Task.EraseFlashMemory;
-                                                                break;
-                                                            default:
-                                                                CurrentTask = Task.BackupEEPROM;
-                                                                break;
-                                                        }
+                                                        CurrentTask = Task.BackupFlashMemory;
                                                     }
                                                     else
                                                     {
-                                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 5. Backup EEPROM." + Environment.NewLine + Environment.NewLine + "Skip EEPROM backup.");
+                                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 4. Backup flash memory." + Environment.NewLine + Environment.NewLine + "Skip flash memory backup.");
 
-                                                        CurrentTask = Task.EraseFlashMemory;
+                                                        if (EEPROMBackupCheckBox.Checked)
+                                                        {
+                                                            switch (BootloaderComboBox.SelectedIndex)
+                                                            {
+                                                                case (byte)Bootloader.JTEC_256k:
+                                                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 5. Backup EEPROM." + Environment.NewLine + Environment.NewLine + "Skip EEPROM backup.");
+                                                                    CurrentTask = Task.EraseFlashMemory;
+                                                                    break;
+                                                                default:
+                                                                    CurrentTask = Task.BackupEEPROM;
+                                                                    break;
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 5. Backup EEPROM." + Environment.NewLine + Environment.NewLine + "Skip EEPROM backup.");
+
+                                                            CurrentTask = Task.EraseFlashMemory;
+                                                        }
                                                     }
-                                                }
-                                                SCIBusResponse = true;
+                                                    SCIBusResponse = true;
+                                                    break;
+                                                case Task.EraseFlashMemory:
+                                                    if (!FlashEraseSuccess)
+                                                    {
+                                                        SCIBusBootstrapWorker.CancelAsync();
+                                                        break;
+                                                    }
+
+                                                    CurrentTask = Task.WriteFlashMemory;
+                                                    SCIBusResponse = true;
+                                                    break;
+                                                default:
+                                                    break;
+                                            }
+                                        }
+                                        else if (Util.IsBitSet(MainForm.Packet.rx.payload[0], 7))
+                                        {
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Apply VBB (12V) to SCI-RX pin.");
+                                        }
+                                        else if (Util.IsBitSet(MainForm.Packet.rx.payload[0], 6))
+                                        {
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Apply VPP (20V) to SCI-RX pin.");
+                                        }
+                                        else
+                                        {
+                                            // TODO
+                                        }
+                                        break;
+                                }
+                                break;
+                            case (byte)Packet.Command.response:
+                                switch (MainForm.Packet.rx.mode)
+                                {
+                                    case (byte)Packet.ResponseMode.AllVolts:
+                                        double BatteryVoltage = ((MainForm.Packet.rx.payload[0] << 8) + MainForm.Packet.rx.payload[1]) / 1000.00;
+                                        double BootstrapVoltage = ((MainForm.Packet.rx.payload[2] << 8) + MainForm.Packet.rx.payload[3]) / 1000.00;
+                                        double ProgrammingVoltage = ((MainForm.Packet.rx.payload[4] << 8) + MainForm.Packet.rx.payload[5]) / 1000.00;
+                                        string BatteryVoltageString = BatteryVoltage.ToString("0.000").Replace(",", ".") + " V";
+                                        string BootstrapVoltageString = BootstrapVoltage.ToString("0.000").Replace(",", ".") + " V";
+                                        string ProgrammingVoltageString = ProgrammingVoltage.ToString("0.000").Replace(",", ".") + " V";
+
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Battery voltage: " + BatteryVoltageString + Environment.NewLine + "Bootstrap voltage: " + BootstrapVoltageString + Environment.NewLine + "Programming voltage: " + ProgrammingVoltageString);
+
+                                        if ((BatteryVoltage >= MinBattVolts) && (BootstrapVoltage >= MinBootVolts) && (ProgrammingVoltage >= MinProgVolts))
+                                        {
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "All voltages are nominal.");
+
+                                            if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                            switch (BootloaderComboBox.SelectedIndex)
+                                            {
+                                                case (byte)Bootloader.JTEC_256k:
+                                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 2. Read part number." + Environment.NewLine + Environment.NewLine + "Skip part number read.");
+
+                                                    if (FlashChipComboBox.SelectedIndex == 0)
+                                                    {
+                                                        CurrentTask = Task.DetectFlashMemoryType;
+                                                    }
+                                                    else
+                                                    {
+                                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 3. Detect flash memory type." + Environment.NewLine + Environment.NewLine + "Use selected flash chip.");
+
+                                                        if ((FlashFileBuffer != null) && (FlashFileBuffer.Length > 0) && (FlashFileBuffer.Length != FlashChipSize))
+                                                        {
+                                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Flash file size (" + FlashFileBuffer.Length.ToString() + " bytes) must be equal to the flash memory chip size (" + FlashChipSize.ToString() + " bytes)!");
+
+                                                            SCIBusBootstrapWorker.CancelAsync();
+                                                        }
+
+                                                        CurrentTask = Task.BackupFlashMemory;
+                                                    }
+                                                    break;
+                                                default:
+                                                    CurrentTask = Task.ReadPartNumber;
+                                                    break;
+                                            }
+
+                                            SCIBusResponse = true;
+                                        }
+                                        else
+                                        {
+                                            if (BatteryVoltage < MinBattVolts)
+                                            {
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Battery voltage must be above " + MinBattVolts.ToString("0.0").Replace(",", ".") + "V.");
+                                            }
+                                            if (BootstrapVoltage < MinBootVolts)
+                                            {
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap voltage must be above " + MinBootVolts.ToString("0.0").Replace(",", ".") + "V.");
+                                            }
+                                            if (ProgrammingVoltage < MinProgVolts)
+                                            {
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Programming voltage must be above " + MinProgVolts.ToString("0.0").Replace(",", ".") + "V.");
+                                            }
+
+                                            if (SCIBusBootstrapWorker.IsBusy)
+                                            {
+                                                SCIBusBootstrapWorker.CancelAsync();
+                                            }
+                                        }
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                break;
+                            case (byte)Packet.Command.debug:
+                                switch (MainForm.Packet.rx.mode)
+                                {
+                                    case (byte)Packet.DebugMode.initBootstrapMode:
+                                        switch (MainForm.Packet.rx.payload[0])
+                                        {
+                                            case (byte)BootloaderError.OK:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap mode initialized successfully.");
                                                 break;
-                                            case Task.EraseFlashMemory:
-                                                if (!FlashEraseSuccess)
+                                            case (byte)BootloaderError.NoResponseToMagicByte:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: no response to magic byte.");
+                                                break;
+                                            case (byte)BootloaderError.UnexpectedResponseToMagicByte:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: unexpected response to magic byte.");
+                                                break;
+                                            case (byte)BootloaderError.SecuritySeedResponseTimeout:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: security seed response timeout.");
+                                                break;
+                                            case (byte)BootloaderError.SecuritySeedChecksumError:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: security seed checksum error.");
+                                                break;
+                                            case (byte)BootloaderError.SecurityKeyStatusTimeout:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: security key status timeout.");
+                                                break;
+                                            case (byte)BootloaderError.SecurityKeyNotAccepted:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: security key not accepted.");
+                                                break;
+                                            case (byte)BootloaderError.StartBootloaderTimeout:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: start bootloader timeout.");
+                                                break;
+                                            case (byte)BootloaderError.UnexpectedBootloaderStatusByte:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: unexpected bootloader status byte.");
+                                                break;
+                                            default:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: unknown.");
+                                                break;
+                                        }
+                                        break;
+                                    case (byte)Packet.DebugMode.uploadWorkerFunction:
+                                        switch (MainForm.Packet.rx.payload[0])
+                                        {
+                                            case (byte)WorkerFunctionError.OK:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Worker function uploaded successfully.");
+
+                                                if (!SCIBusBootstrapWorker.IsBusy)
                                                 {
-                                                    SCIBusBootstrapWorker.CancelAsync();
+                                                    if (FlashChipDetectButtonClicked)
+                                                    {
+                                                        FlashChipDetectButtonClicked = false;
+                                                        StartButton_Click(this, EventArgs.Empty);
+                                                    }
+
                                                     break;
                                                 }
 
-                                                CurrentTask = Task.WriteFlashMemory;
-                                                SCIBusResponse = true;
+                                                switch (CurrentTask)
+                                                {
+                                                    case Task.ReadPartNumber:
+                                                    case Task.DetectFlashMemoryType:
+                                                    case Task.BackupFlashMemory:
+                                                    case Task.ReadFlashMemory:
+                                                    case Task.BackupEEPROM:
+                                                    case Task.EraseFlashMemory:
+                                                    case Task.WriteFlashMemory:
+                                                    case Task.VerifyFlashChecksum:
+                                                    case Task.UpdateEEPROM:
+                                                    case Task.ReadEEPROM:
+                                                    case Task.WriteEEPROM:
+                                                        StartButton_Click(this, EventArgs.Empty);
+                                                        break;
+                                                    default:
+                                                        break;
+                                                }
                                                 break;
-                                            default:
+                                            case (byte)WorkerFunctionError.NoResponseToPing:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Worker function status: no response to ping.");
+
+                                                if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                                SCIBusBootstrapWorker.CancelAsync();
+                                                break;
+                                            case (byte)WorkerFunctionError.UploadInterrupted:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Worker function status: upload interrupted.");
+
+                                                if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                                SCIBusBootstrapWorker.CancelAsync();
+                                                break;
+                                            case (byte)WorkerFunctionError.UnexpectedUploadResult:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Worker function status: unexptected upload result.");
+
+                                                if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                                SCIBusBootstrapWorker.CancelAsync();
                                                 break;
                                         }
-                                    }
-                                    else if (Util.IsBitSet(MainForm.Packet.rx.payload[0], 7))
-                                    {
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Apply VBB (12V) to SCI-RX pin.");
-                                    }
-                                    else if (Util.IsBitSet(MainForm.Packet.rx.payload[0], 6))
-                                    {
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Apply VPP (20V) to SCI-RX pin.");
-                                    }
-                                    else
-                                    {
-                                        // TODO
-                                    }
-                                    break;
-                            }
-                            break;
-                        case (byte)Packet.Command.response:
-                            switch (MainForm.Packet.rx.mode)
-                            {
-                                case (byte)Packet.ResponseMode.AllVolts:
-                                    double BatteryVoltage = ((MainForm.Packet.rx.payload[0] << 8) + MainForm.Packet.rx.payload[1]) / 1000.00;
-                                    double BootstrapVoltage = ((MainForm.Packet.rx.payload[2] << 8) + MainForm.Packet.rx.payload[3]) / 1000.00;
-                                    double ProgrammingVoltage = ((MainForm.Packet.rx.payload[4] << 8) + MainForm.Packet.rx.payload[5]) / 1000.00;
-                                    string BatteryVoltageString = BatteryVoltage.ToString("0.000").Replace(",", ".") + " V";
-                                    string BootstrapVoltageString = BootstrapVoltage.ToString("0.000").Replace(",", ".") + " V";
-                                    string ProgrammingVoltageString = ProgrammingVoltage.ToString("0.000").Replace(",", ".") + " V";
+                                        break;
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+                    case (byte)Packet.Bus.pcm:
+                    case (byte)Packet.Bus.tcm:
+                        byte[] SCIBusResponseBytes = MainForm.Packet.rx.payload.Skip(4).ToArray(); // skip 4 timestamp bytes
 
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Battery voltage: " + BatteryVoltageString + Environment.NewLine + "Bootstrap voltage: " + BootstrapVoltageString + Environment.NewLine + "Programming voltage: " + ProgrammingVoltageString);
+                        if (SCIBusResponseBytes.Length == 0) break;
 
-                                    if ((BatteryVoltage >= MinBattVolts) && (BootstrapVoltage >= MinBootVolts) && (ProgrammingVoltage >= MinProgVolts))
-                                    {
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "All voltages are nominal.");
+                        switch (SCIBusResponseBytes[0])
+                        {
+                            case (byte)SCI_ID.BootstrapBaudrateSet:
+                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Set bootstrap baudrate to 62500 baud. OK.");
+                                break;
+                            case (byte)SCI_ID.UploadWorkerFunctionResult:
+                                if (SCIBusResponseBytes.Length < 2) break;
+
+                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Upload worker function: ");
+
+                                switch (WorkerFunctionComboBox.SelectedIndex)
+                                {
+                                    case (byte)WorkerFunction.PartNumberRead:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "part number read.");
+                                        break;
+                                    case (byte)WorkerFunction.FlashID:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "flash ID.");
+                                        break;
+                                    case (byte)WorkerFunction.FlashRead:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "flash read.");
+                                        break;
+                                    case (byte)WorkerFunction.FlashErase:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "flash erase.");
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Erase algorithm used: " + FlashChipComboBox.Items[(byte)FlashChipComboBox.SelectedIndex].ToString() + ".");
+                                        break;
+                                    case (byte)WorkerFunction.FlashWrite:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "flash write.");
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Write algorithm used: " + FlashChipComboBox.Items[(byte)FlashChipComboBox.SelectedIndex].ToString() + ".");
+                                        break;
+                                    case (byte)WorkerFunction.VerifyFlashChecksum:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "verify flash checksum.");
+                                        break;
+                                    case (byte)WorkerFunction.EEPROMRead:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "EEPROM read.");
+                                        break;
+                                    case (byte)WorkerFunction.EEPROMWrite:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "EEPROM write.");
+                                        break;
+                                    case (byte)WorkerFunction.Empty:
+                                    default:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "empty.");
+                                        break;
+                                }
+                                break;
+                            case (byte)SCI_ID.StartWorkerFunction:
+                                switch (WorkerFunctionComboBox.SelectedIndex)
+                                {
+                                    case (byte)WorkerFunction.PartNumberRead:
+                                        if (SCIBusResponseBytes.Length < 30)
+                                        {
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Part number: unknown.");
+                                            break;
+                                        }
+
+                                        if (SCIBusResponseBytes[1] != 0xFF)
+                                        {
+                                            PartNumberString = Util.ByteToHexString(SCIBusResponseBytes, 1, 4).Replace(" ", "");
+
+                                            if ((SCIBusResponseBytes[5] >= 0x41) && (SCIBusResponseBytes[5] <= 0x5A) && (SCIBusResponseBytes[6] >= 0x41) && (SCIBusResponseBytes[6] <= 0x5A))
+                                            {
+                                                PartNumberString += Encoding.ASCII.GetString(SCIBusResponseBytes, 5, 2);
+                                            }
+                                            else // no revision label available, append 99 by default
+                                            {
+                                                PartNumberString += "99";
+                                            }
+                                        }
+                                        else if (SCIBusResponseBytes[21] != 0xFF)
+                                        {
+                                            PartNumberString = Util.ByteToHexString(SCIBusResponseBytes, 21, 4).Replace(" ", "");
+
+                                            if ((SCIBusResponseBytes[25] >= 0x41) && (SCIBusResponseBytes[25] <= 0x5A) && (SCIBusResponseBytes[26] >= 0x41) && (SCIBusResponseBytes[26] <= 0x5A))
+                                            {
+                                                PartNumberString += Encoding.ASCII.GetString(SCIBusResponseBytes, 25, 2);
+                                            }
+                                            else // no revision label available, append 99 by default
+                                            {
+                                                PartNumberString += "99";
+                                            }
+                                        }
+                                        else
+                                        {
+                                            PartNumberString = string.Empty;
+                                        }
+
+                                        if (PartNumberString != string.Empty)
+                                        {
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Part number: " + PartNumberString);
+                                        }
+                                        else
+                                        {
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Part number: unknown.");
+                                        }
 
                                         if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                        if (FlashChipComboBox.SelectedIndex == 0)
+                                        {
+                                            CurrentTask = Task.DetectFlashMemoryType;
+                                        }
+                                        else
+                                        {
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 3. Detect flash memory type." + Environment.NewLine + Environment.NewLine + "Use selected flash chip.");
+
+                                            if ((FlashFileBuffer != null) && (FlashFileBuffer.Length > 0) && (FlashFileBuffer.Length != FlashChipSize))
+                                            {
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Flash file size (" + FlashFileBuffer.Length.ToString() + " bytes) must be equal to the flash memory chip size (" + FlashChipSize.ToString() + " bytes)!");
+
+                                                SCIBusBootstrapWorker.CancelAsync();
+                                            }
+
+                                            if (FlashMemoryBackupCheckBox.Checked)
+                                            {
+                                                CurrentTask = Task.BackupFlashMemory;
+                                            }
+                                            else
+                                            {
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 4. Backup flash memory." + Environment.NewLine + Environment.NewLine + "Skip flash memory backup.");
+
+                                                if (EEPROMBackupCheckBox.Checked)
+                                                {
+                                                    CurrentTask = Task.BackupEEPROM;
+                                                }
+                                                else
+                                                {
+                                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 5. Backup EEPROM." + Environment.NewLine + Environment.NewLine + "Skip EEPROM backup.");
+
+                                                    CurrentTask = Task.EraseFlashMemory;
+                                                }
+                                            }
+                                        }
+
+                                        SCIBusResponse = true;
+                                        break;
+                                    case (byte)WorkerFunction.FlashID:
+                                        if (SCIBusResponseBytes.Length < 3) break;
+
+                                        byte mfgid = SCIBusResponseBytes[1];
+                                        byte chipid = SCIBusResponseBytes[2];
+                                        bool ManufacturerKnown = true;
+                                        bool ChipTypeKnown = true;
+
+                                        switch (mfgid)
+                                        {
+                                            case (byte)FlashMemoryManufacturer.STMicroelectronics:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory: ST ");
+                                                break;
+                                            case (byte)FlashMemoryManufacturer.CATALYST:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory: CATALYST ");
+                                                break;
+                                            case (byte)FlashMemoryManufacturer.Intel:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory: Intel ");
+                                                break;
+                                            case (byte)FlashMemoryManufacturer.TexasInstruments:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory: Texas Instruments ");
+                                                break;
+                                            default:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory: unknown ");
+                                                ManufacturerKnown = false;
+                                                break;
+                                        }
+
+                                        if (ManufacturerKnown)
+                                        {
+                                            switch (chipid)
+                                            {
+                                                case (byte)FlashMemoryType.M28F102:
+                                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "M28F102 (128 kB).");
+                                                    FlashChipComboBox.SelectedIndex = 1;
+                                                    break;
+                                                case (byte)FlashMemoryType.CAT28F102:
+                                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "CAT28F102 (128 kB).");
+                                                    FlashChipComboBox.SelectedIndex = 2;
+                                                    break;
+                                                case (byte)FlashMemoryType.N28F010:
+                                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "N28F010 (128 kB).");
+                                                    FlashChipComboBox.SelectedIndex = 3;
+                                                    break;
+                                                case (byte)FlashMemoryType.N28F020:
+                                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "N28F020 (256 kB).");
+                                                    FlashChipComboBox.SelectedIndex = 4;
+                                                    break;
+                                                case (byte)FlashMemoryType.M28F210:
+                                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "M28F210 (256 kB).");
+                                                    FlashChipComboBox.SelectedIndex = 5;
+                                                    break;
+                                                case (byte)FlashMemoryType.M28F220:
+                                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "M28F220 (256 kB).");
+                                                    FlashChipComboBox.SelectedIndex = 6;
+                                                    break;
+                                                case (byte)FlashMemoryType.M28F200T:
+                                                case (byte)FlashMemoryType.M28F200B:
+                                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "M28F200 (256 kB).");
+                                                    FlashChipComboBox.SelectedIndex = 7;
+                                                    break;
+                                                case (byte)FlashMemoryType.TMS28F210:
+                                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "TMS28F210 (256 kB).");
+                                                    FlashChipComboBox.SelectedIndex = 8;
+                                                    break;
+                                                default:
+                                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "(" + Util.ByteToHexString(SCIBusResponseBytes, 1, 2) + ").");
+                                                    FlashChipComboBox.SelectedIndex = 0;
+                                                    ChipTypeKnown = false;
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, "(" + Util.ByteToHexString(SCIBusResponseBytes, 1, 2) + ").");
+                                            FlashChipComboBox.SelectedIndex = 0;
+                                            ChipTypeKnown = false;
+                                        }
+
+                                        if (!ManufacturerKnown || !ChipTypeKnown)
+                                        {
+                                            FlashChipComboBox.SelectedIndex = 0;
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Result: " + Util.ByteToHexString(SCIBusResponseBytes, 1, SCIBusResponseBytes.Length - 1) + Environment.NewLine);
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory type could not be determined.");
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Consider selecting the correct chip by hand if issue persist.");
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Add request for flash memory chip support at:");
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "https://github.com/laszlodaniel/ChryslerScanner/discussions/8" + Environment.NewLine);
+
+                                            if (SCIBusBootstrapWorker.IsBusy)
+                                            {
+                                                SCIBusBootstrapWorker.CancelAsync();
+                                            }
+                                        }
+
+                                        if ((FlashFileBuffer != null) && (FlashFileBuffer.Length > 0) && (FlashFileBuffer.Length != FlashChipSize))
+                                        {
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash file size (" + FlashFileBuffer.Length.ToString() + " bytes) must be equal to the flash memory chip size (" + FlashChipSize.ToString() + " bytes)!");
+
+                                            if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                            SCIBusBootstrapWorker.CancelAsync();
+                                        }
+                                        break;
+                                    case (byte)WorkerFunction.FlashRead:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Start flash reading.");
+
+                                        if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                        SCIBusResponse = true;
+                                        break;
+                                    case (byte)WorkerFunction.FlashErase:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Start flash erasing.");
+
+                                        if (SCIBusResponseBytes.Length < 2) break;
+
+                                        switch (SCIBusResponseBytes[1])
+                                        {
+                                            case (byte)SCI_ID.ExitWorkerFunction:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash erased successfully.");
+                                                FlashEraseSuccess = true;
+                                                break;
+                                            case (byte)SCI_ID.EraseError_81:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash erase error: 0x81.");
+                                                FlashEraseSuccess = false;
+                                                break;
+                                            case (byte)SCI_ID.EraseError_82:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash erase error: 0x82.");
+                                                FlashEraseSuccess = false;
+                                                break;
+                                            case (byte)SCI_ID.EraseError_83:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash erase error: 0x83.");
+                                                FlashEraseSuccess = false;
+                                                break;
+                                        }
+                                        break;
+                                    case (byte)WorkerFunction.FlashWrite:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Start flash writing.");
+
+                                        if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                        SCIBusResponse = true;
+                                        break;
+                                    case (byte)WorkerFunction.VerifyFlashChecksum:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Skip flash checksum verification.");
+
+                                        if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                        CurrentTask = Task.UpdateEEPROM;
+                                        SCIBusResponse = true;
+                                        break;
+                                    case (byte)WorkerFunction.EEPROMRead:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Start EEPROM reading.");
+
+                                        if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                        SCIBusResponse = true;
+                                        break;
+                                    case (byte)WorkerFunction.EEPROMWrite:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Start EEPROM writing.");
+
+                                        if (CurrentTask == Task.UpdateEEPROM)
+                                        {
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Skip EEPROM update.");
+                                        }
+
+                                        if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                        SCIBusResponse = true;
+                                        break;
+                                    case (byte)WorkerFunction.Empty:
+                                    default:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Start worker function.");
+                                        SCIBusResponse = true;
+                                        break;
+                                }
+                                break;
+                            case (byte)SCI_ID.ExitWorkerFunction:
+                                switch ((byte)WorkerFunctionComboBox.SelectedIndex)
+                                {
+                                    case (byte)WorkerFunction.FlashRead:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit flash reading.");
+
+                                        if (CurrentTask == Task.BackupFlashMemory)
+                                        {
+                                            if (EEPROMBackupCheckBox.Checked)
+                                            {
+                                                switch (BootloaderComboBox.SelectedIndex)
+                                                {
+                                                    case (byte)Bootloader.JTEC_256k:
+                                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 5. Backup EEPROM." + Environment.NewLine + Environment.NewLine + "Skip EEPROM backup.");
+                                                        CurrentTask = Task.EraseFlashMemory;
+                                                        break;
+                                                    default:
+                                                        CurrentTask = Task.BackupEEPROM;
+                                                        break;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 5. Backup EEPROM." + Environment.NewLine + Environment.NewLine + "Skip EEPROM backup.");
+
+                                                CurrentTask = Task.EraseFlashMemory;
+                                            }
+                                        }
+                                        else if (CurrentTask == Task.ReadFlashMemory)
+                                        {
+                                            CurrentTask = Task.FinishFlashRead;
+                                        }
+
+                                        SCIBusResponse = true;
+                                        break;
+                                    case (byte)WorkerFunction.FlashErase:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash erased successfully.");
+                                        FlashEraseSuccess = true;
+                                        SCIBusResponse = true;
+                                        break;
+                                    case (byte)WorkerFunction.FlashWrite:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit flash writing.");
+                                        CurrentTask = Task.VerifyFlashChecksum;
+                                        SCIBusResponse = true;
+                                        break;
+                                    case (byte)WorkerFunction.VerifyFlashChecksum:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit flash checksum verification.");
 
                                         switch (BootloaderComboBox.SelectedIndex)
                                         {
                                             case (byte)Bootloader.JTEC_256k:
-                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 2. Read part number." + Environment.NewLine + Environment.NewLine + "Skip part number read.");
-
-                                                if (FlashChipComboBox.SelectedIndex == 0)
-                                                {
-                                                    CurrentTask = Task.DetectFlashMemoryType;
-                                                }
-                                                else
-                                                {
-                                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 3. Detect flash memory type." + Environment.NewLine + Environment.NewLine + "Use selected flash chip.");
-
-                                                    if ((FlashFileBuffer != null) && (FlashFileBuffer.Length > 0) && (FlashFileBuffer.Length != FlashChipSize))
-                                                    {
-                                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Flash file size (" + FlashFileBuffer.Length.ToString() + " bytes) must be equal to the flash memory chip size (" + FlashChipSize.ToString() + " bytes)!");
-
-                                                        SCIBusBootstrapWorker.CancelAsync();
-                                                    }
-
-                                                    CurrentTask = Task.BackupFlashMemory;
-                                                }
+                                                CurrentTask = Task.FinishFlashWrite;
                                                 break;
                                             default:
-                                                CurrentTask = Task.ReadPartNumber;
+                                                CurrentTask = Task.UpdateEEPROM;
                                                 break;
                                         }
 
                                         SCIBusResponse = true;
-                                    }
-                                    else
-                                    {
-                                        if (BatteryVoltage < MinBattVolts)
-                                        {
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Battery voltage must be above " + MinBattVolts.ToString("0.0").Replace(",", ".") + "V.");
-                                        }
-                                        if (BootstrapVoltage < MinBootVolts)
-                                        {
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap voltage must be above " + MinBootVolts.ToString("0.0").Replace(",", ".") + "V.");
-                                        }
-                                        if (ProgrammingVoltage < MinProgVolts)
-                                        {
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Programming voltage must be above " + MinProgVolts.ToString("0.0").Replace(",", ".") + "V.");
-                                        }
-
-                                        if (SCIBusBootstrapWorker.IsBusy)
-                                        {
-                                            SCIBusBootstrapWorker.CancelAsync();
-                                        }
-                                    }
-                                    break;
-                                default:
-                                    break;
-                            }
-                            break;
-                        case (byte)Packet.Command.debug:
-                            switch (MainForm.Packet.rx.mode)
-                            {
-                                case (byte)Packet.DebugMode.initBootstrapMode:
-                                    switch (MainForm.Packet.rx.payload[0])
-                                    {
-                                        case (byte)BootloaderError.OK:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap mode initialized successfully.");
-                                            break;
-                                        case (byte)BootloaderError.NoResponseToMagicByte:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: no response to magic byte.");
-                                            break;
-                                        case (byte)BootloaderError.UnexpectedResponseToMagicByte:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: unexpected response to magic byte.");
-                                            break;
-                                        case (byte)BootloaderError.SecuritySeedResponseTimeout:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: security seed response timeout.");
-                                            break;
-                                        case (byte)BootloaderError.SecuritySeedChecksumError:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: security seed checksum error.");
-                                            break;
-                                        case (byte)BootloaderError.SecurityKeyStatusTimeout:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: security key status timeout.");
-                                            break;
-                                        case (byte)BootloaderError.SecurityKeyNotAccepted:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: security key not accepted.");
-                                            break;
-                                        case (byte)BootloaderError.StartBootloaderTimeout:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: start bootloader timeout.");
-                                            break;
-                                        case (byte)BootloaderError.UnexpectedBootloaderStatusByte:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: unexpected bootloader status byte.");
-                                            break;
-                                        default:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap status: unknown.");
-                                            break;
-                                    }
-                                    break;
-                                case (byte)Packet.DebugMode.uploadWorkerFunction:
-                                    switch (MainForm.Packet.rx.payload[0])
-                                    {
-                                        case (byte)WorkerFunctionError.OK:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Worker function uploaded successfully.");
-
-                                            if (!SCIBusBootstrapWorker.IsBusy)
-                                            {
-                                                if (FlashChipDetectButtonClicked)
-                                                {
-                                                    FlashChipDetectButtonClicked = false;
-                                                    StartButton_Click(this, EventArgs.Empty);
-                                                }
-
-                                                break;
-                                            }
-
-                                            switch (CurrentTask)
-                                            {
-                                                case Task.ReadPartNumber:
-                                                case Task.DetectFlashMemoryType:
-                                                case Task.BackupFlashMemory:
-                                                case Task.ReadFlashMemory:
-                                                case Task.BackupEEPROM:
-                                                case Task.EraseFlashMemory:
-                                                case Task.WriteFlashMemory:
-                                                case Task.VerifyFlashChecksum:
-                                                case Task.UpdateEEPROM:
-                                                case Task.ReadEEPROM:
-                                                case Task.WriteEEPROM:
-                                                    StartButton_Click(this, EventArgs.Empty);
-                                                    break;
-                                                default:
-                                                    break;
-                                            }
-                                            break;
-                                        case (byte)WorkerFunctionError.NoResponseToPing:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Worker function status: no response to ping.");
-
-                                            if (!SCIBusBootstrapWorker.IsBusy) break;
-                                            
-                                            SCIBusBootstrapWorker.CancelAsync();
-                                            break;
-                                        case (byte)WorkerFunctionError.UploadInterrupted:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Worker function status: upload interrupted.");
-
-                                            if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                                            SCIBusBootstrapWorker.CancelAsync();
-                                            break;
-                                        case (byte)WorkerFunctionError.UnexpectedUploadResult:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Worker function status: unexptected upload result.");
-
-                                            if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                                            SCIBusBootstrapWorker.CancelAsync();
-                                            break;
-                                    }
-                                    break;
-                            }
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                case (byte)Packet.Bus.pcm:
-                case (byte)Packet.Bus.tcm:
-                    byte[] SCIBusResponseBytes = MainForm.Packet.rx.payload.Skip(4).ToArray(); // skip 4 timestamp bytes
-
-                    if (SCIBusResponseBytes.Length == 0) break;
-
-                    switch (SCIBusResponseBytes[0])
-                    {
-                        case (byte)SCI_ID.BootstrapBaudrateSet:
-                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Set bootstrap baudrate to 62500 baud. OK.");
-                            break;
-                        case (byte)SCI_ID.UploadWorkerFunctionResult:
-                            if (SCIBusResponseBytes.Length < 2) break;
-
-                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Upload worker function: ");
-
-                            switch ((byte)WorkerFunctionComboBox.SelectedIndex)
-                            {
-                                case (byte)WorkerFunction.PartNumberRead:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "part number read.");
-                                    break;
-                                case (byte)WorkerFunction.FlashID:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "flash ID.");
-                                    break;
-                                case (byte)WorkerFunction.FlashRead:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "flash read.");
-                                    break;
-                                case (byte)WorkerFunction.FlashErase:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "flash erase.");
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Erase algorithm used: " + FlashChipComboBox.Items[(byte)FlashChipComboBox.SelectedIndex].ToString() + ".");
-                                    break;
-                                case (byte)WorkerFunction.FlashWrite:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "flash write.");
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Write algorithm used: " + FlashChipComboBox.Items[(byte)FlashChipComboBox.SelectedIndex].ToString() + ".");
-                                    break;
-                                case (byte)WorkerFunction.VerifyFlashChecksum:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "verify flash checksum.");
-                                    break;
-                                case (byte)WorkerFunction.EEPROMRead:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "EEPROM read.");
-                                    break;
-                                case (byte)WorkerFunction.EEPROMWrite:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "EEPROM write.");
-                                    break;
-                                case (byte)WorkerFunction.Empty:
-                                default:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "empty.");
-                                    break;
-                            }
-                            break;
-                        case (byte)SCI_ID.StartWorkerFunction:
-                            switch ((byte)WorkerFunctionComboBox.SelectedIndex)
-                            {
-                                case (byte)WorkerFunction.PartNumberRead:
-                                    if (SCIBusResponseBytes.Length < 30)
-                                    {
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Part number: unknown.");
                                         break;
-                                    }
+                                    case (byte)WorkerFunction.EEPROMRead:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit EEPROM reading.");
 
-                                    if (SCIBusResponseBytes[1] != 0xFF)
-                                    {
-                                        PartNumberString = Util.ByteToHexString(SCIBusResponseBytes, 1, 4).Replace(" ", "");
-
-                                        if ((SCIBusResponseBytes[5] >= 0x41) && (SCIBusResponseBytes[5] <= 0x5A) && (SCIBusResponseBytes[6] >= 0x41) && (SCIBusResponseBytes[6] <= 0x5A))
-                                        {
-                                            PartNumberString += Encoding.ASCII.GetString(SCIBusResponseBytes, 5, 2);
-                                        }
-                                        else // no revision label available, append 99 by default
-                                        {
-                                            PartNumberString += "99";
-                                        }
-                                    }
-                                    else if (SCIBusResponseBytes[21] != 0xFF)
-                                    {
-                                        PartNumberString = Util.ByteToHexString(SCIBusResponseBytes, 21, 4).Replace(" ", "");
-
-                                        if ((SCIBusResponseBytes[25] >= 0x41) && (SCIBusResponseBytes[25] <= 0x5A) && (SCIBusResponseBytes[26] >= 0x41) && (SCIBusResponseBytes[26] <= 0x5A))
-                                        {
-                                            PartNumberString += Encoding.ASCII.GetString(SCIBusResponseBytes, 25, 2);
-                                        }
-                                        else // no revision label available, append 99 by default
-                                        {
-                                            PartNumberString += "99";
-                                        }
-                                    }
-                                    else
-                                    {
-                                        PartNumberString = string.Empty;
-                                    }
-
-                                    if (PartNumberString != string.Empty)
-                                    {
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Part number: " + PartNumberString);
-                                    }
-                                    else
-                                    {
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Part number: unknown.");
-                                    }
-
-                                    if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                                    if (FlashChipComboBox.SelectedIndex == 0)
-                                    {
-                                        CurrentTask = Task.DetectFlashMemoryType;
-                                    }
-                                    else
-                                    {
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 3. Detect flash memory type." + Environment.NewLine + Environment.NewLine + "Use selected flash chip.");
-
-                                        if ((FlashFileBuffer != null) && (FlashFileBuffer.Length > 0) && (FlashFileBuffer.Length != FlashChipSize))
-                                        {
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Flash file size (" + FlashFileBuffer.Length.ToString() + " bytes) must be equal to the flash memory chip size (" + FlashChipSize.ToString() + " bytes)!");
-
-                                            SCIBusBootstrapWorker.CancelAsync();
-                                        }
-
-                                        if (FlashMemoryBackupCheckBox.Checked)
-                                        {
-                                            CurrentTask = Task.BackupFlashMemory;
-                                        }
-                                        else
+                                        if (CurrentTask == Task.BackupEEPROM)
                                         {
                                             CurrentTask = Task.EraseFlashMemory;
                                         }
-                                    }
-
-                                    SCIBusResponse = true;
-                                    break;
-                                case (byte)WorkerFunction.FlashID:
-                                    if (SCIBusResponseBytes.Length < 3) break;
-
-                                    byte mfgid = SCIBusResponseBytes[1];
-                                    byte chipid = SCIBusResponseBytes[2];
-
-                                    //if ((SCIBusResponseBytes[1] == SCIBusResponseBytes[3]) && (SCIBusResponseBytes[2] == SCIBusResponseBytes[4]))
-                                    //{
-                                    //    mfgid = SCIBusResponseBytes[1];
-                                    //    chipid = SCIBusResponseBytes[2];
-                                    //}
-                                    //else
-                                    //{
-                                    //    if ((SCIBusResponseBytes[1] == 0x20) || (SCIBusResponseBytes[1] == 0x89) || (SCIBusResponseBytes[1] == 0x97))
-                                    //    {
-                                    //        mfgid = SCIBusResponseBytes[1];
-                                    //        chipid = SCIBusResponseBytes[2];
-                                    //    }
-                                    //    else
-                                    //    {
-                                    //        mfgid = SCIBusResponseBytes[3];
-                                    //        chipid = SCIBusResponseBytes[4];
-                                    //    }
-                                    //}
-
-                                    bool ManufacturerKnown = true;
-                                    bool ChipTypeKnown = true;
-
-                                    switch (mfgid)
-                                    {
-                                        case (byte)FlashMemoryManufacturer.STMicroelectronics:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory: ST ");
-                                            break;
-                                        case (byte)FlashMemoryManufacturer.CATALYST:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory: CATALYST ");
-                                            break;
-                                        case (byte)FlashMemoryManufacturer.Intel:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory: Intel ");
-                                            break;
-                                        case (byte)FlashMemoryManufacturer.TexasInstruments:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory: Texas Instruments ");
-                                            break;
-                                        default:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory: unknown ");
-                                            ManufacturerKnown = false;
-                                            break;
-                                    }
-
-                                    if (ManufacturerKnown)
-                                    {
-                                        switch (chipid)
+                                        else if (CurrentTask == Task.ReadEEPROM)
                                         {
-                                            case (byte)FlashMemoryType.M28F102:
-                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, "M28F102 (128 kB).");
-                                                FlashChipComboBox.SelectedIndex = 1;
-                                                break;
-                                            case (byte)FlashMemoryType.CAT28F102:
-                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, "CAT28F102 (128 kB).");
-                                                FlashChipComboBox.SelectedIndex = 2;
-                                                break;
-                                            case (byte)FlashMemoryType.N28F010:
-                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, "N28F010 (128 kB).");
-                                                FlashChipComboBox.SelectedIndex = 3;
-                                                break;
-                                            case (byte)FlashMemoryType.N28F020:
-                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, "N28F020 (256 kB).");
-                                                FlashChipComboBox.SelectedIndex = 4;
-                                                break;
-                                            case (byte)FlashMemoryType.M28F210:
-                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, "M28F210 (256 kB).");
-                                                FlashChipComboBox.SelectedIndex = 5;
-                                                break;
-                                            case (byte)FlashMemoryType.M28F220:
-                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, "M28F220 (256 kB).");
-                                                FlashChipComboBox.SelectedIndex = 6;
-                                                break;
-                                            case (byte)FlashMemoryType.M28F200T:
-                                            case (byte)FlashMemoryType.M28F200B:
-                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, "M28F200 (256 kB).");
-                                                FlashChipComboBox.SelectedIndex = 7;
-                                                break;
-                                            case (byte)FlashMemoryType.TMS28F210:
-                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, "TMS28F210 (256 kB).");
-                                                FlashChipComboBox.SelectedIndex = 8;
-                                                break;
-                                            default:
-                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, "(" + Util.ByteToHexString(SCIBusResponseBytes, 1, 2) + ").");
-                                                FlashChipComboBox.SelectedIndex = 0;
-                                                ChipTypeKnown = false;
-                                                break;
+                                            CurrentTask = Task.FinishEEPROMRead;
                                         }
-                                    }
-                                    else
-                                    {
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "(" + Util.ByteToHexString(SCIBusResponseBytes, 1, 2) + ").");
-                                        FlashChipComboBox.SelectedIndex = 0;
-                                        ChipTypeKnown = false;
-                                    }
 
-                                    if (!ManufacturerKnown || !ChipTypeKnown)
-                                    {
-                                        FlashChipComboBox.SelectedIndex = 0;
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Result: " + Util.ByteToHexString(SCIBusResponseBytes, 1, SCIBusResponseBytes.Length - 1) + Environment.NewLine);
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory type could not be determined.");
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Consider selecting the correct chip by hand if issue persist.");
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Add request for flash memory chip support at:");
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "https://github.com/laszlodaniel/ChryslerScanner/discussions/8" + Environment.NewLine);
+                                        SCIBusResponse = true;
+                                        break;
+                                    case (byte)WorkerFunction.EEPROMWrite:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit EEPROM writing.");
 
-                                        if (SCIBusBootstrapWorker.IsBusy)
+                                        if (CurrentTask == Task.UpdateEEPROM)
                                         {
-                                            SCIBusBootstrapWorker.CancelAsync();
-                                        }
-                                    }
-
-                                    if ((FlashFileBuffer != null) && (FlashFileBuffer.Length > 0) && (FlashFileBuffer.Length != FlashChipSize))
-                                    {
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash file size (" + FlashFileBuffer.Length.ToString() + " bytes) must be equal to the flash memory chip size (" + FlashChipSize.ToString() + " bytes)!");
-
-                                        if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                                        SCIBusBootstrapWorker.CancelAsync();
-                                    }
-                                    break;
-                                case (byte)WorkerFunction.FlashRead:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Start flash reading.");
-
-                                    if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                                    SCIBusResponse = true;
-                                    break;
-                                case (byte)WorkerFunction.FlashErase:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Start flash erasing.");
-
-                                    if (SCIBusResponseBytes.Length < 2) break;
-
-                                    switch (SCIBusResponseBytes[1])
-                                    {
-                                        case (byte)SCI_ID.ExitWorkerFunction:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash erased successfully.");
-                                            FlashEraseSuccess = true;
-                                            break;
-                                        case (byte)SCI_ID.EraseError_81:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash erase error: 0x81.");
-                                            FlashEraseSuccess = false;
-                                            break;
-                                        case (byte)SCI_ID.EraseError_82:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash erase error: 0x82.");
-                                            FlashEraseSuccess = false;
-                                            break;
-                                        case (byte)SCI_ID.EraseError_83:
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash erase error: 0x83.");
-                                            FlashEraseSuccess = false;
-                                            break;
-                                    }
-                                    break;
-                                case (byte)WorkerFunction.FlashWrite:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Start flash writing.");
-
-                                    if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                                    SCIBusResponse = true;
-                                    break;
-                                case (byte)WorkerFunction.VerifyFlashChecksum:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Skip flash checksum verification.");
-
-                                    if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                                    CurrentTask = Task.UpdateEEPROM;
-                                    SCIBusResponse = true;
-                                    break;
-                                case (byte)WorkerFunction.EEPROMRead:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Start EEPROM reading.");
-
-                                    if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                                    SCIBusResponse = true;
-                                    break;
-                                case (byte)WorkerFunction.EEPROMWrite:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Start EEPROM writing.");
-
-                                    if (CurrentTask == Task.UpdateEEPROM)
-                                    {
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Skip EEPROM update.");
-                                    }
-
-                                    if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                                    SCIBusResponse = true;
-                                    break;
-                                case (byte)WorkerFunction.Empty:
-                                default:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Start worker function.");
-                                    SCIBusResponse = true;
-                                    break;
-                            }
-                            break;
-                        case (byte)SCI_ID.ExitWorkerFunction:
-                            switch ((byte)WorkerFunctionComboBox.SelectedIndex)
-                            {
-                                case (byte)WorkerFunction.FlashRead:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit flash reading.");
-
-                                    if (CurrentTask == Task.BackupFlashMemory)
-                                    {
-                                        if (EEPROMBackupCheckBox.Checked)
-                                        {
-                                            switch (BootloaderComboBox.SelectedIndex)
-                                            {
-                                                case (byte)Bootloader.JTEC_256k:
-                                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 5. Backup EEPROM." + Environment.NewLine + Environment.NewLine + "Skip EEPROM backup.");
-                                                    CurrentTask = Task.EraseFlashMemory;
-                                                    break;
-                                                default:
-                                                    CurrentTask = Task.BackupEEPROM;
-                                                    break;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 5. Backup EEPROM." + Environment.NewLine + Environment.NewLine + "Skip EEPROM backup.");
-
-                                            CurrentTask = Task.EraseFlashMemory;
-                                        }
-                                    }
-                                    else if (CurrentTask == Task.ReadFlashMemory)
-                                    {
-                                        CurrentTask = Task.FinishFlashRead;
-                                    }
-                                        
-                                    SCIBusResponse = true;
-                                    break;
-                                case (byte)WorkerFunction.FlashErase:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash erased successfully.");
-                                    FlashEraseSuccess = true;
-                                    SCIBusResponse = true;
-                                    break;
-                                case (byte)WorkerFunction.FlashWrite:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit flash writing.");
-                                    CurrentTask = Task.VerifyFlashChecksum;
-                                    SCIBusResponse = true;
-                                    break;
-                                case (byte)WorkerFunction.VerifyFlashChecksum:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit flash checksum verification.");
-
-                                    switch (BootloaderComboBox.SelectedIndex)
-                                    {
-                                        case (byte)Bootloader.JTEC_256k:
                                             CurrentTask = Task.FinishFlashWrite;
+                                        }
+                                        else if (CurrentTask == Task.WriteEEPROM)
+                                        {
+                                            CurrentTask = Task.FinishEEPROMWrite;
+                                        }
+
+                                        //SCIBusBootstrapFinished = true; // debug
+                                        SCIBusResponse = true;
+                                        break;
+                                    case (byte)WorkerFunction.Empty:
+                                    default:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit worker function.");
+                                        SCIBusResponse = true;
+                                        break;
+                                }
+
+                                break;
+                            case (byte)SCI_ID.BootstrapSeedKeyRequest:
+                                break;
+                            case (byte)SCI_ID.BootstrapSeedKeyResponse:
+                                if (!((SCIBusResponseBytes.Length == 5) && (SCIBusResponseBytes[1] == 0xD0) && (SCIBusResponseBytes[2] == 0x67) && (SCIBusResponseBytes[3] == 0xC2) && (SCIBusResponseBytes[4] == 0x1F))) break;
+
+                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Unlock bootstrap mode security. OK.");
+                                break;
+                            case (byte)SCI_ID.FlashBlockWrite:
+                                if (SCIBusResponseBytes.Length < 7) break;
+
+                                List<byte> OffsetFBW = new List<byte>();
+                                List<byte> LengthFBW = new List<byte>();
+                                List<byte> ValuesFBW = new List<byte>();
+
+                                OffsetFBW.AddRange(SCIBusResponseBytes.Skip(1).Take(3));
+                                LengthFBW.AddRange(SCIBusResponseBytes.Skip(4).Take(2));
+                                ValuesFBW.AddRange(SCIBusResponseBytes.Skip(6));
+
+                                ushort BlockSizeFBW = (ushort)((SCIBusResponseBytes[4] << 8) + SCIBusResponseBytes[5]);
+                                ushort EchoCountFBW = (ushort)(SCIBusResponseBytes.Length - 6);
+
+                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Write offset: " + Util.ByteToHexStringSimple(OffsetFBW.ToArray()) + ". Size: " + Util.ByteToHexStringSimple(LengthFBW.ToArray()) + ". ");
+
+                                if (EchoCountFBW == BlockSizeFBW)
+                                {
+                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "OK.");
+
+                                    if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                    if (!((SCIBusResponseBytes[1] == SCIBusTxPayload[1]) && (SCIBusResponseBytes[2] == SCIBusTxPayload[2]) && (SCIBusResponseBytes[3] == SCIBusTxPayload[3]))) break;
+
+                                    SCIBusCurrentMemoryOffset += FlashWriteBlockSize;
+
+                                    if ((FlashChipComboBox.SelectedIndex < 4) && (FlashChipComboBox.SelectedIndex != 0)) // 128 kB
+                                    {
+                                        if (SCIBusCurrentMemoryOffset >= 0x20000)
+                                        {
+                                            ExitButton_Click(this, EventArgs.Empty);
+                                        }
+                                    }
+                                    else // 256 kB
+                                    {
+                                        if (SCIBusCurrentMemoryOffset >= 0x40000)
+                                        {
+                                            ExitButton_Click(this, EventArgs.Empty);
+                                        }
+                                    }
+
+                                    SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / (double)FlashChipSize * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/" + FlashChipSize.ToString() + " bytes)";
+
+                                    SCIBusResponse = true;
+                                    SCIBusRxTimeoutTimer.Stop();
+                                }
+                                else
+                                {
+                                    switch (SCIBusResponseBytes[SCIBusResponseBytes.Length - 1]) // last payload byte stores error status
+                                    {
+                                        case (byte)SCI_ID.WriteError:
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, "Write error.");
+                                            break;
+                                        case (byte)SCI_ID.BlockSizeError:
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, "Invalid block size.");
                                             break;
                                         default:
-                                            CurrentTask = Task.UpdateEEPROM;
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, "Unknown error.");
                                             break;
                                     }
 
-                                    SCIBusResponse = true;
-                                    break;
-                                case (byte)WorkerFunction.EEPROMRead:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit EEPROM reading.");
+                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit flash writing.");
 
-                                    if (CurrentTask == Task.BackupEEPROM)
-                                    {
-                                        CurrentTask = Task.EraseFlashMemory;
-                                    }
-                                    else if (CurrentTask == Task.ReadEEPROM)
-                                    {
-                                        CurrentTask = Task.FinishEEPROMRead;
-                                    }
-                                        
-                                    SCIBusResponse = true;
-                                    break;
-                                case (byte)WorkerFunction.EEPROMWrite:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit EEPROM writing.");
+                                    if (!SCIBusBootstrapWorker.IsBusy) break;
 
-                                    if (CurrentTask == Task.UpdateEEPROM)
-                                    {
-                                        CurrentTask = Task.FinishFlashWrite;
-                                    }
-                                    else if (CurrentTask == Task.WriteEEPROM)
-                                    {
-                                        CurrentTask = Task.FinishEEPROMWrite;
-                                    }
-                                        
-                                    //SCIBusBootstrapFinished = true; // debug
-                                    SCIBusResponse = true;
-                                    break;
-                                case (byte)WorkerFunction.Empty:
-                                default:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit worker function.");
-                                    SCIBusResponse = true;
-                                    break;
-                            }
-                                
-                            break;
-                        case (byte)SCI_ID.BootstrapSeedKeyRequest:
-                            break;
-                        case (byte)SCI_ID.BootstrapSeedKeyResponse:
-                            if (!((SCIBusResponseBytes.Length == 5) && (SCIBusResponseBytes[1] == 0xD0) && (SCIBusResponseBytes[2] == 0x67) && (SCIBusResponseBytes[3] == 0xC2) && (SCIBusResponseBytes[4] == 0x1F))) break;
-
-                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Unlock bootstrap mode security. OK.");
-                            break;
-                        case (byte)SCI_ID.FlashBlockWrite:
-                            if (SCIBusResponseBytes.Length < 7) break;
-
-                            List<byte> OffsetFBW = new List<byte>();
-                            List<byte> LengthFBW = new List<byte>();
-                            List<byte> ValuesFBW = new List<byte>();
-
-                            OffsetFBW.AddRange(SCIBusResponseBytes.Skip(1).Take(3));
-                            LengthFBW.AddRange(SCIBusResponseBytes.Skip(4).Take(2));
-                            ValuesFBW.AddRange(SCIBusResponseBytes.Skip(6));
-
-                            ushort BlockSizeFBW = (ushort)((SCIBusResponseBytes[4] << 8) + SCIBusResponseBytes[5]);
-                            ushort EchoCountFBW = (ushort)(SCIBusResponseBytes.Length - 6);
-
-                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Write offset: " + Util.ByteToHexStringSimple(OffsetFBW.ToArray()) + ". Size: " + Util.ByteToHexStringSimple(LengthFBW.ToArray()) + ". ");
-
-                            if (EchoCountFBW == BlockSizeFBW)
-                            {
-                                UpdateTextBox(SCIBusBootstrapInfoTextBox, "OK.");
-
-                                if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                                if (!((SCIBusResponseBytes[1] == SCIBusTxPayload[1]) && (SCIBusResponseBytes[2] == SCIBusTxPayload[2]) && (SCIBusResponseBytes[3] == SCIBusTxPayload[3]))) break;
-
-                                SCIBusCurrentMemoryOffset += FlashWriteBlockSize;
-
-                                if ((FlashChipComboBox.SelectedIndex < 4) && (FlashChipComboBox.SelectedIndex != 0)) // 128 kB
-                                {
-                                    if (SCIBusCurrentMemoryOffset >= 0x20000)
-                                    {
-                                        ExitButton_Click(this, EventArgs.Empty);
-                                    }
+                                    SCIBusBootstrapWorker.CancelAsync();
                                 }
-                                else // 256 kB
+                                break;
+                            case (byte)SCI_ID.FlashBlockRead:
+                                if (SCIBusResponseBytes.Length < 7) break;
+
+                                List<byte> OffsetFBR = new List<byte>();
+                                List<byte> LengthFBR = new List<byte>();
+                                List<byte> ValuesFBR = new List<byte>();
+
+                                OffsetFBR.AddRange(SCIBusResponseBytes.Skip(1).Take(3));
+                                LengthFBR.AddRange(SCIBusResponseBytes.Skip(4).Take(2));
+                                ValuesFBR.AddRange(SCIBusResponseBytes.Skip(6));
+
+                                ushort BlockSizeFBR = (ushort)((SCIBusResponseBytes[4] << 8) + SCIBusResponseBytes[5]);
+                                ushort EchoCountFBR = (ushort)(SCIBusResponseBytes.Length - 6);
+
+                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Read offset: " + Util.ByteToHexStringSimple(OffsetFBR.ToArray()) + ". Size: " + Util.ByteToHexStringSimple(LengthFBR.ToArray()) + ". ");
+
+                                if (EchoCountFBR == BlockSizeFBR)
                                 {
-                                    if (SCIBusCurrentMemoryOffset >= 0x40000)
+                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "OK.");
+
+                                    if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                    if (!((SCIBusResponseBytes[1] == SCIBusTxPayload[1]) && (SCIBusResponseBytes[2] == SCIBusTxPayload[2]) && (SCIBusResponseBytes[3] == SCIBusTxPayload[3]))) break;
+
+                                    using (BinaryWriter writer = new BinaryWriter(File.Open(SCIBusFlashReadFilename, FileMode.Append)))
                                     {
-                                        ExitButton_Click(this, EventArgs.Empty);
-                                    }
-                                }
-
-                                SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / (double)FlashChipSize * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/" + FlashChipSize.ToString() + " bytes)";
-                                SCIBusResponse = true;
-                                SCIBusRxTimeoutTimer.Stop();
-                            }
-                            else
-                            {
-                                switch (SCIBusResponseBytes[SCIBusResponseBytes.Length - 1]) // last payload byte stores error status
-                                {
-                                    case (byte)SCI_ID.WriteError:
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "Write error.");
-                                        break;
-                                    case (byte)SCI_ID.BlockSizeError:
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "Invalid block size.");
-                                        break;
-                                    default:
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "Unknown error.");
-                                        break;
-                                }
-
-                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit flash writing.");
-
-                                if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                                SCIBusBootstrapWorker.CancelAsync();
-                            }
-                            break;
-                        case (byte)SCI_ID.FlashBlockRead:
-                            if (SCIBusResponseBytes.Length < 7) break;
-
-                            List<byte> OffsetFBR = new List<byte>();
-                            List<byte> LengthFBR = new List<byte>();
-                            List<byte> ValuesFBR = new List<byte>();
-
-                            OffsetFBR.AddRange(SCIBusResponseBytes.Skip(1).Take(3));
-                            LengthFBR.AddRange(SCIBusResponseBytes.Skip(4).Take(2));
-                            ValuesFBR.AddRange(SCIBusResponseBytes.Skip(6));
-
-                            ushort BlockSizeFBR = (ushort)((SCIBusResponseBytes[4] << 8) + SCIBusResponseBytes[5]);
-                            ushort EchoCountFBR = (ushort)(SCIBusResponseBytes.Length - 6);
-
-                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Read offset: " + Util.ByteToHexStringSimple(OffsetFBR.ToArray()) + ". Size: " + Util.ByteToHexStringSimple(LengthFBR.ToArray()) + ". ");
-
-                            if (EchoCountFBR == BlockSizeFBR)
-                            {
-                                UpdateTextBox(SCIBusBootstrapInfoTextBox, "OK.");
-
-                                if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                                if (!((SCIBusResponseBytes[1] == SCIBusTxPayload[1]) && (SCIBusResponseBytes[2] == SCIBusTxPayload[2]) && (SCIBusResponseBytes[3] == SCIBusTxPayload[3]))) break;
-
-                                using (BinaryWriter writer = new BinaryWriter(File.Open(SCIBusFlashReadFilename, FileMode.Append)))
-                                {
-                                    writer.Write(ValuesFBR.ToArray());
-                                    writer.Close();
-                                }
-
-                                SCIBusCurrentMemoryOffset += FlashReadBlockSize;
-                                SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / (double)FlashChipSize * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/" + FlashChipSize.ToString() + " bytes)";
-
-                                if ((FlashChipComboBox.SelectedIndex < 4) && (FlashChipComboBox.SelectedIndex != 0)) // 128 kB
-                                {
-                                    if (SCIBusCurrentMemoryOffset >= 0x20000)
-                                    {
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory content saved to:" + Environment.NewLine + SCIBusFlashReadFilename);
-                                        ExitButton_Click(this, EventArgs.Empty);
-                                    }
-                                }
-                                else // 256 kB
-                                {
-                                    if (SCIBusCurrentMemoryOffset >= 0x40000)
-                                    {
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory content saved to:" + Environment.NewLine + SCIBusFlashReadFilename);
-                                        ExitButton_Click(this, EventArgs.Empty);
-                                    }
-                                }
-
-                                SCIBusResponse = true;
-                                SCIBusRxTimeoutTimer.Stop();
-                            }
-                            else
-                            {
-                                switch (SCIBusResponseBytes[SCIBusResponseBytes.Length - 1]) // last payload byte stores error status
-                                {
-                                    case (byte)SCI_ID.BlockSizeError:
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "Invalid block size.");
-                                        break;
-                                    default:
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "Unknown error.");
-                                        break;
-                                }
-
-                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit flash reading.");
-
-                                if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                                SCIBusBootstrapWorker.CancelAsync();
-                            }
-                            break;
-                        case (byte)SCI_ID.EEPROMBlockWrite:
-                            if (SCIBusResponseBytes.Length < 6) break;
-
-                            List<byte> OffsetEBW = new List<byte>();
-                            List<byte> LengthEBW = new List<byte>();
-                            List<byte> ValuesEBW = new List<byte>();
-
-                            OffsetEBW.AddRange(SCIBusResponseBytes.Skip(1).Take(2));
-                            LengthEBW.AddRange(SCIBusResponseBytes.Skip(3).Take(2));
-                            ValuesEBW.AddRange(SCIBusResponseBytes.Skip(5));
-
-                            ushort BlockSizeEBW = (ushort)((SCIBusResponseBytes[3] << 8) + SCIBusResponseBytes[4]);
-                            ushort EchoCountEBW = (ushort)(SCIBusResponseBytes.Length - 5);
-
-                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Write offset: " + Util.ByteToHexStringSimple(OffsetEBW.ToArray()) + ". Size: " + Util.ByteToHexStringSimple(LengthEBW.ToArray()) + ". ");
-
-                            if ((EchoCountEBW == BlockSizeEBW) && (OffsetEBW[0] < 2))
-                            {
-                                UpdateTextBox(SCIBusBootstrapInfoTextBox, "OK.");
-
-                                if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                                if (!((SCIBusResponseBytes[1] == SCIBusTxPayload[1]) && (SCIBusResponseBytes[2] == SCIBusTxPayload[2]))) break;
-
-                                SCIBusCurrentMemoryOffset += EEPROMWriteBlockSize;
-                                SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/512 bytes)";
-                                ExitButton_Click(this, EventArgs.Empty);
-                                SCIBusResponse = true;
-                                SCIBusRxTimeoutTimer.Stop();
-                            }
-                            else
-                            {
-                                switch (SCIBusResponseBytes[SCIBusResponseBytes.Length - 1]) // last payload byte stores error status
-                                {
-                                    case (byte)SCI_ID.WriteError:
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "Write error.");
-                                        break;
-                                    case (byte)SCI_ID.BlockSizeError:
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "Invalid block size.");
-                                        break;
-                                    case (byte)SCI_ID.OffsetError:
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "Invalid offset.");
-                                        break;
-                                    default:
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "Unknown error.");
-                                        break;
-                                }
-
-                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit EEPROM writing.");
-
-                                if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                                SCIBusBootstrapWorker.CancelAsync();
-                            }
-                            break;
-                        case (byte)SCI_ID.EEPROMBlockRead:
-                            if (SCIBusResponseBytes.Length < 6) break;
-
-                            List<byte> OffsetEBR = new List<byte>();
-                            List<byte> LengthEBR = new List<byte>();
-                            List<byte> ValuesEBR = new List<byte>();
-
-                            OffsetEBR.AddRange(SCIBusResponseBytes.Skip(1).Take(2));
-                            LengthEBR.AddRange(SCIBusResponseBytes.Skip(3).Take(2));
-                            ValuesEBR.AddRange(SCIBusResponseBytes.Skip(5));
-
-                            ushort BlockSizeEBR = (ushort)((SCIBusResponseBytes[3] << 8) + SCIBusResponseBytes[4]);
-                            ushort EchoCountEBR = (ushort)(SCIBusResponseBytes.Length - 5);
-
-                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Read offset: " + Util.ByteToHexStringSimple(OffsetEBR.ToArray()) + ". Size: " + Util.ByteToHexStringSimple(LengthEBR.ToArray()) + ". ");
-
-                            if ((EchoCountEBR == BlockSizeEBR) && (OffsetEBR[0] < 2))
-                            {
-                                UpdateTextBox(SCIBusBootstrapInfoTextBox, "OK.");
-
-                                if (BlockSizeEBR == 512)
-                                {
-                                    using (BinaryWriter writer = new BinaryWriter(File.Open(SCIBusEEPROMReadFilename, FileMode.Append)))
-                                    {
-                                        writer.Write(ValuesEBR.ToArray());
+                                        writer.Write(ValuesFBR.ToArray());
                                         writer.Close();
                                     }
 
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "EEPROM content saved to:" + Environment.NewLine + SCIBusEEPROMReadFilename);
+                                    SCIBusCurrentMemoryOffset += FlashReadBlockSize;
+
+                                    SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / (double)FlashChipSize * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/" + FlashChipSize.ToString() + " bytes)";
+
+                                    if ((FlashChipComboBox.SelectedIndex < 4) && (FlashChipComboBox.SelectedIndex != 0)) // 128 kB
+                                    {
+                                        if (SCIBusCurrentMemoryOffset >= 0x20000)
+                                        {
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory content saved to:" + Environment.NewLine + SCIBusFlashReadFilename);
+                                            ExitButton_Click(this, EventArgs.Empty);
+                                        }
+                                    }
+                                    else // 256 kB
+                                    {
+                                        if (SCIBusCurrentMemoryOffset >= 0x40000)
+                                        {
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash memory content saved to:" + Environment.NewLine + SCIBusFlashReadFilename);
+                                            ExitButton_Click(this, EventArgs.Empty);
+                                        }
+                                    }
+
+                                    SCIBusResponse = true;
+                                    SCIBusRxTimeoutTimer.Stop();
+                                }
+                                else
+                                {
+                                    switch (SCIBusResponseBytes[SCIBusResponseBytes.Length - 1]) // last payload byte stores error status
+                                    {
+                                        case (byte)SCI_ID.BlockSizeError:
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, "Invalid block size.");
+                                            break;
+                                        default:
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, "Unknown error.");
+                                            break;
+                                    }
+
+                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit flash reading.");
+
+                                    if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                    SCIBusBootstrapWorker.CancelAsync();
+                                }
+                                break;
+                            case (byte)SCI_ID.EEPROMBlockWrite:
+                                if (SCIBusResponseBytes.Length < 6) break;
+
+                                List<byte> OffsetEBW = new List<byte>();
+                                List<byte> LengthEBW = new List<byte>();
+                                List<byte> ValuesEBW = new List<byte>();
+
+                                OffsetEBW.AddRange(SCIBusResponseBytes.Skip(1).Take(2));
+                                LengthEBW.AddRange(SCIBusResponseBytes.Skip(3).Take(2));
+                                ValuesEBW.AddRange(SCIBusResponseBytes.Skip(5));
+
+                                ushort BlockSizeEBW = (ushort)((SCIBusResponseBytes[3] << 8) + SCIBusResponseBytes[4]);
+                                ushort EchoCountEBW = (ushort)(SCIBusResponseBytes.Length - 5);
+
+                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Write offset: " + Util.ByteToHexStringSimple(OffsetEBW.ToArray()) + ". Size: " + Util.ByteToHexStringSimple(LengthEBW.ToArray()) + ". ");
+
+                                if ((EchoCountEBW == BlockSizeEBW) && (OffsetEBW[0] < 2))
+                                {
+                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "OK.");
 
                                     if (!SCIBusBootstrapWorker.IsBusy) break;
 
                                     if (!((SCIBusResponseBytes[1] == SCIBusTxPayload[1]) && (SCIBusResponseBytes[2] == SCIBusTxPayload[2]))) break;
 
-                                    SCIBusCurrentMemoryOffset += EEPROMReadBlockSize;
+                                    SCIBusCurrentMemoryOffset += EEPROMWriteBlockSize;
+
                                     SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/512 bytes)";
+
                                     ExitButton_Click(this, EventArgs.Empty);
                                     SCIBusResponse = true;
                                     SCIBusRxTimeoutTimer.Stop();
                                 }
-                            }
-                            else
-                            {
-                                switch (SCIBusResponseBytes[SCIBusResponseBytes.Length - 1]) // last payload byte stores error status
+                                else
                                 {
-                                    case (byte)SCI_ID.BlockSizeError:
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "Invalid block size.");
+                                    switch (SCIBusResponseBytes[SCIBusResponseBytes.Length - 1]) // last payload byte stores error status
+                                    {
+                                        case (byte)SCI_ID.WriteError:
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, "Write error.");
+                                            break;
+                                        case (byte)SCI_ID.BlockSizeError:
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, "Invalid block size.");
+                                            break;
+                                        case (byte)SCI_ID.OffsetError:
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, "Invalid offset.");
+                                            break;
+                                        default:
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, "Unknown error.");
+                                            break;
+                                    }
+
+                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit EEPROM writing.");
+
+                                    if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                    SCIBusBootstrapWorker.CancelAsync();
+                                }
+                                break;
+                            case (byte)SCI_ID.EEPROMBlockRead:
+                                if (SCIBusResponseBytes.Length < 6) break;
+
+                                List<byte> OffsetEBR = new List<byte>();
+                                List<byte> LengthEBR = new List<byte>();
+                                List<byte> ValuesEBR = new List<byte>();
+
+                                OffsetEBR.AddRange(SCIBusResponseBytes.Skip(1).Take(2));
+                                LengthEBR.AddRange(SCIBusResponseBytes.Skip(3).Take(2));
+                                ValuesEBR.AddRange(SCIBusResponseBytes.Skip(5));
+
+                                ushort BlockSizeEBR = (ushort)((SCIBusResponseBytes[3] << 8) + SCIBusResponseBytes[4]);
+                                ushort EchoCountEBR = (ushort)(SCIBusResponseBytes.Length - 5);
+
+                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Read offset: " + Util.ByteToHexStringSimple(OffsetEBR.ToArray()) + ". Size: " + Util.ByteToHexStringSimple(LengthEBR.ToArray()) + ". ");
+
+                                if ((EchoCountEBR == BlockSizeEBR) && (OffsetEBR[0] < 2))
+                                {
+                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "OK.");
+
+                                    if (BlockSizeEBR == 512)
+                                    {
+                                        using (BinaryWriter writer = new BinaryWriter(File.Open(SCIBusEEPROMReadFilename, FileMode.Append)))
+                                        {
+                                            writer.Write(ValuesEBR.ToArray());
+                                            writer.Close();
+                                        }
+
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "EEPROM content saved to:" + Environment.NewLine + SCIBusEEPROMReadFilename);
+
+                                        if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                        if (!((SCIBusResponseBytes[1] == SCIBusTxPayload[1]) && (SCIBusResponseBytes[2] == SCIBusTxPayload[2]))) break;
+
+                                        SCIBusCurrentMemoryOffset += EEPROMReadBlockSize;
+
+                                        SCIBusBootstrapToolsProgressLabel.Text = "Progress: " + (byte)(Math.Round((double)SCIBusCurrentMemoryOffset / 512.0 * 100.0)) + "% (" + SCIBusCurrentMemoryOffset.ToString() + "/512 bytes)";
+
+                                        ExitButton_Click(this, EventArgs.Empty);
+                                        SCIBusResponse = true;
+                                        SCIBusRxTimeoutTimer.Stop();
+                                    }
+                                }
+                                else
+                                {
+                                    switch (SCIBusResponseBytes[SCIBusResponseBytes.Length - 1]) // last payload byte stores error status
+                                    {
+                                        case (byte)SCI_ID.BlockSizeError:
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, "Invalid block size.");
+                                            break;
+                                        case (byte)SCI_ID.OffsetError:
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, "Invalid offset.");
+                                            break;
+                                        default:
+                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, "Unknown error.");
+                                            break;
+                                    }
+
+                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit EEPROM reading.");
+
+                                    if (!SCIBusBootstrapWorker.IsBusy) break;
+
+                                    SCIBusBootstrapWorker.CancelAsync();
+                                }
+                                break;
+                            case (byte)SCI_ID.StartBootloader:
+                                if ((SCIBusResponseBytes.Length == 4) && (SCIBusResponseBytes[3] == 0x22))
+                                {
+                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Start bootloader. OK.");
+                                }
+                                else if (SCIBusResponseBytes.Length == 3)
+                                {
+                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Start bootloader. Error.");
+                                }
+                                break;
+                            case (byte)SCI_ID.UploadBootloader:
+                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Upload bootloader: ");
+
+                                switch (BootloaderComboBox.SelectedIndex)
+                                {
+                                    case (byte)Bootloader.SBEC3_128k:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3 (128k). ");
                                         break;
-                                    case (byte)SCI_ID.OffsetError:
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "Invalid offset.");
+                                    case (byte)Bootloader.SBEC3_128k_custom:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3 (128k) custom. ");
                                         break;
+                                    case (byte)Bootloader.SBEC3_256k:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3 (256k). ");
+                                        break;
+                                    case (byte)Bootloader.SBEC3_256k_custom:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3 (256k) custom. ");
+                                        break;
+                                    case (byte)Bootloader.EATX3_128k:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "EATX3 (128k). ");
+                                        break;
+                                    case (byte)Bootloader.EATX3_256k:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "EATX3 (256k). ");
+                                        break;
+                                    case (byte)Bootloader.JTEC_256k:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "JTEC (256k). ");
+                                        break;
+                                    case (byte)Bootloader.Empty:
                                     default:
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "Unknown error.");
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "empty. ");
                                         break;
                                 }
 
-                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit EEPROM reading.");
+                                ushort start = (ushort)((SCIBusResponseBytes[1] << 8) + SCIBusResponseBytes[2]);
+                                ushort end = (ushort)((SCIBusResponseBytes[3] << 8) + SCIBusResponseBytes[4]);
+
+                                if ((end - start + 1) == (SCIBusResponseBytes.Length - 5))
+                                {
+                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "OK.");
+                                }
+                                else
+                                {
+                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "Error.");
+                                }
+                                break;
+                            case (byte)SCI_ID.BlockSizeError:
+                                switch (WorkerFunctionComboBox.SelectedIndex)
+                                {
+                                    case (byte)WorkerFunction.FlashRead:
+                                    case (byte)WorkerFunction.FlashWrite:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash block size error.");
+                                        break;
+                                    case (byte)WorkerFunction.EEPROMRead:
+                                    case (byte)WorkerFunction.EEPROMWrite:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "EEPROM block size error.");
+                                        break;
+                                    default:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Block size error.");
+                                        break;
+                                }
+
+                                SCIBusBootstrapWorker.CancelAsync();
+                                break;
+                            case (byte)SCI_ID.EraseError_81:
+                                switch (WorkerFunctionComboBox.SelectedIndex)
+                                {
+                                    case (byte)WorkerFunction.FlashErase:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash erase error 0x81.");
+                                        break;
+                                    default:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Error 0x81.");
+                                        break;
+                                }
 
                                 if (!SCIBusBootstrapWorker.IsBusy) break;
 
                                 SCIBusBootstrapWorker.CancelAsync();
-                            }
-                            break;
-                        case (byte)SCI_ID.StartBootloader:
-                            if ((SCIBusResponseBytes.Length == 4) && (SCIBusResponseBytes[3] == 0x22))
-                            {
-                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Start bootloader. OK.");
-                            }
-                            else if(SCIBusResponseBytes.Length == 3)
-                            {
-                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Start bootloader. Error.");
-                            }
-                            break;
-                        case (byte)SCI_ID.UploadBootloader:
-                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Upload bootloader: ");
+                                break;
+                            case (byte)SCI_ID.EraseError_82:
+                                switch (WorkerFunctionComboBox.SelectedIndex)
+                                {
+                                    case (byte)WorkerFunction.FlashErase:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash erase error 0x82.");
+                                        break;
+                                    default:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Error 0x82.");
+                                        break;
+                                }
 
-                            switch ((byte)BootloaderComboBox.SelectedIndex)
-                            {
-                                case (byte)Bootloader.SBEC3_128k:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3 (128k). ");
-                                    break;
-                                case (byte)Bootloader.SBEC3_128k_custom:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3 (128k) custom. ");
-                                    break;
-                                case (byte)Bootloader.SBEC3_256k:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3 (256k). ");
-                                    break;
-                                case (byte)Bootloader.SBEC3_256k_custom:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3 (256k) custom. ");
-                                    break;
-                                case (byte)Bootloader.EATX3_128k:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "EATX3 (128k). ");
-                                    break;
-                                case (byte)Bootloader.EATX3_256k:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "EATX3 (256k). ");
-                                    break;
-                                case (byte)Bootloader.JTEC_256k:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "JTEC (256k). ");
-                                    break;
-                                case (byte)Bootloader.Empty:
-                                default:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, "empty. ");
-                                    break;
-                            }
+                                if (!SCIBusBootstrapWorker.IsBusy) break;
 
-                            ushort start = (ushort)((SCIBusResponseBytes[1] << 8) + SCIBusResponseBytes[2]);
-                            ushort end = (ushort)((SCIBusResponseBytes[3] << 8) + SCIBusResponseBytes[4]);
+                                SCIBusBootstrapWorker.CancelAsync();
+                                break;
+                            case (byte)SCI_ID.EraseError_83:
+                                switch (WorkerFunctionComboBox.SelectedIndex)
+                                {
+                                    case (byte)WorkerFunction.FlashErase:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash erase error 0x83.");
+                                        break;
+                                    default:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Error 0x83.");
+                                        break;
+                                }
 
-                            if ((end - start + 1) == (SCIBusResponseBytes.Length - 5))
-                            {
-                                UpdateTextBox(SCIBusBootstrapInfoTextBox, "OK.");
-                            }
-                            else
-                            {
-                                UpdateTextBox(SCIBusBootstrapInfoTextBox, "Error.");
-                            }
-                            break;
-                        case (byte)SCI_ID.BlockSizeError:
-                            switch ((byte)WorkerFunctionComboBox.SelectedIndex)
-                            {
-                                case (byte)WorkerFunction.FlashRead:
-                                case (byte)WorkerFunction.FlashWrite:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash block size error.");
-                                    break;
-                                case (byte)WorkerFunction.EEPROMRead:
-                                case (byte)WorkerFunction.EEPROMWrite:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "EEPROM block size error.");
-                                    break;
-                                default:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Block size error.");
-                                    break;
-                            }
+                                if (!SCIBusBootstrapWorker.IsBusy) break;
 
-                            if (!SCIBusBootstrapWorker.IsBusy) break;
+                                SCIBusBootstrapWorker.CancelAsync();
+                                break;
+                            case (byte)SCI_ID.OffsetError:
+                                switch (WorkerFunctionComboBox.SelectedIndex)
+                                {
+                                    case (byte)WorkerFunction.EEPROMRead:
+                                    case (byte)WorkerFunction.EEPROMWrite:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "EEPROM offset error.");
+                                        break;
+                                    default:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Error 0x84.");
+                                        break;
+                                }
 
-                            SCIBusBootstrapWorker.CancelAsync();
-                            break;
-                        case (byte)SCI_ID.EraseError_81:
-                            switch ((byte)WorkerFunctionComboBox.SelectedIndex)
-                            {
-                                case (byte)WorkerFunction.FlashErase:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash erase error 0x81.");
-                                    break;
-                                default:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Error 0x81.");
-                                    break;
-                            }
+                                if (!SCIBusBootstrapWorker.IsBusy) break;
 
-                            if (!SCIBusBootstrapWorker.IsBusy) break;
+                                SCIBusBootstrapWorker.CancelAsync();
+                                break;
+                            case (byte)SCI_ID.BootstrapModeNotProtected:
+                                if ((SCIBusResponseBytes.Length == 5) && (SCIBusResponseBytes[1] == 0x2F) && (SCIBusResponseBytes[2] == 0xD8) && (SCIBusResponseBytes[3] == 0x3E) && (SCIBusResponseBytes[4] == 0x23))
+                                {
+                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap mode is not protected.");
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+                }
 
-                            SCIBusBootstrapWorker.CancelAsync();
-                            break;
-                        case (byte)SCI_ID.EraseError_82:
-                            switch ((byte)WorkerFunctionComboBox.SelectedIndex)
-                            {
-                                case (byte)WorkerFunction.FlashErase:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash erase error 0x82.");
-                                    break;
-                                default:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Error 0x82.");
-                                    break;
-                            }
-
-                            if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                            SCIBusBootstrapWorker.CancelAsync();
-                            break;
-                        case (byte)SCI_ID.EraseError_83:
-                            switch ((byte)WorkerFunctionComboBox.SelectedIndex)
-                            {
-                                case (byte)WorkerFunction.FlashErase:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Flash erase error 0x83.");
-                                    break;
-                                default:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Error 0x83.");
-                                    break;
-                            }
-
-                            if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                            SCIBusBootstrapWorker.CancelAsync();
-                            break;
-                        case (byte)SCI_ID.OffsetError:
-                            switch ((byte)WorkerFunctionComboBox.SelectedIndex)
-                            {
-                                case (byte)WorkerFunction.EEPROMRead:
-                                case (byte)WorkerFunction.EEPROMWrite:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "EEPROM offset error.");
-                                    break;
-                                default:
-                                    UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Error 0x84.");
-                                    break;
-                            }
-
-                            if (!SCIBusBootstrapWorker.IsBusy) break;
-
-                            SCIBusBootstrapWorker.CancelAsync();
-                            break;
-                        case (byte)SCI_ID.BootstrapModeNotProtected:
-                            if ((SCIBusResponseBytes.Length == 5) && (SCIBusResponseBytes[1] == 0x2F) && (SCIBusResponseBytes[2] == 0xD8) && (SCIBusResponseBytes[3] == 0x3E) && (SCIBusResponseBytes[4] == 0x23))
-                            {
-                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap mode is not protected.");
-                            }
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-            }
-
-            SCIBusNextRequest = false;
-            SCIBusNextRequestTimer.Stop();
-            SCIBusNextRequestTimer.Start();
+                SCIBusNextRequest = false;
+                SCIBusNextRequestTimer.Stop();
+                SCIBusNextRequestTimer.Start();
+            });
         }
 
         private void PrepareFlashMemoryReading()
@@ -2326,20 +2378,23 @@ namespace ChryslerScanner
             Array.Copy(EEPROMFileBuffer, SCIBusCurrentMemoryOffset, SCIBusTxPayload, 5, EEPROMWriteBlockSize);
         }
 
-        private void UpdateTextBox(TextBox textBox, string text)
+        private void UpdateTextBox(TextBox TB, string text)
         {
-            if (!textBox.IsDisposed)
+            if (TB.IsDisposed || !TB.IsHandleCreated)
+                return;
+
+            Invoke((MethodInvoker)delegate
             {
-                if (textBox.TextLength + text.Length > textBox.MaxLength)
+                if (TB.TextLength + text.Length > TB.MaxLength)
                 {
-                    textBox.Clear();
+                    TB.Clear();
                     GC.Collect();
                 }
 
-                textBox.AppendText(text);
+                TB.AppendText(text);
 
-                if ((textBox.Name == "SCIBusBootstrapInfoTextBox") && (SCIBusBootstrapInfoTextBox != null)) File.AppendAllText(SCIBusBootstrapLogFilename, text);
-            }
+                if ((TB.Name == "SCIBusBootstrapInfoTextBox") && (SCIBusBootstrapInfoTextBox != null)) File.AppendAllText(SCIBusBootstrapLogFilename, text);
+            });
         }
 
         private void BootstrapToolsForm_FormClosing(object sender, FormClosingEventArgs e)

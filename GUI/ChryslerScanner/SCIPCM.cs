@@ -43,6 +43,7 @@ namespace ChryslerScanner
         public byte[] PartNumberChars = new byte[6] { 0, 0, 0, 0, 0, 0 };
         public string[] EngineToolsStatusBarTextItems = new string[12];
         public int Year = 2003;
+        public bool CumminsSelected = false;
 
         public SCIPCM()
         {
@@ -6518,7 +6519,7 @@ namespace ChryslerScanner
 
                         if (message.Length < 3) break;
 
-                        if ((Year < 2003) && (ControllerHardwareType == 9)) // CUMMINS
+                        if ((Year < 2003) && CumminsSelected) // CUMMINS
                         {
                             switch (payload[0])
                             {
@@ -7603,7 +7604,7 @@ namespace ChryslerScanner
                             }
                             break;
                         }
-                        else if ((Year >= 2003) && (ControllerHardwareType == 9)) // CUMMINS
+                        else if ((Year >= 2003) && CumminsSelected) // CUMMINS
                         {
                             switch (payload[0])
                             {
@@ -9083,7 +9084,7 @@ namespace ChryslerScanner
                                 break;
                         }
 
-                        if ((Year < 2003) && (ControllerHardwareType == 9)) // CUMMINS
+                        if ((Year < 2003) && CumminsSelected) // CUMMINS
                         {
                             switch (payload[1])
                             {
@@ -9641,7 +9642,7 @@ namespace ChryslerScanner
                                     break;
                             }
                         }
-                        else if ((Year >= 2003) && (ControllerHardwareType == 9)) // CUMMINS
+                        else if ((Year >= 2003) && CumminsSelected) // CUMMINS
                         {
                             switch (payload[1])
                             {

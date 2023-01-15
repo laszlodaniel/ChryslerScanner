@@ -847,7 +847,7 @@
             // EngineToolsForm
             // 
             resources.ApplyResources(this, "$this");
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.Controls.Add(this.EngineToolsStatusStrip);
             this.Controls.Add(this.CHTGroupBox);
             this.Controls.Add(this.RAMTableGroupBox);
@@ -861,6 +861,7 @@
             this.Controls.Add(this.FaultCodeGroupBox);
             this.Name = "EngineToolsForm";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.EngineToolsForm_FormClosing);
+            this.Load += new System.EventHandler(this.EngineToolsForm_Load);
             this.FaultCodeGroupBox.ResumeLayout(false);
             this.BaudrateGroupBox.ResumeLayout(false);
             this.ActuatorTestGroupBox.ResumeLayout(false);

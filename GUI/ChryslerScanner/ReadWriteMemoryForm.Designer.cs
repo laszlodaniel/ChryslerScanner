@@ -540,10 +540,11 @@ namespace ChryslerScanner
             // ReadWriteMemoryForm
             // 
             resources.ApplyResources(this, "$this");
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.Controls.Add(this.WriteMemoryTabControl);
             this.Name = "ReadWriteMemoryForm";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.WriteMemoryForm_FormClosing);
+            this.Load += new System.EventHandler(this.ReadWriteMemoryForm_Load);
             this.WriteMemoryTabControl.ResumeLayout(false);
             this.CCDBusTabPage.ResumeLayout(false);
             this.CCDBusTabPage.PerformLayout();

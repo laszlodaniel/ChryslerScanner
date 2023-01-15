@@ -94,5 +94,17 @@ namespace ChryslerScanner.Properties {
                 this["Language"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool DisplayRawBusPackets {
+            get {
+                return ((bool)(this["DisplayRawBusPackets"]));
+            }
+            set {
+                this["DisplayRawBusPackets"] = value;
+            }
+        }
     }
 }

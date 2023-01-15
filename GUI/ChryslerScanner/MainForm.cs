@@ -95,6 +95,8 @@ namespace ChryslerScanner
         private FileInfo fi = new FileInfo(@"DRBDBReader/database.mem");
         private Database db;
 
+        Thread MSP; // Monitor Serial Port thread
+
         public MainForm()
         {
             InitializeComponent();
@@ -242,6 +244,15 @@ namespace ChryslerScanner
                 SortMessagesByIDByteToolStripMenuItem.Checked = false;
             }
 
+            if (Properties.Settings.Default.DisplayRawBusPackets == true)
+            {
+                DisplayRawBusPacketsToolStripMenuItem.Checked = true;
+            }
+            else
+            {
+                DisplayRawBusPacketsToolStripMenuItem.Checked = false;
+            }
+
             ActiveControl = ConnectButton; // put focus on the connect button
         }
 
@@ -255,7 +266,7 @@ namespace ChryslerScanner
             {
                 CCDBusDiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
                 {
-                    CCDBusDiagnosticsListBox.BeginUpdate();
+                    //CCDBusDiagnosticsListBox.BeginUpdate();
 
                     LastCCDScrollBarPosition = CCDBusDiagnosticsListBox.GetVerticalScrollPosition();
 
@@ -276,7 +287,7 @@ namespace ChryslerScanner
 
                     CCDBusDiagnosticsListBox.SetVerticalScrollPosition(LastCCDScrollBarPosition);
 
-                    CCDBusDiagnosticsListBox.EndUpdate();
+                    //CCDBusDiagnosticsListBox.EndUpdate();
 
                     CCDTableBuffer.Clear();
                     CCDTableBufferLocation.Clear();
@@ -396,6 +407,7 @@ namespace ChryslerScanner
         private void UpdateCOMPortList()
         {
             COMPortsComboBox.Items.Clear(); // clear combobox
+
             string[] ports = SerialPort.GetPortNames(); // get available ports
 
             if (ports.Length > 0)
@@ -508,7 +520,7 @@ namespace ChryslerScanner
                     break;
             }
 
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
         }
 
         private void AnalyzePacket(object sender, EventArgs e)
@@ -1233,24 +1245,27 @@ namespace ChryslerScanner
                                                                    "       Heartbeat interval: " + LEDHeartbeatIntervalString + Environment.NewLine +
                                                                    "       Blink duration: " + LEDBlinkDurationString);
 
-                                    EEPROMChecksumButton.Visible = false;
-                                    InternalEEPROMRadioButton.Visible = false;
-                                    ExternalEEPROMRadioButton.Visible = false;
-                                    DebugLabel.Visible = false;
-                                    ReadEEPROMButton.Visible = false;
-                                    EEPROMReadAddressLabel.Visible = false;
-                                    EEPROMReadAddressTextBox.Visible = false;
-                                    EEPROMReadCountLabel.Visible = false;
-                                    EEPROMReadCountTextBox.Visible = false;
-                                    WriteEEPROMButton.Visible = false;
-                                    EEPROMWriteAddressLabel.Visible = false;
-                                    EEPROMWriteAddressTextBox.Visible = false;
-                                    EEPROMWriteEnableCheckBox.Visible = false;
-                                    EEPROMWriteValuesLabel.Visible = false;
-                                    EEPROMWriteValuesTextBox.Visible = false;
-                                    MeasureCCDBusVoltagesButton.Visible = false;
-                                    CCDBusTerminationBiasOnOffCheckBox.Enabled = false;
-                                    LCDApplySettingsButton.Enabled = false;
+                                    BeginInvoke((MethodInvoker)delegate
+                                    {
+                                        EEPROMChecksumButton.Visible = false;
+                                        InternalEEPROMRadioButton.Visible = false;
+                                        ExternalEEPROMRadioButton.Visible = false;
+                                        DebugLabel.Visible = false;
+                                        ReadEEPROMButton.Visible = false;
+                                        EEPROMReadAddressLabel.Visible = false;
+                                        EEPROMReadAddressTextBox.Visible = false;
+                                        EEPROMReadCountLabel.Visible = false;
+                                        EEPROMReadCountTextBox.Visible = false;
+                                        WriteEEPROMButton.Visible = false;
+                                        EEPROMWriteAddressLabel.Visible = false;
+                                        EEPROMWriteAddressTextBox.Visible = false;
+                                        EEPROMWriteEnableCheckBox.Visible = false;
+                                        EEPROMWriteValuesLabel.Visible = false;
+                                        EEPROMWriteValuesTextBox.Visible = false;
+                                        MeasureCCDBusVoltagesButton.Visible = false;
+                                        CCDBusTerminationBiasOnOffCheckBox.Enabled = false;
+                                        LCDApplySettingsButton.Enabled = false;
+                                    });
                                 }
                             }
                             else
@@ -1781,15 +1796,18 @@ namespace ChryslerScanner
                                                                            "         - Features : " + ChipFeaturesString + Environment.NewLine +
                                                                            "         - MAC addr.: " + Util.ByteToHexString(Packet.rx.payload, 16) + ":" + Util.ByteToHexString(Packet.rx.payload, 17) + ":" + Util.ByteToHexString(Packet.rx.payload, 18) + ":" + Util.ByteToHexString(Packet.rx.payload, 19) + ":" + Util.ByteToHexString(Packet.rx.payload, 20) + ":" + Util.ByteToHexString(Packet.rx.payload, 21));
 
-                                            if (!Text.Contains("  |  FW v"))
+                                            BeginInvoke((MethodInvoker)delegate
                                             {
-                                                Text += "  |  FW " + FirmwareVersionString + "  |  HW " + HardwareVersionString;
-                                            }
-                                            else
-                                            {
-                                                Text = Text.Remove(Text.Length - 20);
-                                                Text += FirmwareVersionString + "  |  HW " + HardwareVersionString;
-                                            }
+                                                if (!Text.Contains("  |  FW v"))
+                                                {
+                                                    Text += "  |  FW " + FirmwareVersionString + "  |  HW " + HardwareVersionString;
+                                                }
+                                                else
+                                                {
+                                                    Text = Text.Remove(Text.Length - 20);
+                                                    Text += FirmwareVersionString + "  |  HW " + HardwareVersionString;
+                                                }
+                                            });
                                         }
                                     }
                                     else
@@ -2664,14 +2682,22 @@ namespace ChryslerScanner
                 case (byte)Packet.Bus.ccd:
                     if (CCDBusOnDemandToolStripMenuItem.Checked && (ScannerTabControl.SelectedTab.Name == "CCDBusControlTabPage") || !CCDBusOnDemandToolStripMenuItem.Checked)
                     {
-                        Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message:", Packet.rx.buffer);
+                        if (Properties.Settings.Default.DisplayRawBusPackets)
+                        {
+                            Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message:", Packet.rx.buffer);
+                        }
+                        
                         CCD.AddMessage(Packet.rx.payload.ToArray());
                     }
                     break;
                 case (byte)Packet.Bus.pci:
                     if (PCIBusOnDemandToolStripMenuItem.Checked && (ScannerTabControl.SelectedTab.Name == "PCIBusControlTabPage") || !PCIBusOnDemandToolStripMenuItem.Checked)
                     {
-                        Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus message:", Packet.rx.buffer);
+                        if (Properties.Settings.Default.DisplayRawBusPackets)
+                        {
+                            Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus message:", Packet.rx.buffer);
+                        }
+
                         PCI.AddMessage(Packet.rx.payload.ToArray());
                     }
                     break;
@@ -2853,16 +2879,25 @@ namespace ChryslerScanner
                                         }
                                         break;
                                     default:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) low-speed message:", Packet.rx.buffer);
+                                        if (Properties.Settings.Default.DisplayRawBusPackets)
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) low-speed message:", Packet.rx.buffer);
+                                        }
                                         break;
                                 }
                             }
                             break;
                         case (byte)Packet.SCISpeedMode.highSpeed:
-                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) high-speed message:", Packet.rx.buffer);
+                            if (Properties.Settings.Default.DisplayRawBusPackets)
+                            {
+                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) high-speed message:", Packet.rx.buffer);
+                            }
                             break;
                         default:
-                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message:", Packet.rx.buffer);
+                            if (Properties.Settings.Default.DisplayRawBusPackets)
+                            {
+                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message:", Packet.rx.buffer);
+                            }
                             break;
                     }
 
@@ -2888,7 +2923,11 @@ namespace ChryslerScanner
                     //}
                     break;
                 case (byte)Packet.Bus.tcm:
-                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message:", Packet.rx.buffer);
+                    if (Properties.Settings.Default.DisplayRawBusPackets)
+                    {
+                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message:", Packet.rx.buffer);
+                    }
+
                     TCM.AddMessage(Packet.rx.payload.ToArray());
                     break;
                 default:
@@ -2973,13 +3012,16 @@ namespace ChryslerScanner
 
         public async void TransmitUSBPacket(string description)
         {
-            if (!USBSendPacketComboBox.Items.Contains(USBSendPacketComboBox.Text)) // only add unique items (no repeat!)
+            Invoke((MethodInvoker)delegate
             {
-                USBSendPacketComboBox.Items.Add(USBSendPacketComboBox.Text); // add command to the list so it can be selected later
-            }
+                if (!USBSendPacketComboBox.Items.Contains(USBSendPacketComboBox.Text)) // only add unique items (no repeat!)
+                {
+                    USBSendPacketComboBox.Items.Add(USBSendPacketComboBox.Text); // add command to the list so it can be selected later
+                }
+            });
 
             Util.UpdateTextBox(USBTextBox, description, Packet.tx.buffer); // Packet class fields must be previously filled with data
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
         }
 
         public void UpdateUSBTextBox(string description)
@@ -3005,24 +3047,26 @@ namespace ChryslerScanner
 
         private async void USBSendPacketButton_Click(object sender, EventArgs e)
         {
-            if (USBSendPacketComboBox.Text != string.Empty)
-            {
-                byte[] bytes = Util.HexStringToByte(USBSendPacketComboBox.Text);
-                if ((bytes != null) && (bytes.Length > 5))
-                {
-                    if (!USBSendPacketComboBox.Items.Contains(USBSendPacketComboBox.Text)) // only add unique items (no repeat!)
-                    {
-                        USBSendPacketComboBox.Items.Add(USBSendPacketComboBox.Text); // add command to the list so it can be selected later
-                    }
+            if (USBSendPacketComboBox.Text == string.Empty)
+                return;
 
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Data transmitted:", bytes);
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, bytes);
-                }
-                else
-                {
-                    MessageBox.Show("At least 6 bytes are necessary for a valid packet!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
+            byte[] bytes = Util.HexStringToByte(USBSendPacketComboBox.Text);
+
+            if ((bytes == null) || (bytes.Length < 6))
+            {
+                MessageBox.Show("Minimum packet length = 6 bytes.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
+
+            Packet.tx.buffer = bytes;
+
+            if (!USBSendPacketComboBox.Items.Contains(USBSendPacketComboBox.Text)) // only add unique items (no repeat!)
+            {
+                USBSendPacketComboBox.Items.Add(USBSendPacketComboBox.Text); // add command to the list so it can be selected later
+            }
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Data transmitted:", Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
         }
 
         private void USBSendPacketComboBox_KeyPress(object sender, KeyPressEventArgs e)
@@ -3065,160 +3109,93 @@ namespace ChryslerScanner
         {
             UpdateCOMPortList();
 
-            if ((COMPortsComboBox.Text != "N/A") && (COMPortsComboBox.Text != string.Empty))
+            if ((SelectedPort == "N/A") || (SelectedPort == string.Empty))
             {
-                if (ConnectButton.Text == Languages.strings.Connect)
+                return;
+            }
+
+            if (ConnectButton.Text == Languages.strings.Connect)
+            {
+                Util.UpdateTextBox(USBTextBox, "[INFO] Connecting to " + SelectedPort + ".");
+
+                if (Packet.SP.IsOpen)
+                    Packet.SP.Close();
+
+                Packet.SP.PortName = SelectedPort;
+                Packet.SP.BaudRate = 250000;
+                Packet.SP.DataBits = 8;
+                Packet.SP.StopBits = StopBits.One;
+                Packet.SP.Parity = Parity.None;
+                Packet.SP.ReadTimeout = 500;
+                Packet.SP.WriteTimeout = 500;
+
+                try
                 {
-                    byte ConnectionCounter = 0;
-
-                    ConnectButton.Enabled = false; // no double-click
-                    COMPortsRefreshButton.Enabled = false;
-
-                    while (ConnectionCounter < 5) // try connecting to the scanner 5 times before giving up
-                    {
-                        Thread.Sleep(1);
-
-                        if (Packet.Serial.IsOpen) Packet.Serial.Close(); // can't overwrite fields if serial port is open
-                        Packet.Serial.PortName = COMPortsComboBox.Text;
-                        Packet.Serial.BaudRate = 250000;
-                        Packet.Serial.DataBits = 8;
-                        Packet.Serial.StopBits = StopBits.One;
-                        Packet.Serial.Parity = Parity.None;
-                        Packet.Serial.ReadTimeout = 500;
-                        Packet.Serial.WriteTimeout = 500;
-
-                        Util.UpdateTextBox(USBTextBox, "[INFO] Connecting to " + Packet.Serial.PortName + ".");
-
-                        try
-                        {
-                            Packet.Serial.Open(); // open current serial port
-                        }
-                        catch
-                        {
-                            Util.UpdateTextBox(USBTextBox, "[INFO] " + Packet.Serial.PortName + " is opened by another application.");
-                            Util.UpdateTextBox(USBTextBox, "[INFO] Device not found on " + Packet.Serial.PortName + ".");
-                            break;
-                        }
-
-                        if (Packet.Serial.IsOpen)
-                        {
-                            //Packet.tx.source = (byte)Packet.Source.device;
-                            //Packet.tx.target = (byte)Packet.Target.device;
-                            //Packet.tx.command = (byte)Packet.Command.handshake;
-                            //Packet.tx.mode = (byte)Packet.HandshakeMode.handshakeOnly;
-                            //Packet.tx.payload = null;
-                            //Packet.GeneratePacket();
-                            //Util.UpdateTextBox(USBTextBox, "[<-TX] Handshake request (" + Packet.Serial.PortName + "):", Packet.tx.buffer);
-                            //await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
-
-                            //TimeoutTimer.Start();
-
-                            while (!timeout && !DeviceFound)
-                            {
-                                Thread.Sleep(1);
-                                
-                                //if (Packet.Serial.BytesToRead == Packet.expectedHandshake.Length)
-                                //{
-                                //    try
-                                //    {
-                                //        Packet.Serial.Read(buffer, 0, Packet.expectedHandshake.Length);
-                                //    }
-                                //    catch
-                                //    {
-                                //        Util.UpdateTextBox(USBTextBox, "[INFO] Cannot read enough bytes from " + Packet.Serial.PortName + ".");
-                                //        break;
-                                //    }
-
-                                //    string expectedHandshake = "CHRYSLERCCDSCISCANNER";
-                                //    string receivedHandshake = Encoding.ASCII.GetString(buffer, 5, 21);
-                                //    Util.UpdateTextBox(USBTextBox, "[RX->] Handshake response:", buffer);
-
-                                //    if (receivedHandshake == expectedHandshake)
-                                //    {
-                                        //TimeoutTimer.Stop();
-                                        //timeout = false;
-                                        //Util.UpdateTextBox(USBTextBox, "[INFO] Handshake OK: " + receivedHandshake);
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Device connected (" + Packet.Serial.PortName + ").");
-                                        DeviceFound = true;
-                                        ConnectButton.Text = "Disconnect";
-                                        COMPortsComboBox.Enabled = false;
-                                        COMPortsRefreshButton.Enabled = false;
-                                        USBCommunicationGroupBox.Enabled = true;
-                                        ScannerTabControl.Enabled = true;
-                                        DiagnosticsGroupBox.Enabled = true;
-                                        ReadMemoryToolStripMenuItem.Enabled = true;
-                                        ReadWriteMemoryToolStripMenuItem.Enabled = true;
-                                        BootstrapToolsToolStripMenuItem.Enabled = true;
-                                        EngineToolsToolStripMenuItem.Enabled = true;
-                                        ABSToolsToolStripMenuItem.Enabled = true;
-                                        Packet.PacketReceived += AnalyzePacket; // subscribe to the OnPacketReceived event
-                                        CCD.Diagnostics.TableUpdated += UpdateCCDTable; // subscribe to the CCD-bus OnTableUpdated event
-                                        PCI.Diagnostics.TableUpdated += UpdatePCITable; // subscribe to the PCI-bus OnTableUpdated event
-                                        PCM.Diagnostics.TableUpdated += UpdateSCIPCMTable; // subscribe to the SCI-bus (PCM) OnTableUpdated event
-                                        TCM.Diagnostics.TableUpdated += UpdateSCITCMTable; // subscribe to the SCI-bus (TCM) OnTableUpdated event
-                                        Packet.MonitorSerialPort();
-                                        VersionInfoButton_Click(this, EventArgs.Empty);
-                                        StatusButton_Click(this, EventArgs.Empty);
-                                        //UpdateToolStripMenuItem_Click(this, EventArgs.Empty); // check for updates
-                                //    }
-                                //    else
-                                //    {
-                                //        Util.UpdateTextBox(USBTextBox, "[INFO] Handshake ERROR: " + receivedHandshake);
-                                //    }
-                                //}
-                            }
-
-                            //if (timeout)
-                            //{
-                            //    TimeoutTimer.Stop();
-                            //    timeout = false;
-                            //    Packet.Serial.Close();
-                            //    ConnectionCounter++; // increase counter value and try again
-                            //    Util.UpdateTextBox(USBTextBox, "[INFO] Device is not responding on " + Packet.Serial.PortName + ".");
-                            //}
-
-                            if (DeviceFound) break;
-                        }
-                    }
-
-                    ConnectButton.Enabled = true;
-
-                    if (!DeviceFound)
-                    {
-                        COMPortsRefreshButton.Enabled = true;
-                        COMPortsComboBox.Enabled = true;
-                    }
+                    Packet.SP.Open();
                 }
-                else if (ConnectButton.Text == "Disconnect")
+                catch
                 {
-                    if (Packet.Serial.IsOpen)
-                    {
-                        Packet.Serial.DiscardInBuffer();
-                        Packet.Serial.DiscardOutBuffer();
-                        Packet.Serial.BaseStream.Flush();
-                        Packet.Serial.Close();
-                        Packet.PacketReceived -= AnalyzePacket; // unsubscribe from the OnPacketReceived event
-                        CCD.Diagnostics.TableUpdated -= UpdateCCDTable; // unsubscribe from the CCD-bus OnTableUpdated event
-                        PCI.Diagnostics.TableUpdated -= UpdatePCITable; // unsubscribe from the CCD-bus OnTableUpdated event
-                        PCM.Diagnostics.TableUpdated -= UpdateSCIPCMTable; // unsubscribe from the SCI-bus (PCM) OnTableUpdated event
-                        TCM.Diagnostics.TableUpdated -= UpdateSCITCMTable; // unsubscribe from the SCI-bus (PCM) OnTableUpdated event
-                        ConnectButton.Text = "Connect";
-                        COMPortsComboBox.Enabled = true;
-                        COMPortsRefreshButton.Enabled = true;
-                        USBCommunicationGroupBox.Enabled = false;
-                        ScannerTabControl.Enabled = false;
-                        DiagnosticsGroupBox.Enabled = false;
-                        ReadMemoryToolStripMenuItem.Enabled = false;
-                        ReadWriteMemoryToolStripMenuItem.Enabled = false;
-                        BootstrapToolsToolStripMenuItem.Enabled = false;
-                        EngineToolsToolStripMenuItem.Enabled = false;
-                        ABSToolsToolStripMenuItem.Enabled = false;
-                        DeviceFound = false;
-                        timeout = false;
-                        Util.UpdateTextBox(USBTextBox, "[INFO] Device disconnected (" + Packet.Serial.PortName + ").");
-                        if (ReadMemory != null) ReadMemory.Close();
-                        Text = "Chrysler Scanner  |  GUI " + GUIVersion;
-                    }
+                    Util.UpdateTextBox(USBTextBox, "[INFO] " + Packet.SP.PortName + " is opened by another application.");
+                    Util.UpdateTextBox(USBTextBox, "[INFO] Device not found on " + Packet.SP.PortName + ".");
+                    return;
+                }
+
+                if (!Packet.SP.IsOpen)
+                {
+                    Util.UpdateTextBox(USBTextBox, "[INFO] " + Packet.SP.PortName + " cannot be opened.");
+                    return;
+                }
+
+                Packet.PacketReceived += AnalyzePacket;
+
+                MSP = new Thread(Packet.MonitorSerialPort);
+                MSP.Start();
+
+                Util.UpdateTextBox(USBTextBox, "[INFO] Device connected to " + SelectedPort + ".");
+
+                DeviceFound = true;
+                ConnectButton.Text = Languages.strings.Disconnect;
+                COMPortsComboBox.Enabled = false;
+                COMPortsRefreshButton.Enabled = false;
+                USBCommunicationGroupBox.Enabled = true;
+                ScannerTabControl.Enabled = true;
+                DiagnosticsGroupBox.Enabled = true;
+                ReadMemoryToolStripMenuItem.Enabled = true;
+                ReadWriteMemoryToolStripMenuItem.Enabled = true;
+                BootstrapToolsToolStripMenuItem.Enabled = true;
+                EngineToolsToolStripMenuItem.Enabled = true;
+                ABSToolsToolStripMenuItem.Enabled = true;
+                CCD.Diagnostics.TableUpdated += UpdateCCDTable; // subscribe to the CCD-bus OnTableUpdated event
+                PCI.Diagnostics.TableUpdated += UpdatePCITable; // subscribe to the PCI-bus OnTableUpdated event
+                PCM.Diagnostics.TableUpdated += UpdateSCIPCMTable; // subscribe to the SCI-bus (PCM) OnTableUpdated event
+                TCM.Diagnostics.TableUpdated += UpdateSCITCMTable; // subscribe to the SCI-bus (TCM) OnTableUpdated event
+                ActiveControl = ExpandButton;
+                VersionInfoButton_Click(this, EventArgs.Empty);
+                StatusButton_Click(this, EventArgs.Empty);
+            }
+            else if (ConnectButton.Text == Languages.strings.Disconnect)
+            {
+                if (Packet.SP.IsOpen)
+                {
+                    CCD.Diagnostics.TableUpdated -= UpdateCCDTable; // unsubscribe from the CCD-bus OnTableUpdated event
+                    PCI.Diagnostics.TableUpdated -= UpdatePCITable; // unsubscribe from the CCD-bus OnTableUpdated event
+                    PCM.Diagnostics.TableUpdated -= UpdateSCIPCMTable; // unsubscribe from the SCI-bus (PCM) OnTableUpdated event
+                    TCM.Diagnostics.TableUpdated -= UpdateSCITCMTable; // unsubscribe from the SCI-bus (PCM) OnTableUpdated event
+                    ConnectButton.Text = Languages.strings.Connect;
+                    COMPortsComboBox.Enabled = true;
+                    COMPortsRefreshButton.Enabled = true;
+                    USBCommunicationGroupBox.Enabled = false;
+                    ScannerTabControl.Enabled = false;
+                    DiagnosticsGroupBox.Enabled = false;
+                    ReadMemoryToolStripMenuItem.Enabled = false;
+                    ReadWriteMemoryToolStripMenuItem.Enabled = false;
+                    BootstrapToolsToolStripMenuItem.Enabled = false;
+                    EngineToolsToolStripMenuItem.Enabled = false;
+                    ABSToolsToolStripMenuItem.Enabled = false;
+                    DeviceFound = false;
+                    timeout = false;
+                    Util.UpdateTextBox(USBTextBox, "[INFO] Device disconnected (" + SelectedPort + ").");
+                    Text = "Chrysler Scanner  |  GUI " + GUIVersion;
                 }
             }
         }
@@ -3253,7 +3230,7 @@ namespace ChryslerScanner
             Packet.tx.payload = null;
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Reset device:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
         }
 
         private async void HandshakeButton_Click(object sender, EventArgs e)
@@ -3264,7 +3241,7 @@ namespace ChryslerScanner
             Packet.tx.payload = null;
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Handshake request:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
         }
 
         private async void StatusButton_Click(object sender, EventArgs e)
@@ -3275,7 +3252,7 @@ namespace ChryslerScanner
             Packet.tx.payload = null;
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Status request:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
         }
 
         private async void VersionInfoButton_Click(object sender, EventArgs e)
@@ -3286,7 +3263,7 @@ namespace ChryslerScanner
             Packet.tx.payload = null;
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Hardware/Firmware information request:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
         }
 
         private async void TimestampButton_Click(object sender, EventArgs e)
@@ -3297,7 +3274,7 @@ namespace ChryslerScanner
             Packet.tx.payload = null;
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Timestamp request:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
         }
 
         private async void BatteryVoltageButton_Click(object sender, EventArgs e)
@@ -3308,7 +3285,7 @@ namespace ChryslerScanner
             Packet.tx.payload = null;
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Battery voltage request:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
         }
 
         private async void EEPROMChecksumButton_Click(object sender, EventArgs e)
@@ -3321,7 +3298,7 @@ namespace ChryslerScanner
                 Packet.tx.payload = null;
                 Packet.GeneratePacket();
                 Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM checksum request:", Packet.tx.buffer);
-                await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
             }
             else if (InternalEEPROMRadioButton.Checked)
             {
@@ -3362,7 +3339,7 @@ namespace ChryslerScanner
                     Packet.tx.payload = address;
                     Packet.GeneratePacket();
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Internal EEPROM byte read request:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
 
                     if (offset > (IntEEPROMsize - 1))
                     {
@@ -3381,7 +3358,7 @@ namespace ChryslerScanner
                     Packet.tx.payload = payloadList.ToArray();
                     Packet.GeneratePacket();
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Internal EEPROM block read request:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
 
                     if ((offset + (readCount - 1)) > (IntEEPROMsize - 1))
                     {
@@ -3403,7 +3380,7 @@ namespace ChryslerScanner
                     Packet.tx.payload = address;
                     Packet.GeneratePacket();
                     Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM byte read request:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
 
                     if (offset > (ExtEEPROMsize - 1))
                     {
@@ -3422,7 +3399,7 @@ namespace ChryslerScanner
                     Packet.tx.payload = payloadList.ToArray();
                     Packet.GeneratePacket();
                     Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM block read request:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
 
                     if ((offset + (readCount - 1)) > (ExtEEPROMsize - 1))
                     {
@@ -3467,7 +3444,7 @@ namespace ChryslerScanner
                     Packet.tx.payload = payloadList.ToArray();
                     Packet.GeneratePacket();
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Internal EEPROM byte write request:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
 
                     if (offset > (IntEEPROMsize - 1))
                     {
@@ -3486,7 +3463,7 @@ namespace ChryslerScanner
                     Packet.tx.payload = payloadList.ToArray();
                     Packet.GeneratePacket();
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Internal EEPROM block write request:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
 
                     if ((offset + (writeCount - 1)) > (IntEEPROMsize - 1))
                     {
@@ -3512,7 +3489,7 @@ namespace ChryslerScanner
                     Packet.tx.payload = payloadList.ToArray();
                     Packet.GeneratePacket();
                     Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM byte write request:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
 
                     if (offset > (ExtEEPROMsize - 1))
                     {
@@ -3531,7 +3508,7 @@ namespace ChryslerScanner
                     Packet.tx.payload = payloadList.ToArray();
                     Packet.GeneratePacket();
                     Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM block write request:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
 
                     if ((offset + (writeCount - 1)) > (ExtEEPROMsize - 1))
                     {
@@ -3578,7 +3555,7 @@ namespace ChryslerScanner
             Packet.tx.payload = payloadList.ToArray();
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Change LED settings:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
         }
 
         private void EEPROMWriteEnableCheckBox_CheckedChanged(object sender, EventArgs e)
@@ -3804,7 +3781,7 @@ namespace ChryslerScanner
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Send a CCD-bus message once:", Packet.tx.buffer);
                     if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine +
                                                                            "       " + Util.ByteToHexStringSimple(message));
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                 }
                 else // list of messages once
                 {
@@ -3842,7 +3819,7 @@ namespace ChryslerScanner
 
                     if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine + messageList.ToString());
 
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                 }
             }
             else // repeat message(s) forever
@@ -3865,7 +3842,7 @@ namespace ChryslerScanner
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Send a repeated CCD-bus message:", Packet.tx.buffer);
                     if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine +
                                                                            "       " + Util.ByteToHexStringSimple(message));
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
 
                 }
                 else // repeated list of messages
@@ -3907,7 +3884,7 @@ namespace ChryslerScanner
 
                     if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine + messageList.ToString());
 
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                 }
             }
         }
@@ -3920,7 +3897,7 @@ namespace ChryslerScanner
             Packet.tx.payload = null;
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Stop repeated message Tx on CCD-bus:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
         }
 
         private async void DebugRandomCCDBusMessagesButton_Click(object sender, EventArgs e)
@@ -3957,7 +3934,7 @@ namespace ChryslerScanner
                     Packet.tx.payload = new byte[5] { 0x01, minIntervalHB, minIntervalLB, maxIntervalHB, maxIntervalLB };
                     Packet.GeneratePacket();
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Send random CCD-bus messages:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                     DebugRandomCCDBusMessagesButton.Text = "Stop random messages";
                 }
             }
@@ -3969,7 +3946,7 @@ namespace ChryslerScanner
                 Packet.tx.payload = new byte[5] { 0x00, 0x00, 0x00, 0x00, 0x00 };
                 Packet.GeneratePacket();
                 Util.UpdateTextBox(USBTextBox, "[<-TX] Stop random CCD-bus messages:", Packet.tx.buffer);
-                await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                 DebugRandomCCDBusMessagesButton.Text = "Send random messages";
             }
         }
@@ -3982,7 +3959,7 @@ namespace ChryslerScanner
             Packet.tx.payload = null;
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Measure CCD-bus voltages request:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
         }
 
         private void CCDBusTxMessagesListBox_DoubleClick(object sender, EventArgs e)
@@ -4045,7 +4022,7 @@ namespace ChryslerScanner
             Packet.tx.payload = new byte[1] { config };
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Change CCD-bus settings:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
         }
 
         private void CCDBusTxMessageRepeatIntervalTextBox_KeyPress(object sender, KeyPressEventArgs e)
@@ -4125,7 +4102,7 @@ namespace ChryslerScanner
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Send a CCD-bus message once:", Packet.tx.buffer);
                     if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine +
                                                                            "       " + Util.ByteToHexStringSimple(message));
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                 }
                 else
                 {
@@ -4298,7 +4275,7 @@ namespace ChryslerScanner
                             Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (PCM) message once:", Packet.tx.buffer);
                             if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
                                                                                    "       " + Util.ByteToHexStringSimple(message));
-                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                             break;
                         case 1: // transmission
                             Packet.tx.bus = (byte)Packet.Bus.tcm;
@@ -4309,7 +4286,7 @@ namespace ChryslerScanner
                             Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (TCM) message once:", Packet.tx.buffer);
                             if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine +
                                                                                    "       " + Util.ByteToHexStringSimple(message));
-                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                             break;
                     }
                    
@@ -4353,7 +4330,7 @@ namespace ChryslerScanner
 
                             if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine + messageList.ToString());
 
-                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                             break;
                         case 1: // transmission
                             Packet.tx.bus = (byte)Packet.Bus.tcm;
@@ -4371,7 +4348,7 @@ namespace ChryslerScanner
 
                             if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine + messageList.ToString());
 
-                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                             break;
                     }
                 }
@@ -4398,7 +4375,7 @@ namespace ChryslerScanner
                             Util.UpdateTextBox(USBTextBox, "[<-TX] Send a repeated SCI-bus (PCM) message:", Packet.tx.buffer);
                             if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
                                                                                    "       " + Util.ByteToHexStringSimple(message));
-                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                             break;
                         case 1: // transmission
                             SetRepeatedMessageBehavior(Packet.Bus.tcm); // first send a settings packet to configure repeat behavior
@@ -4411,7 +4388,7 @@ namespace ChryslerScanner
                             Util.UpdateTextBox(USBTextBox, "[<-TX] Send a repeated SCI-bus (TCM) message:", Packet.tx.buffer);
                             if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine +
                                                                                    "       " + Util.ByteToHexStringSimple(message));
-                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                             break;
                     }
                 }
@@ -4456,7 +4433,7 @@ namespace ChryslerScanner
 
                             if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine + messageList.ToString());
 
-                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                             break;
                         case 1: // transmission
                             SetRepeatedMessageBehavior(Packet.Bus.tcm); // first send a settings packet to configure repeat behavior
@@ -4476,7 +4453,7 @@ namespace ChryslerScanner
 
                             if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine + messageList.ToString());
 
-                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                             break;
                     }
                 }
@@ -4491,7 +4468,7 @@ namespace ChryslerScanner
             Packet.tx.payload = null;
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Stop repeated message Tx on SCI-bus (PCM):", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
         }
 
         private async void SCIBusModuleConfigSpeedApplyButton_Click(object sender, EventArgs e)
@@ -4640,7 +4617,7 @@ namespace ChryslerScanner
             Packet.tx.payload = new byte[1] { config };
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Change SCI-bus settings:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
         }
 
         private void SCIBusTxMessagesListBox_DoubleClick(object sender, EventArgs e)
@@ -4671,55 +4648,58 @@ namespace ChryslerScanner
 
         private void SCIBusModuleComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            switch (SCIBusModuleComboBox.SelectedIndex)
+            BeginInvoke((MethodInvoker)delegate
             {
-                case 0: // PCM
-                    if (PCM.state == "enabled")
-                    {
-                        if (PCM.speed == "976.5 baud") SCIBusSpeedComboBox.SelectedIndex = 1;
-                        else if (PCM.speed == "7812.5 baud") SCIBusSpeedComboBox.SelectedIndex = 2;
-                        else if (PCM.speed == "62500 baud") SCIBusSpeedComboBox.SelectedIndex = 3;
-                        else if (PCM.speed == "125000 baud") SCIBusSpeedComboBox.SelectedIndex = 4;
-                    }
-                    else if (PCM.state == "disabled")
-                    {
-                        SCIBusSpeedComboBox.SelectedIndex = 0; // off
-                    }
+                switch (SCIBusModuleComboBox.SelectedIndex)
+                {
+                    case 0: // PCM
+                        if (PCM.state == "enabled")
+                        {
+                            if (PCM.speed == "976.5 baud") SCIBusSpeedComboBox.SelectedIndex = 1;
+                            else if (PCM.speed == "7812.5 baud") SCIBusSpeedComboBox.SelectedIndex = 2;
+                            else if (PCM.speed == "62500 baud") SCIBusSpeedComboBox.SelectedIndex = 3;
+                            else if (PCM.speed == "125000 baud") SCIBusSpeedComboBox.SelectedIndex = 4;
+                        }
+                        else if (PCM.state == "disabled")
+                        {
+                            SCIBusSpeedComboBox.SelectedIndex = 0; // off
+                        }
 
-                    if (PCM.logic == "non-inverted") SCIBusInvertedLogicCheckBox.Checked = false;
-                    else if (PCM.logic == "inverted") SCIBusInvertedLogicCheckBox.Checked = true;
+                        if (PCM.logic == "non-inverted") SCIBusInvertedLogicCheckBox.Checked = false;
+                        else if (PCM.logic == "inverted") SCIBusInvertedLogicCheckBox.Checked = true;
 
-                    if (PCM.configuration == "A") SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
-                    else if (PCM.configuration == "B") SCIBusOBDConfigurationComboBox.SelectedIndex = 1;
+                        if (PCM.configuration == "A") SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
+                        else if (PCM.configuration == "B") SCIBusOBDConfigurationComboBox.SelectedIndex = 1;
 
-                    PCMSelected = true;
-                    TCMSelected = false;
-                    break;
-                case 1: // TCM
-                    if (TCM.state == "enabled")
-                    {
-                        if (TCM.speed == "976.5 baud") SCIBusSpeedComboBox.SelectedIndex = 1;
-                        else if (TCM.speed == "7812.5 baud") SCIBusSpeedComboBox.SelectedIndex = 2;
-                        else if (TCM.speed == "62500 baud") SCIBusSpeedComboBox.SelectedIndex = 3;
-                        else if (TCM.speed == "125000 baud") SCIBusSpeedComboBox.SelectedIndex = 4;
-                    }
-                    else if (TCM.state == "disabled")
-                    {
-                        SCIBusSpeedComboBox.SelectedIndex = 0; // off
-                    }
+                        PCMSelected = true;
+                        TCMSelected = false;
+                        break;
+                    case 1: // TCM
+                        if (TCM.state == "enabled")
+                        {
+                            if (TCM.speed == "976.5 baud") SCIBusSpeedComboBox.SelectedIndex = 1;
+                            else if (TCM.speed == "7812.5 baud") SCIBusSpeedComboBox.SelectedIndex = 2;
+                            else if (TCM.speed == "62500 baud") SCIBusSpeedComboBox.SelectedIndex = 3;
+                            else if (TCM.speed == "125000 baud") SCIBusSpeedComboBox.SelectedIndex = 4;
+                        }
+                        else if (TCM.state == "disabled")
+                        {
+                            SCIBusSpeedComboBox.SelectedIndex = 0; // off
+                        }
 
-                    if (TCM.logic == "non-inverted") SCIBusInvertedLogicCheckBox.Checked = false;
-                    else if (TCM.logic == "inverted") SCIBusInvertedLogicCheckBox.Checked = true;
+                        if (TCM.logic == "non-inverted") SCIBusInvertedLogicCheckBox.Checked = false;
+                        else if (TCM.logic == "inverted") SCIBusInvertedLogicCheckBox.Checked = true;
 
-                    if (TCM.configuration == "A") SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
-                    else if (TCM.configuration == "B") SCIBusOBDConfigurationComboBox.SelectedIndex = 1;
+                        if (TCM.configuration == "A") SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
+                        else if (TCM.configuration == "B") SCIBusOBDConfigurationComboBox.SelectedIndex = 1;
 
-                    PCMSelected = false;
-                    TCMSelected = true;
-                    break;
-                default:
-                    break;
-            }
+                        PCMSelected = false;
+                        TCMSelected = true;
+                        break;
+                    default:
+                        break;
+                }
+            });
         }
 
         private void SCIBusTxMessageRepeatIntervalTextBox_KeyPress(object sender, KeyPressEventArgs e)
@@ -4792,7 +4772,7 @@ namespace ChryslerScanner
                             Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (PCM) message once:", Packet.tx.buffer);
                             if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
                                                                                    "       " + Util.ByteToHexStringSimple(message));
-                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                             break;
                         case 1: // transmission
                             Packet.tx.bus = (byte)Packet.Bus.tcm;
@@ -4803,7 +4783,7 @@ namespace ChryslerScanner
                             Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (TCM) message once:", Packet.tx.buffer);
                             if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine +
                                                                                    "       " + Util.ByteToHexStringSimple(message));
-                            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                             break;
                     }
                 }
@@ -4972,7 +4952,7 @@ namespace ChryslerScanner
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Send a PCI-bus message once:", Packet.tx.buffer);
                     if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] PCI-bus message Tx list:" + Environment.NewLine +
                                                                            "       " + Util.ByteToHexStringSimple(message));
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                 }
                 else // list of messages once
                 {
@@ -5010,7 +4990,7 @@ namespace ChryslerScanner
 
                     if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] PCI-bus message Tx list:" + Environment.NewLine + messageList.ToString());
 
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                 }
             }
             else // repeat message(s) forever
@@ -5033,7 +5013,7 @@ namespace ChryslerScanner
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Send a repeated PCI-bus message:", Packet.tx.buffer);
                     if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] PCI-bus message Tx list:" + Environment.NewLine +
                                                                            "       " + Util.ByteToHexStringSimple(message));
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
 
                 }
                 else // repeated list of messages
@@ -5075,7 +5055,7 @@ namespace ChryslerScanner
 
                     if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] PCI-bus message Tx list:" + Environment.NewLine + messageList.ToString());
 
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                 }
             }
         }
@@ -5088,7 +5068,7 @@ namespace ChryslerScanner
             Packet.tx.payload = null;
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Stop repeated message Tx on PCI-bus:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
         }
 
         private void PCIBusTxMessagesListBox_DoubleClick(object sender, EventArgs e)
@@ -5140,7 +5120,7 @@ namespace ChryslerScanner
             Packet.tx.payload = new byte[1] { config };
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Change PCI-bus settings:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
         }
 
         private void PCIBusTxMessageRepeatIntervalTextBox_KeyPress(object sender, KeyPressEventArgs e)
@@ -5195,7 +5175,7 @@ namespace ChryslerScanner
                     Util.UpdateTextBox(USBTextBox, "[<-TX] Send a PCI-bus message once:", Packet.tx.buffer);
                     if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] PCI-bus message Tx list:" + Environment.NewLine +
                                                                            "       " + Util.ByteToHexStringSimple(message));
-                    await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
                 }
                 else
                 {
@@ -5461,7 +5441,7 @@ namespace ChryslerScanner
             Packet.tx.payload = new byte[7] { LCDState, LCDI2CAddress, LCDWidth, LCDHeight, LCDRefreshRate, LCDUnits, LCDDataSource };
             Packet.GeneratePacket();
             Util.UpdateTextBox(USBTextBox, "[<-TX] Change LCD settings:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet.Serial, Packet.tx.buffer);
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
 
             UpdateLCDPreviewTextBox();
         }
@@ -6275,6 +6255,20 @@ namespace ChryslerScanner
             }
         }
 
+        private void DisplayRawBusPacketsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (DisplayRawBusPacketsToolStripMenuItem.Checked)
+            {
+                Properties.Settings.Default.DisplayRawBusPackets = true;
+                Properties.Settings.Default.Save(); // save setting in application configuration file
+            }
+            else
+            {
+                Properties.Settings.Default.DisplayRawBusPackets = false;
+                Properties.Settings.Default.Save(); // save setting in application configuration file
+            }
+        }
+
         private void AboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
             About = new AboutForm(this)
@@ -6335,6 +6329,12 @@ namespace ChryslerScanner
                     ABSToolsToolStripMenuItem_Click(this, EventArgs.Empty);
                 }
             }
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (MSP != null)
+                MSP.Join();
         }
     }
 
