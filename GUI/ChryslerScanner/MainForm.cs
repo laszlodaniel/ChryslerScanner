@@ -23,6 +23,7 @@ namespace ChryslerScanner
     {
         private bool GUIUpdateAvailable = false;
         private bool FWUpdateAvailabile = false;
+        private bool ResetFromUpdate = false;
         public string GUIVersion = string.Empty;
         public string FWVersion = string.Empty;
         public string HWVersion = string.Empty;
@@ -581,7 +582,13 @@ namespace ChryslerScanner
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Reset reason: unknown.");
                                                 break;
                                         }
-                                        
+
+                                        if (ResetFromUpdate)
+                                        {
+                                            ResetFromUpdate = false;
+                                            VersionInfoButton_Click(this, EventArgs.Empty);
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Device firmware updated.");
+                                        }
                                         break;
                                     default:
                                         Util.UpdateTextBox(USBTextBox, "[INFO] Unknown reset packet.");
@@ -5709,8 +5716,9 @@ namespace ChryslerScanner
 
                                     if (File.Exists(@"Tools/ChryslerCCDSCIScanner.ino.mega.hex"))
                                     {
-                                        ConnectButton.PerformClick(); // disconnect
-                                        Thread.Sleep(500); // wait until UI updates its controls
+                                        if (Packet.SP.IsOpen)
+                                            Packet.SP.Close();
+
                                         this.Refresh();
                                         Process process = new Process();
                                         process.StartInfo.WorkingDirectory = "Tools";
@@ -5719,10 +5727,14 @@ namespace ChryslerScanner
                                         process.Start();
                                         process.WaitForExit();
                                         this.Refresh();
+
                                         File.Delete(@"Tools/ChryslerCCDSCIScanner.ino.mega.hex");
-                                        MessageBox.Show("Device firmware update finished." + Environment.NewLine +
-                                                        "Connect again manually.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                                         FWVersion = latestFWVersionString;
+
+                                        Packet.SP.Open();
+                                        Packet.MonitorSerialPort();
+                                        ResetButton_Click(this, EventArgs.Empty);
+                                        ResetFromUpdate = true;
                                     }
                                     else
                                     {
@@ -5827,8 +5839,9 @@ namespace ChryslerScanner
 
                                     if (File.Exists(@"Tools/ChryslerScanner.bin"))
                                     {
-                                        ConnectButton.PerformClick(); // disconnect
-                                        Thread.Sleep(500); // wait until UI updates its controls
+                                        if (Packet.SP.IsOpen)
+                                            Packet.SP.Close();
+
                                         this.Refresh();
                                         Process process = new Process();
                                         process.StartInfo.WorkingDirectory = "Tools";
@@ -5837,10 +5850,14 @@ namespace ChryslerScanner
                                         process.Start();
                                         process.WaitForExit();
                                         this.Refresh();
+
                                         File.Delete(@"Tools/ChryslerScanner.bin");
-                                        MessageBox.Show("Device firmware update finished." + Environment.NewLine +
-                                                        "Connect again manually.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                                         FWVersion = latestFWVersionString;
+
+                                        Packet.SP.Open();
+                                        Packet.MonitorSerialPort();
+                                        ResetButton_Click(this, EventArgs.Empty);
+                                        ResetFromUpdate = true;
                                     }
                                     else
                                     {
