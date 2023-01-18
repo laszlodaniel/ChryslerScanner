@@ -43,7 +43,7 @@ namespace ChryslerScanner
         public byte[] PartNumberChars = new byte[6] { 0, 0, 0, 0, 0, 0 };
         public string[] EngineToolsStatusBarTextItems = new string[12];
         public int Year = 2003;
-        public bool CumminsSelected = false;
+        public bool CumminsSelected = true;
 
         public SCIPCM()
         {
@@ -3565,10 +3565,24 @@ namespace ChryslerScanner
                                         ValueToInsert = "2003";
                                         break;
                                     case 0x0E:
-                                        ValueToInsert = "1994 1/2";
+                                        if (CumminsSelected)
+                                        {
+                                            ValueToInsert = "2004";
+                                        }
+                                        else
+                                        {
+                                            ValueToInsert = "1994 1/2";
+                                        }
                                         break;
                                     case 0x0F:
-                                        ValueToInsert = "1991-1995";
+                                        if (CumminsSelected)
+                                        {
+                                            ValueToInsert = "2005";
+                                        }
+                                        else
+                                        {
+                                            ValueToInsert = "1991-1995";
+                                        }
                                         break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);
@@ -3795,6 +3809,7 @@ namespace ChryslerScanner
                                         break;
                                     case 0x09:
                                         ValueToInsert = "CUMMINS";
+                                        CumminsSelected = true;
                                         break;
                                     case 0x0A:
                                         ValueToInsert = "BOSCH";
@@ -3831,15 +3846,19 @@ namespace ChryslerScanner
                                         break;
                                     case 0x15:
                                         ValueToInsert = "CUMMINS 845";
+                                        CumminsSelected = true;
                                         break;
                                     case 0x16:
                                         ValueToInsert = "CUMMINS 846";
+                                        CumminsSelected = true;
                                         break;
                                     case 0x17:
                                         ValueToInsert = "GENERIC CUMMINS";
+                                        CumminsSelected = true;
                                         break;
                                     case 0x18:
                                         ValueToInsert = "CUMMINS 848";
+                                        CumminsSelected = true;
                                         break;
                                     case 0x19:
                                         ValueToInsert = "EDC16-C2";
@@ -3855,6 +3874,7 @@ namespace ChryslerScanner
                                         break;
                                     case 0x1D:
                                         ValueToInsert = "CUMMINS 2";
+                                        CumminsSelected = true;
                                         break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);

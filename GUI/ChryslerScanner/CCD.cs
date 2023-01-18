@@ -1721,11 +1721,14 @@ namespace ChryslerScanner
                     break;
                 case 0xB4:
                 case 0xC4:
-                    DescriptionToInsert = "VEHICLE SPEED SENSOR";
+                    DescriptionToInsert = "VEHICLE SPEED SENSOR PULSE INTERVAL";
 
                     if (message.Length < 4) break;
 
                     ushort DistancePulse = (ushort)((payload[0] << 8) + payload[1]);
+
+                    if (DistancePulse == 0) break;
+
                     double VehicleSpeedMPH = 28800.0 / DistancePulse; // 8000 * 3.6 = 28800
                     double VehicleSpeedKMH = VehicleSpeedMPH * 1.609344;
                     //double MileageIncrementMi = 22016.0 / DistancePulse; // 64 * 344 = 22016, already received in CCD ID 84

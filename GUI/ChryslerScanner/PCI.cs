@@ -120,11 +120,14 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x14:
-                    DescriptionToInsert = "VEHICLE SPEED SENSOR";
+                    DescriptionToInsert = "VEHICLE SPEED SENSOR PULSE INTERVAL";
 
                     if (message.Length < 4) break;
 
                     ushort DistancePulse = (ushort)((payload[0] << 8) + payload[1]);
+
+                    if (DistancePulse == 0) break;
+
                     double VehicleSpeedMPHB = 28800.0 / DistancePulse;
                     double VehicleSpeedKMHB = VehicleSpeedMPHB * 1.609344;
 
