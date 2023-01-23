@@ -25,12 +25,13 @@ enum Reset {
 };
 
 enum Settings {
-    Settings_Heartbeat = 0x01,
-    Settings_CCD       = 0x02,
-    Settings_SCI       = 0x03,
-    Settings_Repeat    = 0x04,
-    Settings_PCI       = 0x06,
-    Settings_ProgVolt  = 0x07
+    Settings_Heartbeat    = 0x01,
+    Settings_CCD          = 0x02,
+    Settings_SCI          = 0x03,
+    Settings_Repeat       = 0x04,
+    Settings_PCI          = 0x06,
+    Settings_ProgVolt     = 0x07,
+    Settings_UARTBaudrate = 0x08
 };
 
 enum Request {

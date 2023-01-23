@@ -2949,7 +2949,7 @@ namespace ChryslerScanner
                                 DescriptionToInsert = "RESET EEPROM / ADAPTIVE NUMERATOR";
                                 break;
                             case 0x13:
-                                DescriptionToInsert = "RESET SKIM";
+                                DescriptionToInsert = "SKIM REPLACED / SEND SECRET KEY FROM PCM";
                                 break;
                             case 0x14:
                                 DescriptionToInsert = "RESET DUTY CYCLE MONITOR";
@@ -3565,24 +3565,20 @@ namespace ChryslerScanner
                                         ValueToInsert = "2003";
                                         break;
                                     case 0x0E:
-                                        if (CumminsSelected)
-                                        {
-                                            ValueToInsert = "2004";
-                                        }
-                                        else
-                                        {
-                                            ValueToInsert = "1994 1/2";
-                                        }
+                                        ValueToInsert = "2004";
+
+                                        //if (true)
+                                        //{
+                                        //    ValueToInsert = "1994 1/2";
+                                        //}
                                         break;
                                     case 0x0F:
-                                        if (CumminsSelected)
-                                        {
-                                            ValueToInsert = "2005";
-                                        }
-                                        else
-                                        {
-                                            ValueToInsert = "1991-1995";
-                                        }
+                                        ValueToInsert = "2005";
+
+                                        //if (true)
+                                        //{
+                                        //    ValueToInsert = "1991-1995";
+                                        //}
                                         break;
                                     default:
                                         ValueToInsert = Util.ByteToHexString(payload, 1, 1);

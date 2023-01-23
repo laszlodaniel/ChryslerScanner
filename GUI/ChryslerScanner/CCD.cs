@@ -123,7 +123,9 @@ namespace ChryslerScanner
                     }
                     break;
                 case 0x07:
-                    DescriptionToInsert = "SKIM PAYLOAD FROM PCM EEPROM"; // packet sent to SKIM to write to SKIM EEPROM (DRB3 SKIM replaced menu)
+                    DescriptionToInsert = "RESTORE SKIM SECRET KEY FROM PCM EEPROM"; // packet sent to SKIM to write to SKIM EEPROM (DRB3 SKIM replaced menu)
+
+                    // SKIM generates same CCD ID if secret key is transferred to PCM EEPROM?
 
                     if (message.Length < 4) break;
                     if ((payload[0] < 0x10) || (payload[0] > 0x14)) break;

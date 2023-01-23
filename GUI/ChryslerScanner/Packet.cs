@@ -88,7 +88,8 @@ namespace ChryslerScanner
             setRepeatBehavior = 0x04,
             setLCD = 0x05,
             setPCIBus = 0x06,
-            setProgVolt = 0x07
+            setProgVolt = 0x07,
+            setUARTBaudrate = 0x08
         }
 
         public enum RequestMode : byte

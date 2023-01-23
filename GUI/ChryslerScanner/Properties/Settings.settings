@@ -23,5 +23,8 @@
     <Setting Name="DisplayRawBusPackets" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
+    <Setting Name="UARTBaudrate" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">250000</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

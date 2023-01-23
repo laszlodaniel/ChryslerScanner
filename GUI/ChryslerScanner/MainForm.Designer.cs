@@ -44,6 +44,9 @@
             this.UnitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.MetricUnitsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ImperialUnitsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.UARTBaudrateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.Baudrate250000ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.Baudrate115200ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.IncludeTimestampInLogFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.CCDBusOnDemandToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.PCIBusOnDemandToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -263,6 +266,7 @@
             this.SettingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.LanguageToolStripMenuItem,
             this.UnitToolStripMenuItem,
+            this.UARTBaudrateToolStripMenuItem,
             this.IncludeTimestampInLogFilesToolStripMenuItem,
             this.CCDBusOnDemandToolStripMenuItem,
             this.PCIBusOnDemandToolStripMenuItem,
@@ -306,6 +310,7 @@
             // MetricUnitsToolStripMenuItem
             // 
             this.MetricUnitsToolStripMenuItem.Checked = true;
+            this.MetricUnitsToolStripMenuItem.CheckOnClick = true;
             this.MetricUnitsToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.MetricUnitsToolStripMenuItem.Name = "MetricUnitsToolStripMenuItem";
             resources.ApplyResources(this.MetricUnitsToolStripMenuItem, "MetricUnitsToolStripMenuItem");
@@ -317,6 +322,30 @@
             this.ImperialUnitsToolStripMenuItem.Name = "ImperialUnitsToolStripMenuItem";
             resources.ApplyResources(this.ImperialUnitsToolStripMenuItem, "ImperialUnitsToolStripMenuItem");
             this.ImperialUnitsToolStripMenuItem.Click += new System.EventHandler(this.ImperialUnitsToolStripMenuItem_Click);
+            // 
+            // UARTBaudrateToolStripMenuItem
+            // 
+            this.UARTBaudrateToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.Baudrate250000ToolStripMenuItem,
+            this.Baudrate115200ToolStripMenuItem});
+            this.UARTBaudrateToolStripMenuItem.Name = "UARTBaudrateToolStripMenuItem";
+            resources.ApplyResources(this.UARTBaudrateToolStripMenuItem, "UARTBaudrateToolStripMenuItem");
+            // 
+            // Baudrate250000ToolStripMenuItem
+            // 
+            this.Baudrate250000ToolStripMenuItem.Checked = true;
+            this.Baudrate250000ToolStripMenuItem.CheckOnClick = true;
+            this.Baudrate250000ToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.Baudrate250000ToolStripMenuItem.Name = "Baudrate250000ToolStripMenuItem";
+            resources.ApplyResources(this.Baudrate250000ToolStripMenuItem, "Baudrate250000ToolStripMenuItem");
+            this.Baudrate250000ToolStripMenuItem.Click += new System.EventHandler(this.Baudrate250000ToolStripMenuItem_Click);
+            // 
+            // Baudrate115200ToolStripMenuItem
+            // 
+            this.Baudrate115200ToolStripMenuItem.CheckOnClick = true;
+            this.Baudrate115200ToolStripMenuItem.Name = "Baudrate115200ToolStripMenuItem";
+            resources.ApplyResources(this.Baudrate115200ToolStripMenuItem, "Baudrate115200ToolStripMenuItem");
+            this.Baudrate115200ToolStripMenuItem.Click += new System.EventHandler(this.Baudrate115200ToolStripMenuItem_Click);
             // 
             // IncludeTimestampInLogFilesToolStripMenuItem
             // 
@@ -1559,6 +1588,9 @@
         private System.Windows.Forms.ToolStripMenuItem EnglishLangToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem SpanishLangToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem DisplayRawBusPacketsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem UARTBaudrateToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem Baudrate250000ToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem Baudrate115200ToolStripMenuItem;
     }
 }
 

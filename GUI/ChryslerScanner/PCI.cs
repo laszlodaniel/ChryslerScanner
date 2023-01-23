@@ -463,21 +463,20 @@ namespace ChryslerScanner
 
                     if (payload[0] == 0x40) // packet received from SKIM to write to PCM EEPROM (DRB3 PCM replaced menu)
                     {
+                        DescriptionToInsert = "SECRET KEY FROM SKIM EEPROM";
+
                         switch (payload[1] & 0x03)
                         {
                             case 0x01:
-                                DescriptionToInsert = "SKIM | PAYLOAD #1 FROM EEPROM";
                                 Array.Copy(payload, 2, SKIMPayload, 0, 3);
                                 ValueToInsert = Util.ByteToHexString(payload, 2, 3);
                                 break;
                             case 0x02:
-                                DescriptionToInsert = "SKIM | PAYLOAD #2 FROM EEPROM";
                                 Array.Copy(payload, 2, SKIMPayload, 3, 2);
                                 ValueToInsert = Util.ByteToHexStringSimple(SKIMPayload);
                                 UnitToInsert = "EEPROM 01D8";
                                 break;
                             default:
-                                DescriptionToInsert = "SKIM | PAYLOAD TO BE WRITTEN TO PCM EEPROM";
                                 ValueToInsert = "INVALID MSG";
                                 break;
                         }
@@ -485,21 +484,20 @@ namespace ChryslerScanner
 
                     if (payload[0] == 0x10) // packet sent to SKIM to write to SKIM EEPROM (DRB3 SKIM replaced menu)
                     {
+                        DescriptionToInsert = "RESTORE SKIM SECRET KEY FROM PCM EEPROM";
+
                         switch (payload[1] & 0x03)
                         {
                             case 0x01:
-                                DescriptionToInsert = "SKIM PAYLOAD #1 FROM PCM EEPROM";
                                 Array.Copy(payload, 2, SKIMPayloadPCM, 0, 3);
                                 ValueToInsert = Util.ByteToHexString(payload, 2, 3);
                                 break;
                             case 0x02:
-                                DescriptionToInsert = "SKIM PAYLOAD #2 FROM PCM EEPROM";
                                 Array.Copy(payload, 2, SKIMPayloadPCM, 3, 2);
                                 ValueToInsert = Util.ByteToHexStringSimple(SKIMPayloadPCM);
                                 UnitToInsert = "EEPROM 01D8";
                                 break;
                             default:
-                                DescriptionToInsert = "SKIM PAYLOAD FROM PCM EEPROM";
                                 ValueToInsert = "INVALID MSG";
                                 break;
                         }
@@ -550,13 +548,14 @@ namespace ChryslerScanner
 
                     break;
                 case 0x5D:
-                    DescriptionToInsert = "MILEAGE INCREMENT | INJECTOR PULSE WIDTH";
+                    DescriptionToInsert = "MILEAGE INCREMENT | INJECTOR PULSE WIDTH | FUEL USED";
 
                     if (message.Length < 7) break;
 
                     double MileageIncrement = payload[0] * 0.000125;
                     double KilometerageIncrement = MileageIncrement * 1.609344;
                     double InjectorPulseWidth = ((payload[1] << 8) + payload[2]) * 0.00390625;
+                    double FuelUsed = ((payload[3] << 8) + payload[4]) * 1.0;
 
                     if (Properties.Settings.Default.Units == "imperial")
                     {

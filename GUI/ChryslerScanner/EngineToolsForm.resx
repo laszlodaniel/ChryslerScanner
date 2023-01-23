@@ -1690,7 +1690,7 @@
     <value>2312 | EEPROM / Adaptive num.</value>
   </data>
   <data name="ResetMemoryComboBox.Items19" xml:space="preserve">
-    <value>2313 | SKIM (w/Lvl 2 access!)</value>
+    <value>2313 | SKIM replaced</value>
   </data>
   <data name="ResetMemoryComboBox.Items20" xml:space="preserve">
     <value>2314 | Duty cycle monitor</value>

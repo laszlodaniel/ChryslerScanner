@@ -121,43 +121,13 @@
     <value>17, 17</value>
   </metadata>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-  <data name="MenuStrip.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 0</value>
-  </data>
-  <data name="MenuStrip.Size" type="System.Drawing.Size, System.Drawing">
-    <value>1284, 24</value>
-  </data>
-  <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="MenuStrip.TabIndex" type="System.Int32, mscorlib">
-    <value>4</value>
-  </data>
-  <data name="MenuStrip.Text" xml:space="preserve">
-    <value>menuStrip1</value>
-  </data>
-  <data name="&gt;&gt;MenuStrip.Name" xml:space="preserve">
-    <value>MenuStrip</value>
-  </data>
-  <data name="&gt;&gt;MenuStrip.Type" xml:space="preserve">
-    <value>System.Windows.Forms.MenuStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;MenuStrip.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;MenuStrip.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
-  <data name="ToolsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>46, 20</value>
-  </data>
-  <data name="ToolsToolStripMenuItem.Text" xml:space="preserve">
-    <value>Tools</value>
-  </data>
   <data name="UpdateToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>195, 22</value>
   </data>
   <data name="UpdateToolStripMenuItem.Text" xml:space="preserve">
     <value>Update</value>
   </data>
+  <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="ReadMemoryToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
@@ -213,17 +183,11 @@
   <data name="ABSToolsToolStripMenuItem.Text" xml:space="preserve">
     <value>ABS tools</value>
   </data>
-  <data name="SettingsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>61, 20</value>
+  <data name="ToolsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 20</value>
   </data>
-  <data name="SettingsToolStripMenuItem.Text" xml:space="preserve">
-    <value>Settings</value>
-  </data>
-  <data name="LanguageToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>230, 22</value>
-  </data>
-  <data name="LanguageToolStripMenuItem.Text" xml:space="preserve">
-    <value>Language</value>
+  <data name="ToolsToolStripMenuItem.Text" xml:space="preserve">
+    <value>Tools</value>
   </data>
   <data name="EnglishLangToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>115, 22</value>
@@ -237,11 +201,11 @@
   <data name="SpanishLangToolStripMenuItem.Text" xml:space="preserve">
     <value>Spanish</value>
   </data>
-  <data name="UnitToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+  <data name="LanguageToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>230, 22</value>
   </data>
-  <data name="UnitToolStripMenuItem.Text" xml:space="preserve">
-    <value>Unit</value>
+  <data name="LanguageToolStripMenuItem.Text" xml:space="preserve">
+    <value>Language</value>
   </data>
   <data name="MetricUnitsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>117, 22</value>
@@ -254,6 +218,30 @@
   </data>
   <data name="ImperialUnitsToolStripMenuItem.Text" xml:space="preserve">
     <value>Imperial</value>
+  </data>
+  <data name="UnitToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>230, 22</value>
+  </data>
+  <data name="UnitToolStripMenuItem.Text" xml:space="preserve">
+    <value>Unit</value>
+  </data>
+  <data name="Baudrate250000ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>180, 22</value>
+  </data>
+  <data name="Baudrate250000ToolStripMenuItem.Text" xml:space="preserve">
+    <value>250000</value>
+  </data>
+  <data name="Baudrate115200ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>180, 22</value>
+  </data>
+  <data name="Baudrate115200ToolStripMenuItem.Text" xml:space="preserve">
+    <value>115200</value>
+  </data>
+  <data name="UARTBaudrateToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>230, 22</value>
+  </data>
+  <data name="UARTBaudrateToolStripMenuItem.Text" xml:space="preserve">
+    <value>UART baudrate</value>
   </data>
   <data name="IncludeTimestampInLogFilesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>230, 22</value>
@@ -285,74 +273,41 @@
   <data name="DisplayRawBusPacketsToolStripMenuItem.Text" xml:space="preserve">
     <value>Display raw bus packets</value>
   </data>
+  <data name="SettingsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>61, 20</value>
+  </data>
+  <data name="SettingsToolStripMenuItem.Text" xml:space="preserve">
+    <value>Settings</value>
+  </data>
   <data name="AboutToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>52, 20</value>
   </data>
   <data name="AboutToolStripMenuItem.Text" xml:space="preserve">
     <value>About</value>
   </data>
-  <data name="&gt;&gt;USBSendPacketButton.Name" xml:space="preserve">
-    <value>USBSendPacketButton</value>
+  <data name="MenuStrip.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
   </data>
-  <data name="&gt;&gt;USBSendPacketButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="MenuStrip.Size" type="System.Drawing.Size, System.Drawing">
+    <value>1284, 24</value>
   </data>
-  <data name="&gt;&gt;USBSendPacketButton.Parent" xml:space="preserve">
-    <value>USBCommunicationGroupBox</value>
+  <data name="MenuStrip.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
   </data>
-  <data name="&gt;&gt;USBSendPacketButton.ZOrder" xml:space="preserve">
-    <value>0</value>
+  <data name="MenuStrip.Text" xml:space="preserve">
+    <value>menuStrip1</value>
   </data>
-  <data name="&gt;&gt;USBSendPacketComboBox.Name" xml:space="preserve">
-    <value>USBSendPacketComboBox</value>
+  <data name="&gt;&gt;MenuStrip.Name" xml:space="preserve">
+    <value>MenuStrip</value>
   </data>
-  <data name="&gt;&gt;USBSendPacketComboBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="&gt;&gt;MenuStrip.Type" xml:space="preserve">
+    <value>System.Windows.Forms.MenuStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;USBSendPacketComboBox.Parent" xml:space="preserve">
-    <value>USBCommunicationGroupBox</value>
-  </data>
-  <data name="&gt;&gt;USBSendPacketComboBox.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;USBTextBox.Name" xml:space="preserve">
-    <value>USBTextBox</value>
-  </data>
-  <data name="&gt;&gt;USBTextBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;USBTextBox.Parent" xml:space="preserve">
-    <value>USBCommunicationGroupBox</value>
-  </data>
-  <data name="&gt;&gt;USBTextBox.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="USBCommunicationGroupBox.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
-  <data name="USBCommunicationGroupBox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>12, 27</value>
-  </data>
-  <data name="USBCommunicationGroupBox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>365, 269</value>
-  </data>
-  <data name="USBCommunicationGroupBox.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
-  </data>
-  <data name="USBCommunicationGroupBox.Text" xml:space="preserve">
-    <value>USB communication</value>
-  </data>
-  <data name="&gt;&gt;USBCommunicationGroupBox.Name" xml:space="preserve">
-    <value>USBCommunicationGroupBox</value>
-  </data>
-  <data name="&gt;&gt;USBCommunicationGroupBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;USBCommunicationGroupBox.Parent" xml:space="preserve">
+  <data name="&gt;&gt;MenuStrip.Parent" xml:space="preserve">
     <value>$this</value>
   </data>
-  <data name="&gt;&gt;USBCommunicationGroupBox.ZOrder" xml:space="preserve">
-    <value>2</value>
+  <data name="&gt;&gt;MenuStrip.ZOrder" xml:space="preserve">
+    <value>3</value>
   </data>
   <data name="USBSendPacketButton.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
@@ -435,101 +390,32 @@
   <data name="&gt;&gt;USBTextBox.ZOrder" xml:space="preserve">
     <value>2</value>
   </data>
-  <data name="&gt;&gt;DemoButton.Name" xml:space="preserve">
-    <value>DemoButton</value>
+  <data name="USBCommunicationGroupBox.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
   </data>
-  <data name="&gt;&gt;DemoButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="USBCommunicationGroupBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>12, 27</value>
   </data>
-  <data name="&gt;&gt;DemoButton.Parent" xml:space="preserve">
-    <value>ControlPanelGroupBox</value>
+  <data name="USBCommunicationGroupBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>365, 269</value>
   </data>
-  <data name="&gt;&gt;DemoButton.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <data name="&gt;&gt;ExpandButton.Name" xml:space="preserve">
-    <value>ExpandButton</value>
-  </data>
-  <data name="&gt;&gt;ExpandButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;ExpandButton.Parent" xml:space="preserve">
-    <value>ControlPanelGroupBox</value>
-  </data>
-  <data name="&gt;&gt;ExpandButton.ZOrder" xml:space="preserve">
+  <data name="USBCommunicationGroupBox.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
   </data>
-  <data name="&gt;&gt;ScannerTabControl.Name" xml:space="preserve">
-    <value>ScannerTabControl</value>
+  <data name="USBCommunicationGroupBox.Text" xml:space="preserve">
+    <value>USB communication</value>
   </data>
-  <data name="&gt;&gt;ScannerTabControl.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabControl, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="&gt;&gt;USBCommunicationGroupBox.Name" xml:space="preserve">
+    <value>USBCommunicationGroupBox</value>
   </data>
-  <data name="&gt;&gt;ScannerTabControl.Parent" xml:space="preserve">
-    <value>ControlPanelGroupBox</value>
-  </data>
-  <data name="&gt;&gt;ScannerTabControl.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="&gt;&gt;COMPortsRefreshButton.Name" xml:space="preserve">
-    <value>COMPortsRefreshButton</value>
-  </data>
-  <data name="&gt;&gt;COMPortsRefreshButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;COMPortsRefreshButton.Parent" xml:space="preserve">
-    <value>ControlPanelGroupBox</value>
-  </data>
-  <data name="&gt;&gt;COMPortsRefreshButton.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
-  <data name="&gt;&gt;COMPortsComboBox.Name" xml:space="preserve">
-    <value>COMPortsComboBox</value>
-  </data>
-  <data name="&gt;&gt;COMPortsComboBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;COMPortsComboBox.Parent" xml:space="preserve">
-    <value>ControlPanelGroupBox</value>
-  </data>
-  <data name="&gt;&gt;COMPortsComboBox.ZOrder" xml:space="preserve">
-    <value>4</value>
-  </data>
-  <data name="&gt;&gt;ConnectButton.Name" xml:space="preserve">
-    <value>ConnectButton</value>
-  </data>
-  <data name="&gt;&gt;ConnectButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;ConnectButton.Parent" xml:space="preserve">
-    <value>ControlPanelGroupBox</value>
-  </data>
-  <data name="&gt;&gt;ConnectButton.ZOrder" xml:space="preserve">
-    <value>5</value>
-  </data>
-  <data name="ControlPanelGroupBox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>12, 302</value>
-  </data>
-  <data name="ControlPanelGroupBox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>365, 298</value>
-  </data>
-  <data name="ControlPanelGroupBox.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
-  </data>
-  <data name="ControlPanelGroupBox.Text" xml:space="preserve">
-    <value>Control panel</value>
-  </data>
-  <data name="&gt;&gt;ControlPanelGroupBox.Name" xml:space="preserve">
-    <value>ControlPanelGroupBox</value>
-  </data>
-  <data name="&gt;&gt;ControlPanelGroupBox.Type" xml:space="preserve">
+  <data name="&gt;&gt;USBCommunicationGroupBox.Type" xml:space="preserve">
     <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;ControlPanelGroupBox.Parent" xml:space="preserve">
+  <data name="&gt;&gt;USBCommunicationGroupBox.Parent" xml:space="preserve">
     <value>$this</value>
   </data>
-  <data name="&gt;&gt;ControlPanelGroupBox.ZOrder" xml:space="preserve">
-    <value>1</value>
+  <data name="&gt;&gt;USBCommunicationGroupBox.ZOrder" xml:space="preserve">
+    <value>2</value>
   </data>
   <data name="DemoButton.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
@@ -584,486 +470,6 @@
   </data>
   <data name="&gt;&gt;ExpandButton.ZOrder" xml:space="preserve">
     <value>1</value>
-  </data>
-  <data name="&gt;&gt;ScannerControlTabPage.Name" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;ScannerControlTabPage.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;ScannerControlTabPage.Parent" xml:space="preserve">
-    <value>ScannerTabControl</value>
-  </data>
-  <data name="&gt;&gt;ScannerControlTabPage.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <data name="&gt;&gt;CCDBusControlTabPage.Name" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusControlTabPage.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusControlTabPage.Parent" xml:space="preserve">
-    <value>ScannerTabControl</value>
-  </data>
-  <data name="&gt;&gt;CCDBusControlTabPage.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;PCIBusControlTabPage.Name" xml:space="preserve">
-    <value>PCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;PCIBusControlTabPage.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;PCIBusControlTabPage.Parent" xml:space="preserve">
-    <value>ScannerTabControl</value>
-  </data>
-  <data name="&gt;&gt;PCIBusControlTabPage.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="&gt;&gt;SCIBusControlTabPage.Name" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusControlTabPage.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusControlTabPage.Parent" xml:space="preserve">
-    <value>ScannerTabControl</value>
-  </data>
-  <data name="&gt;&gt;SCIBusControlTabPage.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
-  <data name="&gt;&gt;LCDControlTabPage.Name" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDControlTabPage.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDControlTabPage.Parent" xml:space="preserve">
-    <value>ScannerTabControl</value>
-  </data>
-  <data name="&gt;&gt;LCDControlTabPage.ZOrder" xml:space="preserve">
-    <value>4</value>
-  </data>
-  <data name="ScannerTabControl.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
-  <data name="ScannerTabControl.Location" type="System.Drawing.Point, System.Drawing">
-    <value>3, 19</value>
-  </data>
-  <data name="ScannerTabControl.Size" type="System.Drawing.Size, System.Drawing">
-    <value>361, 243</value>
-  </data>
-  <data name="ScannerTabControl.TabIndex" type="System.Int32, mscorlib">
-    <value>5</value>
-  </data>
-  <data name="&gt;&gt;ScannerTabControl.Name" xml:space="preserve">
-    <value>ScannerTabControl</value>
-  </data>
-  <data name="&gt;&gt;ScannerTabControl.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabControl, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;ScannerTabControl.Parent" xml:space="preserve">
-    <value>ControlPanelGroupBox</value>
-  </data>
-  <data name="&gt;&gt;ScannerTabControl.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel02.Name" xml:space="preserve">
-    <value>MillisecondsLabel02</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel02.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel02.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel02.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <data name="&gt;&gt;LEDBlinkDurationTextBox.Name" xml:space="preserve">
-    <value>LEDBlinkDurationTextBox</value>
-  </data>
-  <data name="&gt;&gt;LEDBlinkDurationTextBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LEDBlinkDurationTextBox.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LEDBlinkDurationTextBox.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;LEDBlinkDurationLabel.Name" xml:space="preserve">
-    <value>LEDBlinkDurationLabel</value>
-  </data>
-  <data name="&gt;&gt;LEDBlinkDurationLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LEDBlinkDurationLabel.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LEDBlinkDurationLabel.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel01.Name" xml:space="preserve">
-    <value>MillisecondsLabel01</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel01.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel01.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel01.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
-  <data name="&gt;&gt;HeartbeatIntervalTextBox.Name" xml:space="preserve">
-    <value>HeartbeatIntervalTextBox</value>
-  </data>
-  <data name="&gt;&gt;HeartbeatIntervalTextBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;HeartbeatIntervalTextBox.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;HeartbeatIntervalTextBox.ZOrder" xml:space="preserve">
-    <value>4</value>
-  </data>
-  <data name="&gt;&gt;HeartbeatIntervalLabel.Name" xml:space="preserve">
-    <value>HeartbeatIntervalLabel</value>
-  </data>
-  <data name="&gt;&gt;HeartbeatIntervalLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;HeartbeatIntervalLabel.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;HeartbeatIntervalLabel.ZOrder" xml:space="preserve">
-    <value>5</value>
-  </data>
-  <data name="&gt;&gt;SetLEDsButton.Name" xml:space="preserve">
-    <value>SetLEDsButton</value>
-  </data>
-  <data name="&gt;&gt;SetLEDsButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SetLEDsButton.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SetLEDsButton.ZOrder" xml:space="preserve">
-    <value>6</value>
-  </data>
-  <data name="&gt;&gt;SettingsLabel.Name" xml:space="preserve">
-    <value>SettingsLabel</value>
-  </data>
-  <data name="&gt;&gt;SettingsLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SettingsLabel.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SettingsLabel.ZOrder" xml:space="preserve">
-    <value>7</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteEnableCheckBox.Name" xml:space="preserve">
-    <value>EEPROMWriteEnableCheckBox</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteEnableCheckBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteEnableCheckBox.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteEnableCheckBox.ZOrder" xml:space="preserve">
-    <value>8</value>
-  </data>
-  <data name="&gt;&gt;EEPROMReadCountLabel.Name" xml:space="preserve">
-    <value>EEPROMReadCountLabel</value>
-  </data>
-  <data name="&gt;&gt;EEPROMReadCountLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;EEPROMReadCountLabel.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;EEPROMReadCountLabel.ZOrder" xml:space="preserve">
-    <value>9</value>
-  </data>
-  <data name="&gt;&gt;EEPROMReadCountTextBox.Name" xml:space="preserve">
-    <value>EEPROMReadCountTextBox</value>
-  </data>
-  <data name="&gt;&gt;EEPROMReadCountTextBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;EEPROMReadCountTextBox.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;EEPROMReadCountTextBox.ZOrder" xml:space="preserve">
-    <value>10</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteValuesLabel.Name" xml:space="preserve">
-    <value>EEPROMWriteValuesLabel</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteValuesLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteValuesLabel.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteValuesLabel.ZOrder" xml:space="preserve">
-    <value>11</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteValuesTextBox.Name" xml:space="preserve">
-    <value>EEPROMWriteValuesTextBox</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteValuesTextBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteValuesTextBox.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteValuesTextBox.ZOrder" xml:space="preserve">
-    <value>12</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteAddressLabel.Name" xml:space="preserve">
-    <value>EEPROMWriteAddressLabel</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteAddressLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteAddressLabel.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteAddressLabel.ZOrder" xml:space="preserve">
-    <value>13</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteAddressTextBox.Name" xml:space="preserve">
-    <value>EEPROMWriteAddressTextBox</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteAddressTextBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteAddressTextBox.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;EEPROMWriteAddressTextBox.ZOrder" xml:space="preserve">
-    <value>14</value>
-  </data>
-  <data name="&gt;&gt;WriteEEPROMButton.Name" xml:space="preserve">
-    <value>WriteEEPROMButton</value>
-  </data>
-  <data name="&gt;&gt;WriteEEPROMButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;WriteEEPROMButton.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;WriteEEPROMButton.ZOrder" xml:space="preserve">
-    <value>15</value>
-  </data>
-  <data name="&gt;&gt;ExternalEEPROMRadioButton.Name" xml:space="preserve">
-    <value>ExternalEEPROMRadioButton</value>
-  </data>
-  <data name="&gt;&gt;ExternalEEPROMRadioButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;ExternalEEPROMRadioButton.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;ExternalEEPROMRadioButton.ZOrder" xml:space="preserve">
-    <value>16</value>
-  </data>
-  <data name="&gt;&gt;InternalEEPROMRadioButton.Name" xml:space="preserve">
-    <value>InternalEEPROMRadioButton</value>
-  </data>
-  <data name="&gt;&gt;InternalEEPROMRadioButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;InternalEEPROMRadioButton.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;InternalEEPROMRadioButton.ZOrder" xml:space="preserve">
-    <value>17</value>
-  </data>
-  <data name="&gt;&gt;EEPROMReadAddressLabel.Name" xml:space="preserve">
-    <value>EEPROMReadAddressLabel</value>
-  </data>
-  <data name="&gt;&gt;EEPROMReadAddressLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;EEPROMReadAddressLabel.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;EEPROMReadAddressLabel.ZOrder" xml:space="preserve">
-    <value>18</value>
-  </data>
-  <data name="&gt;&gt;EEPROMReadAddressTextBox.Name" xml:space="preserve">
-    <value>EEPROMReadAddressTextBox</value>
-  </data>
-  <data name="&gt;&gt;EEPROMReadAddressTextBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;EEPROMReadAddressTextBox.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;EEPROMReadAddressTextBox.ZOrder" xml:space="preserve">
-    <value>19</value>
-  </data>
-  <data name="&gt;&gt;ReadEEPROMButton.Name" xml:space="preserve">
-    <value>ReadEEPROMButton</value>
-  </data>
-  <data name="&gt;&gt;ReadEEPROMButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;ReadEEPROMButton.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;ReadEEPROMButton.ZOrder" xml:space="preserve">
-    <value>20</value>
-  </data>
-  <data name="&gt;&gt;DebugLabel.Name" xml:space="preserve">
-    <value>DebugLabel</value>
-  </data>
-  <data name="&gt;&gt;DebugLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;DebugLabel.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;DebugLabel.ZOrder" xml:space="preserve">
-    <value>21</value>
-  </data>
-  <data name="&gt;&gt;EEPROMChecksumButton.Name" xml:space="preserve">
-    <value>EEPROMChecksumButton</value>
-  </data>
-  <data name="&gt;&gt;EEPROMChecksumButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;EEPROMChecksumButton.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;EEPROMChecksumButton.ZOrder" xml:space="preserve">
-    <value>22</value>
-  </data>
-  <data name="&gt;&gt;MainLabel.Name" xml:space="preserve">
-    <value>MainLabel</value>
-  </data>
-  <data name="&gt;&gt;MainLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;MainLabel.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;MainLabel.ZOrder" xml:space="preserve">
-    <value>23</value>
-  </data>
-  <data name="&gt;&gt;RequestLabel.Name" xml:space="preserve">
-    <value>RequestLabel</value>
-  </data>
-  <data name="&gt;&gt;RequestLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;RequestLabel.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;RequestLabel.ZOrder" xml:space="preserve">
-    <value>24</value>
-  </data>
-  <data name="&gt;&gt;BatteryVoltageButton.Name" xml:space="preserve">
-    <value>BatteryVoltageButton</value>
-  </data>
-  <data name="&gt;&gt;BatteryVoltageButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;BatteryVoltageButton.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;BatteryVoltageButton.ZOrder" xml:space="preserve">
-    <value>25</value>
-  </data>
-  <data name="&gt;&gt;TimestampButton.Name" xml:space="preserve">
-    <value>TimestampButton</value>
-  </data>
-  <data name="&gt;&gt;TimestampButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;TimestampButton.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;TimestampButton.ZOrder" xml:space="preserve">
-    <value>26</value>
-  </data>
-  <data name="&gt;&gt;VersionInfoButton.Name" xml:space="preserve">
-    <value>VersionInfoButton</value>
-  </data>
-  <data name="&gt;&gt;VersionInfoButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;VersionInfoButton.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;VersionInfoButton.ZOrder" xml:space="preserve">
-    <value>27</value>
-  </data>
-  <data name="&gt;&gt;StatusButton.Name" xml:space="preserve">
-    <value>StatusButton</value>
-  </data>
-  <data name="&gt;&gt;StatusButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;StatusButton.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;StatusButton.ZOrder" xml:space="preserve">
-    <value>28</value>
-  </data>
-  <data name="&gt;&gt;HandshakeButton.Name" xml:space="preserve">
-    <value>HandshakeButton</value>
-  </data>
-  <data name="&gt;&gt;HandshakeButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;HandshakeButton.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;HandshakeButton.ZOrder" xml:space="preserve">
-    <value>29</value>
-  </data>
-  <data name="&gt;&gt;ResetButton.Name" xml:space="preserve">
-    <value>ResetButton</value>
-  </data>
-  <data name="&gt;&gt;ResetButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;ResetButton.Parent" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;ResetButton.ZOrder" xml:space="preserve">
-    <value>30</value>
-  </data>
-  <data name="ScannerControlTabPage.Location" type="System.Drawing.Point, System.Drawing">
-    <value>4, 22</value>
-  </data>
-  <data name="ScannerControlTabPage.Size" type="System.Drawing.Size, System.Drawing">
-    <value>353, 217</value>
-  </data>
-  <data name="ScannerControlTabPage.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
-  </data>
-  <data name="ScannerControlTabPage.Text" xml:space="preserve">
-    <value>Scanner</value>
-  </data>
-  <data name="&gt;&gt;ScannerControlTabPage.Name" xml:space="preserve">
-    <value>ScannerControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;ScannerControlTabPage.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;ScannerControlTabPage.Parent" xml:space="preserve">
-    <value>ScannerTabControl</value>
-  </data>
-  <data name="&gt;&gt;ScannerControlTabPage.ZOrder" xml:space="preserve">
-    <value>0</value>
   </data>
   <data name="MillisecondsLabel02.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -1962,284 +1368,29 @@
   <data name="&gt;&gt;ResetButton.ZOrder" xml:space="preserve">
     <value>30</value>
   </data>
-  <data name="&gt;&gt;CCDBusTransceiverOnOffCheckBox.Name" xml:space="preserve">
-    <value>CCDBusTransceiverOnOffCheckBox</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTransceiverOnOffCheckBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTransceiverOnOffCheckBox.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTransceiverOnOffCheckBox.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <data name="&gt;&gt;MeasureCCDBusVoltagesButton.Name" xml:space="preserve">
-    <value>MeasureCCDBusVoltagesButton</value>
-  </data>
-  <data name="&gt;&gt;MeasureCCDBusVoltagesButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;MeasureCCDBusVoltagesButton.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;MeasureCCDBusVoltagesButton.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTerminationBiasOnOffCheckBox.Name" xml:space="preserve">
-    <value>CCDBusTerminationBiasOnOffCheckBox</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTerminationBiasOnOffCheckBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTerminationBiasOnOffCheckBox.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTerminationBiasOnOffCheckBox.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel04.Name" xml:space="preserve">
-    <value>MillisecondsLabel04</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel04.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel04.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel04.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
-  <data name="&gt;&gt;CCDBusRandomMessageIntervalMaxTextBox.Name" xml:space="preserve">
-    <value>CCDBusRandomMessageIntervalMaxTextBox</value>
-  </data>
-  <data name="&gt;&gt;CCDBusRandomMessageIntervalMaxTextBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusRandomMessageIntervalMaxTextBox.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusRandomMessageIntervalMaxTextBox.ZOrder" xml:space="preserve">
-    <value>4</value>
-  </data>
-  <data name="&gt;&gt;CCDBusRandomMessageIntervalMaxLabel.Name" xml:space="preserve">
-    <value>CCDBusRandomMessageIntervalMaxLabel</value>
-  </data>
-  <data name="&gt;&gt;CCDBusRandomMessageIntervalMaxLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusRandomMessageIntervalMaxLabel.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusRandomMessageIntervalMaxLabel.ZOrder" xml:space="preserve">
-    <value>5</value>
-  </data>
-  <data name="&gt;&gt;CCDBusRandomMessageIntervalMinLabel.Name" xml:space="preserve">
-    <value>CCDBusRandomMessageIntervalMinLabel</value>
-  </data>
-  <data name="&gt;&gt;CCDBusRandomMessageIntervalMinLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusRandomMessageIntervalMinLabel.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusRandomMessageIntervalMinLabel.ZOrder" xml:space="preserve">
-    <value>6</value>
-  </data>
-  <data name="&gt;&gt;CCDBusRandomMessageIntervalMinTextBox.Name" xml:space="preserve">
-    <value>CCDBusRandomMessageIntervalMinTextBox</value>
-  </data>
-  <data name="&gt;&gt;CCDBusRandomMessageIntervalMinTextBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusRandomMessageIntervalMinTextBox.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusRandomMessageIntervalMinTextBox.ZOrder" xml:space="preserve">
-    <value>7</value>
-  </data>
-  <data name="&gt;&gt;CCDBusStopRepeatedMessagesButton.Name" xml:space="preserve">
-    <value>CCDBusStopRepeatedMessagesButton</value>
-  </data>
-  <data name="&gt;&gt;CCDBusStopRepeatedMessagesButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusStopRepeatedMessagesButton.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusStopRepeatedMessagesButton.ZOrder" xml:space="preserve">
-    <value>8</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel03.Name" xml:space="preserve">
-    <value>MillisecondsLabel03</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel03.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel03.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel03.ZOrder" xml:space="preserve">
-    <value>9</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageRepeatIntervalTextBox.Name" xml:space="preserve">
-    <value>CCDBusTxMessageRepeatIntervalTextBox</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageRepeatIntervalTextBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageRepeatIntervalTextBox.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageRepeatIntervalTextBox.ZOrder" xml:space="preserve">
-    <value>10</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageRepeatIntervalCheckBox.Name" xml:space="preserve">
-    <value>CCDBusTxMessageRepeatIntervalCheckBox</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageRepeatIntervalCheckBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageRepeatIntervalCheckBox.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageRepeatIntervalCheckBox.ZOrder" xml:space="preserve">
-    <value>11</value>
-  </data>
-  <data name="&gt;&gt;CCDBusSendMessagesButton.Name" xml:space="preserve">
-    <value>CCDBusSendMessagesButton</value>
-  </data>
-  <data name="&gt;&gt;CCDBusSendMessagesButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusSendMessagesButton.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusSendMessagesButton.ZOrder" xml:space="preserve">
-    <value>12</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageCalculateChecksumCheckBox.Name" xml:space="preserve">
-    <value>CCDBusTxMessageCalculateChecksumCheckBox</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageCalculateChecksumCheckBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageCalculateChecksumCheckBox.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageCalculateChecksumCheckBox.ZOrder" xml:space="preserve">
-    <value>13</value>
-  </data>
-  <data name="&gt;&gt;CCDBusOverwriteDuplicateIDCheckBox.Name" xml:space="preserve">
-    <value>CCDBusOverwriteDuplicateIDCheckBox</value>
-  </data>
-  <data name="&gt;&gt;CCDBusOverwriteDuplicateIDCheckBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusOverwriteDuplicateIDCheckBox.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusOverwriteDuplicateIDCheckBox.ZOrder" xml:space="preserve">
-    <value>14</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageClearListButton.Name" xml:space="preserve">
-    <value>CCDBusTxMessageClearListButton</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageClearListButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageClearListButton.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageClearListButton.ZOrder" xml:space="preserve">
-    <value>15</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageRemoveItemButton.Name" xml:space="preserve">
-    <value>CCDBusTxMessageRemoveItemButton</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageRemoveItemButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageRemoveItemButton.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageRemoveItemButton.ZOrder" xml:space="preserve">
-    <value>16</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageAddButton.Name" xml:space="preserve">
-    <value>CCDBusTxMessageAddButton</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageAddButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageAddButton.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageAddButton.ZOrder" xml:space="preserve">
-    <value>17</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageComboBox.Name" xml:space="preserve">
-    <value>CCDBusTxMessageComboBox</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageComboBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageComboBox.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessageComboBox.ZOrder" xml:space="preserve">
-    <value>18</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessagesListBox.Name" xml:space="preserve">
-    <value>CCDBusTxMessagesListBox</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessagesListBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ListBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessagesListBox.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusTxMessagesListBox.ZOrder" xml:space="preserve">
-    <value>19</value>
-  </data>
-  <data name="&gt;&gt;DebugRandomCCDBusMessagesButton.Name" xml:space="preserve">
-    <value>DebugRandomCCDBusMessagesButton</value>
-  </data>
-  <data name="&gt;&gt;DebugRandomCCDBusMessagesButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;DebugRandomCCDBusMessagesButton.Parent" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;DebugRandomCCDBusMessagesButton.ZOrder" xml:space="preserve">
-    <value>20</value>
-  </data>
-  <data name="CCDBusControlTabPage.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="ScannerControlTabPage.Location" type="System.Drawing.Point, System.Drawing">
     <value>4, 22</value>
   </data>
-  <data name="CCDBusControlTabPage.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>3, 3, 3, 3</value>
-  </data>
-  <data name="CCDBusControlTabPage.Size" type="System.Drawing.Size, System.Drawing">
+  <data name="ScannerControlTabPage.Size" type="System.Drawing.Size, System.Drawing">
     <value>353, 217</value>
   </data>
-  <data name="CCDBusControlTabPage.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
+  <data name="ScannerControlTabPage.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
   </data>
-  <data name="CCDBusControlTabPage.Text" xml:space="preserve">
-    <value>CCD-bus</value>
+  <data name="ScannerControlTabPage.Text" xml:space="preserve">
+    <value>Scanner</value>
   </data>
-  <data name="&gt;&gt;CCDBusControlTabPage.Name" xml:space="preserve">
-    <value>CCDBusControlTabPage</value>
+  <data name="&gt;&gt;ScannerControlTabPage.Name" xml:space="preserve">
+    <value>ScannerControlTabPage</value>
   </data>
-  <data name="&gt;&gt;CCDBusControlTabPage.Type" xml:space="preserve">
+  <data name="&gt;&gt;ScannerControlTabPage.Type" xml:space="preserve">
     <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;CCDBusControlTabPage.Parent" xml:space="preserve">
+  <data name="&gt;&gt;ScannerControlTabPage.Parent" xml:space="preserve">
     <value>ScannerTabControl</value>
   </data>
-  <data name="&gt;&gt;CCDBusControlTabPage.ZOrder" xml:space="preserve">
-    <value>1</value>
+  <data name="&gt;&gt;ScannerControlTabPage.ZOrder" xml:space="preserve">
+    <value>0</value>
   </data>
   <data name="CCDBusTransceiverOnOffCheckBox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -2859,185 +2010,32 @@
   <data name="&gt;&gt;DebugRandomCCDBusMessagesButton.ZOrder" xml:space="preserve">
     <value>20</value>
   </data>
-  <data name="&gt;&gt;PCIBusTransceiverOnOffCheckBox.Name" xml:space="preserve">
-    <value>PCIBusTransceiverOnOffCheckBox</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTransceiverOnOffCheckBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTransceiverOnOffCheckBox.Parent" xml:space="preserve">
-    <value>PCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTransceiverOnOffCheckBox.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <data name="&gt;&gt;PCIBusStopRepeatedMessagesButton.Name" xml:space="preserve">
-    <value>PCIBusStopRepeatedMessagesButton</value>
-  </data>
-  <data name="&gt;&gt;PCIBusStopRepeatedMessagesButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;PCIBusStopRepeatedMessagesButton.Parent" xml:space="preserve">
-    <value>PCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;PCIBusStopRepeatedMessagesButton.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel06.Name" xml:space="preserve">
-    <value>MillisecondsLabel06</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel06.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel06.Parent" xml:space="preserve">
-    <value>PCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel06.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageRepeatIntervalTextBox.Name" xml:space="preserve">
-    <value>PCIBusTxMessageRepeatIntervalTextBox</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageRepeatIntervalTextBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageRepeatIntervalTextBox.Parent" xml:space="preserve">
-    <value>PCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageRepeatIntervalTextBox.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageRepeatIntervalCheckBox.Name" xml:space="preserve">
-    <value>PCIBusTxMessageRepeatIntervalCheckBox</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageRepeatIntervalCheckBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageRepeatIntervalCheckBox.Parent" xml:space="preserve">
-    <value>PCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageRepeatIntervalCheckBox.ZOrder" xml:space="preserve">
-    <value>4</value>
-  </data>
-  <data name="&gt;&gt;PCIBusSendMessagesButton.Name" xml:space="preserve">
-    <value>PCIBusSendMessagesButton</value>
-  </data>
-  <data name="&gt;&gt;PCIBusSendMessagesButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;PCIBusSendMessagesButton.Parent" xml:space="preserve">
-    <value>PCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;PCIBusSendMessagesButton.ZOrder" xml:space="preserve">
-    <value>5</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageCalculateCRCCheckBox.Name" xml:space="preserve">
-    <value>PCIBusTxMessageCalculateCRCCheckBox</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageCalculateCRCCheckBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageCalculateCRCCheckBox.Parent" xml:space="preserve">
-    <value>PCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageCalculateCRCCheckBox.ZOrder" xml:space="preserve">
-    <value>6</value>
-  </data>
-  <data name="&gt;&gt;PCIBusOverwriteDuplicateIDCheckBox.Name" xml:space="preserve">
-    <value>PCIBusOverwriteDuplicateIDCheckBox</value>
-  </data>
-  <data name="&gt;&gt;PCIBusOverwriteDuplicateIDCheckBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;PCIBusOverwriteDuplicateIDCheckBox.Parent" xml:space="preserve">
-    <value>PCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;PCIBusOverwriteDuplicateIDCheckBox.ZOrder" xml:space="preserve">
-    <value>7</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageClearListButton.Name" xml:space="preserve">
-    <value>PCIBusTxMessageClearListButton</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageClearListButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageClearListButton.Parent" xml:space="preserve">
-    <value>PCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageClearListButton.ZOrder" xml:space="preserve">
-    <value>8</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageRemoveItemButton.Name" xml:space="preserve">
-    <value>PCIBusTxMessageRemoveItemButton</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageRemoveItemButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageRemoveItemButton.Parent" xml:space="preserve">
-    <value>PCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageRemoveItemButton.ZOrder" xml:space="preserve">
-    <value>9</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageAddButton.Name" xml:space="preserve">
-    <value>PCIBusTxMessageAddButton</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageAddButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageAddButton.Parent" xml:space="preserve">
-    <value>PCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageAddButton.ZOrder" xml:space="preserve">
-    <value>10</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageComboBox.Name" xml:space="preserve">
-    <value>PCIBusTxMessageComboBox</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageComboBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageComboBox.Parent" xml:space="preserve">
-    <value>PCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessageComboBox.ZOrder" xml:space="preserve">
-    <value>11</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessagesListBox.Name" xml:space="preserve">
-    <value>PCIBusTxMessagesListBox</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessagesListBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ListBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessagesListBox.Parent" xml:space="preserve">
-    <value>PCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;PCIBusTxMessagesListBox.ZOrder" xml:space="preserve">
-    <value>12</value>
-  </data>
-  <data name="PCIBusControlTabPage.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="CCDBusControlTabPage.Location" type="System.Drawing.Point, System.Drawing">
     <value>4, 22</value>
   </data>
-  <data name="PCIBusControlTabPage.Size" type="System.Drawing.Size, System.Drawing">
+  <data name="CCDBusControlTabPage.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 3, 3, 3</value>
+  </data>
+  <data name="CCDBusControlTabPage.Size" type="System.Drawing.Size, System.Drawing">
     <value>353, 217</value>
   </data>
-  <data name="PCIBusControlTabPage.TabIndex" type="System.Int32, mscorlib">
-    <value>4</value>
+  <data name="CCDBusControlTabPage.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
   </data>
-  <data name="PCIBusControlTabPage.Text" xml:space="preserve">
-    <value>PCI-bus</value>
+  <data name="CCDBusControlTabPage.Text" xml:space="preserve">
+    <value>CCD-bus</value>
   </data>
-  <data name="&gt;&gt;PCIBusControlTabPage.Name" xml:space="preserve">
-    <value>PCIBusControlTabPage</value>
+  <data name="&gt;&gt;CCDBusControlTabPage.Name" xml:space="preserve">
+    <value>CCDBusControlTabPage</value>
   </data>
-  <data name="&gt;&gt;PCIBusControlTabPage.Type" xml:space="preserve">
+  <data name="&gt;&gt;CCDBusControlTabPage.Type" xml:space="preserve">
     <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;PCIBusControlTabPage.Parent" xml:space="preserve">
+  <data name="&gt;&gt;CCDBusControlTabPage.Parent" xml:space="preserve">
     <value>ScannerTabControl</value>
   </data>
-  <data name="&gt;&gt;PCIBusControlTabPage.ZOrder" xml:space="preserve">
-    <value>2</value>
+  <data name="&gt;&gt;CCDBusControlTabPage.ZOrder" xml:space="preserve">
+    <value>1</value>
   </data>
   <data name="PCIBusTransceiverOnOffCheckBox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -3429,284 +2427,29 @@
   <data name="&gt;&gt;PCIBusTxMessagesListBox.ZOrder" xml:space="preserve">
     <value>12</value>
   </data>
-  <data name="&gt;&gt;SCIBusNGCModeCheckBox.Name" xml:space="preserve">
-    <value>SCIBusNGCModeCheckBox</value>
-  </data>
-  <data name="&gt;&gt;SCIBusNGCModeCheckBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusNGCModeCheckBox.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusNGCModeCheckBox.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <data name="&gt;&gt;SCIBusOBDConfigurationComboBox.Name" xml:space="preserve">
-    <value>SCIBusOBDConfigurationComboBox</value>
-  </data>
-  <data name="&gt;&gt;SCIBusOBDConfigurationComboBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusOBDConfigurationComboBox.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusOBDConfigurationComboBox.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;SCIBusOBDConfigurationLabel.Name" xml:space="preserve">
-    <value>SCIBusOBDConfigurationLabel</value>
-  </data>
-  <data name="&gt;&gt;SCIBusOBDConfigurationLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusOBDConfigurationLabel.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusOBDConfigurationLabel.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="&gt;&gt;SCIBusInvertedLogicCheckBox.Name" xml:space="preserve">
-    <value>SCIBusInvertedLogicCheckBox</value>
-  </data>
-  <data name="&gt;&gt;SCIBusInvertedLogicCheckBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusInvertedLogicCheckBox.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusInvertedLogicCheckBox.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
-  <data name="&gt;&gt;SCIBusModuleConfigSpeedApplyButton.Name" xml:space="preserve">
-    <value>SCIBusModuleConfigSpeedApplyButton</value>
-  </data>
-  <data name="&gt;&gt;SCIBusModuleConfigSpeedApplyButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusModuleConfigSpeedApplyButton.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusModuleConfigSpeedApplyButton.ZOrder" xml:space="preserve">
-    <value>4</value>
-  </data>
-  <data name="&gt;&gt;SCIBusSpeedComboBox.Name" xml:space="preserve">
-    <value>SCIBusSpeedComboBox</value>
-  </data>
-  <data name="&gt;&gt;SCIBusSpeedComboBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusSpeedComboBox.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusSpeedComboBox.ZOrder" xml:space="preserve">
-    <value>5</value>
-  </data>
-  <data name="&gt;&gt;SCIBusSpeedLabel.Name" xml:space="preserve">
-    <value>SCIBusSpeedLabel</value>
-  </data>
-  <data name="&gt;&gt;SCIBusSpeedLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusSpeedLabel.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusSpeedLabel.ZOrder" xml:space="preserve">
-    <value>6</value>
-  </data>
-  <data name="&gt;&gt;SCIBusModuleComboBox.Name" xml:space="preserve">
-    <value>SCIBusModuleComboBox</value>
-  </data>
-  <data name="&gt;&gt;SCIBusModuleComboBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusModuleComboBox.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusModuleComboBox.ZOrder" xml:space="preserve">
-    <value>7</value>
-  </data>
-  <data name="&gt;&gt;SCIBusModuleLabel.Name" xml:space="preserve">
-    <value>SCIBusModuleLabel</value>
-  </data>
-  <data name="&gt;&gt;SCIBusModuleLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusModuleLabel.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusModuleLabel.ZOrder" xml:space="preserve">
-    <value>8</value>
-  </data>
-  <data name="&gt;&gt;SCIBusStopRepeatedMessagesButton.Name" xml:space="preserve">
-    <value>SCIBusStopRepeatedMessagesButton</value>
-  </data>
-  <data name="&gt;&gt;SCIBusStopRepeatedMessagesButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusStopRepeatedMessagesButton.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusStopRepeatedMessagesButton.ZOrder" xml:space="preserve">
-    <value>9</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel05.Name" xml:space="preserve">
-    <value>MillisecondsLabel05</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel05.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel05.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;MillisecondsLabel05.ZOrder" xml:space="preserve">
-    <value>10</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageRepeatIntervalTextBox.Name" xml:space="preserve">
-    <value>SCIBusTxMessageRepeatIntervalTextBox</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageRepeatIntervalTextBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageRepeatIntervalTextBox.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageRepeatIntervalTextBox.ZOrder" xml:space="preserve">
-    <value>11</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageRepeatIntervalCheckBox.Name" xml:space="preserve">
-    <value>SCIBusTxMessageRepeatIntervalCheckBox</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageRepeatIntervalCheckBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageRepeatIntervalCheckBox.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageRepeatIntervalCheckBox.ZOrder" xml:space="preserve">
-    <value>12</value>
-  </data>
-  <data name="&gt;&gt;SCIBusSendMessagesButton.Name" xml:space="preserve">
-    <value>SCIBusSendMessagesButton</value>
-  </data>
-  <data name="&gt;&gt;SCIBusSendMessagesButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusSendMessagesButton.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusSendMessagesButton.ZOrder" xml:space="preserve">
-    <value>13</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageCalculateChecksumCheckBox.Name" xml:space="preserve">
-    <value>SCIBusTxMessageCalculateChecksumCheckBox</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageCalculateChecksumCheckBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageCalculateChecksumCheckBox.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageCalculateChecksumCheckBox.ZOrder" xml:space="preserve">
-    <value>14</value>
-  </data>
-  <data name="&gt;&gt;SCIBusOverwriteDuplicateIDCheckBox.Name" xml:space="preserve">
-    <value>SCIBusOverwriteDuplicateIDCheckBox</value>
-  </data>
-  <data name="&gt;&gt;SCIBusOverwriteDuplicateIDCheckBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusOverwriteDuplicateIDCheckBox.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusOverwriteDuplicateIDCheckBox.ZOrder" xml:space="preserve">
-    <value>15</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageClearListButton.Name" xml:space="preserve">
-    <value>SCIBusTxMessageClearListButton</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageClearListButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageClearListButton.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageClearListButton.ZOrder" xml:space="preserve">
-    <value>16</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageRemoveItemButton.Name" xml:space="preserve">
-    <value>SCIBusTxMessageRemoveItemButton</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageRemoveItemButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageRemoveItemButton.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageRemoveItemButton.ZOrder" xml:space="preserve">
-    <value>17</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageAddButton.Name" xml:space="preserve">
-    <value>SCIBusTxMessageAddButton</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageAddButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageAddButton.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageAddButton.ZOrder" xml:space="preserve">
-    <value>18</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageComboBox.Name" xml:space="preserve">
-    <value>SCIBusTxMessageComboBox</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageComboBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageComboBox.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessageComboBox.ZOrder" xml:space="preserve">
-    <value>19</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessagesListBox.Name" xml:space="preserve">
-    <value>SCIBusTxMessagesListBox</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessagesListBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ListBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessagesListBox.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTxMessagesListBox.ZOrder" xml:space="preserve">
-    <value>20</value>
-  </data>
-  <data name="SCIBusControlTabPage.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="PCIBusControlTabPage.Location" type="System.Drawing.Point, System.Drawing">
     <value>4, 22</value>
   </data>
-  <data name="SCIBusControlTabPage.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>3, 3, 3, 3</value>
-  </data>
-  <data name="SCIBusControlTabPage.Size" type="System.Drawing.Size, System.Drawing">
+  <data name="PCIBusControlTabPage.Size" type="System.Drawing.Size, System.Drawing">
     <value>353, 217</value>
   </data>
-  <data name="SCIBusControlTabPage.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
+  <data name="PCIBusControlTabPage.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
   </data>
-  <data name="SCIBusControlTabPage.Text" xml:space="preserve">
-    <value>SCI-bus</value>
+  <data name="PCIBusControlTabPage.Text" xml:space="preserve">
+    <value>PCI-bus</value>
   </data>
-  <data name="&gt;&gt;SCIBusControlTabPage.Name" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
+  <data name="&gt;&gt;PCIBusControlTabPage.Name" xml:space="preserve">
+    <value>PCIBusControlTabPage</value>
   </data>
-  <data name="&gt;&gt;SCIBusControlTabPage.Type" xml:space="preserve">
+  <data name="&gt;&gt;PCIBusControlTabPage.Type" xml:space="preserve">
     <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;SCIBusControlTabPage.Parent" xml:space="preserve">
+  <data name="&gt;&gt;PCIBusControlTabPage.Parent" xml:space="preserve">
     <value>ScannerTabControl</value>
   </data>
-  <data name="&gt;&gt;SCIBusControlTabPage.ZOrder" xml:space="preserve">
-    <value>3</value>
+  <data name="&gt;&gt;PCIBusControlTabPage.ZOrder" xml:space="preserve">
+    <value>2</value>
   </data>
   <data name="SCIBusNGCModeCheckBox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -4335,248 +3078,32 @@
   <data name="&gt;&gt;SCIBusTxMessagesListBox.ZOrder" xml:space="preserve">
     <value>20</value>
   </data>
-  <data name="&gt;&gt;LCDI2CAddressHexLabel.Name" xml:space="preserve">
-    <value>LCDI2CAddressHexLabel</value>
-  </data>
-  <data name="&gt;&gt;LCDI2CAddressHexLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDI2CAddressHexLabel.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDI2CAddressHexLabel.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <data name="&gt;&gt;LCDI2CAddressTextBox.Name" xml:space="preserve">
-    <value>LCDI2CAddressTextBox</value>
-  </data>
-  <data name="&gt;&gt;LCDI2CAddressTextBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDI2CAddressTextBox.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDI2CAddressTextBox.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;LCDI2CAddressLabel.Name" xml:space="preserve">
-    <value>LCDI2CAddressLabel</value>
-  </data>
-  <data name="&gt;&gt;LCDI2CAddressLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDI2CAddressLabel.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDI2CAddressLabel.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="&gt;&gt;LCDPreviewLabel.Name" xml:space="preserve">
-    <value>LCDPreviewLabel</value>
-  </data>
-  <data name="&gt;&gt;LCDPreviewLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDPreviewLabel.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDPreviewLabel.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
-  <data name="&gt;&gt;LCDDataSourceComboBox.Name" xml:space="preserve">
-    <value>LCDDataSourceComboBox</value>
-  </data>
-  <data name="&gt;&gt;LCDDataSourceComboBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDDataSourceComboBox.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDDataSourceComboBox.ZOrder" xml:space="preserve">
-    <value>4</value>
-  </data>
-  <data name="&gt;&gt;LCDDataSourceLabel.Name" xml:space="preserve">
-    <value>LCDDataSourceLabel</value>
-  </data>
-  <data name="&gt;&gt;LCDDataSourceLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDDataSourceLabel.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDDataSourceLabel.ZOrder" xml:space="preserve">
-    <value>5</value>
-  </data>
-  <data name="&gt;&gt;LCDStateComboBox.Name" xml:space="preserve">
-    <value>LCDStateComboBox</value>
-  </data>
-  <data name="&gt;&gt;LCDStateComboBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDStateComboBox.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDStateComboBox.ZOrder" xml:space="preserve">
-    <value>6</value>
-  </data>
-  <data name="&gt;&gt;LCDStateLabel.Name" xml:space="preserve">
-    <value>LCDStateLabel</value>
-  </data>
-  <data name="&gt;&gt;LCDStateLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDStateLabel.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDStateLabel.ZOrder" xml:space="preserve">
-    <value>7</value>
-  </data>
-  <data name="&gt;&gt;LCDRowLabel.Name" xml:space="preserve">
-    <value>LCDRowLabel</value>
-  </data>
-  <data name="&gt;&gt;LCDRowLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDRowLabel.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDRowLabel.ZOrder" xml:space="preserve">
-    <value>8</value>
-  </data>
-  <data name="&gt;&gt;LCDHeightTextBox.Name" xml:space="preserve">
-    <value>LCDHeightTextBox</value>
-  </data>
-  <data name="&gt;&gt;LCDHeightTextBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDHeightTextBox.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDHeightTextBox.ZOrder" xml:space="preserve">
-    <value>9</value>
-  </data>
-  <data name="&gt;&gt;LCDColumnLabel.Name" xml:space="preserve">
-    <value>LCDColumnLabel</value>
-  </data>
-  <data name="&gt;&gt;LCDColumnLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDColumnLabel.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDColumnLabel.ZOrder" xml:space="preserve">
-    <value>10</value>
-  </data>
-  <data name="&gt;&gt;LCDWidthTextBox.Name" xml:space="preserve">
-    <value>LCDWidthTextBox</value>
-  </data>
-  <data name="&gt;&gt;LCDWidthTextBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDWidthTextBox.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDWidthTextBox.ZOrder" xml:space="preserve">
-    <value>11</value>
-  </data>
-  <data name="&gt;&gt;LCDSizeLabel.Name" xml:space="preserve">
-    <value>LCDSizeLabel</value>
-  </data>
-  <data name="&gt;&gt;LCDSizeLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDSizeLabel.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDSizeLabel.ZOrder" xml:space="preserve">
-    <value>12</value>
-  </data>
-  <data name="&gt;&gt;LCDApplySettingsButton.Name" xml:space="preserve">
-    <value>LCDApplySettingsButton</value>
-  </data>
-  <data name="&gt;&gt;LCDApplySettingsButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDApplySettingsButton.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDApplySettingsButton.ZOrder" xml:space="preserve">
-    <value>13</value>
-  </data>
-  <data name="&gt;&gt;LCDRefreshRateLabel.Name" xml:space="preserve">
-    <value>LCDRefreshRateLabel</value>
-  </data>
-  <data name="&gt;&gt;LCDRefreshRateLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDRefreshRateLabel.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDRefreshRateLabel.ZOrder" xml:space="preserve">
-    <value>14</value>
-  </data>
-  <data name="&gt;&gt;HzLabel01.Name" xml:space="preserve">
-    <value>HzLabel01</value>
-  </data>
-  <data name="&gt;&gt;HzLabel01.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;HzLabel01.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;HzLabel01.ZOrder" xml:space="preserve">
-    <value>15</value>
-  </data>
-  <data name="&gt;&gt;LCDRefreshRateTextBox.Name" xml:space="preserve">
-    <value>LCDRefreshRateTextBox</value>
-  </data>
-  <data name="&gt;&gt;LCDRefreshRateTextBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDRefreshRateTextBox.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDRefreshRateTextBox.ZOrder" xml:space="preserve">
-    <value>16</value>
-  </data>
-  <data name="&gt;&gt;LCDPreviewTextBox.Name" xml:space="preserve">
-    <value>LCDPreviewTextBox</value>
-  </data>
-  <data name="&gt;&gt;LCDPreviewTextBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;LCDPreviewTextBox.Parent" xml:space="preserve">
-    <value>LCDControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;LCDPreviewTextBox.ZOrder" xml:space="preserve">
-    <value>17</value>
-  </data>
-  <data name="LCDControlTabPage.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="SCIBusControlTabPage.Location" type="System.Drawing.Point, System.Drawing">
     <value>4, 22</value>
   </data>
-  <data name="LCDControlTabPage.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+  <data name="SCIBusControlTabPage.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 3, 3, 3</value>
   </data>
-  <data name="LCDControlTabPage.Size" type="System.Drawing.Size, System.Drawing">
+  <data name="SCIBusControlTabPage.Size" type="System.Drawing.Size, System.Drawing">
     <value>353, 217</value>
   </data>
-  <data name="LCDControlTabPage.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
+  <data name="SCIBusControlTabPage.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
   </data>
-  <data name="LCDControlTabPage.Text" xml:space="preserve">
-    <value>LCD</value>
+  <data name="SCIBusControlTabPage.Text" xml:space="preserve">
+    <value>SCI-bus</value>
   </data>
-  <data name="&gt;&gt;LCDControlTabPage.Name" xml:space="preserve">
-    <value>LCDControlTabPage</value>
+  <data name="&gt;&gt;SCIBusControlTabPage.Name" xml:space="preserve">
+    <value>SCIBusControlTabPage</value>
   </data>
-  <data name="&gt;&gt;LCDControlTabPage.Type" xml:space="preserve">
+  <data name="&gt;&gt;SCIBusControlTabPage.Type" xml:space="preserve">
     <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;LCDControlTabPage.Parent" xml:space="preserve">
+  <data name="&gt;&gt;SCIBusControlTabPage.Parent" xml:space="preserve">
     <value>ScannerTabControl</value>
   </data>
-  <data name="&gt;&gt;LCDControlTabPage.ZOrder" xml:space="preserve">
-    <value>4</value>
+  <data name="&gt;&gt;SCIBusControlTabPage.ZOrder" xml:space="preserve">
+    <value>3</value>
   </data>
   <data name="LCDI2CAddressHexLabel.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -5109,6 +3636,57 @@
   <data name="&gt;&gt;LCDPreviewTextBox.ZOrder" xml:space="preserve">
     <value>17</value>
   </data>
+  <data name="LCDControlTabPage.Location" type="System.Drawing.Point, System.Drawing">
+    <value>4, 22</value>
+  </data>
+  <data name="LCDControlTabPage.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 3, 3, 3</value>
+  </data>
+  <data name="LCDControlTabPage.Size" type="System.Drawing.Size, System.Drawing">
+    <value>353, 217</value>
+  </data>
+  <data name="LCDControlTabPage.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="LCDControlTabPage.Text" xml:space="preserve">
+    <value>LCD</value>
+  </data>
+  <data name="&gt;&gt;LCDControlTabPage.Name" xml:space="preserve">
+    <value>LCDControlTabPage</value>
+  </data>
+  <data name="&gt;&gt;LCDControlTabPage.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;LCDControlTabPage.Parent" xml:space="preserve">
+    <value>ScannerTabControl</value>
+  </data>
+  <data name="&gt;&gt;LCDControlTabPage.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="ScannerTabControl.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="ScannerTabControl.Location" type="System.Drawing.Point, System.Drawing">
+    <value>3, 19</value>
+  </data>
+  <data name="ScannerTabControl.Size" type="System.Drawing.Size, System.Drawing">
+    <value>361, 243</value>
+  </data>
+  <data name="ScannerTabControl.TabIndex" type="System.Int32, mscorlib">
+    <value>5</value>
+  </data>
+  <data name="&gt;&gt;ScannerTabControl.Name" xml:space="preserve">
+    <value>ScannerTabControl</value>
+  </data>
+  <data name="&gt;&gt;ScannerTabControl.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabControl, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ScannerTabControl.Parent" xml:space="preserve">
+    <value>ControlPanelGroupBox</value>
+  </data>
+  <data name="&gt;&gt;ScannerTabControl.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
   <data name="COMPortsRefreshButton.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
   </data>
@@ -5187,92 +3765,29 @@
   <data name="&gt;&gt;ConnectButton.ZOrder" xml:space="preserve">
     <value>5</value>
   </data>
-  <data name="&gt;&gt;DiagnosticsSnapshotButton.Name" xml:space="preserve">
-    <value>DiagnosticsSnapshotButton</value>
+  <data name="ControlPanelGroupBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>12, 302</value>
   </data>
-  <data name="&gt;&gt;DiagnosticsSnapshotButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="ControlPanelGroupBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>365, 298</value>
   </data>
-  <data name="&gt;&gt;DiagnosticsSnapshotButton.Parent" xml:space="preserve">
-    <value>DiagnosticsGroupBox</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsSnapshotButton.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsRefreshButton.Name" xml:space="preserve">
-    <value>DiagnosticsRefreshButton</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsRefreshButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsRefreshButton.Parent" xml:space="preserve">
-    <value>DiagnosticsGroupBox</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsRefreshButton.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsCopyToClipboardButton.Name" xml:space="preserve">
-    <value>DiagnosticsCopyToClipboardButton</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsCopyToClipboardButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsCopyToClipboardButton.Parent" xml:space="preserve">
-    <value>DiagnosticsGroupBox</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsCopyToClipboardButton.ZOrder" xml:space="preserve">
+  <data name="ControlPanelGroupBox.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
   </data>
-  <data name="&gt;&gt;DiagnosticsResetViewButton.Name" xml:space="preserve">
-    <value>DiagnosticsResetViewButton</value>
+  <data name="ControlPanelGroupBox.Text" xml:space="preserve">
+    <value>Control panel</value>
   </data>
-  <data name="&gt;&gt;DiagnosticsResetViewButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="&gt;&gt;ControlPanelGroupBox.Name" xml:space="preserve">
+    <value>ControlPanelGroupBox</value>
   </data>
-  <data name="&gt;&gt;DiagnosticsResetViewButton.Parent" xml:space="preserve">
-    <value>DiagnosticsGroupBox</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsResetViewButton.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsTabControl.Name" xml:space="preserve">
-    <value>DiagnosticsTabControl</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsTabControl.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabControl, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsTabControl.Parent" xml:space="preserve">
-    <value>DiagnosticsGroupBox</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsTabControl.ZOrder" xml:space="preserve">
-    <value>4</value>
-  </data>
-  <data name="DiagnosticsGroupBox.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
-  <data name="DiagnosticsGroupBox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>383, 27</value>
-  </data>
-  <data name="DiagnosticsGroupBox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>889, 573</value>
-  </data>
-  <data name="DiagnosticsGroupBox.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
-  </data>
-  <data name="DiagnosticsGroupBox.Text" xml:space="preserve">
-    <value>Diagnostics</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsGroupBox.Name" xml:space="preserve">
-    <value>DiagnosticsGroupBox</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsGroupBox.Type" xml:space="preserve">
+  <data name="&gt;&gt;ControlPanelGroupBox.Type" xml:space="preserve">
     <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;DiagnosticsGroupBox.Parent" xml:space="preserve">
+  <data name="&gt;&gt;ControlPanelGroupBox.Parent" xml:space="preserve">
     <value>$this</value>
   </data>
-  <data name="&gt;&gt;DiagnosticsGroupBox.ZOrder" xml:space="preserve">
-    <value>0</value>
+  <data name="&gt;&gt;ControlPanelGroupBox.ZOrder" xml:space="preserve">
+    <value>1</value>
   </data>
   <data name="DiagnosticsSnapshotButton.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
@@ -5382,80 +3897,29 @@
   <data name="&gt;&gt;DiagnosticsResetViewButton.ZOrder" xml:space="preserve">
     <value>3</value>
   </data>
-  <data name="&gt;&gt;CCDBusDiagnosticsTabPage.Name" xml:space="preserve">
-    <value>CCDBusDiagnosticsTabPage</value>
+  <data name="CCDBusDiagnosticsListBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
   </data>
-  <data name="&gt;&gt;CCDBusDiagnosticsTabPage.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="CCDBusDiagnosticsListBox.ItemHeight" type="System.Int32, mscorlib">
+    <value>15</value>
   </data>
-  <data name="&gt;&gt;CCDBusDiagnosticsTabPage.Parent" xml:space="preserve">
-    <value>DiagnosticsTabControl</value>
+  <data name="CCDBusDiagnosticsListBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>2, 2</value>
   </data>
-  <data name="&gt;&gt;CCDBusDiagnosticsTabPage.ZOrder" xml:space="preserve">
+  <data name="CCDBusDiagnosticsListBox.ScrollAlwaysVisible" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="CCDBusDiagnosticsListBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>873, 484</value>
+  </data>
+  <data name="CCDBusDiagnosticsListBox.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
-  </data>
-  <data name="&gt;&gt;PCIBusDiagnosticsTabPage.Name" xml:space="preserve">
-    <value>PCIBusDiagnosticsTabPage</value>
-  </data>
-  <data name="&gt;&gt;PCIBusDiagnosticsTabPage.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;PCIBusDiagnosticsTabPage.Parent" xml:space="preserve">
-    <value>DiagnosticsTabControl</value>
-  </data>
-  <data name="&gt;&gt;PCIBusDiagnosticsTabPage.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;SCIBusPCMDiagnosticsTabPage.Name" xml:space="preserve">
-    <value>SCIBusPCMDiagnosticsTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusPCMDiagnosticsTabPage.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusPCMDiagnosticsTabPage.Parent" xml:space="preserve">
-    <value>DiagnosticsTabControl</value>
-  </data>
-  <data name="&gt;&gt;SCIBusPCMDiagnosticsTabPage.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTCMDiagnosticsTabPage.Name" xml:space="preserve">
-    <value>SCIBusTCMDiagnosticsTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTCMDiagnosticsTabPage.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTCMDiagnosticsTabPage.Parent" xml:space="preserve">
-    <value>DiagnosticsTabControl</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTCMDiagnosticsTabPage.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
-  <data name="DiagnosticsTabControl.Location" type="System.Drawing.Point, System.Drawing">
-    <value>3, 16</value>
-  </data>
-  <data name="DiagnosticsTabControl.Size" type="System.Drawing.Size, System.Drawing">
-    <value>885, 521</value>
-  </data>
-  <data name="DiagnosticsTabControl.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsTabControl.Name" xml:space="preserve">
-    <value>DiagnosticsTabControl</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsTabControl.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabControl, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsTabControl.Parent" xml:space="preserve">
-    <value>DiagnosticsGroupBox</value>
-  </data>
-  <data name="&gt;&gt;DiagnosticsTabControl.ZOrder" xml:space="preserve">
-    <value>4</value>
   </data>
   <data name="&gt;&gt;CCDBusDiagnosticsListBox.Name" xml:space="preserve">
     <value>CCDBusDiagnosticsListBox</value>
   </data>
   <data name="&gt;&gt;CCDBusDiagnosticsListBox.Type" xml:space="preserve">
-    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.3.0, Culture=neutral, PublicKeyToken=null</value>
+    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.4.0, Culture=neutral, PublicKeyToken=null</value>
   </data>
   <data name="&gt;&gt;CCDBusDiagnosticsListBox.Parent" xml:space="preserve">
     <value>CCDBusDiagnosticsTabPage</value>
@@ -5490,11 +3954,29 @@
   <data name="&gt;&gt;CCDBusDiagnosticsTabPage.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
+  <data name="PCIBusDiagnosticsListBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="PCIBusDiagnosticsListBox.ItemHeight" type="System.Int32, mscorlib">
+    <value>15</value>
+  </data>
+  <data name="PCIBusDiagnosticsListBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>2, 2</value>
+  </data>
+  <data name="PCIBusDiagnosticsListBox.ScrollAlwaysVisible" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="PCIBusDiagnosticsListBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>873, 484</value>
+  </data>
+  <data name="PCIBusDiagnosticsListBox.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
   <data name="&gt;&gt;PCIBusDiagnosticsListBox.Name" xml:space="preserve">
     <value>PCIBusDiagnosticsListBox</value>
   </data>
   <data name="&gt;&gt;PCIBusDiagnosticsListBox.Type" xml:space="preserve">
-    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.3.0, Culture=neutral, PublicKeyToken=null</value>
+    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.4.0, Culture=neutral, PublicKeyToken=null</value>
   </data>
   <data name="&gt;&gt;PCIBusDiagnosticsListBox.Parent" xml:space="preserve">
     <value>PCIBusDiagnosticsTabPage</value>
@@ -5526,11 +4008,29 @@
   <data name="&gt;&gt;PCIBusDiagnosticsTabPage.ZOrder" xml:space="preserve">
     <value>1</value>
   </data>
+  <data name="SCIBusPCMDiagnosticsListBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="SCIBusPCMDiagnosticsListBox.ItemHeight" type="System.Int32, mscorlib">
+    <value>15</value>
+  </data>
+  <data name="SCIBusPCMDiagnosticsListBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>2, 2</value>
+  </data>
+  <data name="SCIBusPCMDiagnosticsListBox.ScrollAlwaysVisible" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="SCIBusPCMDiagnosticsListBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>873, 484</value>
+  </data>
+  <data name="SCIBusPCMDiagnosticsListBox.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
   <data name="&gt;&gt;SCIBusPCMDiagnosticsListBox.Name" xml:space="preserve">
     <value>SCIBusPCMDiagnosticsListBox</value>
   </data>
   <data name="&gt;&gt;SCIBusPCMDiagnosticsListBox.Type" xml:space="preserve">
-    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.3.0, Culture=neutral, PublicKeyToken=null</value>
+    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.4.0, Culture=neutral, PublicKeyToken=null</value>
   </data>
   <data name="&gt;&gt;SCIBusPCMDiagnosticsListBox.Parent" xml:space="preserve">
     <value>SCIBusPCMDiagnosticsTabPage</value>
@@ -5565,11 +4065,29 @@
   <data name="&gt;&gt;SCIBusPCMDiagnosticsTabPage.ZOrder" xml:space="preserve">
     <value>2</value>
   </data>
+  <data name="SCIBusTCMDiagnosticsListBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Courier New, 9pt</value>
+  </data>
+  <data name="SCIBusTCMDiagnosticsListBox.ItemHeight" type="System.Int32, mscorlib">
+    <value>15</value>
+  </data>
+  <data name="SCIBusTCMDiagnosticsListBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>2, 2</value>
+  </data>
+  <data name="SCIBusTCMDiagnosticsListBox.ScrollAlwaysVisible" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="SCIBusTCMDiagnosticsListBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>873, 484</value>
+  </data>
+  <data name="SCIBusTCMDiagnosticsListBox.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
   <data name="&gt;&gt;SCIBusTCMDiagnosticsListBox.Name" xml:space="preserve">
     <value>SCIBusTCMDiagnosticsListBox</value>
   </data>
   <data name="&gt;&gt;SCIBusTCMDiagnosticsListBox.Type" xml:space="preserve">
-    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.3.0, Culture=neutral, PublicKeyToken=null</value>
+    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.4.0, Culture=neutral, PublicKeyToken=null</value>
   </data>
   <data name="&gt;&gt;SCIBusTCMDiagnosticsListBox.Parent" xml:space="preserve">
     <value>SCIBusTCMDiagnosticsTabPage</value>
@@ -5604,124 +4122,52 @@
   <data name="&gt;&gt;SCIBusTCMDiagnosticsTabPage.ZOrder" xml:space="preserve">
     <value>3</value>
   </data>
-  <data name="CCDBusDiagnosticsListBox.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Courier New, 9pt</value>
+  <data name="DiagnosticsTabControl.Location" type="System.Drawing.Point, System.Drawing">
+    <value>3, 16</value>
   </data>
-  <data name="CCDBusDiagnosticsListBox.ItemHeight" type="System.Int32, mscorlib">
-    <value>15</value>
+  <data name="DiagnosticsTabControl.Size" type="System.Drawing.Size, System.Drawing">
+    <value>885, 521</value>
   </data>
-  <data name="CCDBusDiagnosticsListBox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>2, 2</value>
-  </data>
-  <data name="CCDBusDiagnosticsListBox.ScrollAlwaysVisible" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="CCDBusDiagnosticsListBox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>873, 484</value>
-  </data>
-  <data name="CCDBusDiagnosticsListBox.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
-  </data>
-  <data name="&gt;&gt;CCDBusDiagnosticsListBox.Name" xml:space="preserve">
-    <value>CCDBusDiagnosticsListBox</value>
-  </data>
-  <data name="&gt;&gt;CCDBusDiagnosticsListBox.Type" xml:space="preserve">
-    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.3.0, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;CCDBusDiagnosticsListBox.Parent" xml:space="preserve">
-    <value>CCDBusDiagnosticsTabPage</value>
-  </data>
-  <data name="&gt;&gt;CCDBusDiagnosticsListBox.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <data name="PCIBusDiagnosticsListBox.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Courier New, 9pt</value>
-  </data>
-  <data name="PCIBusDiagnosticsListBox.ItemHeight" type="System.Int32, mscorlib">
-    <value>15</value>
-  </data>
-  <data name="PCIBusDiagnosticsListBox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>2, 2</value>
-  </data>
-  <data name="PCIBusDiagnosticsListBox.ScrollAlwaysVisible" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="PCIBusDiagnosticsListBox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>873, 484</value>
-  </data>
-  <data name="PCIBusDiagnosticsListBox.TabIndex" type="System.Int32, mscorlib">
+  <data name="DiagnosticsTabControl.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
   </data>
-  <data name="&gt;&gt;PCIBusDiagnosticsListBox.Name" xml:space="preserve">
-    <value>PCIBusDiagnosticsListBox</value>
+  <data name="&gt;&gt;DiagnosticsTabControl.Name" xml:space="preserve">
+    <value>DiagnosticsTabControl</value>
   </data>
-  <data name="&gt;&gt;PCIBusDiagnosticsListBox.Type" xml:space="preserve">
-    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.3.0, Culture=neutral, PublicKeyToken=null</value>
+  <data name="&gt;&gt;DiagnosticsTabControl.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabControl, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;PCIBusDiagnosticsListBox.Parent" xml:space="preserve">
-    <value>PCIBusDiagnosticsTabPage</value>
+  <data name="&gt;&gt;DiagnosticsTabControl.Parent" xml:space="preserve">
+    <value>DiagnosticsGroupBox</value>
   </data>
-  <data name="&gt;&gt;PCIBusDiagnosticsListBox.ZOrder" xml:space="preserve">
-    <value>0</value>
+  <data name="&gt;&gt;DiagnosticsTabControl.ZOrder" xml:space="preserve">
+    <value>4</value>
   </data>
-  <data name="SCIBusPCMDiagnosticsListBox.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Courier New, 9pt</value>
+  <data name="DiagnosticsGroupBox.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
   </data>
-  <data name="SCIBusPCMDiagnosticsListBox.ItemHeight" type="System.Int32, mscorlib">
-    <value>15</value>
+  <data name="DiagnosticsGroupBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>383, 27</value>
   </data>
-  <data name="SCIBusPCMDiagnosticsListBox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>2, 2</value>
+  <data name="DiagnosticsGroupBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>889, 573</value>
   </data>
-  <data name="SCIBusPCMDiagnosticsListBox.ScrollAlwaysVisible" type="System.Boolean, mscorlib">
-    <value>True</value>
+  <data name="DiagnosticsGroupBox.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
   </data>
-  <data name="SCIBusPCMDiagnosticsListBox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>873, 484</value>
+  <data name="DiagnosticsGroupBox.Text" xml:space="preserve">
+    <value>Diagnostics</value>
   </data>
-  <data name="SCIBusPCMDiagnosticsListBox.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
+  <data name="&gt;&gt;DiagnosticsGroupBox.Name" xml:space="preserve">
+    <value>DiagnosticsGroupBox</value>
   </data>
-  <data name="&gt;&gt;SCIBusPCMDiagnosticsListBox.Name" xml:space="preserve">
-    <value>SCIBusPCMDiagnosticsListBox</value>
+  <data name="&gt;&gt;DiagnosticsGroupBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;SCIBusPCMDiagnosticsListBox.Type" xml:space="preserve">
-    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.3.0, Culture=neutral, PublicKeyToken=null</value>
+  <data name="&gt;&gt;DiagnosticsGroupBox.Parent" xml:space="preserve">
+    <value>$this</value>
   </data>
-  <data name="&gt;&gt;SCIBusPCMDiagnosticsListBox.Parent" xml:space="preserve">
-    <value>SCIBusPCMDiagnosticsTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusPCMDiagnosticsListBox.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <data name="SCIBusTCMDiagnosticsListBox.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Courier New, 9pt</value>
-  </data>
-  <data name="SCIBusTCMDiagnosticsListBox.ItemHeight" type="System.Int32, mscorlib">
-    <value>15</value>
-  </data>
-  <data name="SCIBusTCMDiagnosticsListBox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>2, 2</value>
-  </data>
-  <data name="SCIBusTCMDiagnosticsListBox.ScrollAlwaysVisible" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="SCIBusTCMDiagnosticsListBox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>873, 484</value>
-  </data>
-  <data name="SCIBusTCMDiagnosticsListBox.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTCMDiagnosticsListBox.Name" xml:space="preserve">
-    <value>SCIBusTCMDiagnosticsListBox</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTCMDiagnosticsListBox.Type" xml:space="preserve">
-    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.3.0, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTCMDiagnosticsListBox.Parent" xml:space="preserve">
-    <value>SCIBusTCMDiagnosticsTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusTCMDiagnosticsListBox.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;DiagnosticsGroupBox.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
@@ -5732,9 +4178,6 @@
   </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
     <value>1284, 611</value>
-  </data>
-  <data name="$this.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
   </data>
   <data name="$this.StartPosition" type="System.Windows.Forms.FormStartPosition, System.Windows.Forms">
     <value>CenterScreen</value>
@@ -5824,6 +4267,24 @@
     <value>ImperialUnitsToolStripMenuItem</value>
   </data>
   <data name="&gt;&gt;ImperialUnitsToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;UARTBaudrateToolStripMenuItem.Name" xml:space="preserve">
+    <value>UARTBaudrateToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;UARTBaudrateToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Baudrate250000ToolStripMenuItem.Name" xml:space="preserve">
+    <value>Baudrate250000ToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;Baudrate250000ToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Baudrate115200ToolStripMenuItem.Name" xml:space="preserve">
+    <value>Baudrate115200ToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;Baudrate115200ToolStripMenuItem.Type" xml:space="preserve">
     <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;IncludeTimestampInLogFilesToolStripMenuItem.Name" xml:space="preserve">

@@ -209,6 +209,17 @@ namespace ChryslerScanner
 
             ChangeLanguage();
 
+            if (Properties.Settings.Default.UARTBaudrate == 250000)
+            {
+                Baudrate250000ToolStripMenuItem.Checked = true;
+                Baudrate115200ToolStripMenuItem.Checked = false;
+            }
+            else if (Properties.Settings.Default.UARTBaudrate == 115200)
+            {
+                Baudrate250000ToolStripMenuItem.Checked = false;
+                Baudrate115200ToolStripMenuItem.Checked = true;
+            }
+
             if (Properties.Settings.Default.Timestamp == true)
             {
                 IncludeTimestampInLogFilesToolStripMenuItem.Checked = true;
@@ -1682,6 +1693,46 @@ namespace ChryslerScanner
                                         Util.UpdateTextBox(USBTextBox, "[RX->] Invalid ProgVolt settings packet:", Packet.rx.buffer);
                                     }
                                     break;
+                                case (byte)(Packet.SettingsMode.setUARTBaudrate):
+                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length >= 4))
+                                    {
+                                        if (Packet.SP.IsOpen)
+                                            Packet.SP.Close();
+
+                                        Packet.SP.PortName = SelectedPort;
+                                        Packet.SP.BaudRate = Properties.Settings.Default.UARTBaudrate;
+                                        Packet.SP.DataBits = 8;
+                                        Packet.SP.StopBits = StopBits.One;
+                                        Packet.SP.Parity = Parity.None;
+                                        Packet.SP.ReadTimeout = 500;
+                                        Packet.SP.WriteTimeout = 500;
+
+                                        try
+                                        {
+                                            Packet.SP.Open();
+                                        }
+                                        catch
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] " + Packet.SP.PortName + " is opened by another application.");
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Device not found on " + Packet.SP.PortName + ".");
+                                            break;
+                                        }
+
+                                        if (!Packet.SP.IsOpen)
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] " + Packet.SP.PortName + " cannot be opened.");
+                                            break;
+                                        }
+
+                                        uint baudrate = (uint)((Packet.rx.payload[0] << 24) | (Packet.rx.payload[1] << 16) | (Packet.rx.payload[2] << 8) | Packet.rx.payload[3]);
+
+                                        Util.UpdateTextBox(USBTextBox, "[INFO] Scanner baudrate = " + baudrate);
+                                    }
+                                    else
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid UART baudrate packet:", Packet.rx.buffer);
+                                    }
+                                    break;
                                 default:
                                     Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", Packet.rx.buffer);
                                     break;
@@ -3129,7 +3180,7 @@ namespace ChryslerScanner
                     Packet.SP.Close();
 
                 Packet.SP.PortName = SelectedPort;
-                Packet.SP.BaudRate = 250000;
+                Packet.SP.BaudRate = Properties.Settings.Default.UARTBaudrate;
                 Packet.SP.DataBits = 8;
                 Packet.SP.StopBits = StopBits.One;
                 Packet.SP.Parity = Parity.None;
@@ -3159,6 +3210,8 @@ namespace ChryslerScanner
                 MSP.Start();
 
                 Util.UpdateTextBox(USBTextBox, "[INFO] Device connected to " + SelectedPort + ".");
+
+                UpdateUARTBaudrate(Properties.Settings.Default.UARTBaudrate);
 
                 DeviceFound = true;
                 ConnectButton.Text = Languages.strings.Disconnect;
@@ -3203,6 +3256,7 @@ namespace ChryslerScanner
                     timeout = false;
                     Util.UpdateTextBox(USBTextBox, "[INFO] Device disconnected (" + SelectedPort + ").");
                     Text = "Chrysler Scanner  |  GUI " + GUIVersion;
+                    Packet.SP.Close();
                 }
             }
         }
@@ -5963,14 +6017,10 @@ namespace ChryslerScanner
         {
             if (BootstrapTools == null)
             {
-                SuspendLayout();
-
                 ScannerTabControl.SelectedTab = SCIBusControlTabPage;
 
                 if (SCIBusModuleComboBox.SelectedIndex == 0) DiagnosticsTabControl.SelectedTab = SCIBusPCMDiagnosticsTabPage;
                 else if (SCIBusModuleComboBox.SelectedIndex == 1) DiagnosticsTabControl.SelectedTab = SCIBusTCMDiagnosticsTabPage;
-
-                ResumeLayout();
 
                 BootstrapTools = new BootstrapToolsForm(this)
                 {
@@ -5998,12 +6048,8 @@ namespace ChryslerScanner
         {
             if (EngineTools == null)
             {
-                SuspendLayout();
-
                 ScannerTabControl.SelectedTab = SCIBusControlTabPage;
                 DiagnosticsTabControl.SelectedTab = SCIBusPCMDiagnosticsTabPage;
-
-                ResumeLayout();
 
                 EngineTools = new EngineToolsForm(this)
                 {
@@ -6031,12 +6077,8 @@ namespace ChryslerScanner
         {
             if (ABSTools == null)
             {
-                SuspendLayout();
-
                 ScannerTabControl.SelectedTab = CCDBusControlTabPage;
                 DiagnosticsTabControl.SelectedTab = CCDBusDiagnosticsTabPage;
-
-                ResumeLayout();
 
                 ABSTools = new ABSToolsForm(this)
                 {
@@ -6214,6 +6256,57 @@ namespace ChryslerScanner
                 ABSTools.Text = Languages.strings.ABSTools;
                 // TODO
             }
+        }
+
+        private async void UpdateUARTBaudrate(int baudrate)
+        {
+            if (!Packet.SP.IsOpen)
+                return;
+            
+            byte[] BaudratePayload = new byte[4];
+
+            BaudratePayload[0] = (byte)((baudrate >> 24) & 0xFF);
+            BaudratePayload[1] = (byte)((baudrate >> 16) & 0xFF);
+            BaudratePayload[2] = (byte)((baudrate >> 8) & 0xFF);
+            BaudratePayload[3] = (byte)(baudrate & 0xFF);
+
+            Packet.tx.bus = (byte)Packet.Bus.usb;
+            Packet.tx.command = (byte)Packet.Command.settings;
+            Packet.tx.mode = (byte)Packet.SettingsMode.setUARTBaudrate;
+            Packet.tx.payload = BaudratePayload;
+            Packet.GeneratePacket();
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Set UART baudrate:", Packet.tx.buffer);
+            Util.UpdateTextBox(USBTextBox, "[INFO] GUI baudrate = " + baudrate);
+
+            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+        }
+
+        private void Baudrate250000ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Baudrate250000ToolStripMenuItem.Checked = true;
+            Baudrate115200ToolStripMenuItem.Checked = false;
+            
+            Properties.Settings.Default.UARTBaudrate = 250000;
+            Properties.Settings.Default.Save(); // save setting in application configuration file
+
+            UpdateUARTBaudrate(Properties.Settings.Default.UARTBaudrate);
+
+            MessageBox.Show("Restart GUI!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Application.Exit();
+        }
+
+        private void Baudrate115200ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Baudrate250000ToolStripMenuItem.Checked = false;
+            Baudrate115200ToolStripMenuItem.Checked = true;
+
+            Properties.Settings.Default.UARTBaudrate = 115200;
+            Properties.Settings.Default.Save(); // save setting in application configuration file
+
+            UpdateUARTBaudrate(Properties.Settings.Default.UARTBaudrate);
+
+            MessageBox.Show("Restart GUI!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Application.Exit();
         }
 
         private void IncludeTimestampInLogFilesToolStripMenuItem_Click(object sender, EventArgs e)

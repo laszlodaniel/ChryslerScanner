@@ -106,5 +106,17 @@ namespace ChryslerScanner.Properties {
                 this["DisplayRawBusPackets"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("250000")]
+        public int UARTBaudrate {
+            get {
+                return ((int)(this["UARTBaudrate"]));
+            }
+            set {
+                this["UARTBaudrate"] = value;
+            }
+        }
     }
 }

@@ -45,7 +45,7 @@
 #include "esp_efuse_custom_table.h"
 
 uart_config_t usb_config = {
-    .baud_rate = 250000,
+    .baud_rate = 250000, // default, changed after loading settings
     .data_bits = UART_DATA_8_BITS,
     .stop_bits = UART_STOP_BITS_1,
     .parity = UART_PARITY_DISABLE,
@@ -266,6 +266,7 @@ void blink_led(uint8_t LED);
 bool open_settings();
 void close_settings();
 uint32_t read_millivolts(adc1_channel_t adc_channel);
+void init_usb();
 
 /**
  * @brief Get coding scheme used for efuse block 3 (custom).
@@ -717,6 +718,7 @@ void default_settings()
         nvs_set_u8(settings_handle, "ccd_settings", 0x41);
         nvs_set_u8(settings_handle, "pci_settings", 0x40);
         nvs_set_u8(settings_handle, "sci_settings", 0x81);
+        nvs_set_i32(settings_handle, "uart_baudrate", 250000);
         close_settings();
         send_usb_packet(Bus_USB, Command_Error, Error_OK, ack, sizeof(ack));
     }
@@ -1264,6 +1266,28 @@ void parse_usb_command()
                             }
 
                             apply_progvolt(usb_packet.payload[0]);
+                            break;
+                        }
+                        case Settings_UARTBaudrate:
+                        {
+                            if (usb_packet.payload_length < 4)
+                            {
+                                send_usb_packet(Bus_USB, Command_Error, Error_Payload, err, sizeof(err));
+                                break;
+                            }
+
+                            uint32_t uart_baudrate = to_uint32(usb_packet.payload[0], usb_packet.payload[1], usb_packet.payload[2], usb_packet.payload[3]);
+                            usb_config.baud_rate = uart_baudrate;
+
+                            if (open_settings())
+                            {
+                                nvs_set_i32(settings_handle, "uart_baudrate", uart_baudrate);
+                                close_settings();
+                            }
+
+                            uint8_t ret[4] = { usb_packet.payload[0], usb_packet.payload[1], usb_packet.payload[2], usb_packet.payload[3] };
+                            send_usb_packet(Bus_USB, Command_Settings, Settings_UARTBaudrate, ret, sizeof(ret));
+                            init_usb(); // apply new baudrate
                             break;
                         }
                         default:
@@ -2145,6 +2169,7 @@ bool IRAM_ATTR ccd_idle_timer_isr_callback(void *arg)
     ccd.state.idle = true;
     timer_pause(CCD_IDLE_TIMER_GROUP, CCD_IDLE_TIMER);
     ccd.msg.rx_length = ccd.msg.rx_ptr;
+    ccd.msg.last_rx_length = ccd.msg.rx_length; // remember last message length
     ccd.msg.rx_ptr = 0;
     return true;
 }
@@ -4516,6 +4541,7 @@ bool IRAM_ATTR pci_idle_timer_isr_callback(void *arg)
     }
 
     pci.msg.rx_length = pci_rx_ptr;
+    pci.msg.last_rx_length = pci.msg.rx_length; // remember last message length
     pci_rx_ptr = 0;
     memset(pci_rx_buf, 0, sizeof(pci_rx_buf));
 
@@ -4959,6 +4985,9 @@ void init_leds()
  */
 void init_usb()
 {
+    if (uart_is_driver_installed(UART_USB))
+        ESP_ERROR_CHECK(uart_driver_delete(UART_USB));
+    
     ESP_ERROR_CHECK(uart_param_config(UART_USB, &usb_config));
     ESP_ERROR_CHECK(uart_set_pin(UART_USB, USB_TX_PIN, USB_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
     ESP_ERROR_CHECK(uart_driver_install(UART_USB, USB_RX_BUF_SIZE, USB_TX_BUF_SIZE, 20, &usb_uart_queue, ESP_INTR_FLAG_SHARED));
@@ -5097,7 +5126,8 @@ void load_settings()
             (nvs_get_u16(settings_handle, "blink_duration", &led_blink_duration) != ESP_OK) &&
             (nvs_get_u8(settings_handle, "ccd_settings", &ccd.bus_settings) != ESP_OK) &&
             (nvs_get_u8(settings_handle, "pci_settings", &pci.bus_settings) != ESP_OK) &&
-            (nvs_get_u8(settings_handle, "sci_settings", &sci.bus_settings) != ESP_OK))
+            (nvs_get_u8(settings_handle, "sci_settings", &sci.bus_settings) != ESP_OK) &&
+            (nvs_get_i32(settings_handle, "uart_baudrate", &usb_config.baud_rate) != ESP_OK))
         {
             close_settings();
             default_settings();
@@ -5126,6 +5156,10 @@ void load_settings()
         {
             sci.bus_settings = 0x81;
         }
+        if (nvs_get_i32(settings_handle, "uart_baudrate", &usb_config.baud_rate) != ESP_OK)
+        {
+            usb_config.baud_rate = 250000;
+        }
 
         nvs_close(settings_handle);
 
@@ -5143,6 +5177,8 @@ void load_settings()
         {
             gpio_set_level(PWR_LED_PIN, LED_OFF); // turn off PWR LED
         }
+
+        init_usb();
     }
 }
 
