@@ -3211,8 +3211,6 @@ namespace ChryslerScanner
 
                 Util.UpdateTextBox(USBTextBox, "[INFO] Device connected to " + SelectedPort + ".");
 
-                UpdateUARTBaudrate(Properties.Settings.Default.UARTBaudrate);
-
                 DeviceFound = true;
                 ConnectButton.Text = Languages.strings.Disconnect;
                 COMPortsComboBox.Enabled = false;
