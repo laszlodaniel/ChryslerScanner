@@ -244,7 +244,7 @@ namespace ChryslerScanner
                 {
                     if (_stream == null)
                         return;
-                    
+
                     rx.buffer = await SerialPortExtension.ReadPacketAsync(_stream);
 
                     if (rx.buffer == null)
@@ -271,16 +271,17 @@ namespace ChryslerScanner
         /// </summary>
         /// <param name="packet">Input byte array.</param>
         /// <returns>True if input byte array seems to be a full communication packet, otherwise returns false.</returns>
-        public static bool IsPacketComplete(byte[] packet)
+        public static byte PacketStatus(byte[] packet)
         {
             if ((packet.Length > 5) && (packet[0] == 0x3D))
             {
                 int length = (packet[1] << 8) + packet[2] + 4;
 
-                if (packet.Length < length) return false;
-                else return true;
+                if (packet.Length < length) return 1;
+                else if (length >= 1024) return 2;
+                else return 0;
             }
-            else return false;
+            else return 3;
         }
 
         /// <summary>

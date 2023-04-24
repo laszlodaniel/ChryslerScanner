@@ -226,13 +226,13 @@
     <value>Unit</value>
   </data>
   <data name="Baudrate250000ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
+    <value>110, 22</value>
   </data>
   <data name="Baudrate250000ToolStripMenuItem.Text" xml:space="preserve">
     <value>250000</value>
   </data>
   <data name="Baudrate115200ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
+    <value>110, 22</value>
   </data>
   <data name="Baudrate115200ToolStripMenuItem.Text" xml:space="preserve">
     <value>115200</value>
@@ -2451,35 +2451,68 @@
   <data name="&gt;&gt;PCIBusControlTabPage.ZOrder" xml:space="preserve">
     <value>2</value>
   </data>
-  <data name="SCIBusNGCModeCheckBox.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
+  <data name="SCIBusLogicComboBox.Items" xml:space="preserve">
+    <value>OBD1 SBEC</value>
   </data>
-  <data name="SCIBusNGCModeCheckBox.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
+  <data name="SCIBusLogicComboBox.Items1" xml:space="preserve">
+    <value>OBD1 JTEC</value>
   </data>
-  <data name="SCIBusNGCModeCheckBox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>273, 195</value>
+  <data name="SCIBusLogicComboBox.Items2" xml:space="preserve">
+    <value>OBD2</value>
   </data>
-  <data name="SCIBusNGCModeCheckBox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>82, 17</value>
+  <data name="SCIBusLogicComboBox.Items3" xml:space="preserve">
+    <value>OBD2 NGC</value>
   </data>
-  <data name="SCIBusNGCModeCheckBox.TabIndex" type="System.Int32, mscorlib">
-    <value>20</value>
+  <data name="SCIBusLogicComboBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>200, 192</value>
   </data>
-  <data name="SCIBusNGCModeCheckBox.Text" xml:space="preserve">
-    <value>NGC debug</value>
+  <data name="SCIBusLogicComboBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>93, 21</value>
   </data>
-  <data name="&gt;&gt;SCIBusNGCModeCheckBox.Name" xml:space="preserve">
-    <value>SCIBusNGCModeCheckBox</value>
+  <data name="SCIBusLogicComboBox.TabIndex" type="System.Int32, mscorlib">
+    <value>22</value>
   </data>
-  <data name="&gt;&gt;SCIBusNGCModeCheckBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="&gt;&gt;SCIBusLogicComboBox.Name" xml:space="preserve">
+    <value>SCIBusLogicComboBox</value>
   </data>
-  <data name="&gt;&gt;SCIBusNGCModeCheckBox.Parent" xml:space="preserve">
+  <data name="&gt;&gt;SCIBusLogicComboBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusLogicComboBox.Parent" xml:space="preserve">
     <value>SCIBusControlTabPage</value>
   </data>
-  <data name="&gt;&gt;SCIBusNGCModeCheckBox.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;SCIBusLogicComboBox.ZOrder" xml:space="preserve">
     <value>0</value>
+  </data>
+  <data name="SCIBusLogicLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="SCIBusLogicLabel.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="SCIBusLogicLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>163, 196</value>
+  </data>
+  <data name="SCIBusLogicLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>36, 13</value>
+  </data>
+  <data name="SCIBusLogicLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>21</value>
+  </data>
+  <data name="SCIBusLogicLabel.Text" xml:space="preserve">
+    <value>Logic:</value>
+  </data>
+  <data name="&gt;&gt;SCIBusLogicLabel.Name" xml:space="preserve">
+    <value>SCIBusLogicLabel</value>
+  </data>
+  <data name="&gt;&gt;SCIBusLogicLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SCIBusLogicLabel.Parent" xml:space="preserve">
+    <value>SCIBusControlTabPage</value>
+  </data>
+  <data name="&gt;&gt;SCIBusLogicLabel.ZOrder" xml:space="preserve">
+    <value>1</value>
   </data>
   <data name="SCIBusOBDConfigurationComboBox.Items" xml:space="preserve">
     <value>A</value>
@@ -2506,7 +2539,7 @@
     <value>SCIBusControlTabPage</value>
   </data>
   <data name="&gt;&gt;SCIBusOBDConfigurationComboBox.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
   </data>
   <data name="SCIBusOBDConfigurationLabel.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -2536,46 +2569,16 @@
     <value>SCIBusControlTabPage</value>
   </data>
   <data name="&gt;&gt;SCIBusOBDConfigurationLabel.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="SCIBusInvertedLogicCheckBox.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="SCIBusInvertedLogicCheckBox.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
-  </data>
-  <data name="SCIBusInvertedLogicCheckBox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>161, 195</value>
-  </data>
-  <data name="SCIBusInvertedLogicCheckBox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>85, 17</value>
-  </data>
-  <data name="SCIBusInvertedLogicCheckBox.TabIndex" type="System.Int32, mscorlib">
-    <value>18</value>
-  </data>
-  <data name="SCIBusInvertedLogicCheckBox.Text" xml:space="preserve">
-    <value>SBEC2 logic</value>
-  </data>
-  <data name="&gt;&gt;SCIBusInvertedLogicCheckBox.Name" xml:space="preserve">
-    <value>SCIBusInvertedLogicCheckBox</value>
-  </data>
-  <data name="&gt;&gt;SCIBusInvertedLogicCheckBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SCIBusInvertedLogicCheckBox.Parent" xml:space="preserve">
-    <value>SCIBusControlTabPage</value>
-  </data>
-  <data name="&gt;&gt;SCIBusInvertedLogicCheckBox.ZOrder" xml:space="preserve">
     <value>3</value>
   </data>
   <data name="SCIBusModuleConfigSpeedApplyButton.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
   </data>
   <data name="SCIBusModuleConfigSpeedApplyButton.Location" type="System.Drawing.Point, System.Drawing">
-    <value>293, 166</value>
+    <value>299, 191</value>
   </data>
   <data name="SCIBusModuleConfigSpeedApplyButton.Size" type="System.Drawing.Size, System.Drawing">
-    <value>53, 23</value>
+    <value>48, 23</value>
   </data>
   <data name="SCIBusModuleConfigSpeedApplyButton.TabIndex" type="System.Int32, mscorlib">
     <value>19</value>
@@ -2614,7 +2617,7 @@
     <value>200, 167</value>
   </data>
   <data name="SCIBusSpeedComboBox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>86, 21</value>
+    <value>93, 21</value>
   </data>
   <data name="SCIBusSpeedComboBox.TabIndex" type="System.Int32, mscorlib">
     <value>17</value>
@@ -3919,7 +3922,7 @@
     <value>CCDBusDiagnosticsListBox</value>
   </data>
   <data name="&gt;&gt;CCDBusDiagnosticsListBox.Type" xml:space="preserve">
-    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.4.0, Culture=neutral, PublicKeyToken=null</value>
+    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.13.0, Culture=neutral, PublicKeyToken=null</value>
   </data>
   <data name="&gt;&gt;CCDBusDiagnosticsListBox.Parent" xml:space="preserve">
     <value>CCDBusDiagnosticsTabPage</value>
@@ -3976,7 +3979,7 @@
     <value>PCIBusDiagnosticsListBox</value>
   </data>
   <data name="&gt;&gt;PCIBusDiagnosticsListBox.Type" xml:space="preserve">
-    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.4.0, Culture=neutral, PublicKeyToken=null</value>
+    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.13.0, Culture=neutral, PublicKeyToken=null</value>
   </data>
   <data name="&gt;&gt;PCIBusDiagnosticsListBox.Parent" xml:space="preserve">
     <value>PCIBusDiagnosticsTabPage</value>
@@ -4030,7 +4033,7 @@
     <value>SCIBusPCMDiagnosticsListBox</value>
   </data>
   <data name="&gt;&gt;SCIBusPCMDiagnosticsListBox.Type" xml:space="preserve">
-    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.4.0, Culture=neutral, PublicKeyToken=null</value>
+    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.13.0, Culture=neutral, PublicKeyToken=null</value>
   </data>
   <data name="&gt;&gt;SCIBusPCMDiagnosticsListBox.Parent" xml:space="preserve">
     <value>SCIBusPCMDiagnosticsTabPage</value>
@@ -4087,7 +4090,7 @@
     <value>SCIBusTCMDiagnosticsListBox</value>
   </data>
   <data name="&gt;&gt;SCIBusTCMDiagnosticsListBox.Type" xml:space="preserve">
-    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.4.0, Culture=neutral, PublicKeyToken=null</value>
+    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.13.0, Culture=neutral, PublicKeyToken=null</value>
   </data>
   <data name="&gt;&gt;SCIBusTCMDiagnosticsListBox.Parent" xml:space="preserve">
     <value>SCIBusTCMDiagnosticsTabPage</value>

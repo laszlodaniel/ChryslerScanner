@@ -34,9 +34,22 @@ namespace ChryslerScanner
                 
                 packet.Add(buffer[0]);
 
-                if (packet[0] != 0x3D) packet.Clear(); // make sure that the first byte is always the SYNC byte
+                if (packet[0] != 0x3D)
+                {
+                    packet.Clear(); // make sure that the first byte is always the SYNC byte
+                }
 
-                if (Packet.IsPacketComplete(packet.ToArray())) return packet.ToArray();
+                if (packet.Count >= 3) // check length
+                {
+                    if ((packet[1] << 8) + packet[2] >= 1024)
+                    {
+                        packet.Clear(); // invalid packet
+                    }
+                }
+
+                byte status = Packet.PacketStatus(packet.ToArray());
+
+                if (status == 0) return packet.ToArray();
             }
 
             return null;

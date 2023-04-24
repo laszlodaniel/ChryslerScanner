@@ -85,13 +85,14 @@ namespace ChryslerScanner
         private enum Bootloader
         {
             Empty = 0x00,
-            SBEC3_128k = 0x01,
+            SBEC3_SBEC3PLUS_128k = 0x01,
             SBEC3_128k_custom = 0x02,
-            SBEC3_256k = 0x03,
+            SBEC3A_3APLUS_3B_256k = 0x03,
             SBEC3_256k_custom = 0x04,
             EATX3_128k = 0x05,
-            EATX3_256k = 0x06,
-            JTEC_256k = 0x07
+            EATX3A_256k = 0x06,
+            JTEC = 0x07,
+            JTECPLUS_256k = 0x08
         }
 
         private enum WorkerFunction
@@ -436,7 +437,8 @@ namespace ChryslerScanner
 
                             switch (BootloaderComboBox.SelectedIndex)
                             {
-                                case (byte)Bootloader.JTEC_256k:
+                                case (byte)Bootloader.JTEC:
+                                case (byte)Bootloader.JTECPLUS_256k:
                                     WorkerFunctionComboBox.SelectedIndex = (byte)WorkerFunction.EEPROMWrite;
                                     break;
                                 default:
@@ -469,7 +471,8 @@ namespace ChryslerScanner
                         {
                             switch (BootloaderComboBox.SelectedIndex)
                             {
-                                case (byte)Bootloader.JTEC_256k:
+                                case (byte)Bootloader.JTEC:
+                                case (byte)Bootloader.JTECPLUS_256k:
                                     WorkerFunctionComboBox.SelectedIndex = (byte)WorkerFunction.EEPROMRead;
                                     break;
                                 default:
@@ -501,7 +504,8 @@ namespace ChryslerScanner
                         {
                             switch (BootloaderComboBox.SelectedIndex)
                             {
-                                case (byte)Bootloader.JTEC_256k:
+                                case (byte)Bootloader.JTEC:
+                                case (byte)Bootloader.JTECPLUS_256k:
                                     WorkerFunctionComboBox.SelectedIndex = (byte)WorkerFunction.EEPROMWrite;
                                     break;
                                 default:
@@ -623,6 +627,14 @@ namespace ChryslerScanner
             CurrentTask = Task.None;
         }
 
+        private void BootloaderComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (BootloaderComboBox.SelectedIndex == 7)
+            {
+                FlashChipComboBox.SelectedIndex = 8; // auto-select "N28F010 (128k+128k)"
+            }
+        }
+
         private void BootstrapButton_Click(object sender, EventArgs e)
         {
             string LastPCMSpeed = OriginalForm.PCM.speed;
@@ -665,26 +677,29 @@ namespace ChryslerScanner
 
                     switch ((byte)BootloaderComboBox.SelectedIndex)
                     {
-                        case (byte)Bootloader.SBEC3_128k:
-                            OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: SBEC3 (128k).");
+                        case (byte)Bootloader.SBEC3_SBEC3PLUS_128k:
+                            OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: SBEC3/SBEC3+ (128k).");
                             break;
                         case (byte)Bootloader.SBEC3_128k_custom:
                             OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: SBEC3 (128k) custom.");
                             break;
-                        case (byte)Bootloader.SBEC3_256k:
-                            OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: SBEC3 (256k).");
+                        case (byte)Bootloader.SBEC3A_3APLUS_3B_256k:
+                            OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: SBEC3A/3A+/3B (256k).");
                             break;
                         case (byte)Bootloader.SBEC3_256k_custom:
-                            OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: SBEC3 (256k) custom.");
+                            OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: SBEC3A (256k) custom.");
                             break;
                         case (byte)Bootloader.EATX3_128k:
                             OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: EATX3 (128k).");
                             break;
-                        case (byte)Bootloader.EATX3_256k:
-                            OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: EATX3 (256k).");
+                        case (byte)Bootloader.EATX3A_256k:
+                            OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: EATX3A (256k).");
                             break;
-                        case (byte)Bootloader.JTEC_256k:
+                        case (byte)Bootloader.JTEC:
                             OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: JTEC (256k).");
+                            break;
+                        case (byte)Bootloader.JTECPLUS_256k:
+                            OriginalForm.UpdateUSBTextBox("[INFO] Bootloader: JTEC+ (256k).");
                             break;
                         case (byte)Bootloader.Empty:
                         default:
@@ -821,6 +836,7 @@ namespace ChryslerScanner
                     case 6:
                     case 7:
                     case 8:
+                    case 9:
                     default:
                         FlashChipSize = 262144; // bytes
                         break;
@@ -864,7 +880,7 @@ namespace ChryslerScanner
 
                         UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Flash file is loaded.");
                         UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Name: " + Path.GetFileName(OpenFlashFileDialog.FileName));
-                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Size: " + FlashFileBuffer.Length + " bytes = " + ((double)FlashFileBuffer.Length / 1024.0).ToString("0.00") + " kilobytes.");
+                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Size: " + FlashFileBuffer.Length + " bytes = " + ((double)FlashFileBuffer.Length / 1024.0).ToString("0.00").Replace(",",".") + " kilobytes.");
 
                         if (FlashChipComboBox.SelectedIndex == 0) return;
                             
@@ -1005,6 +1021,11 @@ namespace ChryslerScanner
         {
             if (SCIBusBootstrapWorker.IsBusy && SCIBusBootstrapWorker.WorkerSupportsCancellation)
             {
+                if (MessageBox.Show("Are you sure you want to stop flash programming?" + Environment.NewLine + Environment.NewLine + "The controller will be bricked/unusable but it can be re-flashed at any later time.", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.No)
+                {
+                    return;
+                }
+
                 SCIBusBootstrapWorker.CancelAsync();
             }
         }
@@ -1065,9 +1086,10 @@ namespace ChryslerScanner
 
         private void EEPROMWriteButton_Click(object sender, EventArgs e)
         {
-            if (BootloaderComboBox.SelectedIndex == (byte)Bootloader.JTEC_256k)
+            if ((BootloaderComboBox.SelectedIndex == (byte)Bootloader.JTEC) ||
+                (BootloaderComboBox.SelectedIndex == (byte)Bootloader.JTECPLUS_256k))
             {
-                MessageBox.Show("JTEC EEPROM writing is not supported yet.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("JTEC EEPROM writing is not supported yet." + Environment.NewLine + Environment.NewLine + "Instead, use \"Tools / Read/Write memory\" menu in normal key-on mode.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -1129,9 +1151,10 @@ namespace ChryslerScanner
 
         private void EEPROMReadButton_Click(object sender, EventArgs e)
         {
-            if (BootloaderComboBox.SelectedIndex == (byte)Bootloader.JTEC_256k)
+            if ((BootloaderComboBox.SelectedIndex == (byte)Bootloader.JTEC) ||
+                (BootloaderComboBox.SelectedIndex == (byte)Bootloader.JTECPLUS_256k))
             {
-                MessageBox.Show("JTEC EEPROM reading is not supported yet.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("JTEC EEPROM reading is not supported yet." + Environment.NewLine + Environment.NewLine + "Instead, use \"Tools / Read/Write memory\" menu in normal key-on mode.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -1200,6 +1223,11 @@ namespace ChryslerScanner
         {
             if (SCIBusBootstrapWorker.IsBusy && SCIBusBootstrapWorker.WorkerSupportsCancellation)
             {
+                if (MessageBox.Show("Are you sure you want to stop EEPROM programming?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.No)
+                {
+                    return;
+                }
+
                 SCIBusBootstrapWorker.CancelAsync();
             }
         }
@@ -1273,7 +1301,8 @@ namespace ChryslerScanner
                                                         {
                                                             switch (BootloaderComboBox.SelectedIndex)
                                                             {
-                                                                case (byte)Bootloader.JTEC_256k:
+                                                                case (byte)Bootloader.JTEC:
+                                                                case (byte)Bootloader.JTECPLUS_256k:
                                                                     UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 5. Backup EEPROM." + Environment.NewLine + Environment.NewLine + "Skip EEPROM backup.");
                                                                     CurrentTask = Task.EraseFlashMemory;
                                                                     break;
@@ -1285,7 +1314,6 @@ namespace ChryslerScanner
                                                         else
                                                         {
                                                             UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 5. Backup EEPROM." + Environment.NewLine + Environment.NewLine + "Skip EEPROM backup.");
-
                                                             CurrentTask = Task.EraseFlashMemory;
                                                         }
                                                     }
@@ -1341,7 +1369,8 @@ namespace ChryslerScanner
 
                                             switch (BootloaderComboBox.SelectedIndex)
                                             {
-                                                case (byte)Bootloader.JTEC_256k:
+                                                case (byte)Bootloader.JTEC:
+                                                case (byte)Bootloader.JTECPLUS_256k:
                                                     UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 2. Read part number." + Environment.NewLine + Environment.NewLine + "Skip part number read.");
 
                                                     if (FlashChipComboBox.SelectedIndex == 0)
@@ -1359,7 +1388,17 @@ namespace ChryslerScanner
                                                             SCIBusBootstrapWorker.CancelAsync();
                                                         }
 
-                                                        CurrentTask = Task.BackupFlashMemory;
+                                                        if (FlashMemoryBackupCheckBox.Checked)
+                                                        {
+                                                            CurrentTask = Task.BackupFlashMemory;
+                                                        }
+                                                        else
+                                                        {
+                                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 4. Backup flash memory." + Environment.NewLine + Environment.NewLine + "Skip flash memory backup.");
+                                                            UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 5. Backup EEPROM." + Environment.NewLine + Environment.NewLine + "Skip EEPROM backup.");
+
+                                                            CurrentTask = Task.EraseFlashMemory;
+                                                        }
                                                     }
                                                     break;
                                                 default:
@@ -1700,7 +1739,7 @@ namespace ChryslerScanner
                                                     break;
                                                 case (byte)FlashMemoryType.TMS28F210:
                                                     UpdateTextBox(SCIBusBootstrapInfoTextBox, "TMS28F210 (256 kB).");
-                                                    FlashChipComboBox.SelectedIndex = 8;
+                                                    FlashChipComboBox.SelectedIndex = 9;
                                                     break;
                                                 default:
                                                     UpdateTextBox(SCIBusBootstrapInfoTextBox, "(" + Util.ByteToHexString(SCIBusResponseBytes, 1, 2) + ").");
@@ -1825,7 +1864,8 @@ namespace ChryslerScanner
                                             {
                                                 switch (BootloaderComboBox.SelectedIndex)
                                                 {
-                                                    case (byte)Bootloader.JTEC_256k:
+                                                    case (byte)Bootloader.JTEC:
+                                                    case (byte)Bootloader.JTECPLUS_256k:
                                                         UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 5. Backup EEPROM." + Environment.NewLine + Environment.NewLine + "Skip EEPROM backup.");
                                                         CurrentTask = Task.EraseFlashMemory;
                                                         break;
@@ -1855,7 +1895,20 @@ namespace ChryslerScanner
                                         break;
                                     case (byte)WorkerFunction.FlashWrite:
                                         UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Exit flash writing.");
-                                        CurrentTask = Task.VerifyFlashChecksum;
+
+                                        switch (BootloaderComboBox.SelectedIndex)
+                                        {
+                                            case (byte)Bootloader.JTEC:
+                                            case (byte)Bootloader.JTECPLUS_256k:
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 8. Verify flash checksum." + Environment.NewLine + Environment.NewLine + "Skip flash checksum verification.");
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Step 9. Update EEPROM." + Environment.NewLine + Environment.NewLine + "Skip EEPROM update.");
+                                                CurrentTask = Task.FinishFlashWrite;
+                                                break;
+                                            default:
+                                                CurrentTask = Task.VerifyFlashChecksum;
+                                                break;
+                                        }
+
                                         SCIBusResponse = true;
                                         break;
                                     case (byte)WorkerFunction.VerifyFlashChecksum:
@@ -1863,7 +1916,8 @@ namespace ChryslerScanner
 
                                         switch (BootloaderComboBox.SelectedIndex)
                                         {
-                                            case (byte)Bootloader.JTEC_256k:
+                                            case (byte)Bootloader.JTEC:
+                                            case (byte)Bootloader.JTECPLUS_256k:
                                                 CurrentTask = Task.FinishFlashWrite;
                                                 break;
                                             default:
@@ -2195,26 +2249,29 @@ namespace ChryslerScanner
 
                                 switch (BootloaderComboBox.SelectedIndex)
                                 {
-                                    case (byte)Bootloader.SBEC3_128k:
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3 (128k). ");
+                                    case (byte)Bootloader.SBEC3_SBEC3PLUS_128k:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3/SBEC3+ (128k). ");
                                         break;
                                     case (byte)Bootloader.SBEC3_128k_custom:
                                         UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3 (128k) custom. ");
                                         break;
-                                    case (byte)Bootloader.SBEC3_256k:
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3 (256k). ");
+                                    case (byte)Bootloader.SBEC3A_3APLUS_3B_256k:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3A/3A+/3B (256k). ");
                                         break;
                                     case (byte)Bootloader.SBEC3_256k_custom:
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3 (256k) custom. ");
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "SBEC3A (256k) custom. ");
                                         break;
                                     case (byte)Bootloader.EATX3_128k:
                                         UpdateTextBox(SCIBusBootstrapInfoTextBox, "EATX3 (128k). ");
                                         break;
-                                    case (byte)Bootloader.EATX3_256k:
-                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "EATX3 (256k). ");
+                                    case (byte)Bootloader.EATX3A_256k:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "EATX3A (256k). ");
                                         break;
-                                    case (byte)Bootloader.JTEC_256k:
+                                    case (byte)Bootloader.JTEC:
                                         UpdateTextBox(SCIBusBootstrapInfoTextBox, "JTEC (256k). ");
+                                        break;
+                                    case (byte)Bootloader.JTECPLUS_256k:
+                                        UpdateTextBox(SCIBusBootstrapInfoTextBox, "JTEC+ (256k). ");
                                         break;
                                     case (byte)Bootloader.Empty:
                                     default:

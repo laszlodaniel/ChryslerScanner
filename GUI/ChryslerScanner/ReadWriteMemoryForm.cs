@@ -266,7 +266,7 @@ namespace ChryslerScanner
                 SRIMileageNew[0] = (byte)(SRIMileageNewRaw >> 8);
                 SRIMileageNew[1] = (byte)SRIMileageNewRaw;
 
-                SRIMileageNewRaw++; // second instance is incremented by 1 mile
+                SRIMileageNewRaw++; // second instance is incremented by 1 unit
                 SRIMileageNew[2] = (byte)(SRIMileageNewRaw >> 8);
                 SRIMileageNew[3] = (byte)SRIMileageNewRaw;
                 SRIMileageNewRaw--;

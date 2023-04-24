@@ -233,7 +233,7 @@ namespace ChryslerScanner
                     {
                         DescriptionToInsert = "CRUISE SET SPD: " + Math.Round(CruiseSetSpeedMPH, 1).ToString("0.0").Replace(",", ".") + " MPH | STATE: " + StatusString;
                         ValueToInsert = "TARGET IDLE: " + Math.Round(TargetIdle).ToString("0") + " RPM";
-                            
+
                     }
                     else if (Properties.Settings.Default.Units == "metric")
                     {
@@ -299,7 +299,7 @@ namespace ChryslerScanner
                     DescriptionToInsert = "STATUS: ";
 
                     if (message.Length < 4) break;
-                    
+
                     if ((payload[0] == 0) && (payload[1] == 0))
                     {
                         DescriptionToInsert += "ATX";
@@ -417,9 +417,9 @@ namespace ChryslerScanner
                     if (VIN.Contains("-")) break;
 
                     byte[] key = Util.GetSKIMUnlockKey(payload, VIN);
-                    byte[] KeyArray = { 0xC2, 0xC0, key[0], key[1], key[2], 0x00 };
+                    byte[] KeyArray = { 0x4F, 0xC0, 0x00, key[0], key[1], key[2], 0x00 };
 
-                    KeyArray[KeyArray.Length - 1] = Util.ChecksumCalculator(KeyArray, 0, KeyArray.Length - 1);
+                    KeyArray[KeyArray.Length - 1] = Util.CRCCalculator(KeyArray, 0, KeyArray.Length - 1);
                     DescriptionToInsert += " | KEY: " + Util.ByteToHexStringSimple(KeyArray);
                     break;
                 case 0x42:
@@ -442,65 +442,70 @@ namespace ChryslerScanner
 
                     break;
                 case 0x4F:
-                    DescriptionToInsert = "SKIM | SEED/KEY VALIDATION";
+                    DescriptionToInsert = "SKIM | SECRET KEY AND SEED/KEY VALIDATION";
 
                     if (message.Length < 7) break;
 
                     if ((payload[0] != 0xC0) && (payload[0] != 0x40) && (payload[0] != 0x10)) break;
 
-                    if (payload[0] == 0xC0) // seed / key
+                    switch (payload[0])
                     {
-                        if (payload[1] != 0)
-                        {
-                            DescriptionToInsert = "SKIM | REQUEST SEED FROM PCM";
-                        }
-                        else
-                        {
-                            DescriptionToInsert = "SKIM | KEY RECEIVED";
-                            ValueToInsert = Util.ByteToHexString(payload, 2, 3);
-                        }
-                    }
+                        case 0x10: // packet sent to SKIM to write to SKIM EEPROM (DRB3 SKIM replaced menu)
+                            DescriptionToInsert = "PAYLOAD FROM PCM EEPROM";
 
-                    if (payload[0] == 0x40) // packet received from SKIM to write to PCM EEPROM (DRB3 PCM replaced menu)
-                    {
-                        DescriptionToInsert = "SECRET KEY FROM SKIM EEPROM";
+                            switch (payload[1] & 0x03)
+                            {
+                                case 0x01:
+                                    Array.Copy(payload, 2, SKIMPayloadPCM, 0, 3);
+                                    ValueToInsert = Util.ByteToHexString(payload, 2, 3);
+                                    break;
+                                case 0x02:
+                                    Array.Copy(payload, 2, SKIMPayloadPCM, 3, 2);
+                                    ValueToInsert = Util.ByteToHexStringSimple(SKIMPayloadPCM);
+                                    UnitToInsert = "EEPROM 01D8";
+                                    break;
+                                default:
+                                    ValueToInsert = "INVALID MSG";
+                                    break;
+                            }
+                            break;
+                        case 0x40: // packet received from SKIM to write to PCM EEPROM (DRB3 PCM replaced menu)
+                            DescriptionToInsert = "PAYLOAD FROM SKIM EEPROM";
 
-                        switch (payload[1] & 0x03)
-                        {
-                            case 0x01:
-                                Array.Copy(payload, 2, SKIMPayload, 0, 3);
-                                ValueToInsert = Util.ByteToHexString(payload, 2, 3);
-                                break;
-                            case 0x02:
-                                Array.Copy(payload, 2, SKIMPayload, 3, 2);
-                                ValueToInsert = Util.ByteToHexStringSimple(SKIMPayload);
-                                UnitToInsert = "EEPROM 01D8";
-                                break;
-                            default:
-                                ValueToInsert = "INVALID MSG";
-                                break;
-                        }
-                    }
-
-                    if (payload[0] == 0x10) // packet sent to SKIM to write to SKIM EEPROM (DRB3 SKIM replaced menu)
-                    {
-                        DescriptionToInsert = "RESTORE SKIM SECRET KEY FROM PCM EEPROM";
-
-                        switch (payload[1] & 0x03)
-                        {
-                            case 0x01:
-                                Array.Copy(payload, 2, SKIMPayloadPCM, 0, 3);
-                                ValueToInsert = Util.ByteToHexString(payload, 2, 3);
-                                break;
-                            case 0x02:
-                                Array.Copy(payload, 2, SKIMPayloadPCM, 3, 2);
-                                ValueToInsert = Util.ByteToHexStringSimple(SKIMPayloadPCM);
-                                UnitToInsert = "EEPROM 01D8";
-                                break;
-                            default:
-                                ValueToInsert = "INVALID MSG";
-                                break;
-                        }
+                            switch (payload[1] & 0x03)
+                            {
+                                case 0x01:
+                                    Array.Copy(payload, 2, SKIMPayload, 0, 3);
+                                    ValueToInsert = Util.ByteToHexString(payload, 2, 3);
+                                    break;
+                                case 0x02:
+                                    Array.Copy(payload, 2, SKIMPayload, 3, 2);
+                                    ValueToInsert = Util.ByteToHexStringSimple(SKIMPayload);
+                                    UnitToInsert = "EEPROM 01D8";
+                                    break;
+                                default:
+                                    ValueToInsert = "INVALID MSG";
+                                    break;
+                            }
+                            break;
+                        case 0xC0: // secret key and seed/key validation
+                            switch (payload[1])
+                            {
+                                case 0x00:
+                                    DescriptionToInsert = "SKIM | KEY RECEIVED";
+                                    ValueToInsert = Util.ByteToHexString(payload, 2, 3);
+                                    break;
+                                case 0x01:
+                                    DescriptionToInsert = "SKIM | SECRET KEY RECEIVED";
+                                    ValueToInsert = Util.ByteToHexString(payload, 2, 3);
+                                    break;
+                                case 0x80:
+                                    DescriptionToInsert = "SKIM | REQUEST SEED FROM PCM";
+                                    break;
+                                default:
+                                    break;
+                            }
+                            break;
                     }
                     break;
                 case 0x52:
@@ -746,7 +751,7 @@ namespace ChryslerScanner
                         if (Util.IsBitSet(payload[0], 2)) WarningList.Add("-7-");
                         if (Util.IsBitSet(payload[0], 6)) WarningList.Add("-6-");
                         if (Util.IsBitSet(payload[0], 5)) WarningList.Add("-5-");
-                        if (Util.IsBitSet(payload[0], 4)) WarningList.Add("-4-");
+                        if (Util.IsBitSet(payload[0], 4)) WarningList.Add("PIN OK"); // cleared after 1 minute inactivity
                         if (Util.IsBitSet(payload[0], 3)) WarningList.Add("-3-");
                         if (Util.IsBitSet(payload[0], 2)) WarningList.Add("-2-");
                         if (Util.IsBitSet(payload[0], 1)) WarningList.Add("FAILURE");

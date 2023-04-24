@@ -152,22 +152,22 @@ namespace ChryslerScanner
             timeout = false;
 
             CCDTableRefreshTimer.Elapsed += new ElapsedEventHandler(CCDTableRefreshHandler);
-            CCDTableRefreshTimer.Interval = 5; // ms
+            CCDTableRefreshTimer.Interval = 10; // ms
             CCDTableRefreshTimer.AutoReset = true;
             CCDTableRefreshTimer.Enabled = true;
 
             PCITableRefreshTimer.Elapsed += new ElapsedEventHandler(PCITableRefreshHandler);
-            PCITableRefreshTimer.Interval = 5; // ms
+            PCITableRefreshTimer.Interval = 10; // ms
             PCITableRefreshTimer.AutoReset = true;
             PCITableRefreshTimer.Enabled = true;
 
             PCMTableRefreshTimer.Elapsed += new ElapsedEventHandler(PCMTableRefreshHandler);
-            PCMTableRefreshTimer.Interval = 5; // ms
+            PCMTableRefreshTimer.Interval = 10; // ms
             PCMTableRefreshTimer.AutoReset = true;
             PCMTableRefreshTimer.Enabled = true;
 
             TCMTableRefreshTimer.Elapsed += new ElapsedEventHandler(TCMTableRefreshHandler);
-            TCMTableRefreshTimer.Interval = 5; // ms
+            TCMTableRefreshTimer.Interval = 10; // ms
             TCMTableRefreshTimer.AutoReset = true;
             TCMTableRefreshTimer.Enabled = true;
 
@@ -181,6 +181,7 @@ namespace ChryslerScanner
             SCIBusModuleComboBox.SelectedIndex = 0;
             SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
             SCIBusSpeedComboBox.SelectedIndex = 2;
+            SCIBusLogicComboBox.SelectedIndex = 2;
             LCDStateComboBox.SelectedIndex = 0;
             LCDDataSourceComboBox.SelectedIndex = 0;
 
@@ -274,146 +275,167 @@ namespace ChryslerScanner
 
         private void CCDTableRefreshHandler(object source, ElapsedEventArgs e)
         {
-            if (CCDTableBuffer.Count > 0)
+            if (CCDTableBuffer.Count == 0)
+                return;
+
+            CCDBusDiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
             {
-                CCDBusDiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
+                CCDBusDiagnosticsListBox.BeginUpdate();
+
+                LastCCDScrollBarPosition = CCDBusDiagnosticsListBox.GetVerticalScrollPosition();
+
+                // Update header line.
+                CCDBusDiagnosticsListBox.Items.RemoveAt(1);
+                CCDBusDiagnosticsListBox.Items.Insert(1, CCD.Diagnostics.Table[1]);
+
+                // Update lines from buffer.
+                for (int i = 0; i < CCDTableBuffer.Count; i++)
                 {
-                    //CCDBusDiagnosticsListBox.BeginUpdate();
-
-                    LastCCDScrollBarPosition = CCDBusDiagnosticsListBox.GetVerticalScrollPosition();
-
-                    // Update header line.
-                    CCDBusDiagnosticsListBox.Items.RemoveAt(1);
-                    CCDBusDiagnosticsListBox.Items.Insert(1, CCD.Diagnostics.Table[1]);
-
-                    // Update lines from buffer.
-                    for (int i = 0; i < CCDTableBuffer.Count; i++)
+                    if (CCDBusDiagnosticsListBox.Items.Count == CCDTableRowCountHistory[i])
                     {
-                        if (CCDBusDiagnosticsListBox.Items.Count == CCDTableRowCountHistory[i])
+                        if (CCDTableBufferLocation[i] < CCDBusDiagnosticsListBox.Items.Count) // check if buffer location is within the ListBox's item count
                         {
                             CCDBusDiagnosticsListBox.Items.RemoveAt(CCDTableBufferLocation[i]);
                         }
-
-                        CCDBusDiagnosticsListBox.Items.Insert(CCDTableBufferLocation[i], CCDTableBuffer[i]);
                     }
 
-                    CCDBusDiagnosticsListBox.SetVerticalScrollPosition(LastCCDScrollBarPosition);
+                    if (CCDTableBufferLocation[i] <= CCDBusDiagnosticsListBox.Items.Count) // check if buffer location is within the ListBox's item count
+                    {
+                        CCDBusDiagnosticsListBox.Items.Insert(CCDTableBufferLocation[i], CCDTableBuffer[i]);
+                    }
+                }
 
-                    //CCDBusDiagnosticsListBox.EndUpdate();
+                CCDBusDiagnosticsListBox.SetVerticalScrollPosition(LastCCDScrollBarPosition);
 
-                    CCDTableBuffer.Clear();
-                    CCDTableBufferLocation.Clear();
-                    CCDTableRowCountHistory.Clear();
-                });
-            }
+                CCDBusDiagnosticsListBox.EndUpdate();
+
+                CCDTableBuffer.Clear();
+                CCDTableBufferLocation.Clear();
+                CCDTableRowCountHistory.Clear();
+            });
         }
 
         private void PCITableRefreshHandler(object source, ElapsedEventArgs e)
         {
-            if (PCITableBuffer.Count > 0)
+            if (PCITableBuffer.Count == 0)
+                return;
+
+            PCIBusDiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
             {
-                PCIBusDiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
+                PCIBusDiagnosticsListBox.BeginUpdate();
+
+                LastPCIScrollBarPosition = PCIBusDiagnosticsListBox.GetVerticalScrollPosition();
+
+                // Update header line.
+                PCIBusDiagnosticsListBox.Items.RemoveAt(1);
+                PCIBusDiagnosticsListBox.Items.Insert(1, PCI.Diagnostics.Table[1]);
+
+                // Update lines from buffer.
+                for (int i = 0; i < PCITableBuffer.Count; i++)
                 {
-                    PCIBusDiagnosticsListBox.BeginUpdate();
-
-                    LastPCIScrollBarPosition = PCIBusDiagnosticsListBox.GetVerticalScrollPosition();
-
-                    // Update header line.
-                    PCIBusDiagnosticsListBox.Items.RemoveAt(1);
-                    PCIBusDiagnosticsListBox.Items.Insert(1, PCI.Diagnostics.Table[1]);
-
-                    // Update lines from buffer.
-                    for (int i = 0; i < PCITableBuffer.Count; i++)
+                    if (PCIBusDiagnosticsListBox.Items.Count == PCITableRowCountHistory[i])
                     {
-                        if (PCIBusDiagnosticsListBox.Items.Count == PCITableRowCountHistory[i])
+                        if (PCITableBufferLocation[i] < PCIBusDiagnosticsListBox.Items.Count) // check if buffer location is within the ListBox's item count
                         {
                             PCIBusDiagnosticsListBox.Items.RemoveAt(PCITableBufferLocation[i]);
                         }
-
-                        PCIBusDiagnosticsListBox.Items.Insert(PCITableBufferLocation[i], PCITableBuffer[i]);
                     }
 
-                    PCIBusDiagnosticsListBox.SetVerticalScrollPosition(LastPCIScrollBarPosition);
+                    if (PCITableBufferLocation[i] <= PCIBusDiagnosticsListBox.Items.Count) // check if buffer location is within the ListBox's item count
+                    {
+                        PCIBusDiagnosticsListBox.Items.Insert(PCITableBufferLocation[i], PCITableBuffer[i]);
+                    }
+                }
 
-                    PCIBusDiagnosticsListBox.EndUpdate();
+                PCIBusDiagnosticsListBox.SetVerticalScrollPosition(LastPCIScrollBarPosition);
 
-                    PCITableBuffer.Clear();
-                    PCITableBufferLocation.Clear();
-                    PCITableRowCountHistory.Clear();
-                });
-            }
+                PCIBusDiagnosticsListBox.EndUpdate();
+
+                PCITableBuffer.Clear();
+                PCITableBufferLocation.Clear();
+                PCITableRowCountHistory.Clear();
+            });
         }
 
         private void PCMTableRefreshHandler(object source, ElapsedEventArgs e)
         {
-            if (PCMTableBuffer.Count > 0)
+            if (PCMTableBuffer.Count == 0)
+                return;
+
+            SCIBusPCMDiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
             {
-                SCIBusPCMDiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
+                SCIBusPCMDiagnosticsListBox.BeginUpdate();
+
+                LastPCMScrollBarPosition = SCIBusPCMDiagnosticsListBox.GetVerticalScrollPosition();
+
+                // Update header line.
+                SCIBusPCMDiagnosticsListBox.Items.RemoveAt(1);
+                SCIBusPCMDiagnosticsListBox.Items.Insert(1, PCM.Diagnostics.Table[1]);
+
+                // Update lines from buffer.
+                for (int i = 0; i < PCMTableBuffer.Count; i++)
                 {
-                    SCIBusPCMDiagnosticsListBox.BeginUpdate();
-
-                    LastPCMScrollBarPosition = SCIBusPCMDiagnosticsListBox.GetVerticalScrollPosition();
-
-                    // Update header line.
-                    SCIBusPCMDiagnosticsListBox.Items.RemoveAt(1);
-                    SCIBusPCMDiagnosticsListBox.Items.Insert(1, PCM.Diagnostics.Table[1]);
-
-                    // Update lines from buffer.
-                    for (int i = 0; i < PCMTableBuffer.Count; i++)
+                    if (SCIBusPCMDiagnosticsListBox.Items.Count == PCMTableRowCountHistory[i])
                     {
-                        if (SCIBusPCMDiagnosticsListBox.Items.Count == PCMTableRowCountHistory[i])
+                        if (PCMTableBufferLocation[i] < SCIBusPCMDiagnosticsListBox.Items.Count) // check if buffer location is within the ListBox's item count
                         {
                             SCIBusPCMDiagnosticsListBox.Items.RemoveAt(PCMTableBufferLocation[i]);
                         }
-
-                        SCIBusPCMDiagnosticsListBox.Items.Insert(PCMTableBufferLocation[i], PCMTableBuffer[i]);
                     }
 
-                    SCIBusPCMDiagnosticsListBox.SetVerticalScrollPosition(LastPCMScrollBarPosition);
+                    if (PCMTableBufferLocation[i] <= SCIBusPCMDiagnosticsListBox.Items.Count) // check if buffer location is within the ListBox's item count
+                    {
+                        SCIBusPCMDiagnosticsListBox.Items.Insert(PCMTableBufferLocation[i], PCMTableBuffer[i]);
+                    }
+                }
 
-                    SCIBusPCMDiagnosticsListBox.EndUpdate();
+                SCIBusPCMDiagnosticsListBox.SetVerticalScrollPosition(LastPCMScrollBarPosition);
 
-                    PCMTableBuffer.Clear();
-                    PCMTableBufferLocation.Clear();
-                    PCMTableRowCountHistory.Clear();
-                });
-            }
+                SCIBusPCMDiagnosticsListBox.EndUpdate();
+
+                PCMTableBuffer.Clear();
+                PCMTableBufferLocation.Clear();
+                PCMTableRowCountHistory.Clear();
+            });
         }
 
         private void TCMTableRefreshHandler(object source, ElapsedEventArgs e)
         {
-            if (TCMTableBuffer.Count > 0)
+            if (TCMTableBuffer.Count == 0)
+                return;
+
+            SCIBusTCMDiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
             {
-                SCIBusTCMDiagnosticsListBox.BeginInvoke((MethodInvoker)delegate
+                SCIBusTCMDiagnosticsListBox.BeginUpdate();
+
+                LastTCMScrollBarPosition = SCIBusTCMDiagnosticsListBox.GetVerticalScrollPosition();
+
+                // Update header line.
+                SCIBusTCMDiagnosticsListBox.Items.RemoveAt(1);
+                SCIBusTCMDiagnosticsListBox.Items.Insert(1, TCM.Diagnostics.Table[1]);
+
+                // Update lines from buffer.
+                for (int i = 0; i < TCMTableBuffer.Count; i++)
                 {
-                    SCIBusTCMDiagnosticsListBox.BeginUpdate();
-
-                    LastTCMScrollBarPosition = SCIBusTCMDiagnosticsListBox.GetVerticalScrollPosition();
-
-                    // Update header line.
-                    SCIBusTCMDiagnosticsListBox.Items.RemoveAt(1);
-                    SCIBusTCMDiagnosticsListBox.Items.Insert(1, TCM.Diagnostics.Table[1]);
-
-                    // Update lines from buffer.
-                    for (int i = 0; i < TCMTableBuffer.Count; i++)
+                    if (SCIBusTCMDiagnosticsListBox.Items.Count == TCMTableRowCountHistory[i])
                     {
-                        if (SCIBusTCMDiagnosticsListBox.Items.Count == TCMTableRowCountHistory[i])
-                        {
-                            SCIBusTCMDiagnosticsListBox.Items.RemoveAt(TCMTableBufferLocation[i]);
-                        }
-
-                        SCIBusTCMDiagnosticsListBox.Items.Insert(TCMTableBufferLocation[i], TCMTableBuffer[i]);
+                        SCIBusTCMDiagnosticsListBox.Items.RemoveAt(TCMTableBufferLocation[i]);
                     }
 
-                    SCIBusTCMDiagnosticsListBox.SetVerticalScrollPosition(LastTCMScrollBarPosition);
+                    if (TCMTableBufferLocation[i] <= SCIBusTCMDiagnosticsListBox.Items.Count) // check if buffer location is within the ListBox's item count
+                    {
+                        SCIBusTCMDiagnosticsListBox.Items.Insert(TCMTableBufferLocation[i], TCMTableBuffer[i]);
+                    }
+                }
 
-                    SCIBusTCMDiagnosticsListBox.EndUpdate();
+                SCIBusTCMDiagnosticsListBox.SetVerticalScrollPosition(LastTCMScrollBarPosition);
 
-                    TCMTableBuffer.Clear();
-                    TCMTableBufferLocation.Clear();
-                    TCMTableRowCountHistory.Clear();
-                });
-            }
+                SCIBusTCMDiagnosticsListBox.EndUpdate();
+
+                TCMTableBuffer.Clear();
+                TCMTableBufferLocation.Clear();
+                TCMTableRowCountHistory.Clear();
+            });
         }
 
         private void UpdateCOMPortList()
@@ -730,6 +752,7 @@ namespace ChryslerScanner
                                     string SCIBusPCMStateString = string.Empty;
                                     string SCIBusPCMLogicString = string.Empty;
                                     string SCIBusPCMNGCModeString = string.Empty;
+                                    string SCIBusPCMSBEC2ModeString = string.Empty;
                                     string SCIBusPCMOBDConfigurationString = string.Empty;
                                     string SCIBusPCMSpeedString = string.Empty;
                                     string SCIBusPCMMsgRxCountString = string.Empty;
@@ -739,26 +762,42 @@ namespace ChryslerScanner
                                     {
                                         SCIBusPCMStateString = "enabled";
 
-                                        if (Util.IsBitClear(Packet.rx.payload[24], 4))
+                                        if (Util.IsBitClear(Packet.rx.payload[24], 4) &&
+                                            Util.IsBitClear(Packet.rx.payload[24], 3) &&
+                                            Util.IsBitClear(Packet.rx.payload[24], 6))
                                         {
-                                            SCIBusPCMNGCModeString = "disabled";
-                                            SCIBusNGCModeCheckBox.Checked = false;
-                                        }
-                                        else
-                                        {
-                                            SCIBusPCMNGCModeString = "enabled";
-                                            SCIBusNGCModeCheckBox.Checked = true;
-                                        }
+                                            SCIBusLogicComboBox.SelectedIndex = 2; // OBD2
 
-                                        if (Util.IsBitClear(Packet.rx.payload[24], 3))
-                                        {
+                                            SCIBusPCMNGCModeString = "disabled";
                                             SCIBusPCMLogicString += "non-inverted";
-                                            SCIBusInvertedLogicCheckBox.Checked = false;
                                         }
                                         else
                                         {
-                                            SCIBusPCMLogicString += "inverted";
-                                            SCIBusInvertedLogicCheckBox.Checked = true;
+                                            if (Util.IsBitSet(Packet.rx.payload[24], 4))
+                                            {
+                                                SCIBusPCMNGCModeString = "enabled";
+                                                SCIBusLogicComboBox.SelectedIndex = 3; // OBD2 NGC
+                                            }
+                                            else
+                                            {
+                                                SCIBusPCMNGCModeString = "disabled";
+                                            }
+
+                                            if (Util.IsBitSet(Packet.rx.payload[24], 3))
+                                            {
+                                                SCIBusPCMLogicString += "inverted";
+                                                SCIBusLogicComboBox.SelectedIndex = 1; // OBD1 JTEC
+                                            }
+                                            else
+                                            {
+                                                SCIBusPCMLogicString += "non-inverted";
+                                            }
+
+                                            if (Util.IsBitSet(Packet.rx.payload[24], 6))
+                                            {
+                                                SCIBusPCMSBEC2ModeString += "(SBEC)";
+                                                SCIBusLogicComboBox.SelectedIndex = 0; // OBD1 SBEC
+                                            }
                                         }
 
                                         if (Util.IsBitClear(Packet.rx.payload[24], 2))
@@ -813,6 +852,7 @@ namespace ChryslerScanner
                                     string SCIBusTCMStateString = string.Empty;
                                     string SCIBusTCMLogicString = string.Empty;
                                     string SCIBusTCMNGCModeString = string.Empty;
+                                    string SCIBusTCMSBEC2ModeString = string.Empty;
                                     string SCIBusTCMOBDConfigurationString = string.Empty;
                                     string SCIBusTCMSpeedString = string.Empty;
                                     string SCIBusTCMMsgRxCountString = string.Empty;
@@ -822,26 +862,42 @@ namespace ChryslerScanner
                                     {
                                         SCIBusTCMStateString = "enabled";
 
-                                        if (Util.IsBitClear(Packet.rx.payload[33], 4))
+                                        if (Util.IsBitClear(Packet.rx.payload[33], 4) &&
+                                            Util.IsBitClear(Packet.rx.payload[33], 3) &&
+                                            Util.IsBitClear(Packet.rx.payload[33], 6))
                                         {
-                                            SCIBusTCMNGCModeString = "disabled";
-                                            SCIBusNGCModeCheckBox.Checked = false;
-                                        }
-                                        else
-                                        {
-                                            SCIBusTCMNGCModeString = "enabled";
-                                            SCIBusNGCModeCheckBox.Checked = true;
-                                        }
+                                            SCIBusLogicComboBox.SelectedIndex = 2; // OBD2
 
-                                        if (Util.IsBitClear(Packet.rx.payload[33], 3))
-                                        {
+                                            SCIBusTCMNGCModeString = "disabled";
                                             SCIBusTCMLogicString += "non-inverted";
-                                            SCIBusInvertedLogicCheckBox.Checked = false;
                                         }
                                         else
                                         {
-                                            SCIBusTCMLogicString += "inverted";
-                                            SCIBusInvertedLogicCheckBox.Checked = true;
+                                            if (Util.IsBitSet(Packet.rx.payload[33], 4))
+                                            {
+                                                SCIBusPCMNGCModeString = "enabled";
+                                                SCIBusLogicComboBox.SelectedIndex = 3; // OBD2 NGC
+                                            }
+                                            else
+                                            {
+                                                SCIBusPCMNGCModeString = "disabled";
+                                            }
+
+                                            if (Util.IsBitSet(Packet.rx.payload[33], 3))
+                                            {
+                                                SCIBusPCMLogicString += "inverted";
+                                                SCIBusLogicComboBox.SelectedIndex = 1; // OBD1 JTEC
+                                            }
+                                            else
+                                            {
+                                                SCIBusPCMLogicString += "non-inverted";
+                                            }
+
+                                            if (Util.IsBitSet(Packet.rx.payload[33], 6))
+                                            {
+                                                SCIBusPCMSBEC2ModeString += "(SBEC)";
+                                                SCIBusLogicComboBox.SelectedIndex = 0; // OBD1 SBEC
+                                            }
                                         }
 
                                         if (Util.IsBitClear(Packet.rx.payload[33], 2))
@@ -979,7 +1035,7 @@ namespace ChryslerScanner
                                                                    "       Messages sent: " + CCDBusMsgTxCountString + Environment.NewLine +
                                                                    "       ----------SCI-bus (PCM) status----------" + Environment.NewLine +
                                                                    "       State: " + SCIBusPCMStateString + Environment.NewLine +
-                                                                   "       Logic: " + SCIBusPCMLogicString + Environment.NewLine +
+                                                                   "       Logic: " + SCIBusPCMLogicString + " " + SCIBusPCMSBEC2ModeString + Environment.NewLine +
                                                                    "       NGC mode: " + SCIBusPCMNGCModeString + Environment.NewLine +
                                                                    "       OBD config.: " + SCIBusPCMOBDConfigurationString + Environment.NewLine +
                                                                    "       Speed: " + SCIBusPCMSpeedString + Environment.NewLine +
@@ -987,7 +1043,7 @@ namespace ChryslerScanner
                                                                    "       Messages sent: " + SCIBusPCMMsgTxCountString + Environment.NewLine +
                                                                    "       ----------SCI-bus (TCM) status----------" + Environment.NewLine +
                                                                    "       State: " + SCIBusTCMStateString + Environment.NewLine +
-                                                                   "       Logic: " + SCIBusTCMLogicString + Environment.NewLine +
+                                                                   "       Logic: " + SCIBusTCMLogicString + " " + SCIBusTCMSBEC2ModeString + Environment.NewLine +
                                                                    "       NGC mode: " + SCIBusTCMNGCModeString + Environment.NewLine +
                                                                    "       OBD config.: " + SCIBusTCMOBDConfigurationString + Environment.NewLine +
                                                                    "       Speed: " + SCIBusTCMSpeedString + Environment.NewLine +
@@ -1124,6 +1180,7 @@ namespace ChryslerScanner
                                     string SCIBusModuleString = string.Empty;
                                     string SCIBusLogicString = string.Empty;
                                     string SCIBusNGCModeString = string.Empty;
+                                    string SCIBusSBEC2ModeString = string.Empty;
                                     string SCIBusOBDConfigurationString = string.Empty;
                                     string SCIBusSpeedString = string.Empty;
                                     string SCIBusMsgRxCountString = string.Empty;
@@ -1133,26 +1190,42 @@ namespace ChryslerScanner
                                     {
                                         SCIBusStateString = "enabled";
 
-                                        if (Util.IsBitClear(Packet.rx.payload[32], 4))
+                                        if (Util.IsBitClear(Packet.rx.payload[32], 4) &&
+                                            Util.IsBitClear(Packet.rx.payload[32], 3) &&
+                                            Util.IsBitClear(Packet.rx.payload[32], 6))
                                         {
-                                            SCIBusNGCModeString = "disabled";
-                                            SCIBusNGCModeCheckBox.Checked = false;
-                                        }
-                                        else
-                                        {
-                                            SCIBusNGCModeString = "enabled";
-                                            SCIBusNGCModeCheckBox.Checked = true;
-                                        }
+                                            SCIBusLogicComboBox.SelectedIndex = 2; // OBD2
 
-                                        if (Util.IsBitClear(Packet.rx.payload[32], 3))
-                                        {
+                                            SCIBusNGCModeString = "disabled";
                                             SCIBusLogicString += "non-inverted";
-                                            SCIBusInvertedLogicCheckBox.Checked = false;
                                         }
                                         else
                                         {
-                                            SCIBusLogicString += "inverted";
-                                            SCIBusInvertedLogicCheckBox.Checked = true;
+                                            if (Util.IsBitSet(Packet.rx.payload[32], 4))
+                                            {
+                                                SCIBusNGCModeString = "enabled";
+                                                SCIBusLogicComboBox.SelectedIndex = 3; // OBD2 NGC
+                                            }
+                                            else
+                                            {
+                                                SCIBusNGCModeString = "disabled";
+                                            }
+
+                                            if (Util.IsBitSet(Packet.rx.payload[32], 3))
+                                            {
+                                                SCIBusLogicString += "inverted";
+                                                SCIBusLogicComboBox.SelectedIndex = 1; // OBD1 JTEC
+                                            }
+                                            else
+                                            {
+                                                SCIBusLogicString += "non-inverted";
+                                            }
+
+                                            if (Util.IsBitSet(Packet.rx.payload[32], 6))
+                                            {
+                                                SCIBusSBEC2ModeString += "(SBEC)";
+                                                SCIBusLogicComboBox.SelectedIndex = 0; // OBD1 SBEC
+                                            }
                                         }
 
                                         if (Util.IsBitClear(Packet.rx.payload[32], 2))
@@ -1252,7 +1325,7 @@ namespace ChryslerScanner
                                                                    "       -------------SCI-bus status-------------" + Environment.NewLine +
                                                                    "       Module: " + SCIBusModuleString + Environment.NewLine +
                                                                    "       State: " + SCIBusStateString + Environment.NewLine +
-                                                                   "       Logic: " + SCIBusLogicString + Environment.NewLine +
+                                                                   "       Logic: " + SCIBusLogicString + " " + SCIBusSBEC2ModeString + Environment.NewLine +
                                                                    "       NGC mode: " + SCIBusNGCModeString + Environment.NewLine +
                                                                    "       OBD config.: " + SCIBusOBDConfigurationString + Environment.NewLine +
                                                                    "       Speed: " + SCIBusSpeedString + Environment.NewLine +
@@ -1360,11 +1433,13 @@ namespace ChryslerScanner
                                         string SCIBusPCMStateString = string.Empty;
                                         string SCIBusPCMLogicString = string.Empty;
                                         string SCIBusPCMNGCModeString = string.Empty;
+                                        string SCIBusPCMSBEC2ModeString = string.Empty;
                                         string SCIBusPCMOBDConfigurationString = string.Empty;
                                         string SCIBusPCMSpeedString = string.Empty;
                                         string SCIBusTCMStateString = string.Empty;
                                         string SCIBusTCMLogicString = string.Empty;
                                         string SCIBusTCMNGCModeString = string.Empty;
+                                        string SCIBusTCMSBEC2ModeString = string.Empty;
                                         string SCIBusTCMOBDConfigurationString = string.Empty;
                                         string SCIBusTCMSpeedString = string.Empty;
 
@@ -1383,24 +1458,57 @@ namespace ChryslerScanner
                                                 SCIBusTCMStateString = "enabled";
                                                 SCIBusPCMStateString = "disabled";
 
-                                                if (Util.IsBitSet(Packet.rx.payload[0], 4))
+                                                if (Util.IsBitClear(Packet.rx.payload[0], 4) &&
+                                                    Util.IsBitClear(Packet.rx.payload[0], 3) &&
+                                                    Util.IsBitClear(Packet.rx.payload[0], 6))
                                                 {
-                                                    SCIBusTCMNGCModeString = "enabled";
-                                                    SCIBusNGCModeCheckBox.Checked = true;
-                                                }
-                                                else
-                                                {
-                                                    SCIBusTCMNGCModeString = "disabled";
-                                                    SCIBusNGCModeCheckBox.Checked = false;
-                                                }
+                                                    BeginInvoke((MethodInvoker)delegate
+                                                    {
+                                                        SCIBusLogicComboBox.SelectedIndex = 2; // OBD2
+                                                    });
 
-                                                if (Util.IsBitClear(Packet.rx.payload[0], 3))
-                                                {
-                                                    SCIBusTCMLogicString = "non-inverted";
+                                                    SCIBusTCMNGCModeString = "disabled";
+                                                    SCIBusTCMLogicString += "non-inverted";
                                                 }
                                                 else
                                                 {
-                                                    SCIBusTCMLogicString = "inverted";
+                                                    if (Util.IsBitSet(Packet.rx.payload[0], 4))
+                                                    {
+                                                        SCIBusTCMNGCModeString = "enabled";
+
+                                                        BeginInvoke((MethodInvoker)delegate
+                                                        {
+                                                            SCIBusLogicComboBox.SelectedIndex = 3; // OBD2 NGC
+                                                        });
+                                                    }
+                                                    else
+                                                    {
+                                                        SCIBusTCMNGCModeString = "disabled";
+                                                    }
+
+                                                    if (Util.IsBitSet(Packet.rx.payload[0], 3))
+                                                    {
+                                                        SCIBusTCMLogicString += "inverted";
+
+                                                        BeginInvoke((MethodInvoker)delegate
+                                                        {
+                                                            SCIBusLogicComboBox.SelectedIndex = 1; // OBD1 JTEC
+                                                        });
+                                                    }
+                                                    else
+                                                    {
+                                                        SCIBusTCMLogicString += "non-inverted";
+                                                    }
+
+                                                    if (Util.IsBitSet(Packet.rx.payload[0], 6))
+                                                    {
+                                                        SCIBusTCMSBEC2ModeString += "(SBEC)";
+
+                                                        BeginInvoke((MethodInvoker)delegate
+                                                        {
+                                                            SCIBusLogicComboBox.SelectedIndex = 0; // OBD1 SBEC
+                                                        });
+                                                    }
                                                 }
 
                                                 if (Util.IsBitClear(Packet.rx.payload[0], 2))
@@ -1418,6 +1526,7 @@ namespace ChryslerScanner
                                                         SCIBusTCMSpeedString = "976.5 baud";
                                                         break;
                                                     case 0x01:
+                                                        SCIBusTCMSpeedString = "7812.5 baud";
                                                         break;
                                                     case 0x02:
                                                         SCIBusTCMSpeedString = "62500 baud";
@@ -1432,7 +1541,7 @@ namespace ChryslerScanner
                                             {
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] TCM settings: " + Environment.NewLine +
                                                                                "       - state: " + SCIBusTCMStateString + Environment.NewLine +
-                                                                               "       - logic: " + SCIBusTCMLogicString + Environment.NewLine +
+                                                                               "       - logic: " + SCIBusTCMLogicString + " " + SCIBusTCMSBEC2ModeString + Environment.NewLine +
                                                                                "       - ngc mode: " + SCIBusTCMNGCModeString + Environment.NewLine +
                                                                                "       - obd config.: " + SCIBusTCMOBDConfigurationString + Environment.NewLine +
                                                                                "       - speed: " + SCIBusTCMSpeedString + Environment.NewLine +
@@ -1461,24 +1570,57 @@ namespace ChryslerScanner
                                                 SCIBusPCMStateString = "enabled";
                                                 SCIBusTCMStateString = "disabled";
 
-                                                if (Util.IsBitSet(Packet.rx.payload[0], 4))
+                                                if (Util.IsBitClear(Packet.rx.payload[0], 4) &&
+                                                    Util.IsBitClear(Packet.rx.payload[0], 3) &&
+                                                    Util.IsBitClear(Packet.rx.payload[0], 6))
                                                 {
-                                                    SCIBusPCMNGCModeString = "enabled";
-                                                    SCIBusNGCModeCheckBox.Checked = true;
-                                                }
-                                                else
-                                                {
-                                                    SCIBusPCMNGCModeString = "disabled";
-                                                    SCIBusNGCModeCheckBox.Checked = false;
-                                                }
+                                                    BeginInvoke((MethodInvoker)delegate
+                                                    {
+                                                        SCIBusLogicComboBox.SelectedIndex = 2; // OBD2
+                                                    });
 
-                                                if (Util.IsBitClear(Packet.rx.payload[0], 3))
-                                                {
-                                                    SCIBusPCMLogicString = "non-inverted";
+                                                    SCIBusPCMNGCModeString = "disabled";
+                                                    SCIBusPCMLogicString += "non-inverted";
                                                 }
                                                 else
                                                 {
-                                                    SCIBusPCMLogicString = "inverted";
+                                                    if (Util.IsBitSet(Packet.rx.payload[0], 4))
+                                                    {
+                                                        SCIBusPCMNGCModeString = "enabled";
+
+                                                        BeginInvoke((MethodInvoker)delegate
+                                                        {
+                                                            SCIBusLogicComboBox.SelectedIndex = 3; // OBD2 NGC
+                                                        });
+                                                    }
+                                                    else
+                                                    {
+                                                        SCIBusPCMNGCModeString = "disabled";
+                                                    }
+
+                                                    if (Util.IsBitSet(Packet.rx.payload[0], 3))
+                                                    {
+                                                        SCIBusPCMLogicString += "inverted";
+
+                                                        BeginInvoke((MethodInvoker)delegate
+                                                        {
+                                                            SCIBusLogicComboBox.SelectedIndex = 1; // OBD1 JTEC
+                                                        });
+                                                    }
+                                                    else
+                                                    {
+                                                        SCIBusPCMLogicString += "non-inverted";
+                                                    }
+
+                                                    if (Util.IsBitSet(Packet.rx.payload[0], 6))
+                                                    {
+                                                        SCIBusPCMSBEC2ModeString += "(SBEC)";
+
+                                                        BeginInvoke((MethodInvoker)delegate
+                                                        {
+                                                            SCIBusLogicComboBox.SelectedIndex = 0; // OBD1 SBEC
+                                                        });
+                                                    }
                                                 }
 
                                                 if (Util.IsBitClear(Packet.rx.payload[0], 2))
@@ -1511,7 +1653,7 @@ namespace ChryslerScanner
                                             {
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] PCM settings: " + Environment.NewLine +
                                                                                "       - state: " + SCIBusPCMStateString + Environment.NewLine +
-                                                                               "       - logic: " + SCIBusPCMLogicString + Environment.NewLine +
+                                                                               "       - logic: " + SCIBusPCMLogicString + " " + SCIBusPCMSBEC2ModeString + Environment.NewLine +
                                                                                "       - ngc mode: " + SCIBusPCMNGCModeString + Environment.NewLine +
                                                                                "       - obd config.: " + SCIBusPCMOBDConfigurationString + Environment.NewLine +
                                                                                "       - speed: " + SCIBusPCMSpeedString + Environment.NewLine +
@@ -1528,7 +1670,7 @@ namespace ChryslerScanner
                                             TCM.UpdateHeader(SCIBusTCMStateString, SCIBusTCMSpeedString, SCIBusTCMLogicString, SCIBusTCMOBDConfigurationString);
                                         }
 
-                                        SCIBusModuleComboBox_SelectedIndexChanged(this, EventArgs.Empty);
+                                        //SCIBusModuleComboBox_SelectedIndexChanged(this, EventArgs.Empty);
                                     }
                                     else
                                     {
@@ -3206,8 +3348,10 @@ namespace ChryslerScanner
 
                 Packet.PacketReceived += AnalyzePacket;
 
-                MSP = new Thread(Packet.MonitorSerialPort);
-                MSP.Start();
+                //MSP = new Thread(Packet.MonitorSerialPort);
+                //MSP.Start();
+
+                Packet.MonitorSerialPort();
 
                 Util.UpdateTextBox(USBTextBox, "[INFO] Device connected to " + SelectedPort + ".");
 
@@ -4537,25 +4681,23 @@ namespace ChryslerScanner
             switch (SCIBusModuleComboBox.SelectedIndex)
             {
                 case 0: // engine
-                    config = Util.ClearBit(config, 6); // unused bit, always clear
                     config = Util.ClearBit(config, 5); // PCM
 
-                    if (SCIBusNGCModeCheckBox.Checked)
+                    if (SCIBusLogicComboBox.SelectedIndex != 2)
                     {
-                        config = Util.SetBit(config, 4);
-                    }
-                    else
-                    {
-                        config = Util.ClearBit(config, 4);
-                    }
-
-                    if (SCIBusInvertedLogicCheckBox.Checked)
-                    {
-                        config = Util.SetBit(config, 3);
-                    }
-                    else
-                    {
-                        config = Util.ClearBit(config, 3);
+                        switch (SCIBusLogicComboBox.SelectedIndex)
+                        {
+                            case 0: // OBD1 SBEC
+                                config = Util.SetBit(config, 6); // SBEC bit
+                                config = Util.SetBit(config, 3); // inverted logic bit
+                                break;
+                            case 1: // OBD1 JTEC
+                                config = Util.SetBit(config, 3); // inverted logic bit
+                                break;
+                            case 3: // OBD2 NGC
+                                config = Util.SetBit(config, 4); // ngc bit
+                                break;
+                        }
                     }
 
                     if (SCIBusOBDConfigurationComboBox.SelectedIndex == 0)
@@ -4602,25 +4744,23 @@ namespace ChryslerScanner
                     }
                     break;
                 case 1: // transmission
-                    config = Util.ClearBit(config, 6); // unused bit, always clear
                     config = Util.SetBit(config, 5); // TCM
 
-                    if (SCIBusNGCModeCheckBox.Checked)
+                    if (SCIBusLogicComboBox.SelectedIndex != 2)
                     {
-                        config = Util.SetBit(config, 4);
-                    }
-                    else
-                    {
-                        config = Util.ClearBit(config, 4);
-                    }
-
-                    if (SCIBusInvertedLogicCheckBox.Checked)
-                    {
-                        config = Util.SetBit(config, 3);
-                    }
-                    else
-                    {
-                        config = Util.ClearBit(config, 3);
+                        switch (SCIBusLogicComboBox.SelectedIndex)
+                        {
+                            case 0: // OBD1 SBEC
+                                config = Util.SetBit(config, 6); // SBEC bit
+                                config = Util.SetBit(config, 3); // inverted logic bit
+                                break;
+                            case 1: // OBD1 JTEC
+                                config = Util.SetBit(config, 3); // inverted logic bit
+                                break;
+                            case 3: // OBD2 NGC
+                                config = Util.SetBit(config, 4); // ngc bit
+                                break;
+                        }
                     }
 
                     if (SCIBusOBDConfigurationComboBox.SelectedIndex == 0)
@@ -4724,8 +4864,10 @@ namespace ChryslerScanner
                             SCIBusSpeedComboBox.SelectedIndex = 0; // off
                         }
 
-                        if (PCM.logic == "non-inverted") SCIBusInvertedLogicCheckBox.Checked = false;
-                        else if (PCM.logic == "inverted") SCIBusInvertedLogicCheckBox.Checked = true;
+                        if (PCM.logic == "non-inverted") SCIBusLogicComboBox.SelectedIndex = 2; // OBD2
+                        else if (PCM.logic == "inverted") SCIBusLogicComboBox.SelectedIndex = 1; // OBD1 JTEC
+
+                        // TODO: decide SBEC 4-bit exchange business
 
                         if (PCM.configuration == "A") SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
                         else if (PCM.configuration == "B") SCIBusOBDConfigurationComboBox.SelectedIndex = 1;
@@ -4746,8 +4888,10 @@ namespace ChryslerScanner
                             SCIBusSpeedComboBox.SelectedIndex = 0; // off
                         }
 
-                        if (TCM.logic == "non-inverted") SCIBusInvertedLogicCheckBox.Checked = false;
-                        else if (TCM.logic == "inverted") SCIBusInvertedLogicCheckBox.Checked = true;
+                        if (TCM.logic == "non-inverted") SCIBusLogicComboBox.SelectedIndex = 2; // OBD2
+                        else if (TCM.logic == "inverted") SCIBusLogicComboBox.SelectedIndex = 1; // OBD1 JTEC
+
+                        // TODO: decide SBEC 4-bit exchange business
 
                         if (TCM.configuration == "A") SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
                         else if (TCM.configuration == "B") SCIBusOBDConfigurationComboBox.SelectedIndex = 1;
@@ -6394,7 +6538,7 @@ namespace ChryslerScanner
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            Util.UpdateTextBox(USBTextBox, "[INFO] GUI started.");
+            Util.UpdateTextBox(USBTextBox, "[INFO] GUI started (" + GUIVersion + ")");
         }
 
         private void MainForm_KeyDown(object sender, KeyEventArgs e)

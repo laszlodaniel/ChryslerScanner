@@ -2121,7 +2121,7 @@ namespace ChryslerScanner
 
                                 double CalPotVoltage = payload[1] * 0.0196;
                                 
-                                ValueToInsert = Math.Round(CalPotVoltage, 31).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(CalPotVoltage, 3).ToString("0.000").Replace(",", ".");
                                 break;
                             case 0x3F:
                                 DescriptionToInsert = "DOWNSTREAM O2 1/2 SENSOR VOLTAGE";
@@ -2717,19 +2717,19 @@ namespace ChryslerScanner
                         switch (payload[0])
                         {
                             case 0x10:
-                                DescriptionToInsert = "WRITE MEMROY | RESET EMR 1";
+                                DescriptionToInsert = "WRITE MEMORY | RESET EMR 1";
                                 if ((payload[1] == 0x00) && (payload[2] == 0xFF)) ValueToInsert = "OK";
                                 else ValueToInsert = "FAILED";
                                 break;
                             case 0x11:
-                                DescriptionToInsert = "WRITE MEMROY | RESET EMR 2";
+                                DescriptionToInsert = "WRITE MEMORY | RESET EMR 2";
                                 if ((payload[1] == 0x00) && (payload[2] == 0xFF)) ValueToInsert = "OK";
                                 else ValueToInsert = "FAILED";
                                 break;
                             case 0x1A:
                                 if (payload[1] == 0xFF)
                                 {
-                                    DescriptionToInsert = "WRITE MEMROY | ENABLE VAR IDLE";
+                                    DescriptionToInsert = "WRITE MEMORY | ENABLE VAR IDLE";
 
                                     if (payload[2] == 0xFF)
                                     {
@@ -2742,7 +2742,7 @@ namespace ChryslerScanner
                                 }
                                 else if (payload[1] == 0x00)
                                 {
-                                    DescriptionToInsert = "WRITE MEMROY | DISABLE VAR IDLE";
+                                    DescriptionToInsert = "WRITE MEMORY | DISABLE VAR IDLE";
 
                                     if (payload[2] == 0xFF)
                                     {
@@ -2755,7 +2755,7 @@ namespace ChryslerScanner
                                 }
                                 break;
                             default:
-                                DescriptionToInsert = "WRITE MEMROY | OFFSET: " + Util.ByteToHexString(payload, 0, 1);
+                                DescriptionToInsert = "WRITE MEMORY | OFFSET: " + Util.ByteToHexString(payload, 0, 1);
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                 break;
                         }

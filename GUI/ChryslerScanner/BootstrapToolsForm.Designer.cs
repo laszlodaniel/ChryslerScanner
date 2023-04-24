@@ -89,9 +89,11 @@ namespace ChryslerScanner
             resources.GetString("BootloaderComboBox.Items4"),
             resources.GetString("BootloaderComboBox.Items5"),
             resources.GetString("BootloaderComboBox.Items6"),
-            resources.GetString("BootloaderComboBox.Items7")});
+            resources.GetString("BootloaderComboBox.Items7"),
+            resources.GetString("BootloaderComboBox.Items8")});
             resources.ApplyResources(this.BootloaderComboBox, "BootloaderComboBox");
             this.BootloaderComboBox.Name = "BootloaderComboBox";
+            this.BootloaderComboBox.SelectedIndexChanged += new System.EventHandler(this.BootloaderComboBox_SelectedIndexChanged);
             // 
             // BootloaderLabel
             // 
@@ -180,7 +182,8 @@ namespace ChryslerScanner
             resources.GetString("FlashChipComboBox.Items5"),
             resources.GetString("FlashChipComboBox.Items6"),
             resources.GetString("FlashChipComboBox.Items7"),
-            resources.GetString("FlashChipComboBox.Items8")});
+            resources.GetString("FlashChipComboBox.Items8"),
+            resources.GetString("FlashChipComboBox.Items9")});
             resources.ApplyResources(this.FlashChipComboBox, "FlashChipComboBox");
             this.FlashChipComboBox.Name = "FlashChipComboBox";
             this.FlashChipComboBox.SelectedIndexChanged += new System.EventHandler(this.FlashChipComboBox_SelectedIndexChanged);

@@ -121,25 +121,28 @@
     <value>Empty</value>
   </data>
   <data name="BootloaderComboBox.Items1" xml:space="preserve">
-    <value>SBEC3 (128k)</value>
+    <value>SBEC3/SBEC3+ (128k)</value>
   </data>
   <data name="BootloaderComboBox.Items2" xml:space="preserve">
     <value>SBEC3 (128k) custom</value>
   </data>
   <data name="BootloaderComboBox.Items3" xml:space="preserve">
-    <value>SBEC3 (256k)</value>
+    <value>SBEC3A/3A+/3B (256k)</value>
   </data>
   <data name="BootloaderComboBox.Items4" xml:space="preserve">
-    <value>SBEC3 (256k) custom</value>
+    <value>SBEC3A (256k) custom</value>
   </data>
   <data name="BootloaderComboBox.Items5" xml:space="preserve">
     <value>EATX3 (128k)</value>
   </data>
   <data name="BootloaderComboBox.Items6" xml:space="preserve">
-    <value>EATX3 (256k)</value>
+    <value>EATX3A (256k)</value>
   </data>
   <data name="BootloaderComboBox.Items7" xml:space="preserve">
     <value>JTEC (256k)</value>
+  </data>
+  <data name="BootloaderComboBox.Items8" xml:space="preserve">
+    <value>JTEC+ (256k)</value>
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="BootloaderComboBox.Location" type="System.Drawing.Point, System.Drawing">
@@ -459,6 +462,9 @@
     <value>M28F200 (256 kB)</value>
   </data>
   <data name="FlashChipComboBox.Items8" xml:space="preserve">
+    <value>N28F010 (128k+128k)</value>
+  </data>
+  <data name="FlashChipComboBox.Items9" xml:space="preserve">
     <value>TMS28F210 (256 kB)</value>
   </data>
   <data name="FlashChipComboBox.Location" type="System.Drawing.Point, System.Drawing">

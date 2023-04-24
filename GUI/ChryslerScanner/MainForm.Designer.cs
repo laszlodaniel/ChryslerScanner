@@ -130,10 +130,10 @@
             this.PCIBusTxMessageComboBox = new System.Windows.Forms.ComboBox();
             this.PCIBusTxMessagesListBox = new System.Windows.Forms.ListBox();
             this.SCIBusControlTabPage = new System.Windows.Forms.TabPage();
-            this.SCIBusNGCModeCheckBox = new System.Windows.Forms.CheckBox();
+            this.SCIBusLogicComboBox = new System.Windows.Forms.ComboBox();
+            this.SCIBusLogicLabel = new System.Windows.Forms.Label();
             this.SCIBusOBDConfigurationComboBox = new System.Windows.Forms.ComboBox();
             this.SCIBusOBDConfigurationLabel = new System.Windows.Forms.Label();
-            this.SCIBusInvertedLogicCheckBox = new System.Windows.Forms.CheckBox();
             this.SCIBusModuleConfigSpeedApplyButton = new System.Windows.Forms.Button();
             this.SCIBusSpeedComboBox = new System.Windows.Forms.ComboBox();
             this.SCIBusSpeedLabel = new System.Windows.Forms.Label();
@@ -180,12 +180,12 @@
             this.DiagnosticsResetViewButton = new System.Windows.Forms.Button();
             this.DiagnosticsTabControl = new System.Windows.Forms.TabControl();
             this.CCDBusDiagnosticsTabPage = new System.Windows.Forms.TabPage();
-            this.PCIBusDiagnosticsTabPage = new System.Windows.Forms.TabPage();
-            this.SCIBusPCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
-            this.SCIBusTCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
             this.CCDBusDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
+            this.PCIBusDiagnosticsTabPage = new System.Windows.Forms.TabPage();
             this.PCIBusDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
+            this.SCIBusPCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
             this.SCIBusPCMDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
+            this.SCIBusTCMDiagnosticsTabPage = new System.Windows.Forms.TabPage();
             this.SCIBusTCMDiagnosticsListBox = new ChryslerScanner.FlickerFreeListBox();
             this.MenuStrip.SuspendLayout();
             this.USBCommunicationGroupBox.SuspendLayout();
@@ -962,10 +962,10 @@
             // SCIBusControlTabPage
             // 
             this.SCIBusControlTabPage.BackColor = System.Drawing.Color.Transparent;
-            this.SCIBusControlTabPage.Controls.Add(this.SCIBusNGCModeCheckBox);
+            this.SCIBusControlTabPage.Controls.Add(this.SCIBusLogicComboBox);
+            this.SCIBusControlTabPage.Controls.Add(this.SCIBusLogicLabel);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusOBDConfigurationComboBox);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusOBDConfigurationLabel);
-            this.SCIBusControlTabPage.Controls.Add(this.SCIBusInvertedLogicCheckBox);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusModuleConfigSpeedApplyButton);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusSpeedComboBox);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusSpeedLabel);
@@ -986,11 +986,22 @@
             resources.ApplyResources(this.SCIBusControlTabPage, "SCIBusControlTabPage");
             this.SCIBusControlTabPage.Name = "SCIBusControlTabPage";
             // 
-            // SCIBusNGCModeCheckBox
+            // SCIBusLogicComboBox
             // 
-            resources.ApplyResources(this.SCIBusNGCModeCheckBox, "SCIBusNGCModeCheckBox");
-            this.SCIBusNGCModeCheckBox.Name = "SCIBusNGCModeCheckBox";
-            this.SCIBusNGCModeCheckBox.UseVisualStyleBackColor = true;
+            this.SCIBusLogicComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.SCIBusLogicComboBox.FormattingEnabled = true;
+            this.SCIBusLogicComboBox.Items.AddRange(new object[] {
+            resources.GetString("SCIBusLogicComboBox.Items"),
+            resources.GetString("SCIBusLogicComboBox.Items1"),
+            resources.GetString("SCIBusLogicComboBox.Items2"),
+            resources.GetString("SCIBusLogicComboBox.Items3")});
+            resources.ApplyResources(this.SCIBusLogicComboBox, "SCIBusLogicComboBox");
+            this.SCIBusLogicComboBox.Name = "SCIBusLogicComboBox";
+            // 
+            // SCIBusLogicLabel
+            // 
+            resources.ApplyResources(this.SCIBusLogicLabel, "SCIBusLogicLabel");
+            this.SCIBusLogicLabel.Name = "SCIBusLogicLabel";
             // 
             // SCIBusOBDConfigurationComboBox
             // 
@@ -1006,12 +1017,6 @@
             // 
             resources.ApplyResources(this.SCIBusOBDConfigurationLabel, "SCIBusOBDConfigurationLabel");
             this.SCIBusOBDConfigurationLabel.Name = "SCIBusOBDConfigurationLabel";
-            // 
-            // SCIBusInvertedLogicCheckBox
-            // 
-            resources.ApplyResources(this.SCIBusInvertedLogicCheckBox, "SCIBusInvertedLogicCheckBox");
-            this.SCIBusInvertedLogicCheckBox.Name = "SCIBusInvertedLogicCheckBox";
-            this.SCIBusInvertedLogicCheckBox.UseVisualStyleBackColor = true;
             // 
             // SCIBusModuleConfigSpeedApplyButton
             // 
@@ -1342,12 +1347,24 @@
             resources.ApplyResources(this.CCDBusDiagnosticsTabPage, "CCDBusDiagnosticsTabPage");
             this.CCDBusDiagnosticsTabPage.Name = "CCDBusDiagnosticsTabPage";
             // 
+            // CCDBusDiagnosticsListBox
+            // 
+            this.CCDBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
+            resources.ApplyResources(this.CCDBusDiagnosticsListBox, "CCDBusDiagnosticsListBox");
+            this.CCDBusDiagnosticsListBox.Name = "CCDBusDiagnosticsListBox";
+            // 
             // PCIBusDiagnosticsTabPage
             // 
             this.PCIBusDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
             this.PCIBusDiagnosticsTabPage.Controls.Add(this.PCIBusDiagnosticsListBox);
             resources.ApplyResources(this.PCIBusDiagnosticsTabPage, "PCIBusDiagnosticsTabPage");
             this.PCIBusDiagnosticsTabPage.Name = "PCIBusDiagnosticsTabPage";
+            // 
+            // PCIBusDiagnosticsListBox
+            // 
+            this.PCIBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
+            resources.ApplyResources(this.PCIBusDiagnosticsListBox, "PCIBusDiagnosticsListBox");
+            this.PCIBusDiagnosticsListBox.Name = "PCIBusDiagnosticsListBox";
             // 
             // SCIBusPCMDiagnosticsTabPage
             // 
@@ -1356,31 +1373,19 @@
             resources.ApplyResources(this.SCIBusPCMDiagnosticsTabPage, "SCIBusPCMDiagnosticsTabPage");
             this.SCIBusPCMDiagnosticsTabPage.Name = "SCIBusPCMDiagnosticsTabPage";
             // 
-            // SCIBusTCMDiagnosticsTabPage
-            // 
-            this.SCIBusTCMDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
-            this.SCIBusTCMDiagnosticsTabPage.Controls.Add(this.SCIBusTCMDiagnosticsListBox);
-            resources.ApplyResources(this.SCIBusTCMDiagnosticsTabPage, "SCIBusTCMDiagnosticsTabPage");
-            this.SCIBusTCMDiagnosticsTabPage.Name = "SCIBusTCMDiagnosticsTabPage";
-            // 
-            // CCDBusDiagnosticsListBox
-            // 
-            this.CCDBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
-            resources.ApplyResources(this.CCDBusDiagnosticsListBox, "CCDBusDiagnosticsListBox");
-            this.CCDBusDiagnosticsListBox.Name = "CCDBusDiagnosticsListBox";
-            // 
-            // PCIBusDiagnosticsListBox
-            // 
-            this.PCIBusDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
-            resources.ApplyResources(this.PCIBusDiagnosticsListBox, "PCIBusDiagnosticsListBox");
-            this.PCIBusDiagnosticsListBox.Name = "PCIBusDiagnosticsListBox";
-            // 
             // SCIBusPCMDiagnosticsListBox
             // 
             this.SCIBusPCMDiagnosticsListBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             resources.ApplyResources(this.SCIBusPCMDiagnosticsListBox, "SCIBusPCMDiagnosticsListBox");
             this.SCIBusPCMDiagnosticsListBox.Name = "SCIBusPCMDiagnosticsListBox";
             this.SCIBusPCMDiagnosticsListBox.SelectionMode = System.Windows.Forms.SelectionMode.None;
+            // 
+            // SCIBusTCMDiagnosticsTabPage
+            // 
+            this.SCIBusTCMDiagnosticsTabPage.BackColor = System.Drawing.Color.Transparent;
+            this.SCIBusTCMDiagnosticsTabPage.Controls.Add(this.SCIBusTCMDiagnosticsListBox);
+            resources.ApplyResources(this.SCIBusTCMDiagnosticsTabPage, "SCIBusTCMDiagnosticsTabPage");
+            this.SCIBusTCMDiagnosticsTabPage.Name = "SCIBusTCMDiagnosticsTabPage";
             // 
             // SCIBusTCMDiagnosticsListBox
             // 
@@ -1525,7 +1530,6 @@
         private System.Windows.Forms.ComboBox SCIBusSpeedComboBox;
         private System.Windows.Forms.Label SCIBusSpeedLabel;
         private System.Windows.Forms.Button SCIBusModuleConfigSpeedApplyButton;
-        private System.Windows.Forms.CheckBox SCIBusInvertedLogicCheckBox;
         private System.Windows.Forms.ComboBox SCIBusOBDConfigurationComboBox;
         private System.Windows.Forms.Label SCIBusOBDConfigurationLabel;
         private System.Windows.Forms.TabPage LCDControlTabPage;
@@ -1580,7 +1584,6 @@
         private FlickerFreeListBox PCIBusDiagnosticsListBox;
         private System.Windows.Forms.ToolStripMenuItem EngineToolsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem PCIBusOnDemandToolStripMenuItem;
-        private System.Windows.Forms.CheckBox SCIBusNGCModeCheckBox;
         private System.Windows.Forms.ToolStripMenuItem SortMessagesByIDByteToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem ABSToolsToolStripMenuItem;
         private System.Windows.Forms.Button DemoButton;
@@ -1591,6 +1594,8 @@
         private System.Windows.Forms.ToolStripMenuItem UARTBaudrateToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem Baudrate250000ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem Baudrate115200ToolStripMenuItem;
+        private System.Windows.Forms.ComboBox SCIBusLogicComboBox;
+        private System.Windows.Forms.Label SCIBusLogicLabel;
     }
 }
 
