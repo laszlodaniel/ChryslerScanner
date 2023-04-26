@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 09: minor
-// 08: patch
+// 09: patch
 // (00: revision)
-// = v0.9.8(.0)
-#define FW_VERSION 0x00090800
+// = v0.9.9(.0)
+#define FW_VERSION 0x00090900
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x0009080062B323AC
+#define FW_DATE 0x000909006448C47D
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -391,7 +391,7 @@ volatile uint8_t TCM_TxTail;
 volatile uint8_t TCM_LastRxError;
 
 uint8_t sci_hi_speed_memarea[16] = { 0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF };
-uint8_t sci_lo_speed_cmd_filter[5] = { 0x14, 0x15, 0x26, 0x27, 0x28 };
+uint8_t sci_lo_speed_cmd_filter[6] = { 0x14, 0x15, 0x26, 0x27, 0x28, 0x2A };
 
 uint32_t ccd_positive_adc = 0;   // raw analog reading is stored here
 uint16_t ccd_positive_volts = 0; // converted to CCD+ voltage and multiplied by 100: 2.51V -> 251
@@ -1308,7 +1308,7 @@ void restore_pcm_eeprom_handler(uint8_t *input_data)
                 pcm_getc(); // read echo into oblivion
             }
 
-            while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_LS_T3_DELAY); // wait for response
+            while ((uint32_t)(millis() - pcm.last_byte_millis) < (2 * SCI_LS_T2_DELAY)); // wait for response
 
             if (pcm_rx_available() == 0)
             {
@@ -1354,7 +1354,7 @@ void restore_pcm_eeprom_handler(uint8_t *input_data)
                     pcm_getc(); // read echo into oblivion
                 }
 
-                while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_LS_T3_DELAY); // wait for response
+                while ((uint32_t)(millis() - pcm.last_byte_millis) < (2 * SCI_LS_T2_DELAY)); // wait for response
 
                 if (pcm_rx_available() == 0)
                 {
@@ -6070,7 +6070,7 @@ void handle_sci_data(void)
                             while ((pcm_rx_available() <= i) && !timeout_reached)
                             {
                                 // wait here for echo
-                                if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
+                                if ((uint32_t)(millis() - timeout_start) >= (2 * SCI_LS_T2_DELAY)) timeout_reached = true;
                             }
 
                             if (timeout_reached) // exit for-loop if there's no echo
@@ -6110,7 +6110,7 @@ void handle_sci_data(void)
                         while ((pcm_rx_available() <= num_bytes) && !timeout_reached) // wait for 1 byte response only
                         {
                             // wait here for response
-                            if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
+                            if ((uint32_t)(millis() - pcm.last_byte_millis) >= (2 * SCI_LS_T2_DELAY)) timeout_reached = true;
                         }
 
                         pcm.response_received = true;
@@ -6122,7 +6122,7 @@ void handle_sci_data(void)
                         while (!timeout_reached && (pcm_rx_available() < 17)) // wait until all bytes are received
                         {
                             // wait here for response
-                            if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
+                            if ((uint32_t)(millis() - pcm.last_byte_millis) >= (2 * SCI_LS_T2_DELAY)) timeout_reached = true;
                         }
 
                         timeout_reached = false;
@@ -6162,7 +6162,7 @@ void handle_sci_data(void)
                             while ((pcm_rx_available() <= (i - pcm.msg_buffer_ptr - 1)) && !timeout_reached)
                             {
                                 // wait here for echo
-                                if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
+                                if ((uint32_t)(millis() - timeout_start) >= (2 * SCI_LS_T2_DELAY)) timeout_reached = true;
                             }
     
                             if (timeout_reached) // exit for-loop if there's no echo
@@ -6182,7 +6182,7 @@ void handle_sci_data(void)
                             while ((pcm_rx_available() <= num_bytes) && !timeout_reached) // wait for 1 byte response only
                             {
                                 // wait here for response
-                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
+                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= (2 * SCI_LS_T2_DELAY)) timeout_reached = true;
                             }
 
                             pcm.response_received = true;
@@ -6194,7 +6194,7 @@ void handle_sci_data(void)
                             while (!timeout_reached) // wait until all bytes are received
                             {
                                 // wait here for response
-                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
+                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= (2 * SCI_LS_T2_DELAY)) timeout_reached = true;
                             }
 
                             timeout_reached = false;
