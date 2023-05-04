@@ -345,6 +345,8 @@
             // DiagnosticDataRepeatIntervalCheckBox
             // 
             resources.ApplyResources(this.DiagnosticDataRepeatIntervalCheckBox, "DiagnosticDataRepeatIntervalCheckBox");
+            this.DiagnosticDataRepeatIntervalCheckBox.Checked = true;
+            this.DiagnosticDataRepeatIntervalCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.DiagnosticDataRepeatIntervalCheckBox.Name = "DiagnosticDataRepeatIntervalCheckBox";
             this.DiagnosticDataRepeatIntervalCheckBox.UseVisualStyleBackColor = true;
             // 

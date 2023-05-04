@@ -32,6 +32,7 @@ namespace ChryslerScanner
             SCIHiSpeed = 0x12,
             ActuatorTest = 0x13,
             DiagnosticData = 0x14,
+            ConfigDataSBEC2 = 0x16,
             ResetMemory = 0x23,
             ConfigData = 0x2A,
             GetSecuritySeedLegacy = 0x2B,
@@ -309,7 +310,16 @@ namespace ChryslerScanner
             MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
             MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
             MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-            MainForm.Packet.tx.payload = new byte[2] { 0x13, (byte)ActuatorTestComboBox.SelectedIndex };
+
+            if (OriginalForm.PCM.logic == "non-inverted")
+            {
+                MainForm.Packet.tx.payload = new byte[2] { 0x13, (byte)ActuatorTestComboBox.SelectedIndex };
+            }
+            else if (OriginalForm.PCM.logic == "inverted")
+            {
+                MainForm.Packet.tx.payload = new byte[3] { 0x13, (byte)ActuatorTestComboBox.SelectedIndex, 0x00 };
+            }
+            
             MainForm.Packet.GeneratePacket();
             OriginalForm.TransmitUSBPacket("[<-TX] Start PCM actuator test:");
         }
@@ -319,7 +329,16 @@ namespace ChryslerScanner
             MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
             MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
             MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-            MainForm.Packet.tx.payload = new byte[2] { 0x13, 0x00 };
+
+            if (OriginalForm.PCM.logic == "non-inverted")
+            {
+                MainForm.Packet.tx.payload = new byte[2] { 0x13, 0x00 };
+            }
+            else if (OriginalForm.PCM.logic == "inverted")
+            {
+                MainForm.Packet.tx.payload = new byte[3] { 0x13, 0x00, 0x00 };
+            }
+
             MainForm.Packet.GeneratePacket();
             OriginalForm.TransmitUSBPacket("[<-TX] Stop PCM actuator test:");
         }
@@ -344,7 +363,16 @@ namespace ChryslerScanner
                 {
                     MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
                     MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                    MainForm.Packet.tx.payload = new byte[2] { 0x14, (byte)DiagnosticDataListBox.SelectedIndex };
+
+                    if (OriginalForm.PCM.logic == "non-inverted")
+                    {
+                        MainForm.Packet.tx.payload = new byte[2] { 0x14, (byte)DiagnosticDataListBox.SelectedIndex };
+                    }
+                    else if (OriginalForm.PCM.logic == "inverted")
+                    {
+                        MainForm.Packet.tx.payload = new byte[3] { 0x14, (byte)DiagnosticDataListBox.SelectedIndex, 0x00 }; // 0x00 terminates byte stream
+                    }
+
                     MainForm.Packet.GeneratePacket();
                     OriginalForm.TransmitUSBPacket("[<-TX] Request diagnostic data:");
                 }
@@ -384,17 +412,36 @@ namespace ChryslerScanner
 
                 if (OriginalForm.PCM.speed == "7812.5 baud")
                 {
-                    MainForm.Packet.tx.payload = new byte[(3 * count) + 1];
-                    MainForm.Packet.tx.payload[0] = count;
-
-                    ushort bp = 1; // buffer pointer
-
-                    for (int i = 0; i < count; i++)
+                    if (OriginalForm.PCM.logic == "non-inverted")
                     {
-                        MainForm.Packet.tx.payload[bp] = 2; // message length
-                        MainForm.Packet.tx.payload[bp + 1] = 0x14; // request ID
-                        MainForm.Packet.tx.payload[bp + 2] = (byte)DiagnosticDataListBox.SelectedIndices[i]; // request parameter
-                        bp += 3;
+                        MainForm.Packet.tx.payload = new byte[(3 * count) + 1];
+                        MainForm.Packet.tx.payload[0] = count;
+
+                        ushort bp = 1; // buffer pointer
+
+                        for (int i = 0; i < count; i++)
+                        {
+                            MainForm.Packet.tx.payload[bp] = 2; // message length
+                            MainForm.Packet.tx.payload[bp + 1] = 0x14; // request ID
+                            MainForm.Packet.tx.payload[bp + 2] = (byte)DiagnosticDataListBox.SelectedIndices[i]; // request parameter
+                            bp += 3;
+                        }
+                    }
+                    else if (OriginalForm.PCM.logic == "inverted")
+                    {
+                        MainForm.Packet.tx.payload = new byte[(4 * count) + 1];
+                        MainForm.Packet.tx.payload[0] = count;
+
+                        ushort bp = 1; // buffer pointer
+
+                        for (int i = 0; i < count; i++)
+                        {
+                            MainForm.Packet.tx.payload[bp] = 3; // message length
+                            MainForm.Packet.tx.payload[bp + 1] = 0x14; // request ID
+                            MainForm.Packet.tx.payload[bp + 2] = (byte)DiagnosticDataListBox.SelectedIndices[i]; // request parameter
+                            MainForm.Packet.tx.payload[bp + 3] = 0; // stop byte stream
+                            bp += 4;
+                        }
                     }
 
                     MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
@@ -731,19 +778,27 @@ namespace ChryslerScanner
             OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:");
 
             const byte infoCount = 31; // there are fixed 31 information records available
+            const byte infoCountSBEC2 = 3;
 
             MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
             MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
             MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.list;
-            MainForm.Packet.tx.payload = new byte[(4 * infoCount) + 1];
-            MainForm.Packet.tx.payload[0] = infoCount;
+            MainForm.Packet.tx.payload = new byte[(4 * infoCount) + (3 * infoCountSBEC2) + 1];
+            MainForm.Packet.tx.payload[0] = infoCount + infoCountSBEC2;
+
+            for (int i = 0; i < infoCountSBEC2; i++)
+            {
+                MainForm.Packet.tx.payload[1 + (i * 3)] = 2; // message length
+                MainForm.Packet.tx.payload[1 + (i * 3) + 1] = 0x16; // request ID
+                MainForm.Packet.tx.payload[1 + (i * 3) + 1 + 1] = (byte)(0x80 + i); // request parameter
+            }
 
             for (int i = 0; i < infoCount; i++)
             {
-                MainForm.Packet.tx.payload[1 + (i * 4)] = 3; // message length
-                MainForm.Packet.tx.payload[1 + (i * 4) + 1] = 0x2A; // request ID
-                MainForm.Packet.tx.payload[1 + (i * 4) + 1 + 1] = (byte)(i + 1); // request parameter
-                MainForm.Packet.tx.payload[1 + (i * 4) + 1 + 1 + 1] = 0xFE; // termination command, some earlier SBEC3 won't stop streaming response byte without it
+                MainForm.Packet.tx.payload[10 + (i * 4)] = 3; // message length
+                MainForm.Packet.tx.payload[10 + (i * 4) + 1] = 0x2A; // request ID
+                MainForm.Packet.tx.payload[10 + (i * 4) + 1 + 1] = (byte)(i + 1); // request parameter
+                MainForm.Packet.tx.payload[10 + (i * 4) + 1 + 1 + 1] = 0xFE; // termination command, some earlier SBEC3 won't stop streaming response byte without it
             }
 
             MainForm.Packet.GeneratePacket();
@@ -807,7 +862,7 @@ namespace ChryslerScanner
                                 case (byte)SCI_ID.ActuatorTest:
                                     if (SCIBusResponseBytes.Length < 3) break;
 
-                                    if ((SCIBusResponseBytes.Length == 4) && (SCIBusResponseBytes[2] == 0))
+                                    if (((SCIBusResponseBytes.Length == 4) || (SCIBusResponseBytes.Length == 5)) && (SCIBusResponseBytes[1] != 0) && (SCIBusResponseBytes[2] == 0))
                                     {
                                         ActuatorTestStatusLabel.Text = "Status: mode not available";
                                         break;
@@ -820,6 +875,12 @@ namespace ChryslerScanner
                                     }
 
                                     ActuatorTestStatusLabel.Text = "Status: running";
+                                    break;
+                                case (byte)SCI_ID.ConfigDataSBEC2:
+                                    if (SCIBusResponseBytes.Length < 7) break;
+
+                                    UpdateCHTGroup();
+                                    UpdateStatusBar();
                                     break;
                                 case (byte)SCI_ID.ResetMemory:
                                     if (SCIBusResponseBytes.Length < 3) break;

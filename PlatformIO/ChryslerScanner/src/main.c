@@ -16,6 +16,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
+#include <inttypes.h>
+#include <stdint.h>
+#include <string.h>
+#include <stdbool.h>
+
 #include "AW9523.h"
 #include "bootstrap.h"
 #include "config.h"
@@ -25,11 +31,16 @@
 #include "freertos/ringbuf.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "freertos/event_groups.h"
+#include "esp_event.h"
+#include "esp_intr_alloc.h"
+#include "esp_log.h"
 #include "driver/adc.h"
 #include "esp_adc_cal.h"
 #include "driver/gpio.h"
 #include "driver/i2c.h"
 #include "driver/timer.h"
+#include "esp_timer.h"
 #include "driver/uart.h"
 #include "nvs_flash.h"
 #include "nvs.h"
@@ -43,6 +54,15 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_efuse_custom_table.h"
+#include "esp_nimble_hci.h"
+#include "nimble/nimble_port.h"
+#include "nimble/nimble_port_freertos.h"
+#include "host/ble_hs.h"
+#include "services/gap/ble_svc_gap.h"
+#include "services/gatt/ble_svc_gatt.h"
+#include "sdkconfig.h"
+
+char *TAG = "CryProV2"; // :')
 
 uart_config_t usb_config = {
     .baud_rate = 250000, // default, changed after loading settings
@@ -153,6 +173,7 @@ typedef struct state {
     bool tb_en; // bus termination and bias
     bool ngc_mode;
     bool inverted_logic;
+    bool sbec2_mode;
     bool rx_timeout;
     bool echo_received;
     bool response_received;
@@ -263,10 +284,10 @@ bool IRAM_ATTR pci_symbol_timer_isr_callback(void *arg);
 void pci_idle_timer_init(int group, int timer, uint16_t bus_idle_us);
 void pci_symbol_timer_init(int group, int timer, uint16_t symbol_us);
 void blink_led(uint8_t LED);
-bool open_settings();
-void close_settings();
+bool open_settings(void);
+void close_settings(void);
 uint32_t read_millivolts(adc1_channel_t adc_channel);
-void init_usb();
+void init_usb(void);
 
 /**
  * @brief Get coding scheme used for efuse block 3 (custom).
@@ -312,7 +333,7 @@ static void write_device_desc_efuse_fields(device_desc_t *desc, esp_efuse_coding
  * 
  * @return Number of milliseconds elapsed since system powerup.
  */
-uint32_t IRAM_ATTR millis()
+uint32_t IRAM_ATTR millis(void)
 {
     return (uint32_t)(esp_timer_get_time() / 1000ULL);
 }
@@ -322,7 +343,7 @@ uint32_t IRAM_ATTR millis()
  * 
  * @return Number of microseconds elapsed since system powerup.
  */
-uint64_t IRAM_ATTR micros()
+uint64_t IRAM_ATTR micros(void)
 {
     return esp_timer_get_time();
 }
@@ -497,7 +518,7 @@ void send_usb_packet(uint8_t bus, uint8_t command, uint8_t subdatacode, uint8_t 
 /**
  * @brief Generate a handshake packet and send over USB connection.
  */
-void send_handshake()
+void send_handshake(void)
 {
     //uint8_t handshake[15] = { 0x43, 0x48, 0x52, 0x59, 0x53, 0x4C, 0x45, 0x52, 0x53, 0x43, 0x41, 0x4E, 0x4E, 0x45, 0x52 }; // CHRYSLERSCANNER
     char *handshake = "CHRYSLERSCANNER";
@@ -507,7 +528,7 @@ void send_handshake()
 /**
  * @brief Generate a status packet and send over USB connection.
  */
-void send_status()
+void send_status(void)
 {
     uint32_t free_ram = esp_get_free_heap_size();
     uint32_t battery_millivolts = read_millivolts(BATTVOLT_ADC_CHANNEL);
@@ -567,7 +588,7 @@ void send_status()
 /**
  * @brief Generate a hardware information packet and send over USB connection.
  */
-void send_hw_info()
+void send_hw_info(void)
 {
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
@@ -685,7 +706,7 @@ static void aw9523_write_byte(uint8_t reg_addr, uint8_t reg_data)
  * 
  * @return True if successful. False is unsuccessful.
  */
-bool open_settings()
+bool open_settings(void)
 {
     esp_err_t result = nvs_open("settings", NVS_READWRITE, &settings_handle);
 
@@ -700,7 +721,7 @@ bool open_settings()
 /**
  * @brief Save last changes and close settings in the NVS partition.
  */
-void close_settings()
+void close_settings(void)
 {
     nvs_commit(settings_handle);
     nvs_close(settings_handle);
@@ -709,7 +730,7 @@ void close_settings()
 /**
  * @brief Write default settings to the NVS partition.
  */
-void default_settings()
+void default_settings(void)
 {
     if (open_settings())
     {
@@ -727,7 +748,7 @@ void default_settings()
 /**
  * @brief Initialize I2C communication.
  */
-void init_i2c()
+void init_i2c(void)
 {
     // Setup I2C communication.
     i2c_param_config(I2C_CHANNEL, &i2c_config);
@@ -816,7 +837,8 @@ void configure_sci_bus(uint8_t settings)
 {
     // B7: state bit:     0: disabled
     //                    1: enabled
-    // B6: not used:      0: always clear
+    // B6: sbec bit:      0: do not exchange first and last 4-bits
+    //                    1: exchange first and last 4-bits
     // B5: module bit:    0: PCM (engine)
     //                    1: TCM (transmission)
     // B4: ngc bit:       0: NGC mode off
@@ -830,9 +852,16 @@ void configure_sci_bus(uint8_t settings)
     //                   10: 62500 baud
     //                   11: 125000 baud
 
-    cbi(settings, 6);
-
     sci.state.en = settings & (1 << SCI_STATE_BIT);
+
+    if (settings & (1 << SCI_SBEC2_BIT))
+    {
+        sci.state.sbec2_mode = true;
+    }
+    else
+    {
+        sci.state.sbec2_mode = false;
+    }
 
     if (settings & (1 << SCI_NGC_BIT))
     {
@@ -880,12 +909,12 @@ void configure_sci_bus(uint8_t settings)
     if (settings & (1 << SCI_LOGIC_BIT)) // inverted logic
     {
         sci.state.inverted_logic = true;
-        uart_set_line_inverse(UART_SCI, UART_SIGNAL_RXD_INV | UART_SIGNAL_TXD_INV);
+        //uart_set_line_inverse(UART_SCI, UART_SIGNAL_RXD_INV | UART_SIGNAL_TXD_INV);
     }
     else // non-inverted logic
     {
         sci.state.inverted_logic = false;
-        uart_set_line_inverse(UART_SCI, UART_SIGNAL_INV_DISABLE);
+        //uart_set_line_inverse(UART_SCI, UART_SIGNAL_INV_DISABLE);
     }
 
     switch (settings & SCI_SPEED_BITS)
@@ -1066,7 +1095,7 @@ void configure_pci_bus(uint8_t settings)
 /**
  * @brief Initialize ESP32's ADC to measure battery/bootstrap/programming voltages.
  */
-void init_adc()
+void init_adc(void)
 {
     adc1_config_width(adc_width);
     adc1_config_channel_atten(adc_battvolt_channel, adc_atten);
@@ -1109,6 +1138,7 @@ uint32_t read_millivolts(adc1_channel_t adc_channel)
         default:
         {
             millivolts = 0;
+            break;
         }
     }
 
@@ -1118,7 +1148,7 @@ uint32_t read_millivolts(adc1_channel_t adc_channel)
 /**
  * @brief Analyze received USB packet and execute requests.
  */
-void parse_usb_command()
+void parse_usb_command(void)
 {
     uint8_t bus = (usb_packet.datacode >> 4) & 0x07; // keep 3 bits (0xxx0000 -> 00000xxx)
     uint8_t command = usb_packet.datacode & 0x0F; // keep 4 bits (0000yyyy)
@@ -1668,7 +1698,7 @@ void parse_usb_command()
                                 break;
                             }
 
-                            if (sci.state.inverted_logic) // last 4 bits come first, then first 4 bits
+                            if (sci.state.sbec2_mode) // last 4 bits come first, then first 4 bits
                             {
                                 for (int i = 0; i < usb_packet.payload_length; i++)
                                 {
@@ -1737,7 +1767,7 @@ void parse_usb_command()
                             sci.msg.tx_length = usb_packet.payload[1]; // first message length is saved
                             sci.msg.tx_ptr = 0; // set the pointer in the main buffer at the beginning
 
-                            if (sci.state.inverted_logic) // last 4 bits come first, then first 4 bits
+                            if (sci.state.sbec2_mode) // last 4 bits come first, then first 4 bits
                             {
                                 for (int i = 0; i < sci.msg.tx_count; i++)
                                 {
@@ -1921,6 +1951,14 @@ void parse_usb_command()
 }
 
 /**
+ * @brief Get number of bytes waiting in the USB ringbuffer.
+ */
+uint16_t usb_rx_available(void)
+{
+    return (USB_RX_BUF_SIZE - xRingbufferGetCurFreeSize(usb_rx_ringbuf_handle));
+}
+
+/**
  * @brief Task to handle and store received USB data to a ringbuffer.
  * 
  * @param pvParameters Unused parameters.
@@ -1941,6 +1979,18 @@ void usb_event_task(void *pvParameters)
                 {
                     uint16_t length = event.size; // save length
                     uart_read_bytes(UART_USB, usb_rx_buf, length, pdMS_TO_TICKS(50)); // read bytes to a simple byte buffer
+
+                    // if (usb_rx_available() == 0)
+                    // {
+                    //     if (usb_rx_buf[0] != PACKET_SYNC_BYTE) // clear ring buffer
+                    //     {
+                    //         size_t item_size;
+                    //         uint8_t *item;
+                    //         item = (uint8_t *)xRingbufferReceiveUpTo(usb_rx_ringbuf_handle, &item_size, pdMS_TO_TICKS(50), USB_RX_BUF_SIZE);
+                    //         vRingbufferReturnItem(usb_rx_ringbuf_handle, (void *)item);
+                    //     }
+                    // }
+
                     xRingbufferSend(usb_rx_ringbuf_handle, usb_rx_buf, length, pdMS_TO_TICKS(50)); // add received bytes to the ring buffer
                     //send_usb_packet(Bus_USB, Command_Error, Error_Timeout, usb_rx_buf, length);
                     break;
@@ -1961,14 +2011,6 @@ void usb_event_task(void *pvParameters)
     }
 
     vTaskDelete(NULL);
-}
-
-/**
- * @brief Get number of bytes waiting in the USB ringbuffer.
- */
-uint16_t usb_rx_available()
-{
-    return (USB_RX_BUF_SIZE - xRingbufferGetCurFreeSize(usb_rx_ringbuf_handle));
 }
 
 /**
@@ -2028,12 +2070,6 @@ void usb_msg_task(void *pvParameters)
 
             if (rx_buf[0] != PACKET_SYNC_BYTE)
             {
-                if (usb_rx_available() > 0)
-                {
-                    item = (uint8_t *)xRingbufferReceiveUpTo(usb_rx_ringbuf_handle, &item_size, pdMS_TO_TICKS(50), usb_rx_available()); // clear buffer
-                    vRingbufferReturnItem(usb_rx_ringbuf_handle, (void *)item);
-                }
-                
                 goto begin;
             }
 
@@ -2485,7 +2521,7 @@ void sci_event_task(void *pvParameters)
 
                     uart_read_bytes(UART_SCI, data, length, pdMS_TO_TICKS(50)); // read bytes to a simple byte buffer
 
-                    if (sci.state.inverted_logic) // last 4 bits come first, then first 4 bits
+                    if (sci.state.sbec2_mode) // last 4 bits come first, then first 4 bits
                     {
                         uint8_t raw = 0;
 
@@ -3216,10 +3252,10 @@ void sci_boot_task(void *pvParameters)
 
             switch (sci.bootstrap.bootloader_src)
             {
-                case Bootloader_128k_SBEC3:
+                case Bootloader_128k_SBEC3_SBEC3PLUS:
                 {
-                    bl_header[3] = ((0x0100 + sizeof(LdBoot_128k_SBEC3) - 1) >> 8) & 0xFF;
-                    bl_header[4] = (0x0100 + sizeof(LdBoot_128k_SBEC3) - 1) & 0xFF;
+                    bl_header[3] = ((0x0100 + sizeof(LdBoot_128k_SBEC3_SBEC3PLUS) - 1) >> 8) & 0xFF;
+                    bl_header[4] = (0x0100 + sizeof(LdBoot_128k_SBEC3_SBEC3PLUS) - 1) & 0xFF;
 
                     for (uint8_t i = 0; i < sizeof(bl_header); i++)
                     {
@@ -3229,9 +3265,9 @@ void sci_boot_task(void *pvParameters)
                         sci.msg.byte_received = false;
                     }
 
-                    for (uint16_t i = 0; i < sizeof(LdBoot_128k_SBEC3); i++)
+                    for (uint16_t i = 0; i < sizeof(LdBoot_128k_SBEC3_SBEC3PLUS); i++)
                     {
-                        buff[0] = LdBoot_128k_SBEC3[i];
+                        buff[0] = LdBoot_128k_SBEC3_SBEC3PLUS[i];
                         uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
                         while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
                         sci.msg.byte_received = false;
@@ -3260,10 +3296,10 @@ void sci_boot_task(void *pvParameters)
                     }
                     break;
                 }
-                case Bootloader_256k_SBEC3:
+                case Bootloader_256k_SBEC3A_3APLUS_3B:
                 {
-                    bl_header[3] = ((0x0100 + sizeof(LdBoot_256k_SBEC3) - 1) >> 8) & 0xFF;
-                    bl_header[4] = (0x0100 + sizeof(LdBoot_256k_SBEC3) - 1) & 0xFF;
+                    bl_header[3] = ((0x0100 + sizeof(LdBoot_256k_SBEC3A_3APLUS_3B) - 1) >> 8) & 0xFF;
+                    bl_header[4] = (0x0100 + sizeof(LdBoot_256k_SBEC3A_3APLUS_3B) - 1) & 0xFF;
 
                     for (uint8_t i = 0; i < sizeof(bl_header); i++)
                     {
@@ -3273,9 +3309,9 @@ void sci_boot_task(void *pvParameters)
                         sci.msg.byte_received = false;
                     }
 
-                    for (uint16_t i = 0; i < sizeof(LdBoot_256k_SBEC3); i++)
+                    for (uint16_t i = 0; i < sizeof(LdBoot_256k_SBEC3A_3APLUS_3B); i++)
                     {
-                        buff[0] = LdBoot_256k_SBEC3[i];
+                        buff[0] = LdBoot_256k_SBEC3A_3APLUS_3B[i];
                         uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
                         while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
                         sci.msg.byte_received = false;
@@ -3326,10 +3362,10 @@ void sci_boot_task(void *pvParameters)
                     }
                     break;
                 }
-                case Bootloader_256k_EATX3:
+                case Bootloader_256k_EATX3A:
                 {
-                    bl_header[3] = ((0x0100 + sizeof(LdBoot_256k_EATX3) - 1) >> 8) & 0xFF;
-                    bl_header[4] = (0x0100 + sizeof(LdBoot_256k_EATX3) - 1) & 0xFF;
+                    bl_header[3] = ((0x0100 + sizeof(LdBoot_256k_EATX3A) - 1) >> 8) & 0xFF;
+                    bl_header[4] = (0x0100 + sizeof(LdBoot_256k_EATX3A) - 1) & 0xFF;
 
                     for (uint8_t i = 0; i < sizeof(bl_header); i++)
                     {
@@ -3339,9 +3375,9 @@ void sci_boot_task(void *pvParameters)
                         sci.msg.byte_received = false;
                     }
 
-                    for (uint16_t i = 0; i < sizeof(LdBoot_256k_EATX3); i++)
+                    for (uint16_t i = 0; i < sizeof(LdBoot_256k_EATX3A); i++)
                     {
-                        buff[0] = LdBoot_256k_EATX3[i];
+                        buff[0] = LdBoot_256k_EATX3A[i];
                         uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
                         while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
                         sci.msg.byte_received = false;
@@ -3364,6 +3400,28 @@ void sci_boot_task(void *pvParameters)
                     for (uint16_t i = 0; i < sizeof(LdBoot_256k_JTEC); i++)
                     {
                         buff[0] = LdBoot_256k_JTEC[i];
+                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                        sci.msg.byte_received = false;
+                    }
+                    break;
+                }
+                case Bootloader_256k_JTECPLUS:
+                {
+                    bl_header[3] = ((0x0100 + sizeof(LdBoot_256k_JTECPLUS) - 1) >> 8) & 0xFF;
+                    bl_header[4] = (0x0100 + sizeof(LdBoot_256k_JTECPLUS) - 1) & 0xFF;
+
+                    for (uint8_t i = 0; i < sizeof(bl_header); i++)
+                    {
+                        buff[0] = bl_header[i];
+                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                        sci.msg.byte_received = false;
+                    }
+
+                    for (uint16_t i = 0; i < sizeof(LdBoot_256k_JTECPLUS); i++)
+                    {
+                        buff[0] = LdBoot_256k_JTECPLUS[i];
                         uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
                         while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
                         sci.msg.byte_received = false;
@@ -3449,7 +3507,7 @@ void sci_boot_task(void *pvParameters)
             uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
             sci_set_timeout(5 * SCI_LS_T1_DELAY);
             uart_write_bytes(UART_SCI, (const uint8_t *)wf_header, 1); // ping with first byte of the header
-            vTaskDelay(pdMS_TO_TICKS(10));
+            vTaskDelay(pdMS_TO_TICKS(50));
 
             if (!sci.msg.byte_received)
             {
@@ -3465,8 +3523,8 @@ void sci_boot_task(void *pvParameters)
                 {
                     switch (sci.bootstrap.bootloader_src)
                     {
-                        case (Bootloader_128k_SBEC3):
-                        case (Bootloader_256k_SBEC3):
+                        case (Bootloader_128k_SBEC3_SBEC3PLUS):
+                        case (Bootloader_256k_SBEC3A_3APLUS_3B):
                         {
                             wf_header[1] = (sizeof(LdPartNumberRead_SBEC3) >> 8) & 0xFF;
                             wf_header[2] = sizeof(LdPartNumberRead_SBEC3) & 0xFF;
@@ -3489,7 +3547,7 @@ void sci_boot_task(void *pvParameters)
                             break;
                         }
                         case (Bootloader_128k_EATX3):
-                        case (Bootloader_256k_EATX3):
+                        case (Bootloader_256k_EATX3A):
                         {
                             wf_header[1] = (sizeof(LdPartNumberRead_EATX3) >> 8) & 0xFF;
                             wf_header[2] = sizeof(LdPartNumberRead_EATX3) & 0xFF;
@@ -3513,8 +3571,8 @@ void sci_boot_task(void *pvParameters)
                         }
                         case (Bootloader_256k_JTEC):
                         {
-                            wf_header[1] = (sizeof(LdPartNumberRead_JTEC) >> 8) & 0xFF;
-                            wf_header[2] = sizeof(LdPartNumberRead_JTEC) & 0xFF;
+                            wf_header[1] = (sizeof(LdPartNumberRead_256k_JTEC) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdPartNumberRead_256k_JTEC) & 0xFF;
 
                             for (uint8_t i = 1; i < sizeof(wf_header); i++)
                             {
@@ -3524,9 +3582,31 @@ void sci_boot_task(void *pvParameters)
                                 sci.msg.byte_received = false;
                             }
 
-                            for (uint16_t i = 0; i < sizeof(LdPartNumberRead_JTEC); i++)
+                            for (uint16_t i = 0; i < sizeof(LdPartNumberRead_256k_JTEC); i++)
                             {
-                                buff[0] = LdPartNumberRead_JTEC[i];
+                                buff[0] = LdPartNumberRead_256k_JTEC[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+                            break;
+                        }
+                        case (Bootloader_256k_JTECPLUS):
+                        {
+                            wf_header[1] = (sizeof(LdPartNumberRead_256k_JTECPLUS) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdPartNumberRead_256k_JTECPLUS) & 0xFF;
+
+                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                            {
+                                buff[0] = wf_header[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+
+                            for (uint16_t i = 0; i < sizeof(LdPartNumberRead_256k_JTECPLUS); i++)
+                            {
+                                buff[0] = LdPartNumberRead_256k_JTECPLUS[i];
                                 uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
                                 while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
                                 sci.msg.byte_received = false;
@@ -3560,56 +3640,23 @@ void sci_boot_task(void *pvParameters)
                 }
                 case WorkerFunction_FlashID:
                 {
-                    switch (sci.bootstrap.bootloader_src)
+                    wf_header[1] = (sizeof(LdFlashID_SBEC3) >> 8) & 0xFF;
+                    wf_header[2] = sizeof(LdFlashID_SBEC3) & 0xFF;
+
+                    for (uint8_t i = 1; i < sizeof(wf_header); i++)
                     {
-                        case (Bootloader_128k_SBEC3):
-                        case (Bootloader_256k_SBEC3):
-                        case (Bootloader_256k_JTEC):
-                        default:
-                        {
-                            wf_header[1] = (sizeof(LdFlashID_SBEC3) >> 8) & 0xFF;
-                            wf_header[2] = sizeof(LdFlashID_SBEC3) & 0xFF;
+                        buff[0] = wf_header[i];
+                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                        sci.msg.byte_received = false;
+                    }
 
-                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
-                            {
-                                buff[0] = wf_header[i];
-                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
-                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
-                                sci.msg.byte_received = false;
-                            }
-
-                            for (uint16_t i = 0; i < sizeof(LdFlashID_SBEC3); i++)
-                            {
-                                buff[0] = LdFlashID_SBEC3[i];
-                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
-                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
-                                sci.msg.byte_received = false;
-                            }
-                            break;
-                        }
-                        case (Bootloader_128k_EATX3):
-                        case (Bootloader_256k_EATX3):
-                        {
-                            wf_header[1] = (sizeof(LdFlashID_EATX3) >> 8) & 0xFF;
-                            wf_header[2] = sizeof(LdFlashID_EATX3) & 0xFF;
-
-                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
-                            {
-                                buff[0] = wf_header[i];
-                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
-                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
-                                sci.msg.byte_received = false;
-                            }
-
-                            for (uint16_t i = 0; i < sizeof(LdFlashID_EATX3); i++)
-                            {
-                                buff[0] = LdFlashID_EATX3[i];
-                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
-                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
-                                sci.msg.byte_received = false;
-                            }
-                            break;
-                        }
+                    for (uint16_t i = 0; i < sizeof(LdFlashID_SBEC3); i++)
+                    {
+                        buff[0] = LdFlashID_SBEC3[i];
+                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                        sci.msg.byte_received = false;
                     }
                     break;
                 }
@@ -3657,6 +3704,28 @@ void sci_boot_task(void *pvParameters)
                             for (uint16_t i = 0; i < sizeof(LdFlashErase_M28F102_128k); i++)
                             {
                                 buff[0] = LdFlashErase_M28F102_128k[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+                            break;
+                        }
+                        case FlashMemoryTypeIndex_N28F010_x2: // 256 kB
+                        {
+                            wf_header[1] = (sizeof(LdFlashErase_N28F010_128k_x2_JTEC) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdFlashErase_N28F010_128k_x2_JTEC) & 0xFF;
+
+                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                            {
+                                buff[0] = wf_header[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+
+                            for (uint16_t i = 0; i < sizeof(LdFlashErase_N28F010_128k_x2_JTEC); i++)
+                            {
+                                buff[0] = LdFlashErase_N28F010_128k_x2_JTEC[i];
                                 uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
                                 while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
                                 sci.msg.byte_received = false;
@@ -3740,6 +3809,28 @@ void sci_boot_task(void *pvParameters)
                 {
                     switch (sci.bootstrap.flash_chip_src)
                     {
+                        case FlashMemoryTypeIndex_N28F010_x2: // 256 kB
+                        {
+                            wf_header[1] = (sizeof(LdFlashWrite_N28F010_128k_x2_JTEC) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdFlashWrite_N28F010_128k_x2_JTEC) & 0xFF;
+
+                            for (uint8_t i = 1; i < sizeof(wf_header); i++)
+                            {
+                                buff[0] = wf_header[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+
+                            for (uint16_t i = 0; i < sizeof(LdFlashWrite_N28F010_128k_x2_JTEC); i++)
+                            {
+                                buff[0] = LdFlashWrite_N28F010_128k_x2_JTEC[i];
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                                while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                                sci.msg.byte_received = false;
+                            }
+                            break;
+                        }
                         case FlashMemoryTypeIndex_M28F102: // 128 kB
                         case FlashMemoryTypeIndex_CAT28F102: // 128 kB
                         case FlashMemoryTypeIndex_N28F010: // 128 kB
@@ -3821,8 +3912,8 @@ void sci_boot_task(void *pvParameters)
                 {
                     switch (sci.bootstrap.bootloader_src)
                     {
-                        case (Bootloader_128k_SBEC3):
-                        case (Bootloader_256k_SBEC3):
+                        case (Bootloader_128k_SBEC3_SBEC3PLUS):
+                        case (Bootloader_256k_SBEC3A_3APLUS_3B):
                         {
                             wf_header[1] = (sizeof(LdEEPROMRead_SBEC3) >> 8) & 0xFF;
                             wf_header[2] = sizeof(LdEEPROMRead_SBEC3) & 0xFF;
@@ -3845,7 +3936,7 @@ void sci_boot_task(void *pvParameters)
                             break;
                         }
                         case (Bootloader_128k_EATX3):
-                        case (Bootloader_256k_EATX3):
+                        case (Bootloader_256k_EATX3A):
                         {
                             wf_header[1] = (sizeof(LdEEPROMRead_EATX3) >> 8) & 0xFF;
                             wf_header[2] = sizeof(LdEEPROMRead_EATX3) & 0xFF;
@@ -3868,9 +3959,10 @@ void sci_boot_task(void *pvParameters)
                             break;
                         }
                         case (Bootloader_256k_JTEC):
+                        case (Bootloader_256k_JTECPLUS):
                         {
-                            wf_header[1] = (sizeof(LdWorker_empty_JTEC) >> 8) & 0xFF;
-                            wf_header[2] = sizeof(LdWorker_empty_JTEC) & 0xFF;
+                            wf_header[1] = (sizeof(LdWorker_empty_256k_JTECPLUS) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdWorker_empty_256k_JTECPLUS) & 0xFF;
 
                             for (uint8_t i = 1; i < sizeof(wf_header); i++)
                             {
@@ -3880,9 +3972,9 @@ void sci_boot_task(void *pvParameters)
                                 sci.msg.byte_received = false;
                             }
 
-                            for (uint16_t i = 0; i < sizeof(LdWorker_empty_JTEC); i++)
+                            for (uint16_t i = 0; i < sizeof(LdWorker_empty_256k_JTECPLUS); i++)
                             {
-                                buff[0] = LdWorker_empty_JTEC[i];
+                                buff[0] = LdWorker_empty_256k_JTECPLUS[i];
                                 uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
                                 while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
                                 sci.msg.byte_received = false;
@@ -3918,8 +4010,8 @@ void sci_boot_task(void *pvParameters)
                 {
                     switch (sci.bootstrap.bootloader_src)
                     {
-                        case (Bootloader_128k_SBEC3):
-                        case (Bootloader_256k_SBEC3):
+                        case (Bootloader_128k_SBEC3_SBEC3PLUS):
+                        case (Bootloader_256k_SBEC3A_3APLUS_3B):
                         {
                             wf_header[1] = (sizeof(LdEEPROMWrite_SBEC3) >> 8) & 0xFF;
                             wf_header[2] = sizeof(LdEEPROMWrite_SBEC3) & 0xFF;
@@ -3942,7 +4034,7 @@ void sci_boot_task(void *pvParameters)
                             break;
                         }
                         case (Bootloader_128k_EATX3):
-                        case (Bootloader_256k_EATX3):
+                        case (Bootloader_256k_EATX3A):
                         {
                             wf_header[1] = (sizeof(LdEEPROMWrite_EATX3) >> 8) & 0xFF;
                             wf_header[2] = sizeof(LdEEPROMWrite_EATX3) & 0xFF;
@@ -3965,9 +4057,10 @@ void sci_boot_task(void *pvParameters)
                             break;
                         }
                         case (Bootloader_256k_JTEC):
+                        case (Bootloader_256k_JTECPLUS):
                         {
-                            wf_header[1] = (sizeof(LdWorker_empty_JTEC) >> 8) & 0xFF;
-                            wf_header[2] = sizeof(LdWorker_empty_JTEC) & 0xFF;
+                            wf_header[1] = (sizeof(LdWorker_empty_256k_JTECPLUS) >> 8) & 0xFF;
+                            wf_header[2] = sizeof(LdWorker_empty_256k_JTECPLUS) & 0xFF;
 
                             for (uint8_t i = 1; i < sizeof(wf_header); i++)
                             {
@@ -3977,9 +4070,9 @@ void sci_boot_task(void *pvParameters)
                                 sci.msg.byte_received = false;
                             }
 
-                            for (uint16_t i = 0; i < sizeof(LdWorker_empty_JTEC); i++)
+                            for (uint16_t i = 0; i < sizeof(LdWorker_empty_256k_JTECPLUS); i++)
                             {
-                                buff[0] = LdWorker_empty_JTEC[i];
+                                buff[0] = LdWorker_empty_256k_JTECPLUS[i];
                                 uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
                                 while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
                                 sci.msg.byte_received = false;
@@ -4065,7 +4158,7 @@ void sci_boot_task(void *pvParameters)
             sci.msg.tx_count = 1;
             sci.msg.rx_ptr = 0;
 
-            sci_set_timeout(SCI_LS_T3_DELAY);
+            sci_set_timeout(5 * SCI_LS_T3_DELAY);
 
             switch (sci.bootstrap.worker_function_src)
             {
@@ -4151,7 +4244,7 @@ void sci_boot_task(void *pvParameters)
             sci.msg.tx_count = 1;
             sci.msg.rx_ptr = 0;
 
-            sci_set_timeout(SCI_LS_T3_DELAY);
+            sci_set_timeout(5 * SCI_LS_T3_DELAY);
 
             switch (sci.bootstrap.worker_function_src)
             {
@@ -4269,7 +4362,7 @@ void sci_eeprom_task(void *pvParameters)
             sci.msg.rx_ptr = 0;
             uart_flush_input(UART_SCI);
             uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
-            sci_set_timeout(2 * SCI_LS_T3_DELAY);
+            sci_set_timeout(4 * SCI_LS_T3_DELAY);
             uart_write_bytes(UART_SCI, (const uint8_t *)req_seed_cmd, sizeof(req_seed_cmd));
             uart_wait_tx_idle_polling(UART_SCI); // wait until all bytes are transferred
             vTaskDelay(pdMS_TO_TICKS(1));
@@ -4307,7 +4400,7 @@ void sci_eeprom_task(void *pvParameters)
 
                 sci.msg.byte_received = false;
                 sci.state.idle = false;
-                sci_set_timeout(2 * SCI_LS_T3_DELAY);
+                sci_set_timeout(4 * SCI_LS_T3_DELAY);
 
                 for (uint8_t i = 0; i < sizeof(send_key_cmd); i++)
                 {
@@ -4317,7 +4410,16 @@ void sci_eeprom_task(void *pvParameters)
                     sci.msg.byte_received = false;
                 }
 
-                while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+                while (!sci.state.idle)
+                {
+                    if (sci.msg.byte_received)
+                    {
+                        sci_idle_timer_isr_callback(NULL);
+                        break;
+                    }
+
+                    vTaskDelay(pdMS_TO_TICKS(1));
+                }
 
                 if (sci.msg.last_rx_length < 5)
                 {
@@ -4341,35 +4443,47 @@ void sci_eeprom_task(void *pvParameters)
                 valid_response = false;
                 attempts = 0;
 
-                sci.msg.byte_received = false;
-                sci.state.idle = false;
-                sci_set_timeout(2 * SCI_LS_T3_DELAY);
-
-                for (uint8_t i = 0; i < sizeof(read_eeprom_cmd); i++)
+                while (!valid_response)
                 {
-                    buff[0] = read_eeprom_cmd[i];
-                    uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
-                    while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
                     sci.msg.byte_received = false;
-                }
+                    sci.state.idle = false;
+                    sci_set_timeout(6 * SCI_LS_T3_DELAY);
 
-                while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
-
-                if (sci.msg.byte_received)
-                {
-                    valid_response = true;
-                }
-                else
-                {
-                    attempts++;
-
-                    if (attempts >= 10)
+                    for (uint8_t i = 0; i < sizeof(read_eeprom_cmd); i++)
                     {
-                        ret[0] = 5;
-                        goto stop_er;
+                        buff[0] = read_eeprom_cmd[i];
+                        uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                        while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                        sci.msg.byte_received = false;
                     }
 
-                    vTaskDelay(100);
+                    while (!sci.state.idle)
+                    {
+                        if (sci.msg.byte_received)
+                        {
+                            sci_idle_timer_isr_callback(NULL);
+                            break;
+                        }
+
+                        vTaskDelay(pdMS_TO_TICKS(1));
+                    }
+
+                    if (sci.msg.byte_received)
+                    {
+                        valid_response = true;
+                    }
+                    else
+                    {
+                        attempts++;
+
+                        if (attempts >= 10)
+                        {
+                            ret[0] = 5;
+                            goto stop_er;
+                        }
+
+                        vTaskDelay(100);
+                    }
                 }
 
                 if (sci.msg.rx_buffer[3] != pcm_eeprom_payload[i]) // write new EEPROM byte
@@ -4384,7 +4498,7 @@ void sci_eeprom_task(void *pvParameters)
                     {
                         sci.msg.byte_received = false;
                         sci.state.idle = false;
-                        sci_set_timeout(2 * SCI_LS_T3_DELAY);
+                        sci_set_timeout(6 * SCI_LS_T3_DELAY);
 
                         for (uint8_t i = 0; i < sizeof(write_eeprom_cmd); i++)
                         {
@@ -4394,7 +4508,16 @@ void sci_eeprom_task(void *pvParameters)
                             sci.msg.byte_received = false;
                         }
 
-                        while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+                        while (!sci.state.idle)
+                        {
+                            if (sci.msg.byte_received)
+                            {
+                                sci_idle_timer_isr_callback(NULL);
+                                break;
+                            }
+
+                            vTaskDelay(pdMS_TO_TICKS(1));
+                        }
 
                         if (sci.msg.byte_received)
                         {
@@ -4423,9 +4546,10 @@ void sci_eeprom_task(void *pvParameters)
             }
 
             stop_er:
-            while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+            //while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+            vTaskDelay(pdMS_TO_TICKS(50));
             send_usb_packet(Bus_USB, Command_Debug, Debug_RestorePCMEEPROM, ret, sizeof(ret));
-            sci_set_timeout(SCI_LS_T3_DELAY);
+            //sci_set_timeout(SCI_LS_T3_DELAY);
         }
         
         vTaskDelay(1);
@@ -4951,7 +5075,7 @@ void led_task(void *pvParameters)
 /**
  * @brief Initialize LED pins.
  */
-void init_leds()
+void init_leds(void)
 {
     gpio_reset_pin(RX_LED_PIN);
     gpio_set_direction(RX_LED_PIN, GPIO_MODE_OUTPUT);
@@ -4983,25 +5107,25 @@ void init_leds()
 /**
  * @brief Initialize USB communication.
  */
-void init_usb()
+void init_usb(void)
 {
     if (uart_is_driver_installed(UART_USB))
         ESP_ERROR_CHECK(uart_driver_delete(UART_USB));
     
     ESP_ERROR_CHECK(uart_param_config(UART_USB, &usb_config));
     ESP_ERROR_CHECK(uart_set_pin(UART_USB, USB_TX_PIN, USB_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
-    ESP_ERROR_CHECK(uart_driver_install(UART_USB, USB_RX_BUF_SIZE, USB_TX_BUF_SIZE, 20, &usb_uart_queue, ESP_INTR_FLAG_SHARED));
+    ESP_ERROR_CHECK(uart_driver_install(UART_USB, USB_RX_BUF_SIZE, USB_TX_BUF_SIZE, 20, &usb_uart_queue, 0));
 }
 
 /**
  * @brief Initialize CCD-bus communication.
  */
-void init_ccd()
+void init_ccd(void)
 {
     configure_ccd_bus(ccd.bus_settings);
     ESP_ERROR_CHECK(uart_param_config(UART_CCD, &ccd_config));
     ESP_ERROR_CHECK(uart_set_pin(UART_CCD, CCD_TX_PIN, CCD_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
-    ESP_ERROR_CHECK(uart_driver_install(UART_CCD, CCD_RX_BUF_SIZE, CCD_TX_BUF_SIZE, 20, &ccd_uart_queue, 0));
+    ESP_ERROR_CHECK(uart_driver_install(UART_CCD, CCD_RX_BUF_SIZE, CCD_TX_BUF_SIZE, 20, &ccd_uart_queue, ESP_INTR_FLAG_SHARED));
     ESP_ERROR_CHECK(uart_set_rx_full_threshold(UART_CCD, 1));
 
     gpio_reset_pin(CCD_IDLE_PIN);
@@ -5021,24 +5145,35 @@ void init_ccd()
 /**
  * @brief Initialize SCI-bus communication.
  */
-void init_sci()
+void init_sci(void)
 {
     configure_sci_bus(sci.bus_settings);
     ESP_ERROR_CHECK(uart_param_config(UART_SCI, &sci_config));
     ESP_ERROR_CHECK(uart_set_pin(UART_SCI, SCI_TX_PIN, SCI_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+
+    // if (sci.state.inverted_logic) // inverted logic
+    // {
+    //     ESP_ERROR_CHECK(uart_set_line_inverse(UART_SCI, UART_SIGNAL_RXD_INV | UART_SIGNAL_TXD_INV));
+    // }
+    // else // non-inverted logic
+    // {
+    //     ESP_ERROR_CHECK(uart_set_line_inverse(UART_SCI, UART_SIGNAL_INV_DISABLE));
+    // }
+
     ESP_ERROR_CHECK(uart_driver_install(UART_SCI, SCI_RX_BUF_SIZE, SCI_TX_BUF_SIZE, 20, &sci_uart_queue, ESP_INTR_FLAG_SHARED));
     ESP_ERROR_CHECK(uart_set_rx_full_threshold(UART_SCI, 1));
-    sci_idle_timer_init(SCI_IDLE_TIMER_GROUP, SCI_IDLE_TIMER, SCI_LS_T3_DELAY);
-    sci_set_timeout(SCI_LS_T3_DELAY);
 
     sci.msg.tx_count = 1;
     sci.repeat.interval = 100; // ms by default
+
+    sci_idle_timer_init(SCI_IDLE_TIMER_GROUP, SCI_IDLE_TIMER, SCI_LS_T3_DELAY);
+    sci_set_timeout(SCI_LS_T3_DELAY);
 }
 
 /**
  * @brief Initialize PCI-bus communication.
  */
-void init_pci()
+void init_pci(void)
 {
     configure_pci_bus(pci.bus_settings);
     gpio_reset_pin(PCI_RX_PIN);
@@ -5046,7 +5181,7 @@ void init_pci()
     gpio_set_pull_mode(PCI_RX_PIN, GPIO_PULLUP_DISABLE);
     gpio_set_pull_mode(PCI_RX_PIN, GPIO_PULLDOWN_DISABLE);
     gpio_set_intr_type(PCI_RX_PIN, GPIO_INTR_ANYEDGE);
-    gpio_install_isr_service(0);
+    //gpio_install_isr_service(0);
     gpio_isr_handler_add(PCI_RX_PIN, pci_protocol_decoder_isr_handler, NULL);
 
     gpio_reset_pin(PCI_TX_PIN);
@@ -5062,10 +5197,241 @@ void init_pci()
     pci_symbol_timer_init(PCI_SYMBOL_TIMER_GROUP, PCI_SYMBOL_TIMER, J1850VPW_TX_SOF);
 }
 
+uint8_t ble_addr_type;
+void ble_app_advertise(void);
+
+/**
+ * @brief Callback function to receive data from central device (Android app)
+ */
+static int ble_on_write(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+{
+    blink_led(RX_LED_PIN);
+    
+    uint16_t ble_packet_length = ctxt->om->om_len;
+    uint8_t *ble_packet = ctxt->om->om_data;
+
+    //send_usb_packet(Bus_USB, Command_Debug, Debug_Test, ble_packet, ble_packet_length);
+
+    if (ble_packet[0] != PACKET_SYNC_BYTE)
+    {
+        blink_led(ACT_LED_PIN);
+        return -1;
+    }
+
+    usb_packet.sync = ble_packet[0];
+    usb_packet.length = to_uint16(ble_packet[1], ble_packet[2]);
+    usb_packet.datacode = ble_packet[3];
+    usb_packet.subdatacode = ble_packet[4];
+
+    if (usb_packet.length > 2)
+    {
+        usb_packet.payload_length = usb_packet.length - 2;
+        
+        for (int i = 0; i < usb_packet.payload_length; i++)
+        {
+            usb_packet.payload[i] = ble_packet[5 + i];
+        }
+    }
+    else
+    {
+        usb_packet.payload_length = 0;
+    }
+
+    usb_packet.checksum = ble_packet[ble_packet_length - 1];
+
+    uint8_t checksum = usb_packet.sync + ((usb_packet.length >> 8) & 0xFF) + (usb_packet.length & 0xFF) + usb_packet.datacode + usb_packet.subdatacode;
+
+    for (int i = 0; i < usb_packet.payload_length; i++)
+    {
+        checksum += usb_packet.payload[i];
+    }
+
+    if (usb_packet.checksum == checksum)
+    {
+        parse_usb_command(); // BLE command actually...
+    }
+    else
+    {
+        //printf("Data from the client: %.*s\n", ctxt->om->om_len, ctxt->om->om_data);
+        //os_mbuf_append(ctxt->om, "Data from the server", strlen("Data from the server"));
+    }
+
+    return 0;
+}
+
+/**
+ * @brief Read data from ESP32 defined as server.
+ */
+static int ble_notify_packet(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+{
+    //os_mbuf_append(ctxt->om, "Data from the server", strlen("Data from the server"));
+    return 0;
+}
+
+const ble_uuid128_t NordicUARTServiceUUID = BLE_UUID128_INIT(0x9E, 0xCA, 0xDC, 0x24, 0x0E, 0xE5, 0xA9, 0xE0, 0x93, 0xF3, 0xA3, 0xB5, 0x01, 0x00, 0x40, 0x6E); // bytes are reverse ordered
+const ble_uuid128_t NordicUARTRXChrUUID   = BLE_UUID128_INIT(0x9E, 0xCA, 0xDC, 0x24, 0x0E, 0xE5, 0xA9, 0xE0, 0x93, 0xF3, 0xA3, 0xB5, 0x02, 0x00, 0x40, 0x6E);
+const ble_uuid128_t NordicUARTTXChrUUID   = BLE_UUID128_INIT(0x9E, 0xCA, 0xDC, 0x24, 0x0E, 0xE5, 0xA9, 0xE0, 0x93, 0xF3, 0xA3, 0xB5, 0x03, 0x00, 0x40, 0x6E);
+
+/**
+ * @brief GATT service structure.
+ */
+static const struct ble_gatt_svc_def gatt_svcs[] =
+{
+    {
+        .type = BLE_GATT_SVC_TYPE_PRIMARY,
+        .uuid = &NordicUARTServiceUUID.u,
+        .characteristics = (struct ble_gatt_chr_def[])
+        {
+            {
+                .uuid = &NordicUARTRXChrUUID.u,
+                .flags = BLE_GATT_CHR_F_WRITE,
+                .access_cb = ble_on_write
+            },
+            {
+                .uuid = &NordicUARTTXChrUUID.u,
+                .flags = BLE_GATT_CHR_F_NOTIFY,
+                .access_cb = ble_notify_packet
+            }, {0} // no more characteristics in this service
+        } 
+    }, {0} // no more services
+};
+
+/**
+ * @brief BLE event handler.
+ */
+static int ble_gap_event(struct ble_gap_event *event, void *arg)
+{
+    switch (event->type)
+    {
+        case BLE_GAP_EVENT_CONNECT: // a new connection was established or a connection attempt failed
+        {
+            //ESP_LOGI(TAG, "BLE GAP event: connection %s", event->connect.status == 0 ? "established" : "failed");
+
+            if (event->connect.status != 0)
+            {
+                ble_app_advertise(); // connection failed, resume advertising
+            }
+            break;
+        }
+        case BLE_GAP_EVENT_DISCONNECT:
+        {
+            //ESP_LOGI(TAG, "BLE GAP event: disconnected, reason=%d", event->disconnect.reason);
+            ble_app_advertise();
+            break;
+        }
+        case BLE_GAP_EVENT_CONN_UPDATE:
+        {
+            //ESP_LOGI(TAG, "BLE GAP event: connection updated, status=%d", event->conn_update.status);
+            break;
+        }
+        case BLE_GAP_EVENT_ADV_COMPLETE: // advertise again after completion of the event
+        {
+            //ESP_LOGI(TAG, "BLE GAP event: advertising complete, restarting");
+            ble_app_advertise();
+            break;
+        }
+        case BLE_GAP_EVENT_ENC_CHANGE:
+        {
+            //ESP_LOGI(TAG, "BLE GAP event: encryption changed, status=%d", event->enc_change.status);
+            break;
+        }
+        case BLE_GAP_EVENT_SUBSCRIBE:
+        {
+            //ESP_LOGI(TAG, "BLE GAP event: subscribe conn_handle=%d attr_handle=%d reason=%d prevn=%d curn=%d previ=%d curi=%d", 
+            //        event->subscribe.conn_handle,
+            //        event->subscribe.attr_handle,
+            //        event->subscribe.reason,
+            //        event->subscribe.prev_notify,
+            //        event->subscribe.cur_notify,
+            //        event->subscribe.prev_indicate,
+            //        event->subscribe.cur_indicate);
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * @brief Setup BLE advertising and start it.
+ */
+void ble_app_advertise(void)
+{
+    // GAP - advertising packet content
+    struct ble_hs_adv_fields fields;
+    memset(&fields, 0, sizeof(fields));
+    const char *device_name;
+    device_name = ble_svc_gap_device_name(); // read BLE device name
+    fields.name = (uint8_t *)device_name;
+    fields.name_len = strlen(device_name);
+    fields.name_is_complete = 1;
+    fields.num_uuids128 = 1;
+    fields.uuids128 = &NordicUARTServiceUUID; // advertise main service
+    fields.uuids128_is_complete = 1;
+    fields.flags = BLE_HS_ADV_F_DISC_GEN;
+    //uint8_t mfg_data[2] = { 0xAB, 0xCD };
+    //fields.mfg_data = mfg_data;
+    //fields.mfg_data_len = sizeof(mfg_data);
+    //fields.appearance = 0x0080;
+    //fields.appearance_is_present = 1;
+    ble_gap_adv_set_fields(&fields);
+
+    // GAP - device connectivity definition
+    struct ble_gap_adv_params adv_params;
+    memset(&adv_params, 0, sizeof(adv_params));
+    adv_params.conn_mode = BLE_GAP_CONN_MODE_UND; // undirected-connectable
+    adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN; // general-discoverable
+    //adv_params.itvl_min = 300.0 * 1.6; // min advertising interval (1 unit = 0.625 ms)
+    //adv_params.itvl_max = 400.0 * 1.6; // max advertising interval
+
+    ble_gap_adv_start(ble_addr_type, NULL, BLE_HS_FOREVER, &adv_params, ble_gap_event, TAG);
+}
+
+/**
+ * @brief Start advertising when BLE server is ready.
+ */
+void ble_app_on_sync(void)
+{
+    ble_hs_id_infer_auto(0, &ble_addr_type); // determines the best address type automatically
+    ble_app_advertise();
+}
+
+/**
+ * @brief Task to handle BLE communication.
+ * 
+ * @param pvParameters Unused parameters.
+ */
+void ble_task(void *pvParameters)
+{
+    nimble_port_run(); // this function will return only when nimble_port_stop() is executed
+}
+
+/**
+ * @brief Initialize BLE stack.
+ */
+void init_ble(void)
+{
+    //nvs_flash_init();                          // 1 - Initialize NVS flash using // already initialized when settings were handled
+    esp_nimble_hci_and_controller_init();      // 2 - Initialize ESP controller
+    nimble_port_init();                        // 3 - Initialize the host stack
+    ble_svc_gap_device_name_set("CryProV2");   // 4 - Initialize NimBLE configuration - server name
+    ble_svc_gap_init();                        // 4 - Initialize NimBLE configuration - gap service
+    ble_svc_gatt_init();                       // 4 - Initialize NimBLE configuration - gatt service
+    ble_gatts_count_cfg(gatt_svcs);            // 4 - Initialize NimBLE configuration - config gatt services
+    ble_gatts_add_svcs(gatt_svcs);             // 4 - Initialize NimBLE configuration - queues gatt services.
+    //ble_hs_cfg.reset_cb = ble_app_adv_on_reset;
+    ble_hs_cfg.sync_cb = ble_app_on_sync;      // 5 - Initialize application
+    nimble_port_freertos_init(ble_task);       // 6 - Run the thread
+}
+
 /**
  * @brief Initialize SPIFFS partition for data storage.
  */
-void init_spiffs()
+void init_spiffs(void)
 {
     esp_err_t result = esp_vfs_spiffs_register(&spiffs_config);
 
@@ -5089,7 +5455,7 @@ void init_spiffs()
 /**
  * @brief Load settings from previous session.
  */
-void load_settings()
+void load_settings(void)
 {
     esp_efuse_coding_scheme_t coding_scheme = get_coding_scheme();
     (void) coding_scheme;
@@ -5210,6 +5576,7 @@ void app_main()
     init_pci();
     init_sci();
     init_adc();
+    //init_ble();
     //init_spiffs();
 
     uint8_t reset_reason[1] = { esp_reset_reason() };

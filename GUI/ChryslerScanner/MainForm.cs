@@ -1524,15 +1524,35 @@ namespace ChryslerScanner
                                                 {
                                                     case 0x00:
                                                         SCIBusTCMSpeedString = "976.5 baud";
+
+                                                        BeginInvoke((MethodInvoker)delegate
+                                                        {
+                                                            SCIBusSpeedComboBox.SelectedIndex = 1;
+                                                        });
                                                         break;
                                                     case 0x01:
                                                         SCIBusTCMSpeedString = "7812.5 baud";
+
+                                                        BeginInvoke((MethodInvoker)delegate
+                                                        {
+                                                            SCIBusSpeedComboBox.SelectedIndex = 2;
+                                                        });
                                                         break;
                                                     case 0x02:
                                                         SCIBusTCMSpeedString = "62500 baud";
+
+                                                        BeginInvoke((MethodInvoker)delegate
+                                                        {
+                                                            SCIBusSpeedComboBox.SelectedIndex = 3;
+                                                        });
                                                         break;
                                                     case 0x03:
                                                         SCIBusTCMSpeedString = "125000 baud";
+
+                                                        BeginInvoke((MethodInvoker)delegate
+                                                        {
+                                                            SCIBusSpeedComboBox.SelectedIndex = 4;
+                                                        });
                                                         break;
                                                 }
                                             }
@@ -1636,15 +1656,35 @@ namespace ChryslerScanner
                                                 {
                                                     case 0x00:
                                                         SCIBusPCMSpeedString = "976.5 baud";
+
+                                                        BeginInvoke((MethodInvoker)delegate
+                                                        {
+                                                            SCIBusSpeedComboBox.SelectedIndex = 1;
+                                                        });
                                                         break;
                                                     case 0x01:
                                                         SCIBusPCMSpeedString = "7812.5 baud";
+
+                                                        BeginInvoke((MethodInvoker)delegate
+                                                        {
+                                                            SCIBusSpeedComboBox.SelectedIndex = 2;
+                                                        });
                                                         break;
                                                     case 0x02:
                                                         SCIBusPCMSpeedString = "62500 baud";
+
+                                                        BeginInvoke((MethodInvoker)delegate
+                                                        {
+                                                            SCIBusSpeedComboBox.SelectedIndex = 3;
+                                                        });
                                                         break;
                                                     case 0x03:
                                                         SCIBusPCMSpeedString = "125000 baud";
+
+                                                        BeginInvoke((MethodInvoker)delegate
+                                                        {
+                                                            SCIBusSpeedComboBox.SelectedIndex = 4;
+                                                        });
                                                         break;
                                                 }
                                             }

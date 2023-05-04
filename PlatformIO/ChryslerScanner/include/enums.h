@@ -96,14 +96,15 @@ enum Error {
 };
 
 enum Bootloader {
-    Bootloader_Empty             = 0x00,
-    Bootloader_128k_SBEC3        = 0x01,
-    Bootloader_128k_SBEC3_custom = 0x02,
-    Bootloader_256k_SBEC3        = 0x03,
-    Bootloader_256k_SBEC3_custom = 0x04,
-    Bootloader_128k_EATX3        = 0x05,
-    Bootloader_256k_EATX3        = 0x06,
-    Bootloader_256k_JTEC         = 0x07
+    Bootloader_Empty                 = 0x00,
+    Bootloader_128k_SBEC3_SBEC3PLUS  = 0x01,
+    Bootloader_128k_SBEC3_custom     = 0x02,
+    Bootloader_256k_SBEC3A_3APLUS_3B = 0x03,
+    Bootloader_256k_SBEC3_custom     = 0x04,
+    Bootloader_128k_EATX3            = 0x05,
+    Bootloader_256k_EATX3A           = 0x06,
+    Bootloader_256k_JTEC             = 0x07,
+    Bootloader_256k_JTECPLUS         = 0x08
 };
 
 enum WorkerFunction {
@@ -135,7 +136,8 @@ enum FlashMemoryTypeIndex {
     FlashMemoryTypeIndex_M28F210   = 0x05, // 0xE0
     FlashMemoryTypeIndex_M28F220   = 0x06, // 0xE6
     FlashMemoryTypeIndex_M28F200   = 0x07, // 0x74-0x75
-    FlashMemoryTypeIndex_TMS28F210 = 0x08  // 0xE5
+    FlashMemoryTypeIndex_N28F010_x2 = 0x08, // 0xB4 (two flash chips in series)
+    FlashMemoryTypeIndex_TMS28F210 = 0x09  // 0xE5
 };
 
 enum BootloaderError {

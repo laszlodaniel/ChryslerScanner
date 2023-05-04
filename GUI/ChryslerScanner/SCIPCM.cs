@@ -2608,17 +2608,36 @@ namespace ChryslerScanner
                         ValueToInsert = Util.ByteToHexString(payload, 2, 1);
                         break;
                     case 0x16:
-                        DescriptionToInsert = "READ FLASH MEMORY CONSTANT";
+                        DescriptionToInsert = "CONFIGURATION";
 
-                        if (message.Length < 3) break;
+                        if (message.Length < 7) break;
 
-                        ushort offset = (ushort)(payload[0] + 0x8000);
-                        byte[] offsetArray = new byte[2];
-                        offsetArray[0] = (byte)((offset >> 8) & 0xFF);
-                        offsetArray[1] = (byte)(offset & 0xFF);
+                        DescriptionToInsert = "CONFIGURATION | PAGE: " + Util.ByteToHexStringSimple(new byte[1] { payload[0] });
 
-                        DescriptionToInsert = "READ FLASH MEMORY CONSTANT | OFFSET: " + Util.ByteToHexStringSimple(offsetArray);
-                        ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+                        ControllerHardwareType = 3; // SBEC2
+
+                        if (Util.ChecksumCalculator(message, 0, message.Length - 1) != message[message.Length - 1])
+                        {
+                            ValueToInsert = "CHECKSUM ERROR";
+                            break;
+                        }
+
+                        ValueToInsert = Util.ByteToHexString(payload, 1, 4);
+
+                        switch (payload[0]) // config page
+                        {
+                            case 0x80:
+                                PartNumberChars[0] = payload[1];
+                                PartNumberChars[1] = payload[2];
+                                PartNumberChars[2] = payload[3];
+                                PartNumberChars[3] = payload[4];
+
+                                DescriptionToInsert += " | PART NUMBER";
+                                ValueToInsert = ValueToInsert.Replace(" ", "");
+                                break;
+                            default: // pages 0x81, 0x82 are unknown
+                                break;
+                        }
                         break;
                     case 0x17:
                         DescriptionToInsert = "ERASE ENGINE FAULT CODES";
@@ -11427,7 +11446,7 @@ namespace ChryslerScanner
 
             ushort modifiedID;
 
-            if ((ID == 0x14) || (ID == 0x22) || (ID == 0x25) || (ID == 0x2A) || ((ID >= 0xF0) && (ID < 0xFE)))
+            if ((ID == 0x14) || (ID == 0x16) || (ID == 0x22) || (ID == 0x25) || (ID == 0x2A) || ((ID >= 0xF0) && (ID < 0xFE)))
             {
                 if (payload.Length > 0) modifiedID = (ushort)(((ID << 8) & 0xFF00) + payload[0]);
                 else modifiedID = (ushort)((ID << 8) & 0xFF00);

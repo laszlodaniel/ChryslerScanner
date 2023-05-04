@@ -1067,8 +1067,8 @@ namespace ChryslerScanner
             {
                 case 0: // ROM/32kB
                     SCIBusPCMReadMemoryCommandTextBox.Text = "15";
-                    SCIBusPCMReadMemoryStartOffsetTextBox.Text = "00 00";
-                    SCIBusPCMReadMemoryEndOffsetTextBox.Text = "7F FF";
+                    SCIBusPCMReadMemoryStartOffsetTextBox.Text = "80 00";
+                    SCIBusPCMReadMemoryEndOffsetTextBox.Text = "FF FF";
                     SCIBusPCMReadMemoryIncrementTextBox.Text = "00 01";
                     SCIBusPCMReadMemoryCurrentOffsetTextBox.Text = "00 00";
                     SCIBusPCMReadMemoryValueTextBox.Text = "00";

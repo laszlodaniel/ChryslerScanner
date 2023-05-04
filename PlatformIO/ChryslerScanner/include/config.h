@@ -41,6 +41,7 @@
 #define SCI_VBB_TO_RX9_PIN        1
 #define SCI_VBB_TO_RX6_PIN        0
 #define SCI_STATE_BIT             7
+#define SCI_SBEC2_BIT             6
 #define SCI_MODULE_BIT            5
 #define SCI_NGC_BIT               4
 #define SCI_LOGIC_BIT             3
