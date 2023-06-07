@@ -5491,7 +5491,7 @@ namespace ChryslerScanner
 
                 if (SCIBusTxMessageAddButton.Text != "Edit")
                 {
-                    if (SCIBusTxMessageChecksumCheckBox.Checked)
+                    if (SCIBusTxMessageChecksumCheckBox.Checked && (message.Length > 1))
                     {
                         message[message.Length - 1] = Util.ChecksumCalculator(message, 0, message.Length - 1);
 
@@ -5546,7 +5546,7 @@ namespace ChryslerScanner
                 }
                 else
                 {
-                    if (SCIBusTxMessageChecksumCheckBox.Checked)
+                    if (SCIBusTxMessageChecksumCheckBox.Checked && (message.Length > 1))
                     {
                         message[message.Length - 1] = Util.ChecksumCalculator(message, 0, message.Length - 1);
 
