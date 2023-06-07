@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
+using ChryslerScanner.Services;
 
 namespace ChryslerScanner
 {
@@ -16,7 +14,7 @@ namespace ChryslerScanner
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+            Application.Run(ContainerManager.Instance.GetInstance<MainForm>()); // resolve MainForm from the container and run app
         }
     }
 }

@@ -9,18 +9,22 @@ using System.IO.Ports;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Resources;
 using System.Text;
 using System.Threading;
 using System.Timers;
 using System.Windows.Forms;
 using DRBDBReader.DB;
 using DRBDBReader.DB.Records;
+using ChryslerScanner.Helpers;
+using ChryslerScanner.Models;
+using ChryslerScanner.Services;
 
 namespace ChryslerScanner
 {
     public partial class MainForm : Form
     {
+        private readonly SynchronizationContext UIContext;
+
         private bool GUIUpdateAvailable = false;
         private bool FWUpdateAvailabile = false;
         private bool ResetFromUpdate = false;
@@ -75,14 +79,14 @@ namespace ChryslerScanner
         private List<int> TCMTableBufferLocation = new List<int>();
         private List<int> TCMTableRowCountHistory = new List<int>();
 
+        private readonly SerialService SerialService;
+
         private ReadMemoryForm ReadMemory;
         private ReadWriteMemoryForm ReadWriteMemory;
-        private SecurityKeyCalculatorForm SecurityKeyCalculator;
         private BootstrapToolsForm BootstrapTools;
         private EngineToolsForm EngineTools;
         private ABSToolsForm ABSTools;
         private AboutForm About;
-        public static Packet Packet = new Packet();
         public CCD CCD = new CCD();
         public PCI PCI = new PCI();
         public SCIPCM PCM = new SCIPCM();
@@ -96,15 +100,16 @@ namespace ChryslerScanner
         private FileInfo fi = new FileInfo(@"DRBDBReader/database.mem");
         private Database db;
 
-        Thread MSP; // Monitor Serial Port thread
-
-        public MainForm()
+        public MainForm(SerialService service)
         {
             InitializeComponent();
+            UIContext = SynchronizationContext.Current;
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); // set application icon
             DiagnosticsGroupBox.Visible = false; // hide the expanded view components all at once
             Size = new Size(405, 650); // resize form to collapsed view
             CenterToScreen(); // put window at the center of the screen
+
+            SerialService = service;
 
             if (fi.Exists) db = new Database(fi); // load DRB3 database
 
@@ -476,7 +481,7 @@ namespace ChryslerScanner
             }
         }
 
-        private async void SetRepeatedMessageBehavior(Packet.Bus bus)
+        private void SetRepeatedMessageBehavior(PacketHelper.Bus bus)
         {
             List<byte> payloadList = new List<byte>();
             bool success = false;
@@ -485,20 +490,26 @@ namespace ChryslerScanner
 
             switch (bus)
             {
-                case Packet.Bus.ccd:
+                case PacketHelper.Bus.CCD:
+                {
                     success = int.TryParse(CCDBusTxMessageRepeatIntervalTextBox.Text, out repeatInterval);
                     break;
-                case Packet.Bus.pci:
+                }
+                case PacketHelper.Bus.PCI:
+                {
                     success = int.TryParse(PCIBusTxMessageRepeatIntervalTextBox.Text, out repeatInterval);
                     break;
-                case Packet.Bus.pcm:
+                }
+                case PacketHelper.Bus.PCM:
+                {
                     success = int.TryParse(SCIBusTxMessageRepeatIntervalTextBox.Text, out repeatInterval);
                     break;
-                case Packet.Bus.tcm:
+                }
+                case PacketHelper.Bus.TCM:
+                {
                     success = int.TryParse(SCIBusTxMessageRepeatIntervalTextBox.Text, out repeatInterval);
                     break;
-                default:
-                    break;
+                }
             }
 
             if (!success || (repeatInterval == 0))
@@ -507,20 +518,26 @@ namespace ChryslerScanner
 
                 switch (bus)
                 {
-                    case Packet.Bus.ccd:
+                    case PacketHelper.Bus.CCD:
+                    {
                         CCDBusTxMessageRepeatIntervalTextBox.Text = "100";
                         break;
-                    case Packet.Bus.pci:
+                    }
+                    case PacketHelper.Bus.PCI:
+                    {
                         PCIBusTxMessageRepeatIntervalTextBox.Text = "100";
                         break;
-                    case Packet.Bus.pcm:
+                    }
+                    case PacketHelper.Bus.PCM:
+                    {
                         SCIBusTxMessageRepeatIntervalTextBox.Text = "100";
                         break;
-                    case Packet.Bus.tcm:
+                    }
+                    case PacketHelper.Bus.TCM:
+                    {
                         SCIBusTxMessageRepeatIntervalTextBox.Text = "100";
                         break;
-                    default:
-                        break;
+                    }
                 }
             }
 
@@ -530,90 +547,132 @@ namespace ChryslerScanner
             payloadList.Add((byte)bus);
             payloadList.AddRange(repeatIntervalArray);
 
-            Packet.tx.bus = (byte)Packet.Bus.usb;
-            Packet.tx.command = (byte)Packet.Command.settings;
-            Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
-            Packet.tx.payload = payloadList.ToArray();
-            Packet.GeneratePacket();
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Settings;
+            packet.Mode = (byte)PacketHelper.SettingsMode.SetRepeatBehavior;
+            packet.Payload = payloadList.ToArray();
 
             switch (bus)
             {
-                case Packet.Bus.ccd:
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Set CCD-bus message repeat:", Packet.tx.buffer);
+                case PacketHelper.Bus.CCD:
+                {
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Set CCD-bus message repeat:", PacketHelper.Serialize(packet));
                     break;
-                case Packet.Bus.pci:
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Set PCI-bus message repeat:", Packet.tx.buffer);
+                }
+                case PacketHelper.Bus.PCI:
+                {
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Set PCI-bus message repeat:", PacketHelper.Serialize(packet));
                     break;
-                case Packet.Bus.pcm:
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Set SCI-bus (PCM) message repeat:", Packet.tx.buffer);
+                }
+                case PacketHelper.Bus.PCM:
+                {
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Set SCI-bus (PCM) message repeat:", PacketHelper.Serialize(packet));
                     break;
-                case Packet.Bus.tcm:
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Set SCI-bus (TCM) message repeat:", Packet.tx.buffer);
+                }
+                case PacketHelper.Bus.TCM:
+                {
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Set SCI-bus (TCM) message repeat:", PacketHelper.Serialize(packet));
                     break;
-                default:
-                    break;
+                }
             }
 
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            SerialService.WritePacket(packet);
         }
 
-        private void AnalyzePacket(object sender, EventArgs e)
+        private void PacketReceivedHandler(object sender, Packet packet)
         {
-            switch (Packet.rx.bus)
+            UIContext.Post(state =>
             {
-                case (byte)Packet.Bus.usb:
-                    switch (Packet.rx.command)
+                switch (packet.Bus)
+                {
+                    case (byte)PacketHelper.Bus.USB:
                     {
-                        case (byte)Packet.Command.reset:
-                            if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
+                        switch (packet.Command)
+                        {
+                            case (byte)PacketHelper.Command.Reset:
                             {
-                                switch (Packet.rx.mode)
+                                if ((packet.Payload == null) || (packet.Payload.Length == 0))
                                 {
-                                    case (byte)Packet.ResetMode.resetInit:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Reset in progress:", Packet.rx.buffer);
+                                    Util.UpdateTextBox(USBTextBox, "[RX->] Invalid reset packet:", PacketHelper.Serialize(packet));
+                                    break;
+                                }
+
+                                switch (packet.Mode)
+                                {
+                                    case (byte)PacketHelper.ResetMode.ResetInit:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Reset in progress:", PacketHelper.Serialize(packet));
                                         Util.UpdateTextBox(USBTextBox, "[INFO] Device is resetting, please wait.");
                                         break;
-                                    case (byte)Packet.ResetMode.resetDone:
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Reset done:", Packet.rx.buffer);
+                                    }
+                                    case (byte)PacketHelper.ResetMode.ResetDone:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Reset done:", PacketHelper.Serialize(packet));
 
-                                        switch (Packet.rx.payload[0])
+                                        switch (packet.Payload[0])
                                         {
                                             case 0:
+                                            {
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Device is ready to accept instructions.");
                                                 break;
+                                            }
                                             case 1:
+                                            {
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Reset reason: ESP_RST_POWERON");
                                                 break;
+                                            }
                                             case 2:
+                                            {
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Reset reason: ESP_RST_EXT");
                                                 break;
+                                            }
                                             case 3:
+                                            {
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Reset reason: ESP_RST_SW");
                                                 break;
+                                            }
                                             case 4:
+                                            {
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Reset reason: ESP_RST_PANIC");
                                                 break;
+                                            }
                                             case 5:
+                                            {
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Reset reason: ESP_RST_INT_WDT");
                                                 break;
+                                            }
                                             case 6:
+                                            {
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Reset reason: ESP_RST_TASK_WDT");
                                                 break;
+                                            }
                                             case 7:
+                                            {
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Reset reason: ESP_RST_WDT");
                                                 break;
+                                            }
                                             case 8:
+                                            {
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Reset reason: ESP_RST_DEEPSLEEP");
                                                 break;
+                                            }
                                             case 9:
+                                            {
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Reset reason: ESP_RST_BROWNOUT");
                                                 break;
+                                            }
                                             case 10:
+                                            {
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Reset reason: ESP_RST_SDIO");
                                                 break;
+                                            }
                                             default:
+                                            {
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] Reset reason: unknown.");
                                                 break;
+                                            }
                                         }
 
                                         if (ResetFromUpdate)
@@ -623,63 +682,70 @@ namespace ChryslerScanner
                                             Util.UpdateTextBox(USBTextBox, "[INFO] Device firmware updated.");
                                         }
                                         break;
+                                    }
                                     default:
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Unknown reset packet.");
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[INFO] Unknown reset PacketHelper.");
                                         break;
+                                    }
                                 }
+                                break;
                             }
-                            else
+                            case (byte)PacketHelper.Command.Handshake:
                             {
-                                Util.UpdateTextBox(USBTextBox, "[RX->] Invalid reset packet:", Packet.rx.buffer);
-                            }
-                            break;
-                        case (byte)Packet.Command.handshake:
-                            if (Packet.rx.payload != null)
-                            {
-                                Util.UpdateTextBox(USBTextBox, "[RX->] Handshake response:", Packet.rx.buffer);
-
-                                if (Util.CompareArrays(Packet.rx.buffer, Packet.expectedHandshake_V1, 0, Packet.expectedHandshake_V1.Length) || Util.CompareArrays(Packet.rx.buffer, Packet.expectedHandshake_V2, 0, Packet.expectedHandshake_V2.Length))
+                                if (packet.Payload == null)
                                 {
-                                    Util.UpdateTextBox(USBTextBox, "[INFO] Handshake OK: " + Encoding.ASCII.GetString(Packet.rx.payload, 0, Packet.rx.payload.Length));
+                                    Util.UpdateTextBox(USBTextBox, "[RX->] Invalid handshake packet:", PacketHelper.Serialize(packet));
+                                    break;
+                                }
+
+                                byte[] serialized = PacketHelper.Serialize(packet);
+
+                                Util.UpdateTextBox(USBTextBox, "[RX->] Handshake response:", serialized);
+
+                                if (Util.CompareArrays(serialized, PacketHelper.ExpectedHandshake_V1, 0, PacketHelper.ExpectedHandshake_V1.Length) || Util.CompareArrays(serialized, PacketHelper.ExpectedHandshake_V2, 0, PacketHelper.ExpectedHandshake_V2.Length))
+                                {
+                                    Util.UpdateTextBox(USBTextBox, "[INFO] Handshake OK: " + Encoding.ASCII.GetString(packet.Payload, 0, packet.Payload.Length));
                                 }
                                 else
                                 {
-                                    Util.UpdateTextBox(USBTextBox, "[INFO] Handshake ERROR: " + Encoding.ASCII.GetString(Packet.rx.payload, 0, Packet.rx.payload.Length));
+                                    Util.UpdateTextBox(USBTextBox, "[INFO] Handshake ERROR: " + Encoding.ASCII.GetString(packet.Payload, 0, packet.Payload.Length));
                                 }
+                                break;
                             }
-                            else
+                            case (byte)PacketHelper.Command.Status:
                             {
-                                Util.UpdateTextBox(USBTextBox, "[RX->] Invalid handshake packet:", Packet.rx.buffer);
-                            }
-                            break;
-                        case (byte)Packet.Command.status:
-                            if (Packet.rx.payload != null)
-                            {
-                                if (HWVersion.Contains("v1.") && (Packet.rx.payload.Length >= 53))
+                                if (packet.Payload == null)
                                 {
-                                    string AVRSignature = Util.ByteToHexString(Packet.rx.payload, 0, 3);
-                                    if ((Packet.rx.payload[0] == 0x1E) && (Packet.rx.payload[1] == 0x98) && (Packet.rx.payload[2] == 0x01)) AVRSignature += " (ATmega2560)";
+                                    Util.UpdateTextBox(USBTextBox, "[RX->] Invalid status packet:", PacketHelper.Serialize(packet));
+                                    break;
+                                }
+
+                                if (HWVersion.Contains("v1.") && (packet.Payload.Length >= 53))
+                                {
+                                    string AVRSignature = Util.ByteToHexString(packet.Payload, 0, 3);
+                                    if ((packet.Payload[0] == 0x1E) && (packet.Payload[1] == 0x98) && (packet.Payload[2] == 0x01)) AVRSignature += " (ATmega2560)";
                                     else AVRSignature += " (unknown)";
 
                                     string extEEPROMPresent = string.Empty;
-                                    if (Packet.rx.payload[3] == 0x01) extEEPROMPresent += "yes";
+                                    if (packet.Payload[3] == 0x01) extEEPROMPresent += "yes";
                                     else extEEPROMPresent += "no";
-                                    string extEEPROMChecksum = Util.ByteToHexString(Packet.rx.payload, 4, 1);
-                                    if (Packet.rx.payload[4] == Packet.rx.payload[5]) extEEPROMChecksum += "=OK";
-                                    else extEEPROMChecksum += "!=" + Util.ByteToHexString(Packet.rx.payload, 5, 1) + ", ERROR";
+                                    string extEEPROMChecksum = Util.ByteToHexString(packet.Payload, 4, 1);
+                                    if (packet.Payload[4] == packet.Payload[5]) extEEPROMChecksum += "=OK";
+                                    else extEEPROMChecksum += "!=" + Util.ByteToHexString(packet.Payload, 5, 1) + ", ERROR";
 
-                                    TimeSpan elapsedMillis = TimeSpan.FromMilliseconds((Packet.rx.payload[6] << 24) + (Packet.rx.payload[7] << 16) + (Packet.rx.payload[8] << 8) + Packet.rx.payload[9]);
+                                    TimeSpan elapsedMillis = TimeSpan.FromMilliseconds((packet.Payload[6] << 24) + (packet.Payload[7] << 16) + (packet.Payload[8] << 8) + packet.Payload[9]);
                                     DateTime microcontrollerTimestamp = DateTime.Today.Add(elapsedMillis);
                                     string microcontrollerTimestampString = microcontrollerTimestamp.ToString("HH:mm:ss.fff");
 
-                                    int freeRAM = (Packet.rx.payload[10] << 8) + Packet.rx.payload[11];
+                                    int freeRAM = (packet.Payload[10] << 8) + packet.Payload[11];
                                     string freeRAMString = (100.0 * ((8192.0 - freeRAM) / 8192.0)).ToString("0.0") + "% (" + (8192.0 - freeRAM).ToString("0") + "/8192 bytes)";
 
                                     string connectedToVehicle = string.Empty;
-                                    if (Packet.rx.payload[12] == 0x01) connectedToVehicle = "yes";
+                                    if (packet.Payload[12] == 0x01) connectedToVehicle = "yes";
                                     else connectedToVehicle = "no";
 
-                                    string batteryVoltageString = (((Packet.rx.payload[13] << 8) + Packet.rx.payload[14]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
+                                    string batteryVoltageString = (((packet.Payload[13] << 8) + packet.Payload[14]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
 
                                     string CCDBusStateString = string.Empty;
                                     string CCDBusLogicString = string.Empty;
@@ -688,7 +754,7 @@ namespace ChryslerScanner
                                     string CCDBusMsgRxCountString = string.Empty;
                                     string CCDBusMsgTxCountString = string.Empty;
 
-                                    if (Util.IsBitClear(Packet.rx.payload[15], 7))
+                                    if (Util.IsBitClear(packet.Payload[15], 7))
                                     {
                                         CCDBusTransceiverOnOffCheckBox.CheckedChanged -= new EventHandler(CCDBusSettingsCheckBox_CheckedChanged);
                                         CCDBusTransceiverOnOffCheckBox.Checked = false;
@@ -705,10 +771,10 @@ namespace ChryslerScanner
                                         CCDBusStateString = "enabled";
                                     }
 
-                                    if (Util.IsBitClear(Packet.rx.payload[15], 3)) CCDBusLogicString = "non-inverted";
+                                    if (Util.IsBitClear(packet.Payload[15], 3)) CCDBusLogicString = "non-inverted";
                                     else CCDBusLogicString = "inverted";
 
-                                    if (Util.IsBitClear(Packet.rx.payload[15], 6))
+                                    if (Util.IsBitClear(packet.Payload[15], 6))
                                     {
                                         CCDBusTerminationBiasOnOffCheckBox.CheckedChanged -= new EventHandler(this.CCDBusSettingsCheckBox_CheckedChanged);
                                         CCDBusTerminationBiasOnOffCheckBox.Checked = false;
@@ -725,29 +791,39 @@ namespace ChryslerScanner
                                         CCDTerminationBiasEnabledString = "enabled";
                                     }
 
-                                    switch (Packet.rx.payload[15] & 0x03)
+                                    switch (packet.Payload[15] & 0x03)
                                     {
                                         case 0x00:
+                                        {
                                             CCDBusSpeedString = "976.5 baud";
                                             break;
+                                        }
                                         case 0x01:
+                                        {
                                             CCDBusSpeedString = "7812.5 baud";
                                             break;
+                                        }
                                         case 0x02:
+                                        {
                                             CCDBusSpeedString = "62500 baud";
                                             break;
+                                        }
                                         case 0x03:
+                                        {
                                             CCDBusSpeedString = "125000 baud";
                                             break;
+                                        }
                                         default:
+                                        {
                                             CCDBusSpeedString = "unknown";
                                             break;
+                                        }
                                     }
 
                                     CCD.UpdateHeader(CCDBusStateString, CCDBusSpeedString, CCDBusLogicString);
 
-                                    CCDBusMsgRxCountString = ((Packet.rx.payload[16] << 24) + (Packet.rx.payload[17] << 16) + (Packet.rx.payload[18] << 8) + Packet.rx.payload[19]).ToString();
-                                    CCDBusMsgTxCountString = ((Packet.rx.payload[20] << 24) + (Packet.rx.payload[21] << 16) + (Packet.rx.payload[22] << 8) + Packet.rx.payload[23]).ToString();
+                                    CCDBusMsgRxCountString = ((packet.Payload[16] << 24) + (packet.Payload[17] << 16) + (packet.Payload[18] << 8) + packet.Payload[19]).ToString();
+                                    CCDBusMsgTxCountString = ((packet.Payload[20] << 24) + (packet.Payload[21] << 16) + (packet.Payload[22] << 8) + packet.Payload[23]).ToString();
 
                                     string SCIBusPCMStateString = string.Empty;
                                     string SCIBusPCMLogicString = string.Empty;
@@ -758,13 +834,13 @@ namespace ChryslerScanner
                                     string SCIBusPCMMsgRxCountString = string.Empty;
                                     string SCIBusPCMMsgTxCountString = string.Empty;
 
-                                    if (Util.IsBitSet(Packet.rx.payload[24], 7))
+                                    if (Util.IsBitSet(packet.Payload[24], 7))
                                     {
                                         SCIBusPCMStateString = "enabled";
 
-                                        if (Util.IsBitClear(Packet.rx.payload[24], 4) &&
-                                            Util.IsBitClear(Packet.rx.payload[24], 3) &&
-                                            Util.IsBitClear(Packet.rx.payload[24], 6))
+                                        if (Util.IsBitClear(packet.Payload[24], 4) &&
+                                            Util.IsBitClear(packet.Payload[24], 3) &&
+                                            Util.IsBitClear(packet.Payload[24], 6))
                                         {
                                             SCIBusLogicComboBox.SelectedIndex = 2; // OBD2
 
@@ -773,7 +849,7 @@ namespace ChryslerScanner
                                         }
                                         else
                                         {
-                                            if (Util.IsBitSet(Packet.rx.payload[24], 4))
+                                            if (Util.IsBitSet(packet.Payload[24], 4))
                                             {
                                                 SCIBusPCMNGCModeString = "enabled";
                                                 SCIBusLogicComboBox.SelectedIndex = 3; // OBD2 NGC
@@ -783,7 +859,7 @@ namespace ChryslerScanner
                                                 SCIBusPCMNGCModeString = "disabled";
                                             }
 
-                                            if (Util.IsBitSet(Packet.rx.payload[24], 3))
+                                            if (Util.IsBitSet(packet.Payload[24], 3))
                                             {
                                                 SCIBusPCMLogicString += "inverted";
                                                 SCIBusLogicComboBox.SelectedIndex = 1; // OBD1 JTEC
@@ -793,14 +869,14 @@ namespace ChryslerScanner
                                                 SCIBusPCMLogicString += "non-inverted";
                                             }
 
-                                            if (Util.IsBitSet(Packet.rx.payload[24], 6))
+                                            if (Util.IsBitSet(packet.Payload[24], 6))
                                             {
                                                 SCIBusPCMSBEC2ModeString += "(SBEC)";
                                                 SCIBusLogicComboBox.SelectedIndex = 0; // OBD1 SBEC
                                             }
                                         }
 
-                                        if (Util.IsBitClear(Packet.rx.payload[24], 2))
+                                        if (Util.IsBitClear(packet.Payload[24], 2))
                                         {
                                             SCIBusPCMOBDConfigurationString = "A";
                                             SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
@@ -811,28 +887,38 @@ namespace ChryslerScanner
                                             SCIBusOBDConfigurationComboBox.SelectedIndex = 1;
                                         }
 
-                                        switch (Packet.rx.payload[24] & 0x03)
+                                        switch (packet.Payload[24] & 0x03)
                                         {
                                             case 0x00:
+                                            {
                                                 SCIBusPCMSpeedString = "976.5 baud";
                                                 SCIBusSpeedComboBox.SelectedIndex = 1;
                                                 break;
+                                            }
                                             case 0x01:
+                                            {
                                                 SCIBusPCMSpeedString = "7812.5 baud";
                                                 SCIBusSpeedComboBox.SelectedIndex = 2;
                                                 break;
+                                            }
                                             case 0x02:
+                                            {
                                                 SCIBusPCMSpeedString = "62500 baud";
                                                 SCIBusSpeedComboBox.SelectedIndex = 3;
                                                 break;
+                                            }
                                             case 0x03:
+                                            {
                                                 SCIBusPCMSpeedString = "125000 baud";
                                                 SCIBusSpeedComboBox.SelectedIndex = 4;
                                                 break;
+                                            }
                                             default:
+                                            {
                                                 SCIBusPCMSpeedString = "unknown";
                                                 SCIBusSpeedComboBox.SelectedIndex = 0;
                                                 break;
+                                            }
                                         }
                                     }
                                     else
@@ -846,8 +932,8 @@ namespace ChryslerScanner
 
                                     PCM.UpdateHeader(SCIBusPCMStateString, SCIBusPCMSpeedString, SCIBusPCMLogicString, SCIBusPCMOBDConfigurationString);
 
-                                    SCIBusPCMMsgRxCountString = ((Packet.rx.payload[25] << 24) + (Packet.rx.payload[26] << 16) + (Packet.rx.payload[27] << 8) + Packet.rx.payload[28]).ToString();
-                                    SCIBusPCMMsgTxCountString = ((Packet.rx.payload[29] << 24) + (Packet.rx.payload[30] << 16) + (Packet.rx.payload[31] << 8) + Packet.rx.payload[32]).ToString();
+                                    SCIBusPCMMsgRxCountString = ((packet.Payload[25] << 24) + (packet.Payload[26] << 16) + (packet.Payload[27] << 8) + packet.Payload[28]).ToString();
+                                    SCIBusPCMMsgTxCountString = ((packet.Payload[29] << 24) + (packet.Payload[30] << 16) + (packet.Payload[31] << 8) + packet.Payload[32]).ToString();
 
                                     string SCIBusTCMStateString = string.Empty;
                                     string SCIBusTCMLogicString = string.Empty;
@@ -858,13 +944,13 @@ namespace ChryslerScanner
                                     string SCIBusTCMMsgRxCountString = string.Empty;
                                     string SCIBusTCMMsgTxCountString = string.Empty;
 
-                                    if (Util.IsBitSet(Packet.rx.payload[33], 7))
+                                    if (Util.IsBitSet(packet.Payload[33], 7))
                                     {
                                         SCIBusTCMStateString = "enabled";
 
-                                        if (Util.IsBitClear(Packet.rx.payload[33], 4) &&
-                                            Util.IsBitClear(Packet.rx.payload[33], 3) &&
-                                            Util.IsBitClear(Packet.rx.payload[33], 6))
+                                        if (Util.IsBitClear(packet.Payload[33], 4) &&
+                                            Util.IsBitClear(packet.Payload[33], 3) &&
+                                            Util.IsBitClear(packet.Payload[33], 6))
                                         {
                                             SCIBusLogicComboBox.SelectedIndex = 2; // OBD2
 
@@ -873,7 +959,7 @@ namespace ChryslerScanner
                                         }
                                         else
                                         {
-                                            if (Util.IsBitSet(Packet.rx.payload[33], 4))
+                                            if (Util.IsBitSet(packet.Payload[33], 4))
                                             {
                                                 SCIBusPCMNGCModeString = "enabled";
                                                 SCIBusLogicComboBox.SelectedIndex = 3; // OBD2 NGC
@@ -883,7 +969,7 @@ namespace ChryslerScanner
                                                 SCIBusPCMNGCModeString = "disabled";
                                             }
 
-                                            if (Util.IsBitSet(Packet.rx.payload[33], 3))
+                                            if (Util.IsBitSet(packet.Payload[33], 3))
                                             {
                                                 SCIBusPCMLogicString += "inverted";
                                                 SCIBusLogicComboBox.SelectedIndex = 1; // OBD1 JTEC
@@ -893,14 +979,14 @@ namespace ChryslerScanner
                                                 SCIBusPCMLogicString += "non-inverted";
                                             }
 
-                                            if (Util.IsBitSet(Packet.rx.payload[33], 6))
+                                            if (Util.IsBitSet(packet.Payload[33], 6))
                                             {
                                                 SCIBusPCMSBEC2ModeString += "(SBEC)";
                                                 SCIBusLogicComboBox.SelectedIndex = 0; // OBD1 SBEC
                                             }
                                         }
 
-                                        if (Util.IsBitClear(Packet.rx.payload[33], 2))
+                                        if (Util.IsBitClear(packet.Payload[33], 2))
                                         {
                                             SCIBusTCMOBDConfigurationString = "A";
                                             SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
@@ -911,28 +997,38 @@ namespace ChryslerScanner
                                             SCIBusOBDConfigurationComboBox.SelectedIndex = 1;
                                         }
 
-                                        switch (Packet.rx.payload[33] & 0x03)
+                                        switch (packet.Payload[33] & 0x03)
                                         {
                                             case 0x00:
+                                            {
                                                 SCIBusTCMSpeedString = "976.5 baud";
                                                 SCIBusSpeedComboBox.SelectedIndex = 1;
                                                 break;
+                                            }
                                             case 0x01:
+                                            {
                                                 SCIBusTCMSpeedString = "7812.5 baud";
                                                 SCIBusSpeedComboBox.SelectedIndex = 2;
                                                 break;
+                                            }
                                             case 0x02:
+                                            {
                                                 SCIBusTCMSpeedString = "62500 baud";
                                                 SCIBusSpeedComboBox.SelectedIndex = 3;
                                                 break;
+                                            }
                                             case 0x03:
+                                            {
                                                 SCIBusTCMSpeedString = "125000 baud";
                                                 SCIBusSpeedComboBox.SelectedIndex = 4;
                                                 break;
+                                            }
                                             default:
+                                            {
                                                 SCIBusTCMSpeedString = "unknown";
                                                 SCIBusSpeedComboBox.SelectedIndex = 0;
                                                 break;
+                                            }
                                         }
                                     }
                                     else
@@ -945,8 +1041,8 @@ namespace ChryslerScanner
 
                                     TCM.UpdateHeader(SCIBusTCMStateString, SCIBusTCMSpeedString, SCIBusTCMLogicString, SCIBusTCMOBDConfigurationString);
 
-                                    SCIBusTCMMsgRxCountString = ((Packet.rx.payload[34] << 24) + (Packet.rx.payload[35] << 16) + (Packet.rx.payload[36] << 8) + Packet.rx.payload[37]).ToString();
-                                    SCIBusTCMMsgTxCountString = ((Packet.rx.payload[38] << 24) + (Packet.rx.payload[39] << 16) + (Packet.rx.payload[40] << 8) + Packet.rx.payload[41]).ToString();
+                                    SCIBusTCMMsgRxCountString = ((packet.Payload[34] << 24) + (packet.Payload[35] << 16) + (packet.Payload[36] << 8) + packet.Payload[37]).ToString();
+                                    SCIBusTCMMsgTxCountString = ((packet.Payload[38] << 24) + (packet.Payload[39] << 16) + (packet.Payload[40] << 8) + packet.Payload[41]).ToString();
 
                                     string LCDStatusString = string.Empty;
                                     string LCDI2CAddressString = string.Empty;
@@ -955,7 +1051,7 @@ namespace ChryslerScanner
                                     string LCDUnitsString = string.Empty;
                                     string LCDDataSourceString = string.Empty;
 
-                                    if (Packet.rx.payload[42] == 0x00)
+                                    if (packet.Payload[42] == 0x00)
                                     {
                                         LCDStateComboBox.SelectedIndex = 0;
                                         LCDStatusString = "disabled";
@@ -966,17 +1062,17 @@ namespace ChryslerScanner
                                         LCDStatusString = "enabled";
                                     }
 
-                                    LCDI2CAddressTextBox.Text = Util.ByteToHexString(Packet.rx.payload, 43, 1);
-                                    LCDI2CAddressString = Util.ByteToHexString(Packet.rx.payload, 43, 1) + " (hex)";
+                                    LCDI2CAddressTextBox.Text = Util.ByteToHexString(packet.Payload, 43, 1);
+                                    LCDI2CAddressString = Util.ByteToHexString(packet.Payload, 43, 1) + " (hex)";
 
-                                    LCDWidthTextBox.Text = Packet.rx.payload[44].ToString("0");
-                                    LCDHeightTextBox.Text = Packet.rx.payload[45].ToString("0");
-                                    LCDSizeString = Packet.rx.payload[44].ToString("0") + "x" + Packet.rx.payload[45].ToString("0") + " characters";
+                                    LCDWidthTextBox.Text = packet.Payload[44].ToString("0");
+                                    LCDHeightTextBox.Text = packet.Payload[45].ToString("0");
+                                    LCDSizeString = packet.Payload[44].ToString("0") + "x" + packet.Payload[45].ToString("0") + " characters";
 
-                                    LCDRefreshRateTextBox.Text = Packet.rx.payload[46].ToString("0");
-                                    LCDRefreshRateString = Packet.rx.payload[46].ToString("0") + " Hz";
+                                    LCDRefreshRateTextBox.Text = packet.Payload[46].ToString("0");
+                                    LCDRefreshRateString = packet.Payload[46].ToString("0") + " Hz";
 
-                                    if (Packet.rx.payload[47] == 0x00)
+                                    if (packet.Payload[47] == 0x00)
                                     {
                                         LCDUnitsString = "imperial";
                                     }
@@ -985,28 +1081,36 @@ namespace ChryslerScanner
                                         LCDUnitsString = "metric";
                                     }
 
-                                    switch (Packet.rx.payload[48])
+                                    switch (packet.Payload[48])
                                     {
                                         case 0x01:
+                                        {
                                             LCDDataSourceString = "CCD-bus";
                                             LCDDataSourceComboBox.SelectedIndex = 0;
                                             break;
+                                        }
                                         case 0x02:
+                                        {
                                             LCDDataSourceString = "SCI-bus (PCM)";
                                             LCDDataSourceComboBox.SelectedIndex = 1;
                                             break;
+                                        }
                                         case 0x03:
+                                        {
                                             LCDDataSourceString = "SCI-bus (TCM)";
                                             LCDDataSourceComboBox.SelectedIndex = 2;
                                             break;
+                                        }
                                         default:
+                                        {
                                             LCDDataSourceString = "CCD-bus";
                                             LCDDataSourceComboBox.SelectedIndex = 0;
                                             break;
+                                        }
                                     }
 
-                                    ushort LEDHeartbeatInterval = (ushort)((Packet.rx.payload[49] << 8) + Packet.rx.payload[50]);
-                                    ushort LEDBlinkDuration = (ushort)((Packet.rx.payload[51] << 8) + Packet.rx.payload[52]);
+                                    ushort LEDHeartbeatInterval = (ushort)((packet.Payload[49] << 8) + packet.Payload[50]);
+                                    ushort LEDBlinkDuration = (ushort)((packet.Payload[51] << 8) + packet.Payload[52]);
 
                                     string LEDHeartbeatStateString = string.Empty;
                                     if (LEDHeartbeatInterval > 0) LEDHeartbeatStateString = "enabled";
@@ -1017,63 +1121,63 @@ namespace ChryslerScanner
                                     HeartbeatIntervalTextBox.Text = LEDHeartbeatInterval.ToString();
                                     LEDBlinkDurationTextBox.Text = LEDBlinkDuration.ToString();
 
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Status response:", Packet.rx.buffer);
+                                    Util.UpdateTextBox(USBTextBox, "[RX->] Status response:", PacketHelper.Serialize(packet));
                                     Util.UpdateTextBox(USBTextBox, "[INFO] -------------Device status--------------" + Environment.NewLine +
-                                                                   "       AVR signature: " + AVRSignature + Environment.NewLine +
-                                                                   "       External EEPROM present: " + extEEPROMPresent + Environment.NewLine +
-                                                                   "       External EEPROM checksum: " + extEEPROMChecksum + Environment.NewLine +
-                                                                   "       Timestamp: " + microcontrollerTimestampString + Environment.NewLine +
-                                                                   "       RAM usage: " + freeRAMString + Environment.NewLine +
-                                                                   "       Connected to vehicle: " + connectedToVehicle + Environment.NewLine +
-                                                                   "       Battery voltage: " + batteryVoltageString + Environment.NewLine +
-                                                                   "       -------------CCD-bus status-------------" + Environment.NewLine +
-                                                                   "       State: " + CCDBusStateString + Environment.NewLine +
-                                                                   "       Logic: " + CCDBusLogicString + Environment.NewLine +
-                                                                   "       Termination and bias: " + CCDTerminationBiasEnabledString + Environment.NewLine +
-                                                                   "       Speed: " + CCDBusSpeedString + Environment.NewLine +
-                                                                   "       Messages received: " + CCDBusMsgRxCountString + Environment.NewLine +
-                                                                   "       Messages sent: " + CCDBusMsgTxCountString + Environment.NewLine +
-                                                                   "       ----------SCI-bus (PCM) status----------" + Environment.NewLine +
-                                                                   "       State: " + SCIBusPCMStateString + Environment.NewLine +
-                                                                   "       Logic: " + SCIBusPCMLogicString + " " + SCIBusPCMSBEC2ModeString + Environment.NewLine +
-                                                                   "       NGC mode: " + SCIBusPCMNGCModeString + Environment.NewLine +
-                                                                   "       OBD config.: " + SCIBusPCMOBDConfigurationString + Environment.NewLine +
-                                                                   "       Speed: " + SCIBusPCMSpeedString + Environment.NewLine +
-                                                                   "       Messages received: " + SCIBusPCMMsgRxCountString + Environment.NewLine +
-                                                                   "       Messages sent: " + SCIBusPCMMsgTxCountString + Environment.NewLine +
-                                                                   "       ----------SCI-bus (TCM) status----------" + Environment.NewLine +
-                                                                   "       State: " + SCIBusTCMStateString + Environment.NewLine +
-                                                                   "       Logic: " + SCIBusTCMLogicString + " " + SCIBusTCMSBEC2ModeString + Environment.NewLine +
-                                                                   "       NGC mode: " + SCIBusTCMNGCModeString + Environment.NewLine +
-                                                                   "       OBD config.: " + SCIBusTCMOBDConfigurationString + Environment.NewLine +
-                                                                   "       Speed: " + SCIBusTCMSpeedString + Environment.NewLine +
-                                                                   "       Messages received: " + SCIBusTCMMsgRxCountString + Environment.NewLine +
-                                                                   "       Messages sent: " + SCIBusTCMMsgTxCountString + Environment.NewLine +
-                                                                   "       ---------------LCD status---------------" + Environment.NewLine +
-                                                                   "       State: " + LCDStatusString + Environment.NewLine +
-                                                                   "       I2C address: " + LCDI2CAddressString + Environment.NewLine +
-                                                                   "       Size: " + LCDSizeString + Environment.NewLine +
-                                                                   "       Refresh rate: " + LCDRefreshRateString + Environment.NewLine +
-                                                                   "       Units: " + LCDUnitsString + Environment.NewLine +
-                                                                   "       Data source: " + LCDDataSourceString + Environment.NewLine +
-                                                                   "       ---------------LED status---------------" + Environment.NewLine +
-                                                                   "       Heartbeat state: " + LEDHeartbeatStateString + Environment.NewLine +
-                                                                   "       Heartbeat interval: " + LEDHeartbeatIntervalString + Environment.NewLine +
-                                                                   "       Blink duration: " + LEDBlinkDurationString);
+                                                                    "       AVR signature: " + AVRSignature + Environment.NewLine +
+                                                                    "       External EEPROM present: " + extEEPROMPresent + Environment.NewLine +
+                                                                    "       External EEPROM checksum: " + extEEPROMChecksum + Environment.NewLine +
+                                                                    "       Timestamp: " + microcontrollerTimestampString + Environment.NewLine +
+                                                                    "       RAM usage: " + freeRAMString + Environment.NewLine +
+                                                                    "       Connected to vehicle: " + connectedToVehicle + Environment.NewLine +
+                                                                    "       Battery voltage: " + batteryVoltageString + Environment.NewLine +
+                                                                    "       -------------CCD-bus status-------------" + Environment.NewLine +
+                                                                    "       State: " + CCDBusStateString + Environment.NewLine +
+                                                                    "       Logic: " + CCDBusLogicString + Environment.NewLine +
+                                                                    "       Termination and bias: " + CCDTerminationBiasEnabledString + Environment.NewLine +
+                                                                    "       Speed: " + CCDBusSpeedString + Environment.NewLine +
+                                                                    "       Messages received: " + CCDBusMsgRxCountString + Environment.NewLine +
+                                                                    "       Messages sent: " + CCDBusMsgTxCountString + Environment.NewLine +
+                                                                    "       ----------SCI-bus (PCM) status----------" + Environment.NewLine +
+                                                                    "       State: " + SCIBusPCMStateString + Environment.NewLine +
+                                                                    "       Logic: " + SCIBusPCMLogicString + " " + SCIBusPCMSBEC2ModeString + Environment.NewLine +
+                                                                    "       NGC mode: " + SCIBusPCMNGCModeString + Environment.NewLine +
+                                                                    "       OBD config.: " + SCIBusPCMOBDConfigurationString + Environment.NewLine +
+                                                                    "       Speed: " + SCIBusPCMSpeedString + Environment.NewLine +
+                                                                    "       Messages received: " + SCIBusPCMMsgRxCountString + Environment.NewLine +
+                                                                    "       Messages sent: " + SCIBusPCMMsgTxCountString + Environment.NewLine +
+                                                                    "       ----------SCI-bus (TCM) status----------" + Environment.NewLine +
+                                                                    "       State: " + SCIBusTCMStateString + Environment.NewLine +
+                                                                    "       Logic: " + SCIBusTCMLogicString + " " + SCIBusTCMSBEC2ModeString + Environment.NewLine +
+                                                                    "       NGC mode: " + SCIBusTCMNGCModeString + Environment.NewLine +
+                                                                    "       OBD config.: " + SCIBusTCMOBDConfigurationString + Environment.NewLine +
+                                                                    "       Speed: " + SCIBusTCMSpeedString + Environment.NewLine +
+                                                                    "       Messages received: " + SCIBusTCMMsgRxCountString + Environment.NewLine +
+                                                                    "       Messages sent: " + SCIBusTCMMsgTxCountString + Environment.NewLine +
+                                                                    "       ---------------LCD status---------------" + Environment.NewLine +
+                                                                    "       State: " + LCDStatusString + Environment.NewLine +
+                                                                    "       I2C address: " + LCDI2CAddressString + Environment.NewLine +
+                                                                    "       Size: " + LCDSizeString + Environment.NewLine +
+                                                                    "       Refresh rate: " + LCDRefreshRateString + Environment.NewLine +
+                                                                    "       Units: " + LCDUnitsString + Environment.NewLine +
+                                                                    "       Data source: " + LCDDataSourceString + Environment.NewLine +
+                                                                    "       ---------------LED status---------------" + Environment.NewLine +
+                                                                    "       Heartbeat state: " + LEDHeartbeatStateString + Environment.NewLine +
+                                                                    "       Heartbeat interval: " + LEDHeartbeatIntervalString + Environment.NewLine +
+                                                                    "       Blink duration: " + LEDBlinkDurationString);
 
-                                    UpdateLCDPreviewTextBox();
+                                    //UpdateLCDPreviewTextBox();
                                 }
-                                else if (HWVersion.Contains("v2.") && (Packet.rx.payload.Length >= 45))
+                                else if (HWVersion.Contains("v2.") && (packet.Payload.Length >= 45))
                                 {
-                                    TimeSpan elapsedMillis = TimeSpan.FromMilliseconds((Packet.rx.payload[0] << 24) + (Packet.rx.payload[1] << 16) + (Packet.rx.payload[2] << 8) + Packet.rx.payload[3]);
+                                    TimeSpan elapsedMillis = TimeSpan.FromMilliseconds((packet.Payload[0] << 24) + (packet.Payload[1] << 16) + (packet.Payload[2] << 8) + packet.Payload[3]);
                                     DateTime microcontrollerTimestamp = DateTime.Today.Add(elapsedMillis);
                                     string microcontrollerTimestampString = microcontrollerTimestamp.ToString("HH:mm:ss.fff");
 
-                                    int freeRAM = (Packet.rx.payload[4] << 24) + (Packet.rx.payload[5] << 16) + (Packet.rx.payload[6] << 8) + Packet.rx.payload[7];
+                                    int freeRAM = (packet.Payload[4] << 24) + (packet.Payload[5] << 16) + (packet.Payload[6] << 8) + packet.Payload[7];
                                     string freeRAMString = (100.0 * (freeRAM / 532480.0)).ToString("0.0") + "% (" + freeRAM.ToString("0") + "/532480 bytes)";
-                                    string batteryVoltageString = (((Packet.rx.payload[8] << 8) + Packet.rx.payload[9]) / 1000.0).ToString("0.000").Replace(",", ".") + " V";
-                                    string bootstrapVoltageString = (((Packet.rx.payload[10] << 8) + Packet.rx.payload[11]) / 1000.0).ToString("0.000").Replace(",", ".") + " V";
-                                    string programmingVoltageString = (((Packet.rx.payload[12] << 8) + Packet.rx.payload[13]) / 1000.0).ToString("0.000").Replace(",", ".") + " V";
+                                    string batteryVoltageString = (((packet.Payload[8] << 8) + packet.Payload[9]) / 1000.0).ToString("0.000").Replace(",", ".") + " V";
+                                    string bootstrapVoltageString = (((packet.Payload[10] << 8) + packet.Payload[11]) / 1000.0).ToString("0.000").Replace(",", ".") + " V";
+                                    string programmingVoltageString = (((packet.Payload[12] << 8) + packet.Payload[13]) / 1000.0).ToString("0.000").Replace(",", ".") + " V";
 
                                     string CCDBusStateString = string.Empty;
                                     string CCDBusLogicString = string.Empty;
@@ -1082,7 +1186,7 @@ namespace ChryslerScanner
                                     string CCDBusMsgRxCountString = string.Empty;
                                     string CCDBusMsgTxCountString = string.Empty;
 
-                                    if (Util.IsBitClear(Packet.rx.payload[14], 7))
+                                    if (Util.IsBitClear(packet.Payload[14], 7))
                                     {
                                         CCDBusTransceiverOnOffCheckBox.CheckedChanged -= new EventHandler(CCDBusSettingsCheckBox_CheckedChanged);
                                         CCDBusTransceiverOnOffCheckBox.Checked = false;
@@ -1099,10 +1203,10 @@ namespace ChryslerScanner
                                         CCDBusStateString = "enabled";
                                     }
 
-                                    if (Util.IsBitClear(Packet.rx.payload[14], 3)) CCDBusLogicString = "non-inverted";
+                                    if (Util.IsBitClear(packet.Payload[14], 3)) CCDBusLogicString = "non-inverted";
                                     else CCDBusLogicString = "inverted";
 
-                                    if (Util.IsBitClear(Packet.rx.payload[14], 6))
+                                    if (Util.IsBitClear(packet.Payload[14], 6))
                                     {
                                         CCDBusTerminationBiasOnOffCheckBox.CheckedChanged -= new EventHandler(this.CCDBusSettingsCheckBox_CheckedChanged);
                                         CCDBusTerminationBiasOnOffCheckBox.Checked = false;
@@ -1119,29 +1223,39 @@ namespace ChryslerScanner
                                         CCDTerminationBiasEnabledString = "enabled";
                                     }
 
-                                    switch (Packet.rx.payload[14] & 0x03)
+                                    switch (packet.Payload[14] & 0x03)
                                     {
                                         case 0x00:
+                                        {
                                             CCDBusSpeedString = "976.5 baud";
                                             break;
+                                        }
                                         case 0x01:
+                                        {
                                             CCDBusSpeedString = "7812.5 baud";
                                             break;
+                                        }
                                         case 0x02:
+                                        {
                                             CCDBusSpeedString = "62500 baud";
                                             break;
+                                        }
                                         case 0x03:
+                                        {
                                             CCDBusSpeedString = "125000 baud";
                                             break;
+                                        }
                                         default:
+                                        {
                                             CCDBusSpeedString = "unknown";
                                             break;
+                                        }
                                     }
 
                                     CCD.UpdateHeader(CCDBusStateString, CCDBusSpeedString, CCDBusLogicString);
 
-                                    CCDBusMsgRxCountString = ((Packet.rx.payload[15] << 24) + (Packet.rx.payload[16] << 16) + (Packet.rx.payload[17] << 8) + Packet.rx.payload[18]).ToString();
-                                    CCDBusMsgTxCountString = ((Packet.rx.payload[19] << 24) + (Packet.rx.payload[20] << 16) + (Packet.rx.payload[21] << 8) + Packet.rx.payload[22]).ToString();
+                                    CCDBusMsgRxCountString = ((packet.Payload[15] << 24) + (packet.Payload[16] << 16) + (packet.Payload[17] << 8) + packet.Payload[18]).ToString();
+                                    CCDBusMsgTxCountString = ((packet.Payload[19] << 24) + (packet.Payload[20] << 16) + (packet.Payload[21] << 8) + packet.Payload[22]).ToString();
 
                                     string PCIBusStateString = string.Empty;
                                     string PCIBusLogicString = string.Empty;
@@ -1149,7 +1263,7 @@ namespace ChryslerScanner
                                     string PCIBusMsgRxCountString = string.Empty;
                                     string PCIBusMsgTxCountString = string.Empty;
 
-                                    if (Util.IsBitClear(Packet.rx.payload[23], 7))
+                                    if (Util.IsBitClear(packet.Payload[23], 7))
                                     {
                                         PCIBusTransceiverOnOffCheckBox.CheckedChanged -= new EventHandler(PCIBusSettingsCheckBox_CheckedChanged);
                                         PCIBusTransceiverOnOffCheckBox.Checked = false;
@@ -1166,15 +1280,15 @@ namespace ChryslerScanner
                                         PCIBusStateString = "enabled";
                                     }
 
-                                    if (Util.IsBitClear(Packet.rx.payload[23], 6)) PCIBusLogicString = "active-low";
+                                    if (Util.IsBitClear(packet.Payload[23], 6)) PCIBusLogicString = "active-low";
                                     else PCIBusLogicString = "active-high";
 
                                     PCIBusSpeedString = "10416 baud";
 
                                     PCI.UpdateHeader(PCIBusStateString, PCIBusSpeedString, PCIBusLogicString);
 
-                                    PCIBusMsgRxCountString = ((Packet.rx.payload[24] << 24) + (Packet.rx.payload[25] << 16) + (Packet.rx.payload[26] << 8) + Packet.rx.payload[27]).ToString();
-                                    PCIBusMsgTxCountString = ((Packet.rx.payload[28] << 24) + (Packet.rx.payload[29] << 16) + (Packet.rx.payload[30] << 8) + Packet.rx.payload[31]).ToString();
+                                    PCIBusMsgRxCountString = ((packet.Payload[24] << 24) + (packet.Payload[25] << 16) + (packet.Payload[26] << 8) + packet.Payload[27]).ToString();
+                                    PCIBusMsgTxCountString = ((packet.Payload[28] << 24) + (packet.Payload[29] << 16) + (packet.Payload[30] << 8) + packet.Payload[31]).ToString();
 
                                     string SCIBusStateString = string.Empty;
                                     string SCIBusModuleString = string.Empty;
@@ -1186,13 +1300,13 @@ namespace ChryslerScanner
                                     string SCIBusMsgRxCountString = string.Empty;
                                     string SCIBusMsgTxCountString = string.Empty;
 
-                                    if (Util.IsBitSet(Packet.rx.payload[32], 7))
+                                    if (Util.IsBitSet(packet.Payload[32], 7))
                                     {
                                         SCIBusStateString = "enabled";
 
-                                        if (Util.IsBitClear(Packet.rx.payload[32], 4) &&
-                                            Util.IsBitClear(Packet.rx.payload[32], 3) &&
-                                            Util.IsBitClear(Packet.rx.payload[32], 6))
+                                        if (Util.IsBitClear(packet.Payload[32], 4) &&
+                                            Util.IsBitClear(packet.Payload[32], 3) &&
+                                            Util.IsBitClear(packet.Payload[32], 6))
                                         {
                                             SCIBusLogicComboBox.SelectedIndex = 2; // OBD2
 
@@ -1201,7 +1315,7 @@ namespace ChryslerScanner
                                         }
                                         else
                                         {
-                                            if (Util.IsBitSet(Packet.rx.payload[32], 4))
+                                            if (Util.IsBitSet(packet.Payload[32], 4))
                                             {
                                                 SCIBusNGCModeString = "enabled";
                                                 SCIBusLogicComboBox.SelectedIndex = 3; // OBD2 NGC
@@ -1211,7 +1325,7 @@ namespace ChryslerScanner
                                                 SCIBusNGCModeString = "disabled";
                                             }
 
-                                            if (Util.IsBitSet(Packet.rx.payload[32], 3))
+                                            if (Util.IsBitSet(packet.Payload[32], 3))
                                             {
                                                 SCIBusLogicString += "inverted";
                                                 SCIBusLogicComboBox.SelectedIndex = 1; // OBD1 JTEC
@@ -1221,14 +1335,14 @@ namespace ChryslerScanner
                                                 SCIBusLogicString += "non-inverted";
                                             }
 
-                                            if (Util.IsBitSet(Packet.rx.payload[32], 6))
+                                            if (Util.IsBitSet(packet.Payload[32], 6))
                                             {
                                                 SCIBusSBEC2ModeString += "(SBEC)";
                                                 SCIBusLogicComboBox.SelectedIndex = 0; // OBD1 SBEC
                                             }
                                         }
 
-                                        if (Util.IsBitClear(Packet.rx.payload[32], 2))
+                                        if (Util.IsBitClear(packet.Payload[32], 2))
                                         {
                                             SCIBusOBDConfigurationString = "A";
                                             SCIBusOBDConfigurationComboBox.SelectedIndex = 0;
@@ -1239,28 +1353,38 @@ namespace ChryslerScanner
                                             SCIBusOBDConfigurationComboBox.SelectedIndex = 1;
                                         }
 
-                                        switch (Packet.rx.payload[32] & 0x03)
+                                        switch (packet.Payload[32] & 0x03)
                                         {
                                             case 0x00:
+                                            {
                                                 SCIBusSpeedString = "976.5 baud";
                                                 SCIBusSpeedComboBox.SelectedIndex = 1;
                                                 break;
+                                            }
                                             case 0x01:
+                                            {
                                                 SCIBusSpeedString = "7812.5 baud";
                                                 SCIBusSpeedComboBox.SelectedIndex = 2;
                                                 break;
+                                            }
                                             case 0x02:
+                                            {
                                                 SCIBusSpeedString = "62500 baud";
                                                 SCIBusSpeedComboBox.SelectedIndex = 3;
                                                 break;
+                                            }
                                             case 0x03:
+                                            {
                                                 SCIBusSpeedString = "125000 baud";
                                                 SCIBusSpeedComboBox.SelectedIndex = 4;
                                                 break;
+                                            }
                                             default:
+                                            {
                                                 SCIBusSpeedString = "unknown";
                                                 SCIBusSpeedComboBox.SelectedIndex = 0;
                                                 break;
+                                            }
                                         }
                                     }
                                     else
@@ -1272,10 +1396,10 @@ namespace ChryslerScanner
                                         SCIBusSpeedComboBox.SelectedIndex = 0;
                                     }
 
-                                    SCIBusMsgRxCountString = ((Packet.rx.payload[33] << 24) + (Packet.rx.payload[34] << 16) + (Packet.rx.payload[35] << 8) + Packet.rx.payload[36]).ToString();
-                                    SCIBusMsgTxCountString = ((Packet.rx.payload[37] << 24) + (Packet.rx.payload[38] << 16) + (Packet.rx.payload[39] << 8) + Packet.rx.payload[40]).ToString();
+                                    SCIBusMsgRxCountString = ((packet.Payload[33] << 24) + (packet.Payload[34] << 16) + (packet.Payload[35] << 8) + packet.Payload[36]).ToString();
+                                    SCIBusMsgTxCountString = ((packet.Payload[37] << 24) + (packet.Payload[38] << 16) + (packet.Payload[39] << 8) + packet.Payload[40]).ToString();
 
-                                    if (Util.IsBitClear(Packet.rx.payload[32], 5)) // PCM
+                                    if (Util.IsBitClear(packet.Payload[32], 5)) // PCM
                                     {
                                         SCIBusModuleString = "PCM (Engine)";
                                         SCIBusModuleComboBox.SelectedIndex = 0;
@@ -1290,8 +1414,8 @@ namespace ChryslerScanner
                                         PCM.UpdateHeader("disabled", "-", "-", "-");
                                     }
 
-                                    ushort LEDHeartbeatInterval = (ushort)((Packet.rx.payload[41] << 8) + Packet.rx.payload[42]);
-                                    ushort LEDBlinkDuration = (ushort)((Packet.rx.payload[43] << 8) + Packet.rx.payload[44]);
+                                    ushort LEDHeartbeatInterval = (ushort)((packet.Payload[41] << 8) + packet.Payload[42]);
+                                    ushort LEDBlinkDuration = (ushort)((packet.Payload[43] << 8) + packet.Payload[44]);
 
                                     string LEDHeartbeatStateString = string.Empty;
                                     if (LEDHeartbeatInterval > 0) LEDHeartbeatStateString = "enabled";
@@ -1302,39 +1426,39 @@ namespace ChryslerScanner
                                     HeartbeatIntervalTextBox.Text = LEDHeartbeatInterval.ToString();
                                     LEDBlinkDurationTextBox.Text = LEDBlinkDuration.ToString();
 
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Status response:", Packet.rx.buffer);
+                                    Util.UpdateTextBox(USBTextBox, "[RX->] Status response:", PacketHelper.Serialize(packet));
                                     Util.UpdateTextBox(USBTextBox, "[INFO] -------------Device status--------------" + Environment.NewLine +
-                                                                   "       Timestamp: " + microcontrollerTimestampString + Environment.NewLine +
-                                                                   "       RAM usage: " + freeRAMString + Environment.NewLine +
-                                                                   "       Battery voltage: " + batteryVoltageString + Environment.NewLine +
-                                                                   "       Bootstrap voltage: " + bootstrapVoltageString + Environment.NewLine +
-                                                                   "       Programming voltage: " + programmingVoltageString + Environment.NewLine +
-                                                                   "       -------------CCD-bus status-------------" + Environment.NewLine +
-                                                                   "       State: " + CCDBusStateString + Environment.NewLine +
-                                                                   "       Logic: " + CCDBusLogicString + Environment.NewLine +
-                                                                   "       Termination and bias: " + CCDTerminationBiasEnabledString + Environment.NewLine +
-                                                                   "       Speed: " + CCDBusSpeedString + Environment.NewLine +
-                                                                   "       Messages received: " + CCDBusMsgRxCountString + Environment.NewLine +
-                                                                   "       Messages sent: " + CCDBusMsgTxCountString + Environment.NewLine +
-                                                                   "       -------------PCI-bus status-------------" + Environment.NewLine +
-                                                                   "       State: " + PCIBusStateString + Environment.NewLine +
-                                                                   "       Logic: " + PCIBusLogicString + Environment.NewLine +
-                                                                   "       Speed: " + PCIBusSpeedString + Environment.NewLine +
-                                                                   "       Messages received: " + PCIBusMsgRxCountString + Environment.NewLine +
-                                                                   "       Messages sent: " + PCIBusMsgTxCountString + Environment.NewLine +
-                                                                   "       -------------SCI-bus status-------------" + Environment.NewLine +
-                                                                   "       Module: " + SCIBusModuleString + Environment.NewLine +
-                                                                   "       State: " + SCIBusStateString + Environment.NewLine +
-                                                                   "       Logic: " + SCIBusLogicString + " " + SCIBusSBEC2ModeString + Environment.NewLine +
-                                                                   "       NGC mode: " + SCIBusNGCModeString + Environment.NewLine +
-                                                                   "       OBD config.: " + SCIBusOBDConfigurationString + Environment.NewLine +
-                                                                   "       Speed: " + SCIBusSpeedString + Environment.NewLine +
-                                                                   "       Messages received: " + SCIBusMsgRxCountString + Environment.NewLine +
-                                                                   "       Messages sent: " + SCIBusMsgTxCountString + Environment.NewLine +
-                                                                   "       ---------------LED status---------------" + Environment.NewLine +
-                                                                   "       Heartbeat state: " + LEDHeartbeatStateString + Environment.NewLine +
-                                                                   "       Heartbeat interval: " + LEDHeartbeatIntervalString + Environment.NewLine +
-                                                                   "       Blink duration: " + LEDBlinkDurationString);
+                                                                    "       Timestamp: " + microcontrollerTimestampString + Environment.NewLine +
+                                                                    "       RAM usage: " + freeRAMString + Environment.NewLine +
+                                                                    "       Battery voltage: " + batteryVoltageString + Environment.NewLine +
+                                                                    "       Bootstrap voltage: " + bootstrapVoltageString + Environment.NewLine +
+                                                                    "       Programming voltage: " + programmingVoltageString + Environment.NewLine +
+                                                                    "       -------------CCD-bus status-------------" + Environment.NewLine +
+                                                                    "       State: " + CCDBusStateString + Environment.NewLine +
+                                                                    "       Logic: " + CCDBusLogicString + Environment.NewLine +
+                                                                    "       Termination and bias: " + CCDTerminationBiasEnabledString + Environment.NewLine +
+                                                                    "       Speed: " + CCDBusSpeedString + Environment.NewLine +
+                                                                    "       Messages received: " + CCDBusMsgRxCountString + Environment.NewLine +
+                                                                    "       Messages sent: " + CCDBusMsgTxCountString + Environment.NewLine +
+                                                                    "       -------------PCI-bus status-------------" + Environment.NewLine +
+                                                                    "       State: " + PCIBusStateString + Environment.NewLine +
+                                                                    "       Logic: " + PCIBusLogicString + Environment.NewLine +
+                                                                    "       Speed: " + PCIBusSpeedString + Environment.NewLine +
+                                                                    "       Messages received: " + PCIBusMsgRxCountString + Environment.NewLine +
+                                                                    "       Messages sent: " + PCIBusMsgTxCountString + Environment.NewLine +
+                                                                    "       -------------SCI-bus status-------------" + Environment.NewLine +
+                                                                    "       Module: " + SCIBusModuleString + Environment.NewLine +
+                                                                    "       State: " + SCIBusStateString + Environment.NewLine +
+                                                                    "       Logic: " + SCIBusLogicString + " " + SCIBusSBEC2ModeString + Environment.NewLine +
+                                                                    "       NGC mode: " + SCIBusNGCModeString + Environment.NewLine +
+                                                                    "       OBD config.: " + SCIBusOBDConfigurationString + Environment.NewLine +
+                                                                    "       Speed: " + SCIBusSpeedString + Environment.NewLine +
+                                                                    "       Messages received: " + SCIBusMsgRxCountString + Environment.NewLine +
+                                                                    "       Messages sent: " + SCIBusMsgTxCountString + Environment.NewLine +
+                                                                    "       ---------------LED status---------------" + Environment.NewLine +
+                                                                    "       Heartbeat state: " + LEDHeartbeatStateString + Environment.NewLine +
+                                                                    "       Heartbeat interval: " + LEDHeartbeatIntervalString + Environment.NewLine +
+                                                                    "       Blink duration: " + LEDBlinkDurationString);
 
                                     BeginInvoke((MethodInvoker)delegate
                                     {
@@ -1358,1619 +1482,1931 @@ namespace ChryslerScanner
                                         LCDApplySettingsButton.Enabled = false;
                                     });
                                 }
+                                break;
                             }
-                            else
+                            case (byte)PacketHelper.Command.Settings:
                             {
-                                Util.UpdateTextBox(USBTextBox, "[RX->] Invalid status packet:", Packet.rx.buffer);
-                            }
-                            break;
-                        case (byte)Packet.Command.settings:
-                            switch (Packet.rx.mode)
-                            {
-                                case (byte)Packet.SettingsMode.leds:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length >= 4))
+                                switch (packet.Mode)
+                                {
+                                    case (byte)PacketHelper.SettingsMode.LEDs:
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] LED settings changed:", Packet.rx.buffer);
-
-                                        int heartbeatInterval = (Packet.rx.payload[0] << 8) + Packet.rx.payload[1];
-                                        int blinkDuration = (Packet.rx.payload[2] << 8) + Packet.rx.payload[3];
-                                        string heartbeatIntervalString = heartbeatInterval.ToString() + " ms";
-                                        string blinkDurationString = blinkDuration.ToString() + " ms";
-
-                                        string heartbeatStateString = string.Empty;
-                                        if (heartbeatInterval > 0) heartbeatStateString = "enabled";
-                                        else heartbeatStateString = "disabled";
-
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] LED settings:" + Environment.NewLine +
-                                                                       "       Heartbeat state: " + heartbeatStateString + Environment.NewLine +
-                                                                       "       Heartbeat interval: " + heartbeatIntervalString + Environment.NewLine +
-                                                                       "       LED blink duration: " + blinkDurationString);
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid settings packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.SettingsMode.setCCDBus:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
-                                    {
-                                        string CCDBusStateString = string.Empty;
-                                        string CCDBusTerminationBiasString = string.Empty;
-
-                                        if (Util.IsBitClear(Packet.rx.payload[0], 7))
+                                        if ((packet.Payload != null) && (packet.Payload.Length >= 4))
                                         {
-                                            CCDBusStateString = "disabled";
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] LED settings changed:", PacketHelper.Serialize(packet));
+
+                                            int heartbeatInterval = (packet.Payload[0] << 8) + packet.Payload[1];
+                                            int blinkDuration = (packet.Payload[2] << 8) + packet.Payload[3];
+                                            string heartbeatIntervalString = heartbeatInterval.ToString() + " ms";
+                                            string blinkDurationString = blinkDuration.ToString() + " ms";
+
+                                            string heartbeatStateString = string.Empty;
+                                            if (heartbeatInterval > 0) heartbeatStateString = "enabled";
+                                            else heartbeatStateString = "disabled";
+
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] LED settings:" + Environment.NewLine +
+                                                                           "       Heartbeat state: " + heartbeatStateString + Environment.NewLine +
+                                                                           "       Heartbeat interval: " + heartbeatIntervalString + Environment.NewLine +
+                                                                           "       LED blink duration: " + blinkDurationString);
                                         }
                                         else
                                         {
-                                            CCDBusStateString = "enabled";
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid settings packet:", PacketHelper.Serialize(packet));
                                         }
-
-                                        if (Util.IsBitClear(Packet.rx.payload[0], 6))
-                                        {
-                                            CCDBusTerminationBiasString = "disabled";
-                                        }
-                                        else
-                                        {
-                                            CCDBusTerminationBiasString = "enabled";
-                                        }
-
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus settings changed:", Packet.rx.buffer);
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus settings: " + Environment.NewLine +
-                                                                       "       - state: " + CCDBusStateString + Environment.NewLine +
-                                                                       "       - termination and bias: " + CCDBusTerminationBiasString);
-
-                                        CCD.UpdateHeader(CCDBusStateString, null, null);
+                                        break;
                                     }
-                                    else
+                                    case (byte)PacketHelper.SettingsMode.SetCCDBus:
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid settings packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.SettingsMode.setSCIBus:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
-                                    {
-                                        string SCIBusPCMStateString = string.Empty;
-                                        string SCIBusPCMLogicString = string.Empty;
-                                        string SCIBusPCMNGCModeString = string.Empty;
-                                        string SCIBusPCMSBEC2ModeString = string.Empty;
-                                        string SCIBusPCMOBDConfigurationString = string.Empty;
-                                        string SCIBusPCMSpeedString = string.Empty;
-                                        string SCIBusTCMStateString = string.Empty;
-                                        string SCIBusTCMLogicString = string.Empty;
-                                        string SCIBusTCMNGCModeString = string.Empty;
-                                        string SCIBusTCMSBEC2ModeString = string.Empty;
-                                        string SCIBusTCMOBDConfigurationString = string.Empty;
-                                        string SCIBusTCMSpeedString = string.Empty;
-
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus settings changed:", Packet.rx.buffer);
-
-                                        if (Util.IsBitSet(Packet.rx.payload[0], 5)) // TCM settings received
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 0))
                                         {
-                                            if (Util.IsBitClear(Packet.rx.payload[0], 7))
+                                            string CCDBusStateString = string.Empty;
+                                            string CCDBusTerminationBiasString = string.Empty;
+
+                                            if (Util.IsBitClear(packet.Payload[0], 7))
                                             {
-                                                SCIBusTCMStateString = "disabled";
+                                                CCDBusStateString = "disabled";
                                             }
                                             else
                                             {
-                                                PCMSelected = false;
-                                                TCMSelected = true;
-                                                SCIBusTCMStateString = "enabled";
-                                                SCIBusPCMStateString = "disabled";
+                                                CCDBusStateString = "enabled";
+                                            }
 
-                                                if (Util.IsBitClear(Packet.rx.payload[0], 4) &&
-                                                    Util.IsBitClear(Packet.rx.payload[0], 3) &&
-                                                    Util.IsBitClear(Packet.rx.payload[0], 6))
+                                            if (Util.IsBitClear(packet.Payload[0], 6))
+                                            {
+                                                CCDBusTerminationBiasString = "disabled";
+                                            }
+                                            else
+                                            {
+                                                CCDBusTerminationBiasString = "enabled";
+                                            }
+
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus settings changed:", PacketHelper.Serialize(packet));
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus settings: " + Environment.NewLine +
+                                                                           "       - state: " + CCDBusStateString + Environment.NewLine +
+                                                                           "       - termination and bias: " + CCDBusTerminationBiasString);
+
+                                            CCD.UpdateHeader(CCDBusStateString, null, null);
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid settings packet:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.SettingsMode.SetSCIBus:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 0))
+                                        {
+                                            string SCIBusPCMStateString = string.Empty;
+                                            string SCIBusPCMLogicString = string.Empty;
+                                            string SCIBusPCMNGCModeString = string.Empty;
+                                            string SCIBusPCMSBEC2ModeString = string.Empty;
+                                            string SCIBusPCMOBDConfigurationString = string.Empty;
+                                            string SCIBusPCMSpeedString = string.Empty;
+                                            string SCIBusTCMStateString = string.Empty;
+                                            string SCIBusTCMLogicString = string.Empty;
+                                            string SCIBusTCMNGCModeString = string.Empty;
+                                            string SCIBusTCMSBEC2ModeString = string.Empty;
+                                            string SCIBusTCMOBDConfigurationString = string.Empty;
+                                            string SCIBusTCMSpeedString = string.Empty;
+
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus settings changed:", PacketHelper.Serialize(packet));
+
+                                            if (Util.IsBitSet(packet.Payload[0], 5)) // TCM settings received
+                                            {
+                                                if (Util.IsBitClear(packet.Payload[0], 7))
                                                 {
-                                                    BeginInvoke((MethodInvoker)delegate
-                                                    {
-                                                        SCIBusLogicComboBox.SelectedIndex = 2; // OBD2
-                                                    });
-
-                                                    SCIBusTCMNGCModeString = "disabled";
-                                                    SCIBusTCMLogicString += "non-inverted";
+                                                    SCIBusTCMStateString = "disabled";
                                                 }
                                                 else
                                                 {
-                                                    if (Util.IsBitSet(Packet.rx.payload[0], 4))
-                                                    {
-                                                        SCIBusTCMNGCModeString = "enabled";
+                                                    PCMSelected = false;
+                                                    TCMSelected = true;
+                                                    SCIBusTCMStateString = "enabled";
+                                                    SCIBusPCMStateString = "disabled";
 
+                                                    if (Util.IsBitClear(packet.Payload[0], 4) &&
+                                                        Util.IsBitClear(packet.Payload[0], 3) &&
+                                                        Util.IsBitClear(packet.Payload[0], 6))
+                                                    {
                                                         BeginInvoke((MethodInvoker)delegate
                                                         {
-                                                            SCIBusLogicComboBox.SelectedIndex = 3; // OBD2 NGC
+                                                            SCIBusLogicComboBox.SelectedIndex = 2; // OBD2
                                                         });
-                                                    }
-                                                    else
-                                                    {
+
                                                         SCIBusTCMNGCModeString = "disabled";
-                                                    }
-
-                                                    if (Util.IsBitSet(Packet.rx.payload[0], 3))
-                                                    {
-                                                        SCIBusTCMLogicString += "inverted";
-
-                                                        BeginInvoke((MethodInvoker)delegate
-                                                        {
-                                                            SCIBusLogicComboBox.SelectedIndex = 1; // OBD1 JTEC
-                                                        });
-                                                    }
-                                                    else
-                                                    {
                                                         SCIBusTCMLogicString += "non-inverted";
                                                     }
-
-                                                    if (Util.IsBitSet(Packet.rx.payload[0], 6))
+                                                    else
                                                     {
-                                                        SCIBusTCMSBEC2ModeString += "(SBEC)";
-
-                                                        BeginInvoke((MethodInvoker)delegate
+                                                        if (Util.IsBitSet(packet.Payload[0], 4))
                                                         {
-                                                            SCIBusLogicComboBox.SelectedIndex = 0; // OBD1 SBEC
-                                                        });
+                                                            SCIBusTCMNGCModeString = "enabled";
+
+                                                            BeginInvoke((MethodInvoker)delegate
+                                                            {
+                                                                SCIBusLogicComboBox.SelectedIndex = 3; // OBD2 NGC
+                                                            });
+                                                        }
+                                                        else
+                                                        {
+                                                            SCIBusTCMNGCModeString = "disabled";
+                                                        }
+
+                                                        if (Util.IsBitSet(packet.Payload[0], 3))
+                                                        {
+                                                            SCIBusTCMLogicString += "inverted";
+
+                                                            BeginInvoke((MethodInvoker)delegate
+                                                            {
+                                                                SCIBusLogicComboBox.SelectedIndex = 1; // OBD1 JTEC
+                                                            });
+                                                        }
+                                                        else
+                                                        {
+                                                            SCIBusTCMLogicString += "non-inverted";
+                                                        }
+
+                                                        if (Util.IsBitSet(packet.Payload[0], 6))
+                                                        {
+                                                            SCIBusTCMSBEC2ModeString += "(SBEC)";
+
+                                                            BeginInvoke((MethodInvoker)delegate
+                                                            {
+                                                                SCIBusLogicComboBox.SelectedIndex = 0; // OBD1 SBEC
+                                                            });
+                                                        }
                                                     }
-                                                }
 
-                                                if (Util.IsBitClear(Packet.rx.payload[0], 2))
-                                                {
-                                                    SCIBusTCMOBDConfigurationString = "A";
-                                                }
-                                                else
-                                                {
-                                                    SCIBusTCMOBDConfigurationString = "B";
-                                                }
-
-                                                switch (Packet.rx.payload[0] & 0x03)
-                                                {
-                                                    case 0x00:
-                                                        SCIBusTCMSpeedString = "976.5 baud";
-
-                                                        BeginInvoke((MethodInvoker)delegate
-                                                        {
-                                                            SCIBusSpeedComboBox.SelectedIndex = 1;
-                                                        });
-                                                        break;
-                                                    case 0x01:
-                                                        SCIBusTCMSpeedString = "7812.5 baud";
-
-                                                        BeginInvoke((MethodInvoker)delegate
-                                                        {
-                                                            SCIBusSpeedComboBox.SelectedIndex = 2;
-                                                        });
-                                                        break;
-                                                    case 0x02:
-                                                        SCIBusTCMSpeedString = "62500 baud";
-
-                                                        BeginInvoke((MethodInvoker)delegate
-                                                        {
-                                                            SCIBusSpeedComboBox.SelectedIndex = 3;
-                                                        });
-                                                        break;
-                                                    case 0x03:
-                                                        SCIBusTCMSpeedString = "125000 baud";
-
-                                                        BeginInvoke((MethodInvoker)delegate
-                                                        {
-                                                            SCIBusSpeedComboBox.SelectedIndex = 4;
-                                                        });
-                                                        break;
-                                                }
-                                            }
-
-                                            if (SCIBusTCMStateString == "enabled")
-                                            {
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] TCM settings: " + Environment.NewLine +
-                                                                               "       - state: " + SCIBusTCMStateString + Environment.NewLine +
-                                                                               "       - logic: " + SCIBusTCMLogicString + " " + SCIBusTCMSBEC2ModeString + Environment.NewLine +
-                                                                               "       - ngc mode: " + SCIBusTCMNGCModeString + Environment.NewLine +
-                                                                               "       - obd config.: " + SCIBusTCMOBDConfigurationString + Environment.NewLine +
-                                                                               "       - speed: " + SCIBusTCMSpeedString + Environment.NewLine +
-                                                                               "       PCM settings: " + Environment.NewLine +
-                                                                               "       - state: disabled");
-                                            }
-                                            else
-                                            {
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] TCM settings: " + Environment.NewLine +
-                                                                                "       - state: " + SCIBusTCMStateString);
-                                            }
-
-                                            TCM.UpdateHeader(SCIBusTCMStateString, SCIBusTCMSpeedString, SCIBusTCMLogicString, SCIBusTCMOBDConfigurationString);
-                                            PCM.UpdateHeader(SCIBusPCMStateString, SCIBusPCMSpeedString, SCIBusPCMLogicString, SCIBusPCMOBDConfigurationString);
-                                        }
-                                        else // PCM settings received
-                                        {
-                                            if (Util.IsBitClear(Packet.rx.payload[0], 7))
-                                            {
-                                                SCIBusPCMStateString = "disabled";
-                                            }
-                                            else
-                                            {
-                                                PCMSelected = true;
-                                                TCMSelected = false;
-                                                SCIBusPCMStateString = "enabled";
-                                                SCIBusTCMStateString = "disabled";
-
-                                                if (Util.IsBitClear(Packet.rx.payload[0], 4) &&
-                                                    Util.IsBitClear(Packet.rx.payload[0], 3) &&
-                                                    Util.IsBitClear(Packet.rx.payload[0], 6))
-                                                {
-                                                    BeginInvoke((MethodInvoker)delegate
+                                                    if (Util.IsBitClear(packet.Payload[0], 2))
                                                     {
-                                                        SCIBusLogicComboBox.SelectedIndex = 2; // OBD2
-                                                    });
-
-                                                    SCIBusPCMNGCModeString = "disabled";
-                                                    SCIBusPCMLogicString += "non-inverted";
-                                                }
-                                                else
-                                                {
-                                                    if (Util.IsBitSet(Packet.rx.payload[0], 4))
-                                                    {
-                                                        SCIBusPCMNGCModeString = "enabled";
-
-                                                        BeginInvoke((MethodInvoker)delegate
-                                                        {
-                                                            SCIBusLogicComboBox.SelectedIndex = 3; // OBD2 NGC
-                                                        });
+                                                        SCIBusTCMOBDConfigurationString = "A";
                                                     }
                                                     else
                                                     {
+                                                        SCIBusTCMOBDConfigurationString = "B";
+                                                    }
+
+                                                    switch (packet.Payload[0] & 0x03)
+                                                    {
+                                                        case 0x00:
+                                                        {
+                                                            SCIBusTCMSpeedString = "976.5 baud";
+
+                                                            BeginInvoke((MethodInvoker)delegate
+                                                            {
+                                                                SCIBusSpeedComboBox.SelectedIndex = 1;
+                                                            });
+                                                            break;
+                                                        }
+                                                        case 0x01:
+                                                        {
+                                                            SCIBusTCMSpeedString = "7812.5 baud";
+
+                                                            BeginInvoke((MethodInvoker)delegate
+                                                            {
+                                                                SCIBusSpeedComboBox.SelectedIndex = 2;
+                                                            });
+                                                            break;
+                                                        }
+                                                        case 0x02:
+                                                        {
+                                                            SCIBusTCMSpeedString = "62500 baud";
+
+                                                            BeginInvoke((MethodInvoker)delegate
+                                                            {
+                                                                SCIBusSpeedComboBox.SelectedIndex = 3;
+                                                            });
+                                                            break;
+                                                        }
+                                                        case 0x03:
+                                                        {
+                                                            SCIBusTCMSpeedString = "125000 baud";
+
+                                                            BeginInvoke((MethodInvoker)delegate
+                                                            {
+                                                                SCIBusSpeedComboBox.SelectedIndex = 4;
+                                                            });
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+
+                                                if (SCIBusTCMStateString == "enabled")
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] TCM settings: " + Environment.NewLine +
+                                                                                   "       - state: " + SCIBusTCMStateString + Environment.NewLine +
+                                                                                   "       - logic: " + SCIBusTCMLogicString + " " + SCIBusTCMSBEC2ModeString + Environment.NewLine +
+                                                                                   "       - ngc mode: " + SCIBusTCMNGCModeString + Environment.NewLine +
+                                                                                   "       - obd config.: " + SCIBusTCMOBDConfigurationString + Environment.NewLine +
+                                                                                   "       - speed: " + SCIBusTCMSpeedString + Environment.NewLine +
+                                                                                   "       PCM settings: " + Environment.NewLine +
+                                                                                   "       - state: disabled");
+                                                }
+                                                else
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] TCM settings: " + Environment.NewLine +
+                                                                                    "       - state: " + SCIBusTCMStateString);
+                                                }
+
+                                                TCM.UpdateHeader(SCIBusTCMStateString, SCIBusTCMSpeedString, SCIBusTCMLogicString, SCIBusTCMOBDConfigurationString);
+                                                PCM.UpdateHeader(SCIBusPCMStateString, SCIBusPCMSpeedString, SCIBusPCMLogicString, SCIBusPCMOBDConfigurationString);
+                                            }
+                                            else // PCM settings received
+                                            {
+                                                if (Util.IsBitClear(packet.Payload[0], 7))
+                                                {
+                                                    SCIBusPCMStateString = "disabled";
+                                                }
+                                                else
+                                                {
+                                                    PCMSelected = true;
+                                                    TCMSelected = false;
+                                                    SCIBusPCMStateString = "enabled";
+                                                    SCIBusTCMStateString = "disabled";
+
+                                                    if (Util.IsBitClear(packet.Payload[0], 4) &&
+                                                        Util.IsBitClear(packet.Payload[0], 3) &&
+                                                        Util.IsBitClear(packet.Payload[0], 6))
+                                                    {
+                                                        BeginInvoke((MethodInvoker)delegate
+                                                        {
+                                                            SCIBusLogicComboBox.SelectedIndex = 2; // OBD2
+                                                        });
+
                                                         SCIBusPCMNGCModeString = "disabled";
-                                                    }
-
-                                                    if (Util.IsBitSet(Packet.rx.payload[0], 3))
-                                                    {
-                                                        SCIBusPCMLogicString += "inverted";
-
-                                                        BeginInvoke((MethodInvoker)delegate
-                                                        {
-                                                            SCIBusLogicComboBox.SelectedIndex = 1; // OBD1 JTEC
-                                                        });
-                                                    }
-                                                    else
-                                                    {
                                                         SCIBusPCMLogicString += "non-inverted";
                                                     }
-
-                                                    if (Util.IsBitSet(Packet.rx.payload[0], 6))
+                                                    else
                                                     {
-                                                        SCIBusPCMSBEC2ModeString += "(SBEC)";
-
-                                                        BeginInvoke((MethodInvoker)delegate
+                                                        if (Util.IsBitSet(packet.Payload[0], 4))
                                                         {
-                                                            SCIBusLogicComboBox.SelectedIndex = 0; // OBD1 SBEC
-                                                        });
+                                                            SCIBusPCMNGCModeString = "enabled";
+
+                                                            BeginInvoke((MethodInvoker)delegate
+                                                            {
+                                                                SCIBusLogicComboBox.SelectedIndex = 3; // OBD2 NGC
+                                                            });
+                                                        }
+                                                        else
+                                                        {
+                                                            SCIBusPCMNGCModeString = "disabled";
+                                                        }
+
+                                                        if (Util.IsBitSet(packet.Payload[0], 3))
+                                                        {
+                                                            SCIBusPCMLogicString += "inverted";
+
+                                                            BeginInvoke((MethodInvoker)delegate
+                                                            {
+                                                                SCIBusLogicComboBox.SelectedIndex = 1; // OBD1 JTEC
+                                                            });
+                                                        }
+                                                        else
+                                                        {
+                                                            SCIBusPCMLogicString += "non-inverted";
+                                                        }
+
+                                                        if (Util.IsBitSet(packet.Payload[0], 6))
+                                                        {
+                                                            SCIBusPCMSBEC2ModeString += "(SBEC)";
+
+                                                            BeginInvoke((MethodInvoker)delegate
+                                                            {
+                                                                SCIBusLogicComboBox.SelectedIndex = 0; // OBD1 SBEC
+                                                            });
+                                                        }
+                                                    }
+
+                                                    if (Util.IsBitClear(packet.Payload[0], 2))
+                                                    {
+                                                        SCIBusPCMOBDConfigurationString = "A";
+                                                    }
+                                                    else
+                                                    {
+                                                        SCIBusPCMOBDConfigurationString = "B";
+                                                    }
+
+                                                    switch (packet.Payload[0] & 0x03)
+                                                    {
+                                                        case 0x00:
+                                                        {
+                                                            SCIBusPCMSpeedString = "976.5 baud";
+
+                                                            BeginInvoke((MethodInvoker)delegate
+                                                            {
+                                                                SCIBusSpeedComboBox.SelectedIndex = 1;
+                                                            });
+                                                            break;
+                                                        }
+                                                        case 0x01:
+                                                        {
+                                                            SCIBusPCMSpeedString = "7812.5 baud";
+
+                                                            BeginInvoke((MethodInvoker)delegate
+                                                            {
+                                                                SCIBusSpeedComboBox.SelectedIndex = 2;
+                                                            });
+                                                            break;
+                                                        }
+                                                        case 0x02:
+                                                        {
+                                                            SCIBusPCMSpeedString = "62500 baud";
+
+                                                            BeginInvoke((MethodInvoker)delegate
+                                                            {
+                                                                SCIBusSpeedComboBox.SelectedIndex = 3;
+                                                            });
+                                                            break;
+                                                        }
+                                                        case 0x03:
+                                                        {
+                                                            SCIBusPCMSpeedString = "125000 baud";
+
+                                                            BeginInvoke((MethodInvoker)delegate
+                                                            {
+                                                                SCIBusSpeedComboBox.SelectedIndex = 4;
+                                                            });
+                                                            break;
+                                                        }
                                                     }
                                                 }
 
-                                                if (Util.IsBitClear(Packet.rx.payload[0], 2))
+                                                if (SCIBusPCMStateString == "enabled")
                                                 {
-                                                    SCIBusPCMOBDConfigurationString = "A";
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] PCM settings: " + Environment.NewLine +
+                                                                                   "       - state: " + SCIBusPCMStateString + Environment.NewLine +
+                                                                                   "       - logic: " + SCIBusPCMLogicString + " " + SCIBusPCMSBEC2ModeString + Environment.NewLine +
+                                                                                   "       - ngc mode: " + SCIBusPCMNGCModeString + Environment.NewLine +
+                                                                                   "       - obd config.: " + SCIBusPCMOBDConfigurationString + Environment.NewLine +
+                                                                                   "       - speed: " + SCIBusPCMSpeedString + Environment.NewLine +
+                                                                                   "       TCM settings: " + Environment.NewLine +
+                                                                                   "       - state: disabled");
                                                 }
                                                 else
                                                 {
-                                                    SCIBusPCMOBDConfigurationString = "B";
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] PCM settings: " + Environment.NewLine +
+                                                                                    "       - state: " + SCIBusPCMStateString);
                                                 }
 
-                                                switch (Packet.rx.payload[0] & 0x03)
+                                                PCM.UpdateHeader(SCIBusPCMStateString, SCIBusPCMSpeedString, SCIBusPCMLogicString, SCIBusPCMOBDConfigurationString);
+                                                TCM.UpdateHeader(SCIBusTCMStateString, SCIBusTCMSpeedString, SCIBusTCMLogicString, SCIBusTCMOBDConfigurationString);
+                                            }
+
+                                            //SCIBusModuleComboBox_SelectedIndexChanged(this, EventArgs.Empty);
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid settings packet:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.SettingsMode.SetRepeatBehavior:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length >= 3))
+                                        {
+                                            string bus = string.Empty;
+
+                                            switch (packet.Payload[0])
+                                            {
+                                                case (byte)PacketHelper.Bus.CCD:
                                                 {
-                                                    case 0x00:
-                                                        SCIBusPCMSpeedString = "976.5 baud";
-
-                                                        BeginInvoke((MethodInvoker)delegate
-                                                        {
-                                                            SCIBusSpeedComboBox.SelectedIndex = 1;
-                                                        });
-                                                        break;
-                                                    case 0x01:
-                                                        SCIBusPCMSpeedString = "7812.5 baud";
-
-                                                        BeginInvoke((MethodInvoker)delegate
-                                                        {
-                                                            SCIBusSpeedComboBox.SelectedIndex = 2;
-                                                        });
-                                                        break;
-                                                    case 0x02:
-                                                        SCIBusPCMSpeedString = "62500 baud";
-
-                                                        BeginInvoke((MethodInvoker)delegate
-                                                        {
-                                                            SCIBusSpeedComboBox.SelectedIndex = 3;
-                                                        });
-                                                        break;
-                                                    case 0x03:
-                                                        SCIBusPCMSpeedString = "125000 baud";
-
-                                                        BeginInvoke((MethodInvoker)delegate
-                                                        {
-                                                            SCIBusSpeedComboBox.SelectedIndex = 4;
-                                                        });
-                                                        break;
+                                                    bus = "CCD-bus";
+                                                    break;
                                                 }
-                                            }
-
-                                            if (SCIBusPCMStateString == "enabled")
-                                            {
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] PCM settings: " + Environment.NewLine +
-                                                                               "       - state: " + SCIBusPCMStateString + Environment.NewLine +
-                                                                               "       - logic: " + SCIBusPCMLogicString + " " + SCIBusPCMSBEC2ModeString + Environment.NewLine +
-                                                                               "       - ngc mode: " + SCIBusPCMNGCModeString + Environment.NewLine +
-                                                                               "       - obd config.: " + SCIBusPCMOBDConfigurationString + Environment.NewLine +
-                                                                               "       - speed: " + SCIBusPCMSpeedString + Environment.NewLine +
-                                                                               "       TCM settings: " + Environment.NewLine +
-                                                                               "       - state: disabled");
-                                            }
-                                            else
-                                            {
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] PCM settings: " + Environment.NewLine +
-                                                                                "       - state: " + SCIBusPCMStateString);
-                                            }
-
-                                            PCM.UpdateHeader(SCIBusPCMStateString, SCIBusPCMSpeedString, SCIBusPCMLogicString, SCIBusPCMOBDConfigurationString);
-                                            TCM.UpdateHeader(SCIBusTCMStateString, SCIBusTCMSpeedString, SCIBusTCMLogicString, SCIBusTCMOBDConfigurationString);
-                                        }
-
-                                        //SCIBusModuleComboBox_SelectedIndexChanged(this, EventArgs.Empty);
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid settings packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.SettingsMode.setRepeatBehavior:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length >= 3))
-                                    {
-                                        string bus = string.Empty;
-
-                                        switch (Packet.rx.payload[0])
-                                        {
-                                            case (byte)Packet.Bus.ccd:
-                                                bus = "CCD-bus";
-                                                break;
-                                            case (byte)Packet.Bus.pcm:
-                                                bus = "SCI-bus (PCM)";
-                                                break;
-                                            case (byte)Packet.Bus.tcm:
-                                                bus = "SCI-bus (TCM)";
-                                                break;
-                                            case (byte)Packet.Bus.pci:
-                                                bus = "PCI-bus";
-                                                break;
-                                            default:
-                                                bus = "Unknown";
-                                                break;
-                                        }
-
-                                        string repeat_interval = ((Packet.rx.payload[1] << 8) + Packet.rx.payload[2]).ToString("0") + " ms";
-
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Repeated message behavior changed:", Packet.rx.buffer);
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Repeated message behavior settings:" + Environment.NewLine +
-                                                                       "       Bus: " + bus + Environment.NewLine +
-                                                                       "       Interval: " + repeat_interval);
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid settings packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.SettingsMode.setLCD:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length >= 7))
-                                    {
-                                        string LCDState = string.Empty;
-
-                                        switch (Packet.rx.payload[0])
-                                        {
-                                            case 0x00:
-                                                LCDState = "disabled";
-                                                break;
-                                            case 0x01:
-                                                LCDState = "enabled";
-                                                break;
-                                            default:
-                                                LCDState = "unknown";
-                                                break;
-                                        }
-
-                                        string LCDI2CAddress = Util.ByteToHexString(Packet.rx.payload, 1, 1) + " (hex)";
-                                        string LCDSize = Packet.rx.payload[2].ToString("0") + "x" + Packet.rx.payload[3].ToString("0") + " characters";
-                                        string LCDRefreshRate = Packet.rx.payload[4].ToString("0") + " Hz";
-                                        string LCDUnits = string.Empty;
-
-                                        if (Packet.rx.payload[5] == 0) LCDUnits = "imperial";
-                                        else if (Packet.rx.payload[5] == 1) LCDUnits = "metric";
-                                        else LCDUnits = "imperial";
-
-                                        string LCDDataSource = string.Empty;
-                                        switch (Packet.rx.payload[6])
-                                        {
-                                            case 0x01:
-                                                LCDDataSource = "CCD-bus";
-                                                break;
-                                            case 0x02:
-                                                LCDDataSource = "SCI-bus (PCM)";
-                                                break;
-                                            case 0x03:
-                                                LCDDataSource = "SCI-bus (TCM)";
-                                                break;
-                                            case 0x04:
-                                                LCDDataSource = "PCI-bus";
-                                                break;
-                                            default:
-                                                LCDDataSource = "unknown";
-                                                break;
-                                        }
-
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] LCD settings changed:", Packet.rx.buffer);
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] LCD information:" + Environment.NewLine +
-                                                                        "       State: " + LCDState + Environment.NewLine +
-                                                                        "       I2C address: " + LCDI2CAddress + Environment.NewLine +
-                                                                        "       Size: " + LCDSize + Environment.NewLine +
-                                                                        "       Refresh rate: " + LCDRefreshRate + Environment.NewLine +
-                                                                        "       Units: " + LCDUnits + Environment.NewLine +
-                                                                        "       Data source: " + LCDDataSource);
-
-                                        UpdateLCDPreviewTextBox();
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid settings packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.SettingsMode.setPCIBus:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
-                                    {
-                                        string PCIBusStateString = string.Empty;
-                                        string PCIBusLogicLevelString = string.Empty;
-
-                                        if (Util.IsBitClear(Packet.rx.payload[0], 7))
-                                        {
-                                            PCIBusStateString = "disabled";
-                                        }
-                                        else
-                                        {
-                                            PCIBusStateString = "enabled";
-                                        }
-
-                                        if (Util.IsBitClear(Packet.rx.payload[0], 6))
-                                        {
-                                            PCIBusLogicLevelString = "active-low";
-                                        }
-                                        else
-                                        {
-                                            PCIBusLogicLevelString = "active-high";
-                                        }
-
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus settings changed:", Packet.rx.buffer);
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] PCI-bus settings: " + Environment.NewLine +
-                                                                       "       - state: " + PCIBusStateString + Environment.NewLine +
-                                                                       "       - logic: " + PCIBusLogicLevelString);
-
-                                        PCI.UpdateHeader(PCIBusStateString, null, PCIBusLogicLevelString);
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid settings packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.SettingsMode.setProgVolt:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] ProgVolt settings changed:", Packet.rx.buffer);
-
-                                        if (Util.IsBitSet(Packet.rx.payload[0], 7))
-                                        {
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] VBB (12V) applied to SCI-RX pin.");
-                                        }
-                                        else if (Util.IsBitSet(Packet.rx.payload[0], 6))
-                                        {
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] VPP (20V) applied to SCI-RX pin.");
-                                        }
-                                        else if ((Packet.rx.payload[0] & 0xC0) == 0)
-                                        {
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] VBB/VPP removed from SCI-RX pin.");
-                                        }
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid ProgVolt settings packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)(Packet.SettingsMode.setUARTBaudrate):
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length >= 4))
-                                    {
-                                        if (Packet.SP.IsOpen)
-                                            Packet.SP.Close();
-
-                                        Packet.SP.PortName = SelectedPort;
-                                        Packet.SP.BaudRate = Properties.Settings.Default.UARTBaudrate;
-                                        Packet.SP.DataBits = 8;
-                                        Packet.SP.StopBits = StopBits.One;
-                                        Packet.SP.Parity = Parity.None;
-                                        Packet.SP.ReadTimeout = 500;
-                                        Packet.SP.WriteTimeout = 500;
-
-                                        try
-                                        {
-                                            Packet.SP.Open();
-                                        }
-                                        catch
-                                        {
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] " + Packet.SP.PortName + " is opened by another application.");
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] Device not found on " + Packet.SP.PortName + ".");
-                                            break;
-                                        }
-
-                                        if (!Packet.SP.IsOpen)
-                                        {
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] " + Packet.SP.PortName + " cannot be opened.");
-                                            break;
-                                        }
-
-                                        uint baudrate = (uint)((Packet.rx.payload[0] << 24) | (Packet.rx.payload[1] << 16) | (Packet.rx.payload[2] << 8) | Packet.rx.payload[3]);
-
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Scanner baudrate = " + baudrate);
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid UART baudrate packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                default:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", Packet.rx.buffer);
-                                    break;
-                            }
-                            break;
-                        case (byte)Packet.Command.request:
-                            break;
-                        case (byte)Packet.Command.response:
-                            switch (Packet.rx.mode)
-                            {
-                                case (byte)Packet.ResponseMode.hardwareFirmwareInfo:
-                                    if (Packet.rx.payload != null)
-                                    {
-                                        if ((Packet.rx.payload[0] == 0) && (Packet.rx.payload.Length >= 30)) // V1.5.0 and below
-                                        {
-                                            double HardwareVersion = ((Packet.rx.payload[0] << 8) + Packet.rx.payload[1]) / 100.00;
-                                            string HardwareVersionString = "v" + (HardwareVersion).ToString("0.00").Replace(",", ".").Insert(3, ".");
-                                            DateTime HardwareDate = Util.UnixTimeStampToDateTime((Packet.rx.payload[6] << 24) + (Packet.rx.payload[7] << 16) + (Packet.rx.payload[8] << 8) + Packet.rx.payload[9]);
-                                            DateTime AssemblyDate = Util.UnixTimeStampToDateTime((Packet.rx.payload[14] << 24) + (Packet.rx.payload[15] << 16) + (Packet.rx.payload[16] << 8) + Packet.rx.payload[17]);
-                                            DateTime FirmwareDate = Util.UnixTimeStampToDateTime((Packet.rx.payload[22] << 24) + (Packet.rx.payload[23] << 16) + (Packet.rx.payload[24] << 8) + Packet.rx.payload[25]);
-                                            DeviceFirmwareTimestamp = (UInt64)((Packet.rx.payload[22] << 24) + (Packet.rx.payload[23] << 16) + (Packet.rx.payload[24] << 8) + Packet.rx.payload[25]);
-                                            string HardwareDateString = HardwareDate.ToString("yyyy.MM.dd HH:mm:ss");
-                                            string AssemblyDateString = AssemblyDate.ToString("yyyy.MM.dd HH:mm:ss");
-                                            string FirmwareDateString = FirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
-                                            string FirmwareVersionString = "v" + Packet.rx.payload[26].ToString("0") + "." + Packet.rx.payload[27].ToString("0") + "." + Packet.rx.payload[28].ToString("0");
-                                            HWVersion = HardwareVersionString;
-                                            FWVersion = FirmwareVersionString;
-
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Hardware/Firmware information response:", Packet.rx.buffer);
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] Hardware ver.: " + HardwareVersionString + Environment.NewLine +
-                                                                           "       Firmware ver.: " + FirmwareVersionString + Environment.NewLine +
-                                                                           "       Hardware date: " + HardwareDateString + Environment.NewLine +
-                                                                           "       Assembly date: " + AssemblyDateString + Environment.NewLine +
-                                                                           "       Firmware date: " + FirmwareDateString);
-                                            if (!Text.Contains("  |  FW v"))
-                                            {
-                                                Text += "  |  FW " + FirmwareVersionString + "  |  HW " + HardwareVersionString;
-                                            }
-                                            else
-                                            {
-                                                Text = Text.Remove(Text.Length - 20);
-                                                Text += FirmwareVersionString + "  |  HW " + HardwareVersionString;
-                                            }
-
-                                            if (Math.Round(HardwareVersion * 100) < 144) // below V1.44 the hardware doesn't support these features
-                                            {
-                                                MeasureCCDBusVoltagesButton.Enabled = false;
-                                                CCDBusTerminationBiasOnOffCheckBox.Enabled = false;
-                                            }
-                                            else
-                                            {
-                                                MeasureCCDBusVoltagesButton.Enabled = true;
-                                                CCDBusTerminationBiasOnOffCheckBox.Enabled = true;
-                                            }
-                                        }
-                                        else if (Packet.rx.payload.Length >= 22) // V2.0.0 and above
-                                        {
-                                            string HardwareVersionString = "v" + (Packet.rx.payload[0]).ToString() + "." + (Packet.rx.payload[1]).ToString() + "." + (Packet.rx.payload[2]).ToString();
-                                            string FirmwareVersionString = "v" + Packet.rx.payload[4].ToString() + "." + Packet.rx.payload[5].ToString() + "." + Packet.rx.payload[6].ToString();
-                                            HWVersion = HardwareVersionString;
-                                            FWVersion = FirmwareVersionString;
-                                            string ChipModelString;
-
-                                            switch (Packet.rx.payload[8])
-                                            {
-                                                case 1:
-                                                    ChipModelString = "ESP32";
+                                                case (byte)PacketHelper.Bus.PCM:
+                                                {
+                                                    bus = "SCI-bus (PCM)";
                                                     break;
-                                                case 2:
-                                                    ChipModelString = "ESP32-S2";
+                                                }
+                                                case (byte)PacketHelper.Bus.TCM:
+                                                {
+                                                    bus = "SCI-bus (TCM)";
                                                     break;
-                                                case 5:
-                                                    ChipModelString = "ESP32-C3";
+                                                }
+                                                case (byte)PacketHelper.Bus.PCI:
+                                                {
+                                                    bus = "PCI-bus";
                                                     break;
-                                                case 6:
-                                                    ChipModelString = "ESP32-H2";
-                                                    break;
-                                                case 9:
-                                                    ChipModelString = "ESP32-S3";
-                                                    break;
-                                                case 12:
-                                                    ChipModelString = "ESP32-C2";
-                                                    break;
+                                                }
                                                 default:
-                                                    ChipModelString = "unknown";
+                                                {
+                                                    bus = "Unknown";
                                                     break;
-
+                                                }
                                             }
 
-                                            string ChipSizeString = "" + Packet.rx.payload[15].ToString() + "MB";
-                                            string ChipFeaturesString = string.Empty;
+                                            string repeat_interval = ((packet.Payload[1] << 8) + packet.Payload[2]).ToString("0") + " ms";
 
-                                            List<string> features = new List<string>();
-                                            features.Clear();
-
-                                            if (Util.IsBitSet(Packet.rx.payload[14], 0)) features.Add(ChipSizeString + " Flash");
-                                            if (Util.IsBitSet(Packet.rx.payload[14], 1)) features.Add("WiFi");
-                                            if (Util.IsBitSet(Packet.rx.payload[14], 5)) features.Add("BT");
-                                            if (Util.IsBitSet(Packet.rx.payload[14], 4)) features.Add("BLE");
-                                            if (Util.IsBitSet(Packet.rx.payload[14], 6)) features.Add("IEEE 802.15.4");
-                                            if (Util.IsBitSet(Packet.rx.payload[14], 7)) features.Add("Embedded PSRAM");
-
-                                            if (features.Count > 0)
-                                            {
-                                                foreach (string s in features)
-                                                {
-                                                    ChipFeaturesString += s + "/";
-                                                }
-
-                                                if (ChipFeaturesString.Length > 2) ChipFeaturesString = ChipFeaturesString.Remove(ChipFeaturesString.Length - 1); // remove last "/" character
-                                            }
-
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Hardware/Firmware information response:", Packet.rx.buffer);
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] Hardware ver.: " + HardwareVersionString + Environment.NewLine +
-                                                                           "       Firmware ver.: " + FirmwareVersionString + Environment.NewLine +
-                                                                           "       CPU Model    : " + ChipModelString + Environment.NewLine +
-                                                                           "         - Revision : " + Packet.rx.payload[9].ToString() + Environment.NewLine +
-                                                                           "         - Cores    : " + Packet.rx.payload[10].ToString() + Environment.NewLine +
-                                                                           "         - Features : " + ChipFeaturesString + Environment.NewLine +
-                                                                           "         - MAC addr.: " + Util.ByteToHexString(Packet.rx.payload, 16) + ":" + Util.ByteToHexString(Packet.rx.payload, 17) + ":" + Util.ByteToHexString(Packet.rx.payload, 18) + ":" + Util.ByteToHexString(Packet.rx.payload, 19) + ":" + Util.ByteToHexString(Packet.rx.payload, 20) + ":" + Util.ByteToHexString(Packet.rx.payload, 21));
-
-                                            BeginInvoke((MethodInvoker)delegate
-                                            {
-                                                if (!Text.Contains("  |  FW v"))
-                                                {
-                                                    Text += "  |  FW " + FirmwareVersionString + "  |  HW " + HardwareVersionString;
-                                                }
-                                                else
-                                                {
-                                                    Text = Text.Remove(Text.Length - 20);
-                                                    Text += FirmwareVersionString + "  |  HW " + HardwareVersionString;
-                                                }
-                                            });
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Repeated message behavior changed:", PacketHelper.Serialize(packet));
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Repeated message behavior settings:" + Environment.NewLine +
+                                                                           "       Bus: " + bus + Environment.NewLine +
+                                                                           "       Interval: " + repeat_interval);
                                         }
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid HW/FW info packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.ResponseMode.timestamp:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 3))
-                                    {
-                                        TimeSpan elapsedTime = TimeSpan.FromMilliseconds((Packet.rx.payload[0] << 24) + (Packet.rx.payload[1] << 16) + (Packet.rx.payload[2] << 8) + Packet.rx.payload[3]);
-                                        DateTime timestamp = DateTime.Today.Add(elapsedTime);
-                                        string timestampString = timestamp.ToString("HH:mm:ss.fff");
-
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Timestamp response:", Packet.rx.buffer);
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Device timestamp: " + timestampString);
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid timestamp packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.ResponseMode.batteryVoltage:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 1))
-                                    {
-                                        string BatteryVoltageString = (((Packet.rx.payload[0] << 8) + Packet.rx.payload[1]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Battery voltage response:", Packet.rx.buffer);
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + BatteryVoltageString);
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid battery voltage packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.ResponseMode.extEEPROMChecksum:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 2))
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM checksum response:", Packet.rx.buffer);
-                                        if (Packet.rx.payload[0] == 0x01) // External EEPROM present
+                                        else
                                         {
-                                            string ExternalEEPROMChecksumReading = Util.ByteToHexString(Packet.rx.payload, 1, 1);
-                                            string ExternalEEPROMChecksumCalculated = Util.ByteToHexString(Packet.rx.payload, 2, 1);
-                                            if (Packet.rx.payload[1] == Packet.rx.payload[2]) // if checksum reading and checksum calculation is the same
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid settings packet:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.SettingsMode.SetLCD:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length >= 7))
+                                        {
+                                            string LCDState = string.Empty;
+
+                                            switch (packet.Payload[0])
                                             {
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum: " + ExternalEEPROMChecksumReading + "=OK.");
+                                                case 0x00:
+                                                {
+                                                    LCDState = "disabled";
+                                                    break;
+                                                }
+                                                case 0x01:
+                                                {
+                                                    LCDState = "enabled";
+                                                    break;
+                                                }
+                                                default:
+                                                {
+                                                    LCDState = "unknown";
+                                                    break;
+                                                }
+                                            }
+
+                                            string LCDI2CAddress = Util.ByteToHexString(packet.Payload, 1, 1) + " (hex)";
+                                            string LCDSize = packet.Payload[2].ToString("0") + "x" + packet.Payload[3].ToString("0") + " characters";
+                                            string LCDRefreshRate = packet.Payload[4].ToString("0") + " Hz";
+                                            string LCDUnits = string.Empty;
+
+                                            if (packet.Payload[5] == 0) LCDUnits = "imperial";
+                                            else if (packet.Payload[5] == 1) LCDUnits = "metric";
+                                            else LCDUnits = "imperial";
+
+                                            string LCDDataSource = string.Empty;
+                                            switch (packet.Payload[6])
+                                            {
+                                                case 0x01:
+                                                {
+                                                    LCDDataSource = "CCD-bus";
+                                                    break;
+                                                }
+                                                case 0x02:
+                                                {
+                                                    LCDDataSource = "SCI-bus (PCM)";
+                                                    break;
+                                                }
+                                                case 0x03:
+                                                {
+                                                    LCDDataSource = "SCI-bus (TCM)";
+                                                    break;
+                                                }
+                                                case 0x04:
+                                                {
+                                                    LCDDataSource = "PCI-bus";
+                                                    break;
+                                                }
+                                                default:
+                                                {
+                                                    LCDDataSource = "unknown";
+                                                    break;
+                                                }
+                                            }
+
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] LCD settings changed:", PacketHelper.Serialize(packet));
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] LCD information:" + Environment.NewLine +
+                                                                            "       State: " + LCDState + Environment.NewLine +
+                                                                            "       I2C address: " + LCDI2CAddress + Environment.NewLine +
+                                                                            "       Size: " + LCDSize + Environment.NewLine +
+                                                                            "       Refresh rate: " + LCDRefreshRate + Environment.NewLine +
+                                                                            "       Units: " + LCDUnits + Environment.NewLine +
+                                                                            "       Data source: " + LCDDataSource);
+
+                                            UpdateLCDPreviewTextBox();
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid settings packet:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.SettingsMode.SetPCIBus:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 0))
+                                        {
+                                            string PCIBusStateString = string.Empty;
+                                            string PCIBusLogicLevelString = string.Empty;
+
+                                            if (Util.IsBitClear(packet.Payload[0], 7))
+                                            {
+                                                PCIBusStateString = "disabled";
                                             }
                                             else
                                             {
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum ERROR: " + Environment.NewLine +
-                                                                               "       - reads as: " + ExternalEEPROMChecksumReading + Environment.NewLine +
-                                                                               "       - calculated: " + ExternalEEPROMChecksumCalculated);
+                                                PCIBusStateString = "enabled";
+                                            }
+
+                                            if (Util.IsBitClear(packet.Payload[0], 6))
+                                            {
+                                                PCIBusLogicLevelString = "active-low";
+                                            }
+                                            else
+                                            {
+                                                PCIBusLogicLevelString = "active-high";
+                                            }
+
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus settings changed:", PacketHelper.Serialize(packet));
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] PCI-bus settings: " + Environment.NewLine +
+                                                                           "       - state: " + PCIBusStateString + Environment.NewLine +
+                                                                           "       - logic: " + PCIBusLogicLevelString);
+
+                                            PCI.UpdateHeader(PCIBusStateString, null, PCIBusLogicLevelString);
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid settings packet:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.SettingsMode.SetProgVolt:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 0))
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] ProgVolt settings changed:", PacketHelper.Serialize(packet));
+
+                                            if (Util.IsBitSet(packet.Payload[0], 7))
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] VBB (12V) applied to SCI-RX pin.");
+                                            }
+                                            else if (Util.IsBitSet(packet.Payload[0], 6))
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] VPP (20V) applied to SCI-RX pin.");
+                                            }
+                                            else if ((packet.Payload[0] & 0xC0) == 0)
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] VBB/VPP removed from SCI-RX pin.");
                                             }
                                         }
                                         else
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] No external EEPROM found.");
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid ProgVolt settings packet:", PacketHelper.Serialize(packet));
                                         }
+                                        break;
                                     }
-                                    else
+                                    case (byte)(PacketHelper.SettingsMode.SetUARTBaudrate):
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid extEEPROM checksum packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.ResponseMode.CCDBusVoltages:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 3))
-                                    {
-                                        string CCDPositiveVoltage = (((Packet.rx.payload[0] << 8) + Packet.rx.payload[1]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
-                                        string CCDNegativeVoltage = (((Packet.rx.payload[2] << 8) + Packet.rx.payload[3]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
-
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus voltage measurements response:", Packet.rx.buffer);
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus wire voltages:" + Environment.NewLine +
-                                                                       "       CCD+: " + CCDPositiveVoltage + Environment.NewLine +
-                                                                       "       CCD-: " + CCDNegativeVoltage);
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid CCD-bus voltage measurements packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.ResponseMode.VBBVolts:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 1))
-                                    {
-                                        string BootstrapVoltageString = (((Packet.rx.payload[0] << 8) + Packet.rx.payload[1]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Bootstrap voltage response:", Packet.rx.buffer);
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Bootstrap voltage: " + BootstrapVoltageString);
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid bootstrap voltage packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.ResponseMode.VPPVolts:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 1))
-                                    {
-                                        string ProgrammingVoltageString = (((Packet.rx.payload[0] << 8) + Packet.rx.payload[1]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Programming voltage response:", Packet.rx.buffer);
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Programming voltage: " + ProgrammingVoltageString);
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid programming voltage packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.ResponseMode.AllVolts:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 5))
-                                    {
-                                        string BatteryVoltageString = (((Packet.rx.payload[0] << 8) + Packet.rx.payload[1]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
-                                        string BootstrapVoltageString = (((Packet.rx.payload[2] << 8) + Packet.rx.payload[3]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
-                                        string ProgrammingVoltageString = (((Packet.rx.payload[4] << 8) + Packet.rx.payload[5]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Voltage measurements response:", Packet.rx.buffer);
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + BatteryVoltageString + Environment.NewLine +
-                                                                       "       Bootstrap voltage: " + BootstrapVoltageString + Environment.NewLine +
-                                                                       "       Programming voltage: " + ProgrammingVoltageString);
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid voltage measurements packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                default:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", Packet.rx.buffer);
-                                    break;
-                            }
-                            break;
-                        case (byte)Packet.Command.msgTx:
-                            switch (Packet.rx.mode)
-                            {
-                                case (byte)Packet.MsgTxMode.stop:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
-                                    {
-                                        switch (Packet.rx.payload[0])
+                                        if ((packet.Payload != null) && (packet.Payload.Length >= 4))
                                         {
-                                            case (byte)Packet.Bus.ccd:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus repeated message Tx stopped:", Packet.rx.buffer);
-                                                break;
-                                            case (byte)Packet.Bus.pcm:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) repeated message Tx stopped:", Packet.rx.buffer);
-                                                break;
-                                            case (byte)Packet.Bus.tcm:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) repeated message Tx stopped:", Packet.rx.buffer);
-                                                break;
-                                            case (byte)Packet.Bus.pci:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus repeated message Tx stopped:", Packet.rx.buffer);
-                                                break;
-                                            default:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] Unknown communication bus action:", Packet.rx.buffer);
-                                                break;
-                                        }
-                                    }
-                                    else // error
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid communication bus action:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.MsgTxMode.single:
-                                case (byte)Packet.MsgTxMode.singleVPP:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
-                                    {
-                                        switch (Packet.rx.payload[0])
-                                        {
-                                            case (byte)Packet.Bus.ccd:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message prepared for Tx:", Packet.rx.buffer);
-                                                break;
-                                            case (byte)Packet.Bus.pcm:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message prepared for Tx:", Packet.rx.buffer);
-                                                break;
-                                            case (byte)Packet.Bus.tcm:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message prepared for Tx:", Packet.rx.buffer);
-                                                break;
-                                            case (byte)Packet.Bus.pci:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus message prepared for Tx:", Packet.rx.buffer);
-                                                break;
-                                            default:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] Unknown communication bus action:", Packet.rx.buffer);
-                                                break;
-                                        }
-                                    }
-                                    else // error
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid communication bus action:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.MsgTxMode.list:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
-                                    {
-                                        switch (Packet.rx.payload[0])
-                                        {
-                                            case (byte)Packet.Bus.ccd:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message list prepared for Tx:", Packet.rx.buffer);
-                                                break;
-                                            case (byte)Packet.Bus.pcm:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) messages list prepared for Tx:", Packet.rx.buffer);
-                                                break;
-                                            case (byte)Packet.Bus.tcm:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) messages list prepared for Tx:", Packet.rx.buffer);
-                                                break;
-                                            case (byte)Packet.Bus.pci:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus message list prepared for Tx:", Packet.rx.buffer);
-                                                break;
-                                            default:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] Unknown communication bus action:", Packet.rx.buffer);
-                                                break;
-                                        }
-                                    }
-                                    else // error
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid communication bus action:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.MsgTxMode.repeatedSingle:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
-                                    {
-                                        switch (Packet.rx.payload[0])
-                                        {
-                                            case (byte)Packet.Bus.ccd:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus repeated message Tx started:", Packet.rx.buffer);
-                                                break;
-                                            case (byte)Packet.Bus.pcm:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) repeated message Tx started:", Packet.rx.buffer);
-                                                break;
-                                            case (byte)Packet.Bus.tcm:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) repeated message Tx started:", Packet.rx.buffer);
-                                                break;
-                                            case (byte)Packet.Bus.pci:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus repeated message Tx started:", Packet.rx.buffer);
-                                                break;
-                                            default:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] Unknown communication bus action:", Packet.rx.buffer);
-                                                break;
-                                        }
-                                    }
-                                    else // error
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid communication bus action:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.MsgTxMode.repeatedList:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
-                                    {
-                                        switch (Packet.rx.payload[0])
-                                        {
-                                            case (byte)Packet.Bus.ccd:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus repeated message list Tx started:", Packet.rx.buffer);
-                                                break;
-                                            case (byte)Packet.Bus.pcm:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) repeated message list Tx started:", Packet.rx.buffer);
-                                                break;
-                                            case (byte)Packet.Bus.tcm:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) repeated message list Tx started:", Packet.rx.buffer);
-                                                break;
-                                            case (byte)Packet.Bus.pci:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus repeated message list Tx started:", Packet.rx.buffer);
-                                                break;
-                                            default:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] Unknown communication bus action:", Packet.rx.buffer);
-                                                break;
-                                        }
-                                    }
-                                    else // error
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid communication bus action:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                default:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", Packet.rx.buffer);
-                                    break;
-                            }
-                            break;
-                        case (byte)Packet.Command.msgRx:
-                            switch (Packet.rx.mode)
-                            {
-                                case (byte)Packet.MsgRxMode.stop:
-                                    break;
-                                case (byte)Packet.MsgRxMode.single:
-                                    break;
-                                case (byte)Packet.MsgRxMode.list:
-                                    break;
-                                case (byte)Packet.MsgRxMode.repeatedSingle:
-                                    break;
-                                case (byte)Packet.MsgRxMode.repeatedList:
-                                    break;
-                                case (byte)Packet.MsgTxMode.singleVPP:
-                                    break;
-                                default:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", Packet.rx.buffer);
-                                    break;
-                            }
-                            break;
-                        case (byte)Packet.Command.debug:
-                            switch (Packet.rx.mode)
-                            {
-                                case (byte)Packet.DebugMode.randomCCDBusMessages:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
-                                    {
-                                        switch (Packet.rx.payload[0])
-                                        {
-                                            case (byte)Packet.OnOffMode.on:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] Random CCD-bus messages started:", Packet.rx.buffer);
-                                                break;
-                                            case (byte)Packet.OnOffMode.off:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] Random CCD-bus messages stopped:", Packet.rx.buffer);
-                                                break;
-                                            default:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] Unknown debug packet:", Packet.rx.buffer);
-                                                break;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.DebugMode.readIntEEPROMbyte:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 3))
-                                    {
-                                        if (Packet.rx.payload[0] == 0x00) // OK
-                                        {
-                                            string offset = Util.ByteToHexString(Packet.rx.payload, 1, 2);
-                                            string value = Util.ByteToHexString(Packet.rx.payload, 3, 1);
-
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM byte read response:", Packet.rx.buffer);
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] Internal EEPROM byte information:" + Environment.NewLine +
-                                                                           "       Offset: " + offset + " | Value: " + value);
-                                        }
-                                        else // error
-                                        {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM byte read error:", Packet.rx.buffer);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.DebugMode.readIntEEPROMblock:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 4))
-                                    {
-                                        if (Packet.rx.payload[0] == 0x00) // OK
-                                        {
-                                            int start = (Packet.rx.payload[1] << 8) + Packet.rx.payload[2];
-                                            int length = Packet.rx.payload.Length - 3;
-                                            string offset = Util.ByteToHexString(Packet.rx.payload, 1, 2);
-                                            string values = Util.ByteToHexString(Packet.rx.payload, 3, Packet.rx.payload.Length - 3);
-                                            string count = length.ToString();
-
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM block read response:", Packet.rx.buffer);
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] Internal EEPROM block information:" + Environment.NewLine +
-                                                                           "       Offset: " + offset + " | Count: " + count + Environment.NewLine + values);
-
-                                            if ((start == 0) && (length == 256))
+                                            if (!SerialService.Connect(SelectedPort))
                                             {
-                                                double HardwareVersion = ((Packet.rx.payload[3] << 8) + Packet.rx.payload[4]) / 100.00;
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Device not found on " + SelectedPort + ".");
+                                                return;
+                                            }
+
+                                            uint baudrate = (uint)((packet.Payload[0] << 24) | (packet.Payload[1] << 16) | (packet.Payload[2] << 8) | packet.Payload[3]);
+
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Scanner baudrate = " + baudrate);
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid UART baudrate packet:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    default:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            case (byte)PacketHelper.Command.Request:
+                            {
+                                break;
+                            }
+                            case (byte)PacketHelper.Command.Response:
+                            {
+                                switch (packet.Mode)
+                                {
+                                    case (byte)PacketHelper.ResponseMode.HardwareFirmwareInfo:
+                                    {
+                                        if (packet.Payload != null)
+                                        {
+                                            if ((packet.Payload[0] == 0) && (packet.Payload.Length >= 30)) // V1.5.0 and below
+                                            {
+                                                double HardwareVersion = ((packet.Payload[0] << 8) + packet.Payload[1]) / 100.00;
                                                 string HardwareVersionString = "v" + (HardwareVersion).ToString("0.00").Replace(",", ".").Insert(3, ".");
-                                                DateTime HardwareDate = Util.UnixTimeStampToDateTime((Packet.rx.payload[9] << 24) + (Packet.rx.payload[10] << 16) + (Packet.rx.payload[11] << 8) + Packet.rx.payload[12]);
-                                                DateTime AssemblyDate = Util.UnixTimeStampToDateTime((Packet.rx.payload[17] << 24) + (Packet.rx.payload[18] << 16) + (Packet.rx.payload[19] << 8) + Packet.rx.payload[20]);
+                                                DateTime HardwareDate = Util.UnixTimeStampToDateTime((packet.Payload[6] << 24) + (packet.Payload[7] << 16) + (packet.Payload[8] << 8) + packet.Payload[9]);
+                                                DateTime AssemblyDate = Util.UnixTimeStampToDateTime((packet.Payload[14] << 24) + (packet.Payload[15] << 16) + (packet.Payload[16] << 8) + packet.Payload[17]);
+                                                DateTime FirmwareDate = Util.UnixTimeStampToDateTime((packet.Payload[22] << 24) + (packet.Payload[23] << 16) + (packet.Payload[24] << 8) + packet.Payload[25]);
+                                                DeviceFirmwareTimestamp = (UInt64)((packet.Payload[22] << 24) + (packet.Payload[23] << 16) + (packet.Payload[24] << 8) + packet.Payload[25]);
                                                 string HardwareDateString = HardwareDate.ToString("yyyy.MM.dd HH:mm:ss");
                                                 string AssemblyDateString = AssemblyDate.ToString("yyyy.MM.dd HH:mm:ss");
-                                                double ADCVoltage = ((Packet.rx.payload[21] << 8) + Packet.rx.payload[22]) / 100.00;
-                                                string ADCVoltageString = ADCVoltage.ToString("0.00").Replace(",", ".") + " V";
-                                                double RDHighResistance = ((Packet.rx.payload[23] << 8) + Packet.rx.payload[24]) / 1000.0;
-                                                double RDLowResistance = ((Packet.rx.payload[25] << 8) + Packet.rx.payload[26]) / 1000.0;
-                                                string RDHighResistanceString = RDHighResistance.ToString("0.000").Replace(",", ".") + " kΩ";
-                                                string RDLowResistanceString = RDLowResistance.ToString("0.000").Replace(",", ".") + " kΩ";
-                                                string LCDStateString = string.Empty;
+                                                string FirmwareDateString = FirmwareDate.ToString("yyyy.MM.dd HH:mm:ss");
+                                                string FirmwareVersionString = "v" + packet.Payload[26].ToString("0") + "." + packet.Payload[27].ToString("0") + "." + packet.Payload[28].ToString("0");
+                                                HWVersion = HardwareVersionString;
+                                                FWVersion = FirmwareVersionString;
 
-                                                if (Util.IsBitSet(Packet.rx.payload[27], 0)) LCDStateString = "enabled";
-                                                else LCDStateString = "disabled";
-
-                                                string LCDI2CAddressString = Util.ByteToHexString(Packet.rx.payload, 28, 1) + " (hex)";
-                                                string LCDWidthString = Packet.rx.payload[29].ToString("0") + " characters";
-                                                string LCDHeightString = Packet.rx.payload[30].ToString("0") + " characters";
-                                                string LCDRefreshRateString = Packet.rx.payload[31].ToString("0") + " Hz";
-                                                string LCDUnitsString = string.Empty;
-                                                string LCDDataSourceString = string.Empty;
-
-                                                if (Packet.rx.payload[32] == 0x00) LCDUnitsString = "imperial";
-                                                else if (Packet.rx.payload[32] == 0x01) LCDUnitsString = "metric";
-                                                else LCDUnitsString = "imperial";
-
-                                                switch (Packet.rx.payload[33])
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Hardware/Firmware information response:", PacketHelper.Serialize(packet));
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Hardware ver.: " + HardwareVersionString + Environment.NewLine +
+                                                                               "       Firmware ver.: " + FirmwareVersionString + Environment.NewLine +
+                                                                               "       Hardware date: " + HardwareDateString + Environment.NewLine +
+                                                                               "       Assembly date: " + AssemblyDateString + Environment.NewLine +
+                                                                               "       Firmware date: " + FirmwareDateString);
+                                                BeginInvoke((MethodInvoker)delegate
                                                 {
-                                                    case 0x01:
-                                                        LCDDataSourceString = "CCD-bus";
+                                                    if (!Text.Contains("  |  FW v"))
+                                                    {
+                                                        Text += "  |  FW " + FirmwareVersionString + "  |  HW " + HardwareVersionString;
+                                                    }
+                                                    else
+                                                    {
+                                                        Text = Text.Remove(Text.Length - (HardwareVersionString.Length + FirmwareVersionString.Length + 8));
+                                                        Text += FirmwareVersionString + "  |  HW " + HardwareVersionString;
+                                                    }
+                                                });
+
+                                                if (Math.Round(HardwareVersion * 100) < 144) // below V1.44 the hardware doesn't support these features
+                                                {
+                                                    MeasureCCDBusVoltagesButton.Enabled = false;
+                                                    CCDBusTerminationBiasOnOffCheckBox.Enabled = false;
+                                                }
+                                                else
+                                                {
+                                                    MeasureCCDBusVoltagesButton.Enabled = true;
+                                                    CCDBusTerminationBiasOnOffCheckBox.Enabled = true;
+                                                }
+                                            }
+                                            else if (packet.Payload.Length >= 22) // V2.0.0 and above
+                                            {
+                                                string HardwareVersionString = "v" + (packet.Payload[0]).ToString() + "." + (packet.Payload[1]).ToString() + "." + (packet.Payload[2]).ToString();
+                                                string FirmwareVersionString = "v" + packet.Payload[4].ToString() + "." + packet.Payload[5].ToString() + "." + packet.Payload[6].ToString();
+                                                HWVersion = HardwareVersionString;
+                                                FWVersion = FirmwareVersionString;
+                                                string ChipModelString;
+
+                                                switch (packet.Payload[8])
+                                                {
+                                                    case 1:
+                                                    {
+                                                        ChipModelString = "ESP32";
                                                         break;
-                                                    case 0x02:
-                                                        LCDDataSourceString = "SCI-bus (PCM)";
+                                                    }
+                                                    case 2:
+                                                    {
+                                                        ChipModelString = "ESP32-S2";
                                                         break;
-                                                    case 0x03:
-                                                        LCDDataSourceString = "SCI-bus (TCM)";
+                                                    }
+                                                    case 5:
+                                                    {
+                                                        ChipModelString = "ESP32-C3";
                                                         break;
+                                                    }
+                                                    case 6:
+                                                    {
+                                                        ChipModelString = "ESP32-H2";
+                                                        break;
+                                                    }
+                                                    case 9:
+                                                    {
+                                                        ChipModelString = "ESP32-S3";
+                                                        break;
+                                                    }
+                                                    case 12:
+                                                    {
+                                                        ChipModelString = "ESP32-C2";
+                                                        break;
+                                                    }
                                                     default:
-                                                        LCDDataSourceString = "CCD-bus";
+                                                    {
+                                                        ChipModelString = "unknown";
                                                         break;
+                                                    }
                                                 }
 
-                                                string LEDHeartbeatInterval = ((Packet.rx.payload[34] << 8) + Packet.rx.payload[35]).ToString() + " ms";
-                                                string LEDBlinkDuration = ((Packet.rx.payload[36] << 8) + Packet.rx.payload[37]).ToString() + " ms";
+                                                string ChipSizeString = "" + packet.Payload[15].ToString() + "MB";
+                                                string ChipFeaturesString = string.Empty;
 
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM settings:" + Environment.NewLine +
-                                                                               "       Hardware ver.: " + Util.ByteToHexString(Packet.rx.payload, 3, 2) + " | " + HardwareVersionString + Environment.NewLine +
-                                                                               "       Hardware date: " + Util.ByteToHexString(Packet.rx.payload, 5, 8) + " | " + Environment.NewLine +
-                                                                               "                      " + HardwareDateString + Environment.NewLine +
-                                                                               "       Assembly date: " + Util.ByteToHexString(Packet.rx.payload, 13, 8) + " | " + Environment.NewLine +
-                                                                               "                      " + AssemblyDateString + Environment.NewLine +
-                                                                               "       ADC supply:    " + Util.ByteToHexString(Packet.rx.payload, 21, 2) + " | " + ADCVoltageString + Environment.NewLine +
-                                                                               "       RDH resistor:  " + Util.ByteToHexString(Packet.rx.payload, 23, 2) + " | " + RDHighResistanceString + Environment.NewLine +
-                                                                               "       RDL resistor:  " + Util.ByteToHexString(Packet.rx.payload, 25, 2) + " | " + RDLowResistanceString + Environment.NewLine +
-                                                                               "       LCD state:        " + Util.ByteToHexString(Packet.rx.payload, 27, 1) + " | " + LCDStateString + Environment.NewLine +
-                                                                               "       LCD I2C addr.:    " + Util.ByteToHexString(Packet.rx.payload, 28, 1) + " | " + LCDI2CAddressString + Environment.NewLine +
-                                                                               "       LCD width:        " + Util.ByteToHexString(Packet.rx.payload, 29, 1) + " | " + LCDWidthString + Environment.NewLine +
-                                                                               "       LCD height:       " + Util.ByteToHexString(Packet.rx.payload, 30, 1) + " | " + LCDHeightString + Environment.NewLine +
-                                                                               "       LCD refresh:      " + Util.ByteToHexString(Packet.rx.payload, 31, 1) + " | " + LCDRefreshRateString + Environment.NewLine +
-                                                                               "       LCD units:        " + Util.ByteToHexString(Packet.rx.payload, 32, 1) + " | " + LCDUnitsString + Environment.NewLine +
-                                                                               "       LCD data src:     " + Util.ByteToHexString(Packet.rx.payload, 33, 1) + " | " + LCDDataSourceString + Environment.NewLine +
-                                                                               "       LED heartbeat: " + Util.ByteToHexString(Packet.rx.payload, 34, 2) + " | " + LEDHeartbeatInterval + Environment.NewLine +
-                                                                               "       LED blink:     " + Util.ByteToHexString(Packet.rx.payload, 36, 2) + " | " + LEDBlinkDuration + Environment.NewLine +
-                                                                               "       CCD settings:     " + Util.ByteToHexString(Packet.rx.payload, 38, 1) + Environment.NewLine +
-                                                                               "       PCM settings:     " + Util.ByteToHexString(Packet.rx.payload, 39, 1) + Environment.NewLine +
-                                                                               "       TCM settings:     " + Util.ByteToHexString(Packet.rx.payload, 40, 1));
+                                                List<string> features = new List<string>();
+                                                features.Clear();
+
+                                                if (Util.IsBitSet(packet.Payload[14], 0)) features.Add(ChipSizeString + " Flash");
+                                                if (Util.IsBitSet(packet.Payload[14], 1)) features.Add("WiFi");
+                                                if (Util.IsBitSet(packet.Payload[14], 5)) features.Add("BT");
+                                                if (Util.IsBitSet(packet.Payload[14], 4)) features.Add("BLE");
+                                                if (Util.IsBitSet(packet.Payload[14], 6)) features.Add("IEEE 802.15.4");
+                                                if (Util.IsBitSet(packet.Payload[14], 7)) features.Add("Embedded PSRAM");
+
+                                                if (features.Count > 0)
+                                                {
+                                                    foreach (string s in features)
+                                                    {
+                                                        ChipFeaturesString += s + "/";
+                                                    }
+
+                                                    if (ChipFeaturesString.Length > 2) ChipFeaturesString = ChipFeaturesString.Remove(ChipFeaturesString.Length - 1); // remove last "/" character
+                                                }
+
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Hardware/Firmware information response:", PacketHelper.Serialize(packet));
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Hardware ver.: " + HardwareVersionString + Environment.NewLine +
+                                                                               "       Firmware ver.: " + FirmwareVersionString + Environment.NewLine +
+                                                                               "       CPU Model    : " + ChipModelString + Environment.NewLine +
+                                                                               "         - Revision : " + packet.Payload[9].ToString() + Environment.NewLine +
+                                                                               "         - Cores    : " + packet.Payload[10].ToString() + Environment.NewLine +
+                                                                               "         - Features : " + ChipFeaturesString + Environment.NewLine +
+                                                                               "         - MAC addr.: " + Util.ByteToHexString(packet.Payload, 16) + ":" + Util.ByteToHexString(packet.Payload, 17) + ":" + Util.ByteToHexString(packet.Payload, 18) + ":" + Util.ByteToHexString(packet.Payload, 19) + ":" + Util.ByteToHexString(packet.Payload, 20) + ":" + Util.ByteToHexString(packet.Payload, 21));
+
+                                                BeginInvoke((MethodInvoker)delegate
+                                                {
+                                                    if (!Text.Contains("  |  FW v"))
+                                                    {
+                                                        Text += "  |  FW " + FirmwareVersionString + "  |  HW " + HardwareVersionString;
+                                                    }
+                                                    else
+                                                    {
+                                                        Text = Text.Remove(Text.Length - (HardwareVersionString.Length + FirmwareVersionString.Length + 8));
+                                                        Text += FirmwareVersionString + "  |  HW " + HardwareVersionString;
+                                                    }
+                                                });
                                             }
                                         }
-                                        else // error
+                                        else
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM block read error:", Packet.rx.buffer);
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid HW/FW info packet:", PacketHelper.Serialize(packet));
                                         }
+                                        break;
                                     }
-                                    else
+                                    case (byte)PacketHelper.ResponseMode.Timestamp:
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.DebugMode.readExtEEPROMbyte:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 3))
-                                    {
-                                        if (Packet.rx.payload[0] == 0x00) // OK
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 3))
                                         {
-                                            string offset = Util.ByteToHexString(Packet.rx.payload, 1, 2);
-                                            string value = Util.ByteToHexString(Packet.rx.payload, 3, 1);
+                                            TimeSpan elapsedTime = TimeSpan.FromMilliseconds((packet.Payload[0] << 24) + (packet.Payload[1] << 16) + (packet.Payload[2] << 8) + packet.Payload[3]);
+                                            DateTime timestamp = DateTime.Today.Add(elapsedTime);
+                                            string timestampString = timestamp.ToString("HH:mm:ss.fff");
 
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM byte read response:", Packet.rx.buffer);
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM byte information:" + Environment.NewLine +
-                                                                           "       Offset: " + offset + " | Value: " + value);
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Timestamp response:", PacketHelper.Serialize(packet));
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Device timestamp: " + timestampString);
                                         }
-                                        else // error
+                                        else
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM byte read error:", Packet.rx.buffer);
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid timestamp packet:", PacketHelper.Serialize(packet));
                                         }
+                                        break;
                                     }
-                                    else
+                                    case (byte)PacketHelper.ResponseMode.BatteryVoltage:
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.DebugMode.readExtEEPROMblock:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 4))
-                                    {
-                                        if (Packet.rx.payload[0] == 0x00) // OK
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 1))
                                         {
-                                            int start = (Packet.rx.payload[1] << 8) + Packet.rx.payload[2];
-                                            int length = Packet.rx.payload.Length - 3;
-                                            string offset = Util.ByteToHexString(Packet.rx.payload, 1, 2);
-                                            string values = Util.ByteToHexString(Packet.rx.payload, 3, Packet.rx.payload.Length - 3);
-                                            string count = length.ToString();
-
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM block read response:", Packet.rx.buffer);
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM block information:" + Environment.NewLine +
-                                                                           "       Offset: " + offset + " | Count: " + count + Environment.NewLine + values);
+                                            string BatteryVoltageString = (((packet.Payload[0] << 8) + packet.Payload[1]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Battery voltage response:", PacketHelper.Serialize(packet));
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + BatteryVoltageString);
                                         }
-                                        else // error
+                                        else
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM block read error:", Packet.rx.buffer);
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid battery voltage packet:", PacketHelper.Serialize(packet));
                                         }
+                                        break;
                                     }
-                                    else
+                                    case (byte)PacketHelper.ResponseMode.ExtEEPROMChecksum:
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.DebugMode.writeIntEEPROMbyte:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 3))
-                                    {
-                                        if (Packet.rx.payload[0] == 0x00) // OK
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 2))
                                         {
-                                            string offset = Util.ByteToHexString(Packet.rx.payload, 1, 2);
-                                            string value = Util.ByteToHexString(Packet.rx.payload, 3, 1);
-
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM byte write response:", Packet.rx.buffer);
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] Internal EEPROM byte information:" + Environment.NewLine +
-                                                                           "       Offset: " + offset + " | Value: " + value);
-
-                                            byte writtenByte = Util.HexStringToByte(EEPROMWriteValuesTextBox.Text)[0];
-                                            byte readByte = Packet.rx.payload[3];
-
-                                            if (readByte == writtenByte)
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM checksum response:", PacketHelper.Serialize(packet));
+                                            if (packet.Payload[0] == 0x01) // External EEPROM present
                                             {
-                                                MessageBox.Show("Internal EEPROM byte write successful!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                string ExternalEEPROMChecksumReading = Util.ByteToHexString(packet.Payload, 1, 1);
+                                                string ExternalEEPROMChecksumCalculated = Util.ByteToHexString(packet.Payload, 2, 1);
+                                                if (packet.Payload[1] == packet.Payload[2]) // if checksum reading and checksum calculation is the same
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum: " + ExternalEEPROMChecksumReading + "=OK.");
+                                                }
+                                                else
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM checksum ERROR: " + Environment.NewLine +
+                                                                                   "       - reads as: " + ExternalEEPROMChecksumReading + Environment.NewLine +
+                                                                                   "       - calculated: " + ExternalEEPROMChecksumCalculated);
+                                                }
                                             }
                                             else
                                             {
-                                                MessageBox.Show("Internal EEPROM byte write failed!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] No external EEPROM found.");
                                             }
                                         }
-                                        else // error
+                                        else
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM byte write error:", Packet.rx.buffer);
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid extEEPROM checksum packet:", PacketHelper.Serialize(packet));
                                         }
+                                        break;
                                     }
-                                    else
+                                    case (byte)PacketHelper.ResponseMode.CCDBusVoltages:
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.DebugMode.writeIntEEPROMblock:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 4))
-                                    {
-                                        if (Packet.rx.payload[0] == 0x00) // OK
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 3))
                                         {
-                                            string offset = Util.ByteToHexString(Packet.rx.payload, 1, 2);
-                                            string values = Util.ByteToHexString(Packet.rx.payload, 3, Packet.rx.payload.Length - 3);
-                                            string count = (Packet.rx.payload.Length - 3).ToString();
+                                            string CCDPositiveVoltage = (((packet.Payload[0] << 8) + packet.Payload[1]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
+                                            string CCDNegativeVoltage = (((packet.Payload[2] << 8) + packet.Payload[3]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
 
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM block write response:", Packet.rx.buffer);
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] Internal EEPROM block information:" + Environment.NewLine +
-                                                                           "       Offset: " + offset + " | Count: " + count + Environment.NewLine + values);
-
-                                            byte[] writtenBytes = Util.HexStringToByte(EEPROMWriteValuesTextBox.Text);
-                                            byte[] readBytes = new byte[writtenBytes.Length];
-                                            Array.Copy(Packet.rx.payload, 3, readBytes, 0, Packet.rx.payload.Length - 3);
-
-                                            if (Util.CompareArrays(writtenBytes, readBytes, 0, writtenBytes.Length))
-                                            {
-                                                MessageBox.Show("Internal EEPROM block write successful!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                                            }
-                                            else
-                                            {
-                                                MessageBox.Show("Internal EEPROM block write failed!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                                            }
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus voltage measurements response:", PacketHelper.Serialize(packet));
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus wire voltages:" + Environment.NewLine +
+                                                                           "       CCD+: " + CCDPositiveVoltage + Environment.NewLine +
+                                                                           "       CCD-: " + CCDNegativeVoltage);
                                         }
-                                        else // error
+                                        else
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM block write error:", Packet.rx.buffer);
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid CCD-bus voltage measurements packet:", PacketHelper.Serialize(packet));
                                         }
+                                        break;
                                     }
-                                    else
+                                    case (byte)PacketHelper.ResponseMode.VBBVolts:
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.DebugMode.writeExtEEPROMbyte:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 3))
-                                    {
-                                        if (Packet.rx.payload[0] == 0x00) // OK
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 1))
                                         {
-                                            string offset = Util.ByteToHexString(Packet.rx.payload, 1, 2);
-                                            string value = Util.ByteToHexString(Packet.rx.payload, 3, 1);
-
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM byte write response:", Packet.rx.buffer);
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM byte information:" + Environment.NewLine +
-                                                                           "       Offset: " + offset + " | Value: " + value);
-
-                                            byte writtenByte = Util.HexStringToByte(EEPROMWriteValuesTextBox.Text)[0];
-                                            byte readByte = Packet.rx.payload[3];
-
-                                            if (readByte == writtenByte)
-                                            {
-                                                MessageBox.Show("External EEPROM byte write successful!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                                            }
-                                            else
-                                            {
-                                                MessageBox.Show("External EEPROM byte write failed!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                                            }
+                                            string BootstrapVoltageString = (((packet.Payload[0] << 8) + packet.Payload[1]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Bootstrap voltage response:", PacketHelper.Serialize(packet));
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Bootstrap voltage: " + BootstrapVoltageString);
                                         }
-                                        else // error
+                                        else
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM byte write error:", Packet.rx.buffer);
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid bootstrap voltage packet:", PacketHelper.Serialize(packet));
                                         }
+                                        break;
                                     }
-                                    else
+                                    case (byte)PacketHelper.ResponseMode.VPPVolts:
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.DebugMode.writeExtEEPROMblock:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 4))
-                                    {
-                                        if (Packet.rx.payload[0] == 0x00) // OK
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 1))
                                         {
-                                            string offset = Util.ByteToHexString(Packet.rx.payload, 1, 2);
-                                            string values = Util.ByteToHexString(Packet.rx.payload, 3, Packet.rx.payload.Length - 3);
-                                            string count = (Packet.rx.payload.Length - 3).ToString();
-
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM block write response:", Packet.rx.buffer);
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM block information:" + Environment.NewLine +
-                                                                           "       Offset: " + offset + " | Count: " + count + Environment.NewLine + values);
-
-                                            byte[] writtenBytes = Util.HexStringToByte(EEPROMWriteValuesTextBox.Text);
-                                            byte[] readBytes = new byte[writtenBytes.Length];
-                                            Array.Copy(Packet.rx.payload, 3, readBytes, 0, Packet.rx.payload.Length - 3);
-
-                                            if (Util.CompareArrays(writtenBytes, readBytes, 0, writtenBytes.Length))
-                                            {
-                                                MessageBox.Show("External EEPROM block write successful!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                                            }
-                                            else
-                                            {
-                                                MessageBox.Show("External EEPROM block write failed!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                                            }
+                                            string ProgrammingVoltageString = (((packet.Payload[0] << 8) + packet.Payload[1]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Programming voltage response:", PacketHelper.Serialize(packet));
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Programming voltage: " + ProgrammingVoltageString);
                                         }
-                                        else // error
+                                        else
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM block write error:", Packet.rx.buffer);
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid programming voltage packet:", PacketHelper.Serialize(packet));
                                         }
+                                        break;
                                     }
-                                    else
+                                    case (byte)PacketHelper.ResponseMode.AllVolts:
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.DebugMode.setArbitraryUARTSpeed:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 1))
-                                    {
-                                        switch (Packet.rx.payload[0])
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 5))
                                         {
-                                            case (byte)Packet.Bus.ccd:
-                                                switch (Packet.rx.payload[1])
-                                                {
-                                                    case (byte)Packet.BaudMode.extraLowBaud:
-                                                        Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus speed changed:", Packet.rx.buffer);
-                                                        Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus speed: 976.5 baud");
-                                                        break;
-                                                    case (byte)Packet.BaudMode.lowBaud:
-                                                        Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus speed changed:", Packet.rx.buffer);
-                                                        Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus speed: 7812.5 baud");
-                                                        break;
-                                                    case (byte)Packet.BaudMode.highBaud:
-                                                        Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus speed changed:", Packet.rx.buffer);
-                                                        Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus speed: 62500 baud");
-                                                        break;
-                                                    case (byte)Packet.BaudMode.extraHighBaud:
-                                                        Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus speed changed:", Packet.rx.buffer);
-                                                        Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus speed: 125000 baud");
-                                                        break;
-                                                    default:
-                                                        Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus speed unchanged:", Packet.rx.buffer);
-                                                        break;
-                                                }
-                                                break;
-                                            case (byte)Packet.Bus.pcm:
-                                                switch (Packet.rx.payload[1])
-                                                {
-                                                    case (byte)Packet.BaudMode.extraLowBaud:
-                                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) speed changed:", Packet.rx.buffer);
-                                                        Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) speed: 976.5 baud");
-                                                        break;
-                                                    case (byte)Packet.BaudMode.lowBaud:
-                                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) speed changed:", Packet.rx.buffer);
-                                                        Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) speed: 7812.5 baud");
-                                                        break;
-                                                    case (byte)Packet.BaudMode.highBaud:
-                                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) speed changed:", Packet.rx.buffer);
-                                                        Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) speed: 62500 baud");
-                                                        break;
-                                                    case (byte)Packet.BaudMode.extraHighBaud:
-                                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) speed changed:", Packet.rx.buffer);
-                                                        Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) speed: 125000 baud");
-                                                        break;
-                                                    default:
-                                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) speed unchanged:", Packet.rx.buffer);
-                                                        break;
-                                                }
-                                                break;
-                                            case (byte)Packet.Bus.tcm:
-                                                switch (Packet.rx.payload[1])
-                                                {
-                                                    case (byte)Packet.BaudMode.extraLowBaud:
-                                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) speed changed:", Packet.rx.buffer);
-                                                        Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) speed: 976.5 baud");
-                                                        break;
-                                                    case (byte)Packet.BaudMode.lowBaud:
-                                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) speed changed:", Packet.rx.buffer);
-                                                        Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) speed: 7812.5 baud");
-                                                        break;
-                                                    case (byte)Packet.BaudMode.highBaud:
-                                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) speed changed:", Packet.rx.buffer);
-                                                        Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) speed: 62500 baud");
-                                                        break;
-                                                    case (byte)Packet.BaudMode.extraHighBaud:
-                                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) speed changed:", Packet.rx.buffer);
-                                                        Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) speed: 125000 baud");
-                                                        break;
-                                                    default:
-                                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) speed unchanged:", Packet.rx.buffer);
-                                                        break;
-                                                }
-                                                break;
-                                            default:
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] Unknown baudrate change request:", Packet.rx.buffer);
-                                                break;
+                                            string BatteryVoltageString = (((packet.Payload[0] << 8) + packet.Payload[1]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
+                                            string BootstrapVoltageString = (((packet.Payload[2] << 8) + packet.Payload[3]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
+                                            string ProgrammingVoltageString = (((packet.Payload[4] << 8) + packet.Payload[5]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Voltage measurements response:", PacketHelper.Serialize(packet));
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + BatteryVoltageString + Environment.NewLine +
+                                                                           "       Bootstrap voltage: " + BootstrapVoltageString + Environment.NewLine +
+                                                                           "       Programming voltage: " + ProgrammingVoltageString);
                                         }
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.DebugMode.initBootstrapMode:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Init bootstrap mode result:", Packet.rx.buffer);
-
-                                        switch (Packet.rx.payload[0])
+                                        else
                                         {
-                                            case 0:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Bootstrap init success.");
-                                                break;
-                                            case 1:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: no response to magic byte.");
-                                                break;
-                                            case 2:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: unexpected response to magic byte.");
-                                                break;
-                                            case 3:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: security seed response timeout.");
-                                                break;
-                                            case 4:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: security seed response checksum.");
-                                                break;
-                                            case 5:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: security key status timeout.");
-                                                break;
-                                            case 6:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: security key not accepted.");
-                                                break;
-                                            case 7:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: start bootloader timeout.");
-                                                break;
-                                            case 8:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: unexpected bootloader status byte.");
-                                                break;
-                                            default:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: unknown result.");
-                                                break;
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid voltage measurements packet:", PacketHelper.Serialize(packet));
                                         }
+                                        break;
                                     }
-                                    break;
-                                case (byte)Packet.DebugMode.uploadWorkerFunction:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
+                                    default:
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Upload worker function result:", Packet.rx.buffer);
-
-                                        switch (Packet.rx.payload[0])
-                                        {
-                                            case 0:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Worker function upload success.");
-                                                break;
-                                            case 1:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: no response to ping.");
-                                                break;
-                                            case 2:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: upload finished status byte not received.");
-                                                break;
-                                            case 3:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: unexpected upload finished status.");
-                                                break;
-                                            default:
-                                                Util.UpdateTextBox(USBTextBox, "[INFO] Error: unknown result.");
-                                                break;
-                                        }
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", PacketHelper.Serialize(packet));
+                                        break;
                                     }
-                                    break;
-                                case (byte)Packet.DebugMode.startWorkerFunction:
-                                case (byte)Packet.DebugMode.defaultSettings:
-                                case (byte)Packet.DebugMode.getRandomNumber:
-                                case (byte)Packet.DebugMode.restorePCMEEPROM:
-                                case (byte)Packet.DebugMode.getAW9523Data:
-                                default:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", Packet.rx.buffer);
-                                    break;
+                                }
+                                break;
                             }
-                            break;
-                        case (byte)Packet.Command.error:
-                            switch (Packet.rx.mode)
+                            case (byte)PacketHelper.Command.MsgTx:
                             {
-                                case (byte)Packet.ErrorMode.ok:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] OK:", Packet.rx.buffer);
-                                    break;
-                                case (byte)Packet.ErrorMode.errorLengthInvalidValue:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error, invalid packet length:", Packet.rx.buffer);
-                                    break;
-                                case (byte)Packet.ErrorMode.errorDatacodeInvalidCommand:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error, invalid dc command:", Packet.rx.buffer);
-                                    break;
-                                case (byte)Packet.ErrorMode.errorSubDatacodeInvalidValue:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error, invalid sub-data code:", Packet.rx.buffer);
-                                    break;
-                                case (byte)Packet.ErrorMode.errorPayloadInvalidValues:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error, invalid payload value(s):", Packet.rx.buffer);
-                                    break;
-                                case (byte)Packet.ErrorMode.errorPacketChecksumInvalidValue:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error, invalid checksum:", Packet.rx.buffer);
-                                    break;
-                                case (byte)Packet.ErrorMode.errorPacketTimeoutOccured:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error, packet timeout occured:", Packet.rx.buffer);
-                                    break;
-                                case (byte)Packet.ErrorMode.errorBufferOverflow:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error, buffer overflow:", Packet.rx.buffer);
-                                    break;
-                                case (byte)Packet.ErrorMode.errorInvalidBus:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error, invalid bus:", Packet.rx.buffer);
-                                    break;
-                                case (byte)Packet.ErrorMode.errorSCILsNoResponse:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error, no response from SCI-bus:", Packet.rx.buffer);
-                                    break;
-                                case (byte)Packet.ErrorMode.errorNotEnoughMCURAM:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error, not enough MCU RAM:", Packet.rx.buffer);
-                                    break;
-                                case (byte)Packet.ErrorMode.errorSCIHsMemoryPtrNoResponse:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, SCI-bus RAM-table no response (" + Util.ByteToHexString(Packet.rx.payload, 0, 1) + "):", Packet.rx.buffer);
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, SCI-bus RAM-table no response:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.ErrorMode.errorSCIHsInvalidMemoryPtr:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 0))
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, SCI-bus RAM-table invalid (" + Util.ByteToHexString(Packet.rx.payload, 0, 1) + "):", Packet.rx.buffer);
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, SCI-bus RAM-table invalid:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.ErrorMode.errorSCIHsNoResponse:
-                                    if ((Packet.rx.payload != null) && (Packet.rx.payload.Length > 1))
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, no response from SCI-bus (" + Util.ByteToHexString(Packet.rx.payload, 0, 2) + "):", Packet.rx.buffer);
-                                    }
-                                    else
-                                    {
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, no response from SCI-bus:", Packet.rx.buffer);
-                                    }
-                                    break;
-                                case (byte)Packet.ErrorMode.errorEEPNotFound:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error, external EEPROM not found:", Packet.rx.buffer);
-                                    break;
-                                case (byte)Packet.ErrorMode.errorEEPRead:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error, external EEPROM read failure:", Packet.rx.buffer);
-                                    break;
-                                case (byte)Packet.ErrorMode.errorEEPWrite:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error, external EEPROM write failure:", Packet.rx.buffer);
-                                    break;
-                                case (byte)Packet.ErrorMode.errorInternal:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error, internal error:", Packet.rx.buffer);
-                                    break;
-                                case (byte)Packet.ErrorMode.errorFatal:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error, fatal error:", Packet.rx.buffer);
-                                    break;
-                                default:
-                                    Util.UpdateTextBox(USBTextBox, "[RX->] Error packet received:", Packet.rx.buffer);
-                                    break;
-                            }
-                            break;
-                        default:
-                            Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", Packet.rx.buffer);
-                            break;
-                    }
-                    break;
-                case (byte)Packet.Bus.ccd:
-                    if (CCDBusOnDemandToolStripMenuItem.Checked && (ScannerTabControl.SelectedTab.Name == "CCDBusControlTabPage") || !CCDBusOnDemandToolStripMenuItem.Checked)
-                    {
-                        if (Properties.Settings.Default.DisplayRawBusPackets)
-                        {
-                            Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message:", Packet.rx.buffer);
-                        }
-                        
-                        CCD.AddMessage(Packet.rx.payload.ToArray());
-                    }
-                    break;
-                case (byte)Packet.Bus.pci:
-                    if (PCIBusOnDemandToolStripMenuItem.Checked && (ScannerTabControl.SelectedTab.Name == "PCIBusControlTabPage") || !PCIBusOnDemandToolStripMenuItem.Checked)
-                    {
-                        if (Properties.Settings.Default.DisplayRawBusPackets)
-                        {
-                            Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus message:", Packet.rx.buffer);
-                        }
-
-                        PCI.AddMessage(Packet.rx.payload.ToArray());
-                    }
-                    break;
-                case (byte)Packet.Bus.pcm:
-                    switch (Packet.rx.mode)
-                    {
-                        case (byte)Packet.SCISpeedMode.lowSpeed:
-                            if (Packet.rx.payload.Length > 4)
-                            {
-                                switch (Packet.rx.payload[4]) // ID byte
+                                switch (packet.Mode)
                                 {
-                                    case 0x10:
-                                    case 0x32:
-                                        if (Packet.rx.payload.Length < 7)
+                                    case (byte)PacketHelper.MsgTxMode.Stop:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 0))
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) stored fault code list:", Packet.rx.buffer);
-                                            break;
+                                            switch (packet.Payload[0])
+                                            {
+                                                case (byte)PacketHelper.Bus.CCD:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus repeated Tx stopped:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.Bus.PCM:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) repeated Tx stopped:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.Bus.TCM:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) repeated Tx stopped:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.Bus.PCI:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus repeated Tx stopped:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                default:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] Unknown communication bus action:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                            }
                                         }
-
-                                        byte ChecksumA = 0;
-                                        int ChecksumALocation = Packet.rx.payload.Length - 1;
-
-                                        for (int i = 4; i < ChecksumALocation; i++)
+                                        else // error
                                         {
-                                            ChecksumA += Packet.rx.payload[i];
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid communication bus action:", PacketHelper.Serialize(packet));
                                         }
-
-                                        if (ChecksumA == Packet.rx.payload[ChecksumALocation])
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.MsgTxMode.Single:
+                                    case (byte)PacketHelper.MsgTxMode.SingleVPP:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 0))
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) stored fault code list:", Packet.rx.buffer);
+                                            switch (packet.Payload[0])
+                                            {
+                                                case (byte)PacketHelper.Bus.CCD:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message prepared for Tx:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.Bus.PCM:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message prepared for Tx:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.Bus.TCM:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message prepared for Tx:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.Bus.PCI:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus message prepared for Tx:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                default:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] Unknown communication bus action:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        else // error
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid communication bus action:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.MsgTxMode.List:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 0))
+                                        {
+                                            switch (packet.Payload[0])
+                                            {
+                                                case (byte)PacketHelper.Bus.CCD:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message list prepared for Tx:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.Bus.PCM:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) messages list prepared for Tx:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.Bus.TCM:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) messages list prepared for Tx:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.Bus.PCI:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus message list prepared for Tx:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                default:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] Unknown communication bus action:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        else // error
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid communication bus action:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.MsgTxMode.RepeatedSingle:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 0))
+                                        {
+                                            switch (packet.Payload[0])
+                                            {
+                                                case (byte)PacketHelper.Bus.CCD:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus repeated message Tx started:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.Bus.PCM:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) repeated message Tx started:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.Bus.TCM:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) repeated message Tx started:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.Bus.PCI:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus repeated message Tx started:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                default:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] Unknown communication bus action:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        else // error
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid communication bus action:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.MsgTxMode.RepeatedList:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 0))
+                                        {
+                                            switch (packet.Payload[0])
+                                            {
+                                                case (byte)PacketHelper.Bus.CCD:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus repeated message list Tx started:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.Bus.PCM:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) repeated message list Tx started:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.Bus.TCM:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) repeated message list Tx started:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.Bus.PCI:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus repeated message list Tx started:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                default:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] Unknown communication bus action:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        else // error
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid communication bus action:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    default:
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", PacketHelper.Serialize(packet));
+                                        break;
+                                }
+                                break;
+                            }
+                            case (byte)PacketHelper.Command.MsgRx:
+                            {
+                                switch (packet.Mode)
+                                {
+                                    case (byte)PacketHelper.MsgRxMode.Stop:
+                                    {
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.MsgRxMode.Single:
+                                    {
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.MsgRxMode.List:
+                                    {
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.MsgRxMode.RepeatedSingle:
+                                    {
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.MsgRxMode.RepeatedList:
+                                    {
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.MsgTxMode.SingleVPP:
+                                    {
+                                        break;
+                                    }
+                                    default:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            case (byte)PacketHelper.Command.Debug:
+                            {
+                                switch (packet.Mode)
+                                {
+                                    case (byte)PacketHelper.DebugMode.RandomCCDBusMessages:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 0))
+                                        {
+                                            switch (packet.Payload[0])
+                                            {
+                                                case (byte)PacketHelper.OnOffMode.On:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] Random CCD-bus messages started:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.OnOffMode.Off:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] Random CCD-bus messages stopped:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                                default:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] Unknown debug packet:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.DebugMode.ReadIntEEPROMbyte:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 3))
+                                        {
+                                            if (packet.Payload[0] == 0x00) // OK
+                                            {
+                                                string offset = Util.ByteToHexString(packet.Payload, 1, 2);
+                                                string value = Util.ByteToHexString(packet.Payload, 3, 1);
+
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM byte read response:", PacketHelper.Serialize(packet));
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Internal EEPROM byte information:" + Environment.NewLine +
+                                                                               "       Offset: " + offset + " | Value: " + value);
+                                            }
+                                            else // error
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM byte read error:", PacketHelper.Serialize(packet));
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.DebugMode.ReadIntEEPROMblock:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 4))
+                                        {
+                                            if (packet.Payload[0] == 0x00) // OK
+                                            {
+                                                int start = (packet.Payload[1] << 8) + packet.Payload[2];
+                                                int length = packet.Payload.Length - 3;
+                                                string offset = Util.ByteToHexString(packet.Payload, 1, 2);
+                                                string values = Util.ByteToHexString(packet.Payload, 3, packet.Payload.Length - 3);
+                                                string count = length.ToString();
+
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM block read response:", PacketHelper.Serialize(packet));
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Internal EEPROM block information:" + Environment.NewLine +
+                                                                               "       Offset: " + offset + " | Count: " + count + Environment.NewLine + values);
+
+                                                if ((start == 0) && (length == 256))
+                                                {
+                                                    double HardwareVersion = ((packet.Payload[3] << 8) + packet.Payload[4]) / 100.00;
+                                                    string HardwareVersionString = "v" + (HardwareVersion).ToString("0.00").Replace(",", ".").Insert(3, ".");
+                                                    DateTime HardwareDate = Util.UnixTimeStampToDateTime((packet.Payload[9] << 24) + (packet.Payload[10] << 16) + (packet.Payload[11] << 8) + packet.Payload[12]);
+                                                    DateTime AssemblyDate = Util.UnixTimeStampToDateTime((packet.Payload[17] << 24) + (packet.Payload[18] << 16) + (packet.Payload[19] << 8) + packet.Payload[20]);
+                                                    string HardwareDateString = HardwareDate.ToString("yyyy.MM.dd HH:mm:ss");
+                                                    string AssemblyDateString = AssemblyDate.ToString("yyyy.MM.dd HH:mm:ss");
+                                                    double ADCVoltage = ((packet.Payload[21] << 8) + packet.Payload[22]) / 100.00;
+                                                    string ADCVoltageString = ADCVoltage.ToString("0.00").Replace(",", ".") + " V";
+                                                    double RDHighResistance = ((packet.Payload[23] << 8) + packet.Payload[24]) / 1000.0;
+                                                    double RDLowResistance = ((packet.Payload[25] << 8) + packet.Payload[26]) / 1000.0;
+                                                    string RDHighResistanceString = RDHighResistance.ToString("0.000").Replace(",", ".") + " kΩ";
+                                                    string RDLowResistanceString = RDLowResistance.ToString("0.000").Replace(",", ".") + " kΩ";
+                                                    string LCDStateString = string.Empty;
+
+                                                    if (Util.IsBitSet(packet.Payload[27], 0)) LCDStateString = "enabled";
+                                                    else LCDStateString = "disabled";
+
+                                                    string LCDI2CAddressString = Util.ByteToHexString(packet.Payload, 28, 1) + " (hex)";
+                                                    string LCDWidthString = packet.Payload[29].ToString("0") + " characters";
+                                                    string LCDHeightString = packet.Payload[30].ToString("0") + " characters";
+                                                    string LCDRefreshRateString = packet.Payload[31].ToString("0") + " Hz";
+                                                    string LCDUnitsString = string.Empty;
+                                                    string LCDDataSourceString = string.Empty;
+
+                                                    if (packet.Payload[32] == 0x00) LCDUnitsString = "imperial";
+                                                    else if (packet.Payload[32] == 0x01) LCDUnitsString = "metric";
+                                                    else LCDUnitsString = "imperial";
+
+                                                    switch (packet.Payload[33])
+                                                    {
+                                                        case 0x01:
+                                                        {
+                                                            LCDDataSourceString = "CCD-bus";
+                                                            break;
+                                                        }
+                                                        case 0x02:
+                                                        {
+                                                            LCDDataSourceString = "SCI-bus (PCM)";
+                                                            break;
+                                                        }
+                                                        case 0x03:
+                                                        {
+                                                            LCDDataSourceString = "SCI-bus (TCM)";
+                                                            break;
+                                                        }
+                                                        default:
+                                                        {
+                                                            LCDDataSourceString = "CCD-bus";
+                                                            break;
+                                                        }
+                                                    }
+
+                                                    string LEDHeartbeatInterval = ((packet.Payload[34] << 8) + packet.Payload[35]).ToString() + " ms";
+                                                    string LEDBlinkDuration = ((packet.Payload[36] << 8) + packet.Payload[37]).ToString() + " ms";
+
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM settings:" + Environment.NewLine +
+                                                                                   "       Hardware ver.: " + Util.ByteToHexString(packet.Payload, 3, 2) + " | " + HardwareVersionString + Environment.NewLine +
+                                                                                   "       Hardware date: " + Util.ByteToHexString(packet.Payload, 5, 8) + " | " + Environment.NewLine +
+                                                                                   "                      " + HardwareDateString + Environment.NewLine +
+                                                                                   "       Assembly date: " + Util.ByteToHexString(packet.Payload, 13, 8) + " | " + Environment.NewLine +
+                                                                                   "                      " + AssemblyDateString + Environment.NewLine +
+                                                                                   "       ADC supply:    " + Util.ByteToHexString(packet.Payload, 21, 2) + " | " + ADCVoltageString + Environment.NewLine +
+                                                                                   "       RDH resistor:  " + Util.ByteToHexString(packet.Payload, 23, 2) + " | " + RDHighResistanceString + Environment.NewLine +
+                                                                                   "       RDL resistor:  " + Util.ByteToHexString(packet.Payload, 25, 2) + " | " + RDLowResistanceString + Environment.NewLine +
+                                                                                   "       LCD state:        " + Util.ByteToHexString(packet.Payload, 27, 1) + " | " + LCDStateString + Environment.NewLine +
+                                                                                   "       LCD I2C addr.:    " + Util.ByteToHexString(packet.Payload, 28, 1) + " | " + LCDI2CAddressString + Environment.NewLine +
+                                                                                   "       LCD width:        " + Util.ByteToHexString(packet.Payload, 29, 1) + " | " + LCDWidthString + Environment.NewLine +
+                                                                                   "       LCD height:       " + Util.ByteToHexString(packet.Payload, 30, 1) + " | " + LCDHeightString + Environment.NewLine +
+                                                                                   "       LCD refresh:      " + Util.ByteToHexString(packet.Payload, 31, 1) + " | " + LCDRefreshRateString + Environment.NewLine +
+                                                                                   "       LCD units:        " + Util.ByteToHexString(packet.Payload, 32, 1) + " | " + LCDUnitsString + Environment.NewLine +
+                                                                                   "       LCD data src:     " + Util.ByteToHexString(packet.Payload, 33, 1) + " | " + LCDDataSourceString + Environment.NewLine +
+                                                                                   "       LED heartbeat: " + Util.ByteToHexString(packet.Payload, 34, 2) + " | " + LEDHeartbeatInterval + Environment.NewLine +
+                                                                                   "       LED blink:     " + Util.ByteToHexString(packet.Payload, 36, 2) + " | " + LEDBlinkDuration + Environment.NewLine +
+                                                                                   "       CCD settings:     " + Util.ByteToHexString(packet.Payload, 38, 1) + Environment.NewLine +
+                                                                                   "       PCM settings:     " + Util.ByteToHexString(packet.Payload, 39, 1) + Environment.NewLine +
+                                                                                   "       TCM settings:     " + Util.ByteToHexString(packet.Payload, 40, 1));
+                                                }
+                                            }
+                                            else // error
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM block read error:", PacketHelper.Serialize(packet));
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.DebugMode.ReadExtEEPROMbyte:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 3))
+                                        {
+                                            if (packet.Payload[0] == 0x00) // OK
+                                            {
+                                                string offset = Util.ByteToHexString(packet.Payload, 1, 2);
+                                                string value = Util.ByteToHexString(packet.Payload, 3, 1);
+
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM byte read response:", PacketHelper.Serialize(packet));
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM byte information:" + Environment.NewLine +
+                                                                               "       Offset: " + offset + " | Value: " + value);
+                                            }
+                                            else // error
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM byte read error:", PacketHelper.Serialize(packet));
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.DebugMode.ReadExtEEPROMblock:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 4))
+                                        {
+                                            if (packet.Payload[0] == 0x00) // OK
+                                            {
+                                                int start = (packet.Payload[1] << 8) + packet.Payload[2];
+                                                int length = packet.Payload.Length - 3;
+                                                string offset = Util.ByteToHexString(packet.Payload, 1, 2);
+                                                string values = Util.ByteToHexString(packet.Payload, 3, packet.Payload.Length - 3);
+                                                string count = length.ToString();
+
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM block read response:", PacketHelper.Serialize(packet));
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM block information:" + Environment.NewLine +
+                                                                               "       Offset: " + offset + " | Count: " + count + Environment.NewLine + values);
+                                            }
+                                            else // error
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM block read error:", PacketHelper.Serialize(packet));
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.DebugMode.WriteIntEEPROMbyte:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 3))
+                                        {
+                                            if (packet.Payload[0] == 0x00) // OK
+                                            {
+                                                string offset = Util.ByteToHexString(packet.Payload, 1, 2);
+                                                string value = Util.ByteToHexString(packet.Payload, 3, 1);
+
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM byte write response:", PacketHelper.Serialize(packet));
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Internal EEPROM byte information:" + Environment.NewLine +
+                                                                               "       Offset: " + offset + " | Value: " + value);
+
+                                                byte writtenByte = Util.HexStringToByte(EEPROMWriteValuesTextBox.Text)[0];
+                                                byte readByte = packet.Payload[3];
+
+                                                if (readByte == writtenByte)
+                                                {
+                                                    MessageBox.Show("Internal EEPROM byte write successful!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                }
+                                                else
+                                                {
+                                                    MessageBox.Show("Internal EEPROM byte write failed!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                }
+                                            }
+                                            else // error
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM byte write error:", PacketHelper.Serialize(packet));
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.DebugMode.WriteIntEEPROMblock:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 4))
+                                        {
+                                            if (packet.Payload[0] == 0x00) // OK
+                                            {
+                                                string offset = Util.ByteToHexString(packet.Payload, 1, 2);
+                                                string values = Util.ByteToHexString(packet.Payload, 3, packet.Payload.Length - 3);
+                                                string count = (packet.Payload.Length - 3).ToString();
+
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM block write response:", PacketHelper.Serialize(packet));
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Internal EEPROM block information:" + Environment.NewLine +
+                                                                               "       Offset: " + offset + " | Count: " + count + Environment.NewLine + values);
+
+                                                byte[] writtenBytes = Util.HexStringToByte(EEPROMWriteValuesTextBox.Text);
+                                                byte[] readBytes = new byte[writtenBytes.Length];
+                                                Array.Copy(packet.Payload, 3, readBytes, 0, packet.Payload.Length - 3);
+
+                                                if (Util.CompareArrays(writtenBytes, readBytes, 0, writtenBytes.Length))
+                                                {
+                                                    MessageBox.Show("Internal EEPROM block write successful!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                }
+                                                else
+                                                {
+                                                    MessageBox.Show("Internal EEPROM block write failed!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                }
+                                            }
+                                            else // error
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Internal EEPROM block write error:", PacketHelper.Serialize(packet));
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.DebugMode.WriteExtEEPROMbyte:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 3))
+                                        {
+                                            if (packet.Payload[0] == 0x00) // OK
+                                            {
+                                                string offset = Util.ByteToHexString(packet.Payload, 1, 2);
+                                                string value = Util.ByteToHexString(packet.Payload, 3, 1);
+
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM byte write response:", PacketHelper.Serialize(packet));
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM byte information:" + Environment.NewLine +
+                                                                               "       Offset: " + offset + " | Value: " + value);
+
+                                                byte writtenByte = Util.HexStringToByte(EEPROMWriteValuesTextBox.Text)[0];
+                                                byte readByte = packet.Payload[3];
+
+                                                if (readByte == writtenByte)
+                                                {
+                                                    MessageBox.Show("External EEPROM byte write successful!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                }
+                                                else
+                                                {
+                                                    MessageBox.Show("External EEPROM byte write failed!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                }
+                                            }
+                                            else // error
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM byte write error:", PacketHelper.Serialize(packet));
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.DebugMode.WriteExtEEPROMblock:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 4))
+                                        {
+                                            if (packet.Payload[0] == 0x00) // OK
+                                            {
+                                                string offset = Util.ByteToHexString(packet.Payload, 1, 2);
+                                                string values = Util.ByteToHexString(packet.Payload, 3, packet.Payload.Length - 3);
+                                                string count = (packet.Payload.Length - 3).ToString();
+
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM block write response:", PacketHelper.Serialize(packet));
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] External EEPROM block information:" + Environment.NewLine +
+                                                                               "       Offset: " + offset + " | Count: " + count + Environment.NewLine + values);
+
+                                                byte[] writtenBytes = Util.HexStringToByte(EEPROMWriteValuesTextBox.Text);
+                                                byte[] readBytes = new byte[writtenBytes.Length];
+                                                Array.Copy(packet.Payload, 3, readBytes, 0, packet.Payload.Length - 3);
+
+                                                if (Util.CompareArrays(writtenBytes, readBytes, 0, writtenBytes.Length))
+                                                {
+                                                    MessageBox.Show("External EEPROM block write successful!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                }
+                                                else
+                                                {
+                                                    MessageBox.Show("External EEPROM block write failed!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                }
+                                            }
+                                            else // error
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] External EEPROM block write error:", PacketHelper.Serialize(packet));
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.DebugMode.SetArbitraryUARTSpeed:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 1))
+                                        {
+                                            switch (packet.Payload[0])
+                                            {
+                                                case (byte)PacketHelper.Bus.CCD:
+                                                {
+                                                    switch (packet.Payload[1])
+                                                    {
+                                                        case (byte)PacketHelper.BaudMode.ExtraLowBaud:
+                                                        {
+                                                            Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus speed changed:", PacketHelper.Serialize(packet));
+                                                            Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus speed: 976.5 baud");
+                                                            break;
+                                                        }
+                                                        case (byte)PacketHelper.BaudMode.LowBaud:
+                                                        {
+                                                            Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus speed changed:", PacketHelper.Serialize(packet));
+                                                            Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus speed: 7812.5 baud");
+                                                            break;
+                                                        }
+                                                        case (byte)PacketHelper.BaudMode.HighBaud:
+                                                        {
+                                                            Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus speed changed:", PacketHelper.Serialize(packet));
+                                                            Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus speed: 62500 baud");
+                                                            break;
+                                                        }
+                                                        case (byte)PacketHelper.BaudMode.ExtraHighBaud:
+                                                        {
+                                                            Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus speed changed:", PacketHelper.Serialize(packet));
+                                                            Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus speed: 125000 baud");
+                                                            break;
+                                                        }
+                                                        default:
+                                                        {
+                                                            Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus speed unchanged:", PacketHelper.Serialize(packet));
+                                                            break;
+                                                        }
+                                                    }
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.Bus.PCM:
+                                                {
+                                                    switch (packet.Payload[1])
+                                                    {
+                                                        case (byte)PacketHelper.BaudMode.ExtraLowBaud:
+                                                        {
+                                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) speed changed:", PacketHelper.Serialize(packet));
+                                                            Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) speed: 976.5 baud");
+                                                            break;
+                                                        }
+                                                        case (byte)PacketHelper.BaudMode.LowBaud:
+                                                        {
+                                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) speed changed:", PacketHelper.Serialize(packet));
+                                                            Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) speed: 7812.5 baud");
+                                                            break;
+                                                        }
+                                                        case (byte)PacketHelper.BaudMode.HighBaud:
+                                                        {
+                                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) speed changed:", PacketHelper.Serialize(packet));
+                                                            Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) speed: 62500 baud");
+                                                            break;
+                                                        }
+                                                        case (byte)PacketHelper.BaudMode.ExtraHighBaud:
+                                                        {
+                                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) speed changed:", PacketHelper.Serialize(packet));
+                                                            Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) speed: 125000 baud");
+                                                            break;
+                                                        }
+                                                        default:
+                                                        {
+                                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) speed unchanged:", PacketHelper.Serialize(packet));
+                                                            break;
+                                                        }
+                                                    }
+                                                    break;
+                                                }
+                                                case (byte)PacketHelper.Bus.TCM:
+                                                {
+                                                    switch (packet.Payload[1])
+                                                    {
+                                                        case (byte)PacketHelper.BaudMode.ExtraLowBaud:
+                                                        {
+                                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) speed changed:", PacketHelper.Serialize(packet));
+                                                            Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) speed: 976.5 baud");
+                                                            break;
+                                                        }
+                                                        case (byte)PacketHelper.BaudMode.LowBaud:
+                                                        {
+                                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) speed changed:", PacketHelper.Serialize(packet));
+                                                            Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) speed: 7812.5 baud");
+                                                            break;
+                                                        }
+                                                        case (byte)PacketHelper.BaudMode.HighBaud:
+                                                        {
+                                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) speed changed:", PacketHelper.Serialize(packet));
+                                                            Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) speed: 62500 baud");
+                                                            break;
+                                                        }
+                                                        case (byte)PacketHelper.BaudMode.ExtraHighBaud:
+                                                        {
+                                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) speed changed:", PacketHelper.Serialize(packet));
+                                                            Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) speed: 125000 baud");
+                                                            break;
+                                                        }
+                                                        default:
+                                                        {
+                                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) speed unchanged:", PacketHelper.Serialize(packet));
+                                                            break;
+                                                        }
+                                                    }
+                                                    break;
+                                                }
+                                                default:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] Unknown baudrate change request:", PacketHelper.Serialize(packet));
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid debug packet:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.DebugMode.InitBootstrapMode:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 0))
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Init bootstrap mode result:", PacketHelper.Serialize(packet));
+
+                                            switch (packet.Payload[0])
+                                            {
+                                                case 0:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Bootstrap init success.");
+                                                    break;
+                                                }
+                                                case 1:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Error: no response to magic byte.");
+                                                    break;
+                                                }
+                                                case 2:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Error: unexpected response to magic byte.");
+                                                    break;
+                                                }
+                                                case 3:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Error: security seed response timeout.");
+                                                    break;
+                                                }
+                                                case 4:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Error: security seed response checksum.");
+                                                    break;
+                                                }
+                                                case 5:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Error: security key status timeout.");
+                                                    break;
+                                                }
+                                                case 6:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Error: security key not accepted.");
+                                                    break;
+                                                }
+                                                case 7:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Error: start bootloader timeout.");
+                                                    break;
+                                                }
+                                                case 8:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Error: unexpected bootloader status byte.");
+                                                    break;
+                                                }
+                                                default:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Error: unknown result.");
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.DebugMode.UploadWorkerFunction:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 0))
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Upload worker function result:", PacketHelper.Serialize(packet));
+
+                                            switch (packet.Payload[0])
+                                            {
+                                                case 0:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Worker function upload success.");
+                                                    break;
+                                                }
+                                                case 1:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Error: no response to ping.");
+                                                    break;
+                                                }
+                                                case 2:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Error: upload finished status byte not received.");
+                                                    break;
+                                                }
+                                                case 3:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Error: unexpected upload finished status.");
+                                                    break;
+                                                }
+                                                default:
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[INFO] Error: unknown result.");
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.DebugMode.StartWorkerFunction:
+                                    case (byte)PacketHelper.DebugMode.DefaultSettings:
+                                    case (byte)PacketHelper.DebugMode.GetRandomNumber:
+                                    case (byte)PacketHelper.DebugMode.RestorePCMEEPROM:
+                                    case (byte)PacketHelper.DebugMode.GetAW9523Data:
+                                    default:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            case (byte)PacketHelper.Command.Error:
+                            {
+                                switch (packet.Mode)
+                                {
+                                    case (byte)PacketHelper.ErrorMode.Ok:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] OK:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorLengthInvalidValue:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, invalid packet length:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorDatacodeInvalidCommand:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, invalid dc command:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorSubDatacodeInvalidValue:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, invalid sub-data code:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorPayloadInvalidValues:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, invalid payload value(s):", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorPacketChecksumInvalidValue:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, invalid checksum:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorPacketTimeoutOccured:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, packet timeout occured:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorBufferOverflow:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, buffer overflow:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorInvalidBus:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, invalid bus:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorSCILsNoResponse:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, no response from SCI-bus:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorNotEnoughMCURAM:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, not enough MCU RAM:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorSCIHsMemoryPtrNoResponse:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 0))
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Error, SCI-bus RAM-table no response (" + Util.ByteToHexString(packet.Payload, 0, 1) + "):", PacketHelper.Serialize(packet));
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Error, SCI-bus RAM-table no response:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorSCIHsInvalidMemoryPtr:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 0))
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Error, SCI-bus RAM-table invalid (" + Util.ByteToHexString(packet.Payload, 0, 1) + "):", PacketHelper.Serialize(packet));
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Error, SCI-bus RAM-table invalid:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorSCIHsNoResponse:
+                                    {
+                                        if ((packet.Payload != null) && (packet.Payload.Length > 1))
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Error, no response from SCI-bus (" + Util.ByteToHexString(packet.Payload, 0, 2) + "):", PacketHelper.Serialize(packet));
+                                        }
+                                        else
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] Error, no response from SCI-bus:", PacketHelper.Serialize(packet));
+                                        }
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorEEPNotFound:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, external EEPROM not found:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorEEPRead:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, external EEPROM read failure:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorEEPWrite:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, external EEPROM write failure:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorInternal:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, internal error:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                    case (byte)PacketHelper.ErrorMode.ErrorFatal:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error, fatal error:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                    default:
+                                    {
+                                        Util.UpdateTextBox(USBTextBox, "[RX->] Error packet received:", PacketHelper.Serialize(packet));
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            default:
+                            {
+                                Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", PacketHelper.Serialize(packet));
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                    case (byte)PacketHelper.Bus.CCD:
+                    {
+                        if (CCDBusOnDemandToolStripMenuItem.Checked && (ScannerTabControl.SelectedTab.Name == "CCDBusControlTabPage") || !CCDBusOnDemandToolStripMenuItem.Checked)
+                        {
+                            if (Properties.Settings.Default.DisplayRawBusPackets)
+                            {
+                                Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus message:", PacketHelper.Serialize(packet));
+                            }
+
+                            CCD.AddMessage(packet.Payload.ToArray());
+                        }
+                        break;
+                    }
+                    case (byte)PacketHelper.Bus.PCI:
+                    {
+                        if (PCIBusOnDemandToolStripMenuItem.Checked && (ScannerTabControl.SelectedTab.Name == "PCIBusControlTabPage") || !PCIBusOnDemandToolStripMenuItem.Checked)
+                        {
+                            if (Properties.Settings.Default.DisplayRawBusPackets)
+                            {
+                                Util.UpdateTextBox(USBTextBox, "[RX->] PCI-bus message:", PacketHelper.Serialize(packet));
+                            }
+
+                            PCI.AddMessage(packet.Payload.ToArray());
+                        }
+                        break;
+                    }
+                    case (byte)PacketHelper.Bus.PCM:
+                    {
+                        switch (packet.Mode)
+                        {
+                            case (byte)PacketHelper.SCISpeedMode.LowSpeed:
+                            {
+                                if (packet.Payload.Length > 4)
+                                {
+                                    switch (packet.Payload[4]) // ID byte
+                                    {
+                                        case 0x10:
+                                        case 0x32:
+                                        {
+                                            if (packet.Payload.Length < 7)
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) stored fault code list:", PacketHelper.Serialize(packet));
+                                                break;
+                                            }
+
+                                            int ChecksumALocation = packet.Payload.Length - 1;
+
+                                            if (packet.Payload[ChecksumALocation] != Util.ChecksumCalculator(packet.Payload, 4, ChecksumALocation))
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) fault code checksum error:", PacketHelper.Serialize(packet));
+                                                break;
+                                            }
+
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) stored fault code list:", PacketHelper.Serialize(packet));
 
                                             List<byte> StoredFaultCodeList = new List<byte>();
-                                            StoredFaultCodeList.AddRange(Packet.rx.payload.Skip(5).Take(Packet.rx.payload.Length - 6)); // skip first 5 bytes (timestamp and ID)
+                                            StoredFaultCodeList.AddRange(packet.Payload.Skip(5).Take(packet.Payload.Length - 6)); // skip first 5 bytes (timestamp and ID)
                                             StoredFaultCodeList.Remove(0xFD); // not fault code related
                                             StoredFaultCodeList.Remove(0xFE); // end of fault code list signifier
 
@@ -3000,180 +3436,172 @@ namespace ChryslerScanner
                                             {
                                                 Util.UpdateTextBox(USBTextBox, "[INFO] No stored PCM fault code found.");
                                             }
-                                        }
-                                        else
-                                        {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) fault code checksum error:", Packet.rx.buffer);
-                                        }
-                                        break;
-                                    case 0x11: // pending fault code list request
-                                        if (Packet.rx.payload.Length < 3)
-                                        {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) pending fault code list:", Packet.rx.buffer);
                                             break;
                                         }
-
-                                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) pending fault code list:", Packet.rx.buffer);
-
-                                        List<byte> PendingFaultCodeList = new List<byte>();
-                                        PendingFaultCodeList.AddRange(Packet.rx.payload.Skip(5).Take(Packet.rx.payload.Length - 2)); // skip first 5 bytes (timestamp and ID)
-
-                                        if ((PendingFaultCodeList[0] == 0) && (PendingFaultCodeList[1] == 0))
+                                        case 0x11: // pending fault code list request
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] No pending PCM fault code found.");
-                                        }
-                                        else
-                                        {
-                                            StringBuilder sb = new StringBuilder();
-
-                                            foreach (byte code in PendingFaultCodeList)
+                                            if (packet.Payload.Length < 3)
                                             {
-                                                if (code == 0) continue; // skip zero code, empty slot
-
-                                                int index = PCM.SBEC3EngineDTC.Rows.IndexOf(PCM.SBEC3EngineDTC.Rows.Find(code));
-
-                                                if (index > -1) // DTC description found
-                                                {
-                                                    sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": " + PCM.SBEC3EngineDTC.Rows[index]["description"] + Environment.NewLine);
-                                                }
-                                                else // no DTC description found
-                                                {
-                                                    sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": EMPTY DTC SLOT" + Environment.NewLine);
-                                                }
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) pending fault code list:", PacketHelper.Serialize(packet));
+                                                break;
                                             }
 
-                                            sb.Remove(sb.Length - 2, 2); // remove last newline character
+                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) pending fault code list:", PacketHelper.Serialize(packet));
 
-                                            Util.UpdateTextBox(USBTextBox, "[INFO] Pending PCM fault codes found:" + Environment.NewLine + sb.ToString());
-                                        }
-                                        break;
-                                    case 0x2E:
-                                    case 0x33:
-                                        if (Packet.rx.payload.Length > 6)
-                                        {
-                                            byte ChecksumB = 0;
-                                            int ChecksumBLocation = Packet.rx.payload.Length - 1;
+                                            List<byte> PendingFaultCodeList = new List<byte>();
+                                            PendingFaultCodeList.AddRange(packet.Payload.Skip(5).Take(packet.Payload.Length - 2)); // skip first 5 bytes (timestamp and ID)
 
-                                            for (int i = 4; i < ChecksumBLocation; i++)
+                                            if ((PendingFaultCodeList[0] == 0) && (PendingFaultCodeList[1] == 0))
                                             {
-                                                ChecksumB += Packet.rx.payload[i];
-                                            }
-
-                                            if ((ChecksumB == Packet.rx.payload[ChecksumBLocation]) || ((ChecksumB - 0x1E) == Packet.rx.payload[ChecksumBLocation]))
-                                            {
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) one-trip fault code list:", Packet.rx.buffer);
-
-                                                List<byte> FaultCode1TList = new List<byte>();
-                                                FaultCode1TList.AddRange(Packet.rx.payload.Skip(5).Take(Packet.rx.payload.Length - 6)); // skip first 5 bytes (timestamp and ID)
-                                                FaultCode1TList.Remove(0xFD); // not fault code related
-                                                FaultCode1TList.Remove(0xFE); // end of fault code list signifier
-
-                                                if (FaultCode1TList.Count > 0)
-                                                {
-                                                    StringBuilder sb = new StringBuilder();
-
-                                                    foreach (byte code in FaultCode1TList)
-                                                    {
-                                                        int index = PCM.SBEC3EngineDTC.Rows.IndexOf(PCM.SBEC3EngineDTC.Rows.Find(code));
-
-                                                        if (index > -1) // DTC description found
-                                                        {
-                                                            sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": " + PCM.SBEC3EngineDTC.Rows[index]["description"] + Environment.NewLine);
-                                                        }
-                                                        else // no DTC description found
-                                                        {
-                                                            sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": UNRECOGNIZED DTC" + Environment.NewLine);
-                                                        }
-                                                    }
-
-                                                    sb.Remove(sb.Length - 2, 2); // remove last newline character
-
-                                                    Util.UpdateTextBox(USBTextBox, "[INFO] One-trip PCM fault codes found:" + Environment.NewLine + sb.ToString());
-                                                }
-                                                else
-                                                {
-                                                    Util.UpdateTextBox(USBTextBox, "[INFO] No one-trip PCM fault code found.");
-                                                }
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] No pending PCM fault code found.");
                                             }
                                             else
                                             {
-                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) fault code checksum error:", Packet.rx.buffer);
+                                                StringBuilder sb = new StringBuilder();
+
+                                                foreach (byte code in PendingFaultCodeList)
+                                                {
+                                                    if (code == 0) continue; // skip zero code, empty slot
+
+                                                    int index = PCM.SBEC3EngineDTC.Rows.IndexOf(PCM.SBEC3EngineDTC.Rows.Find(code));
+
+                                                    if (index > -1) // DTC description found
+                                                    {
+                                                        sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": " + PCM.SBEC3EngineDTC.Rows[index]["description"] + Environment.NewLine);
+                                                    }
+                                                    else // no DTC description found
+                                                    {
+                                                        sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": EMPTY DTC SLOT" + Environment.NewLine);
+                                                    }
+                                                }
+
+                                                sb.Remove(sb.Length - 2, 2); // remove last newline character
+
+                                                Util.UpdateTextBox(USBTextBox, "[INFO] Pending PCM fault codes found:" + Environment.NewLine + sb.ToString());
                                             }
+                                            break;
                                         }
-                                        else // error
+                                        case 0x2E:
+                                        case 0x33:
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) stored fault code list:", Packet.rx.buffer);
-                                        }
-                                        break;
-                                    case 0x17: // erase fault codes
-                                        if (Packet.rx.payload.Length > 5)
-                                        {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) erase fault code list:", Packet.rx.buffer);
+                                            if (packet.Payload.Length > 6)
+                                            {
+                                                int ChecksumLocation = packet.Payload.Length - 1;
 
-                                            if (Packet.rx.payload[5] == 0xE0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) fault code list erased.");
-                                            else Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) erase fault code list error.");
+                                                byte checksum = Util.ChecksumCalculator(packet.Payload, 4, ChecksumLocation);
+
+                                                if ((packet.Payload[ChecksumLocation] == checksum) || (packet.Payload[ChecksumLocation] == (checksum - 0x1E)))
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) one-trip fault code list:", PacketHelper.Serialize(packet));
+
+                                                    List<byte> FaultCode1TList = new List<byte>();
+                                                    FaultCode1TList.AddRange(packet.Payload.Skip(5).Take(packet.Payload.Length - 6)); // skip first 5 bytes (timestamp and ID)
+                                                    FaultCode1TList.Remove(0xFD); // not fault code related
+                                                    FaultCode1TList.Remove(0xFE); // end of fault code list signifier
+
+                                                    if (FaultCode1TList.Count > 0)
+                                                    {
+                                                        StringBuilder sb = new StringBuilder();
+
+                                                        foreach (byte code in FaultCode1TList)
+                                                        {
+                                                            int index = PCM.SBEC3EngineDTC.Rows.IndexOf(PCM.SBEC3EngineDTC.Rows.Find(code));
+
+                                                            if (index > -1) // DTC description found
+                                                            {
+                                                                sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": " + PCM.SBEC3EngineDTC.Rows[index]["description"] + Environment.NewLine);
+                                                            }
+                                                            else // no DTC description found
+                                                            {
+                                                                sb.Append(Util.ByteToHexStringSimple(new byte[1] { code }) + ": UNRECOGNIZED DTC" + Environment.NewLine);
+                                                            }
+                                                        }
+
+                                                        sb.Remove(sb.Length - 2, 2); // remove last newline character
+
+                                                        Util.UpdateTextBox(USBTextBox, "[INFO] One-trip PCM fault codes found:" + Environment.NewLine + sb.ToString());
+                                                    }
+                                                    else
+                                                    {
+                                                        Util.UpdateTextBox(USBTextBox, "[INFO] No one-trip PCM fault code found.");
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) fault code checksum error:", PacketHelper.Serialize(packet));
+                                                }
+                                            }
+                                            else // error
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) one-trip fault code list:", PacketHelper.Serialize(packet));
+                                            }
+                                            break;
                                         }
-                                        else // error
+                                        case 0x17: // erase fault codes
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) erase fault code list response:", Packet.rx.buffer);
+                                            if (packet.Payload.Length > 5)
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) erase fault code list:", PacketHelper.Serialize(packet));
+
+                                                if (packet.Payload[5] == 0xE0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) fault code list erased.");
+                                                else Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) erase fault code list error.");
+                                            }
+                                            else // error
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] Invalid SCI-bus (PCM) erase fault code list response:", PacketHelper.Serialize(packet));
+                                            }
+                                            break;
                                         }
-                                        break;
-                                    default:
-                                        if (Properties.Settings.Default.DisplayRawBusPackets)
+                                        default:
                                         {
-                                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) low-speed message:", Packet.rx.buffer);
+                                            if (Properties.Settings.Default.DisplayRawBusPackets)
+                                            {
+                                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) low-speed message:", PacketHelper.Serialize(packet));
+                                            }
+                                            break;
                                         }
-                                        break;
+                                    }
                                 }
+                                break;
                             }
-                            break;
-                        case (byte)Packet.SCISpeedMode.highSpeed:
-                            if (Properties.Settings.Default.DisplayRawBusPackets)
+                            case (byte)PacketHelper.SCISpeedMode.HighSpeed:
                             {
-                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) high-speed message:", Packet.rx.buffer);
+                                if (Properties.Settings.Default.DisplayRawBusPackets)
+                                {
+                                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) high-speed message:", PacketHelper.Serialize(packet));
+                                }
+                                break;
                             }
-                            break;
-                        default:
-                            if (Properties.Settings.Default.DisplayRawBusPackets)
+                            default:
                             {
-                                Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message:", Packet.rx.buffer);
+                                if (Properties.Settings.Default.DisplayRawBusPackets)
+                                {
+                                    Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (PCM) message:", PacketHelper.Serialize(packet));
+                                }
+                                break;
                             }
-                            break;
+                        }
+
+                        PCM.AddMessage(packet.Payload.ToArray());
+                        break;
                     }
-
-                    PCM.AddMessage(Packet.rx.payload.ToArray());
-                    
-                    //if ((Packet.rx.buffer.Length == 491) && (Packet.rx.mode == (byte)Packet.SCISpeedMode.highSpeed) && 
-                    //    (Packet.rx.payload[5] == 0x00) && (Packet.rx.payload[7] == 0x01) && (Packet.rx.payload[Packet.rx.payload.Length - 4] == 0xEE) && 
-                    //    (Packet.rx.payload[Packet.rx.payload.Length - 2] == 0xEF))
-                    //{
-                    //    byte[] timestamp = Packet.rx.payload.Take(4).ToArray();
-                    //    byte table = Packet.rx.payload[4];
-                    //    byte[] message;
-                    //    byte[] result = new byte[7];
-
-                    //    for (int i = 0; i < 240; i++)
-                    //    {
-                    //        message = Packet.rx.payload.Skip(5 + 2 * i).Take(2).ToArray();
-                    //        Array.Copy(timestamp, 0, result, 0, timestamp.Length);
-                    //        result[4] = table;
-                    //        Array.Copy(message, 0, result, 5, message.Length);
-                    //        PCM.AddMessage(result);
-                    //    }
-                    //}
-                    break;
-                case (byte)Packet.Bus.tcm:
-                    if (Properties.Settings.Default.DisplayRawBusPackets)
+                    case (byte)PacketHelper.Bus.TCM:
                     {
-                        Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message:", Packet.rx.buffer);
-                    }
+                        if (Properties.Settings.Default.DisplayRawBusPackets)
+                        {
+                            Util.UpdateTextBox(USBTextBox, "[RX->] SCI-bus (TCM) message:", PacketHelper.Serialize(packet));
+                        }
 
-                    TCM.AddMessage(Packet.rx.payload.ToArray());
-                    break;
-                default:
-                    Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", Packet.rx.buffer);
-                    break;
-            }
+                        TCM.AddMessage(packet.Payload.ToArray());
+                        break;
+                    }
+                    default:
+                    {
+                        Util.UpdateTextBox(USBTextBox, "[RX->] Packet received:", PacketHelper.Serialize(packet));
+                        break;
+                    }
+                }
+            }, null);
         }
 
         private void UpdateCCDTable(object sender, EventArgs e)
@@ -3250,7 +3678,7 @@ namespace ChryslerScanner
             TCMTableRowCountHistory.Add(TCM.Diagnostics.Table.Count);
         }
 
-        public async void TransmitUSBPacket(string description)
+        public void TransmitUSBPacket(string description, Packet packet)
         {
             Invoke((MethodInvoker)delegate
             {
@@ -3260,8 +3688,7 @@ namespace ChryslerScanner
                 }
             });
 
-            Util.UpdateTextBox(USBTextBox, description, Packet.tx.buffer); // Packet class fields must be previously filled with data
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            Util.UpdateTextBox(USBTextBox, description, PacketHelper.Serialize(packet));
         }
 
         public void UpdateUSBTextBox(string description)
@@ -3285,7 +3712,7 @@ namespace ChryslerScanner
 
         #region USB communication
 
-        private async void USBSendPacketButton_Click(object sender, EventArgs e)
+        private void USBSendPacketButton_Click(object sender, EventArgs e)
         {
             if (USBSendPacketComboBox.Text == string.Empty)
                 return;
@@ -3298,15 +3725,16 @@ namespace ChryslerScanner
                 return;
             }
 
-            Packet.tx.buffer = bytes;
+            Packet packet = PacketHelper.Deserialize(bytes);
 
             if (!USBSendPacketComboBox.Items.Contains(USBSendPacketComboBox.Text)) // only add unique items (no repeat!)
             {
                 USBSendPacketComboBox.Items.Add(USBSendPacketComboBox.Text); // add command to the list so it can be selected later
             }
 
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Data transmitted:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Data transmitted:", PacketHelper.Serialize(packet));
+
+            SerialService.WritePacket(packet);
         }
 
         private void USBSendPacketComboBox_KeyPress(object sender, KeyPressEventArgs e)
@@ -3358,40 +3786,11 @@ namespace ChryslerScanner
             {
                 Util.UpdateTextBox(USBTextBox, "[INFO] Connecting to " + SelectedPort + ".");
 
-                if (Packet.SP.IsOpen)
-                    Packet.SP.Close();
-
-                Packet.SP.PortName = SelectedPort;
-                Packet.SP.BaudRate = Properties.Settings.Default.UARTBaudrate;
-                Packet.SP.DataBits = 8;
-                Packet.SP.StopBits = StopBits.One;
-                Packet.SP.Parity = Parity.None;
-                Packet.SP.ReadTimeout = 500;
-                Packet.SP.WriteTimeout = 500;
-
-                try
+                if (!SerialService.Connect(SelectedPort))
                 {
-                    Packet.SP.Open();
-                }
-                catch
-                {
-                    Util.UpdateTextBox(USBTextBox, "[INFO] " + Packet.SP.PortName + " is opened by another application.");
-                    Util.UpdateTextBox(USBTextBox, "[INFO] Device not found on " + Packet.SP.PortName + ".");
+                    Util.UpdateTextBox(USBTextBox, "[INFO] Device not found on " + SelectedPort + ".");
                     return;
                 }
-
-                if (!Packet.SP.IsOpen)
-                {
-                    Util.UpdateTextBox(USBTextBox, "[INFO] " + Packet.SP.PortName + " cannot be opened.");
-                    return;
-                }
-
-                Packet.PacketReceived += AnalyzePacket;
-
-                //MSP = new Thread(Packet.MonitorSerialPort);
-                //MSP.Start();
-
-                Packet.MonitorSerialPort();
 
                 Util.UpdateTextBox(USBTextBox, "[INFO] Device connected to " + SelectedPort + ".");
 
@@ -3407,6 +3806,7 @@ namespace ChryslerScanner
                 BootstrapToolsToolStripMenuItem.Enabled = true;
                 EngineToolsToolStripMenuItem.Enabled = true;
                 ABSToolsToolStripMenuItem.Enabled = true;
+                SerialService.PacketReceived += PacketReceivedHandler; // subscribe to the PacketReceived event
                 CCD.Diagnostics.TableUpdated += UpdateCCDTable; // subscribe to the CCD-bus OnTableUpdated event
                 PCI.Diagnostics.TableUpdated += UpdatePCITable; // subscribe to the PCI-bus OnTableUpdated event
                 PCM.Diagnostics.TableUpdated += UpdateSCIPCMTable; // subscribe to the SCI-bus (PCM) OnTableUpdated event
@@ -3417,29 +3817,27 @@ namespace ChryslerScanner
             }
             else if (ConnectButton.Text == Languages.strings.Disconnect)
             {
-                if (Packet.SP.IsOpen)
-                {
-                    CCD.Diagnostics.TableUpdated -= UpdateCCDTable; // unsubscribe from the CCD-bus OnTableUpdated event
-                    PCI.Diagnostics.TableUpdated -= UpdatePCITable; // unsubscribe from the CCD-bus OnTableUpdated event
-                    PCM.Diagnostics.TableUpdated -= UpdateSCIPCMTable; // unsubscribe from the SCI-bus (PCM) OnTableUpdated event
-                    TCM.Diagnostics.TableUpdated -= UpdateSCITCMTable; // unsubscribe from the SCI-bus (PCM) OnTableUpdated event
-                    ConnectButton.Text = Languages.strings.Connect;
-                    COMPortsComboBox.Enabled = true;
-                    COMPortsRefreshButton.Enabled = true;
-                    USBCommunicationGroupBox.Enabled = false;
-                    ScannerTabControl.Enabled = false;
-                    DiagnosticsGroupBox.Enabled = false;
-                    ReadMemoryToolStripMenuItem.Enabled = false;
-                    ReadWriteMemoryToolStripMenuItem.Enabled = false;
-                    BootstrapToolsToolStripMenuItem.Enabled = false;
-                    EngineToolsToolStripMenuItem.Enabled = false;
-                    ABSToolsToolStripMenuItem.Enabled = false;
-                    DeviceFound = false;
-                    timeout = false;
-                    Util.UpdateTextBox(USBTextBox, "[INFO] Device disconnected (" + SelectedPort + ").");
-                    Text = "Chrysler Scanner  |  GUI " + GUIVersion;
-                    Packet.SP.Close();
-                }
+                SerialService.Disconnect();
+                SerialService.PacketReceived -= PacketReceivedHandler; // unsubscribe from the PacketReceived event
+                CCD.Diagnostics.TableUpdated -= UpdateCCDTable; // unsubscribe from the CCD-bus OnTableUpdated event
+                PCI.Diagnostics.TableUpdated -= UpdatePCITable; // unsubscribe from the CCD-bus OnTableUpdated event
+                PCM.Diagnostics.TableUpdated -= UpdateSCIPCMTable; // unsubscribe from the SCI-bus (PCM) OnTableUpdated event
+                TCM.Diagnostics.TableUpdated -= UpdateSCITCMTable; // unsubscribe from the SCI-bus (PCM) OnTableUpdated event
+                ConnectButton.Text = Languages.strings.Connect;
+                COMPortsComboBox.Enabled = true;
+                COMPortsRefreshButton.Enabled = true;
+                USBCommunicationGroupBox.Enabled = false;
+                ScannerTabControl.Enabled = false;
+                DiagnosticsGroupBox.Enabled = false;
+                ReadMemoryToolStripMenuItem.Enabled = false;
+                ReadWriteMemoryToolStripMenuItem.Enabled = false;
+                BootstrapToolsToolStripMenuItem.Enabled = false;
+                EngineToolsToolStripMenuItem.Enabled = false;
+                ABSToolsToolStripMenuItem.Enabled = false;
+                DeviceFound = false;
+                timeout = false;
+                Util.UpdateTextBox(USBTextBox, "[INFO] Device disconnected (" + SelectedPort + ").");
+                Text = "Chrysler Scanner  |  GUI " + GUIVersion;
             }
         }
 
@@ -3465,91 +3863,111 @@ namespace ChryslerScanner
 
         #region Device tab 
 
-        private async void ResetButton_Click(object sender, EventArgs e)
+        private void ResetButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.bus = (byte)Packet.Bus.usb;
-            Packet.tx.command = (byte)Packet.Command.reset;
-            Packet.tx.mode = (byte)Packet.ResetMode.resetInit;
-            Packet.tx.payload = null;
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Reset device:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Reset;
+            packet.Mode = (byte)PacketHelper.ResetMode.ResetInit;
+            packet.Payload = null;
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Reset device:", PacketHelper.Serialize(packet));
+
+            SerialService.WritePacket(packet);
         }
 
-        private async void HandshakeButton_Click(object sender, EventArgs e)
+        private void HandshakeButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.bus = (byte)Packet.Bus.usb;
-            Packet.tx.command = (byte)Packet.Command.handshake;
-            Packet.tx.mode = (byte)Packet.HandshakeMode.handshakeOnly;
-            Packet.tx.payload = null;
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Handshake request:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Handshake;
+            packet.Mode = (byte)PacketHelper.HandshakeMode.HandshakeOnly;
+            packet.Payload = null;
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Handshake request:", PacketHelper.Serialize(packet));
+
+            SerialService.WritePacket(packet);
         }
 
-        private async void StatusButton_Click(object sender, EventArgs e)
+        private void StatusButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.bus = (byte)Packet.Bus.usb;
-            Packet.tx.command = (byte)Packet.Command.status;
-            Packet.tx.mode = (byte)Packet.StatusMode.none;
-            Packet.tx.payload = null;
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Status request:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Status;
+            packet.Mode = (byte)PacketHelper.StatusMode.None;
+            packet.Payload = null;
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Status request:", PacketHelper.Serialize(packet));
+
+            SerialService.WritePacket(packet);
         }
 
-        private async void VersionInfoButton_Click(object sender, EventArgs e)
+        private void VersionInfoButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.bus = (byte)Packet.Bus.usb;
-            Packet.tx.command = (byte)Packet.Command.request;
-            Packet.tx.mode = (byte)Packet.RequestMode.hardwareFirmwareInfo;
-            Packet.tx.payload = null;
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Hardware/Firmware information request:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Request;
+            packet.Mode = (byte)PacketHelper.RequestMode.HardwareFirmwareInfo;
+            packet.Payload = null;
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Hardware/Firmware information request:", PacketHelper.Serialize(packet));
+
+            SerialService.WritePacket(packet);
         }
 
-        private async void TimestampButton_Click(object sender, EventArgs e)
+        private void TimestampButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.bus = (byte)Packet.Bus.usb;
-            Packet.tx.command = (byte)Packet.Command.request;
-            Packet.tx.mode = (byte)Packet.RequestMode.timestamp;
-            Packet.tx.payload = null;
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Timestamp request:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Request;
+            packet.Mode = (byte)PacketHelper.RequestMode.Timestamp;
+            packet.Payload = null;
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Timestamp request:", PacketHelper.Serialize(packet));
+
+            SerialService.WritePacket(packet);
         }
 
-        private async void BatteryVoltageButton_Click(object sender, EventArgs e)
+        private void BatteryVoltageButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.bus = (byte)Packet.Bus.usb;
-            Packet.tx.command = (byte)Packet.Command.request;
-            Packet.tx.mode = (byte)Packet.RequestMode.batteryVoltage;
-            Packet.tx.payload = null;
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Battery voltage request:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Request;
+            packet.Mode = (byte)PacketHelper.RequestMode.BatteryVoltage;
+            packet.Payload = null;
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Battery voltage request:", PacketHelper.Serialize(packet));
+
+            SerialService.WritePacket(packet);
         }
 
-        private async void EEPROMChecksumButton_Click(object sender, EventArgs e)
+        private void EEPROMChecksumButton_Click(object sender, EventArgs e)
         {
-            if (ExternalEEPROMRadioButton.Checked)
-            {
-                Packet.tx.bus = (byte)Packet.Bus.usb;
-                Packet.tx.command = (byte)Packet.Command.request;
-                Packet.tx.mode = (byte)Packet.RequestMode.extEEPROMChecksum;
-                Packet.tx.payload = null;
-                Packet.GeneratePacket();
-                Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM checksum request:", Packet.tx.buffer);
-                await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
-            }
-            else if (InternalEEPROMRadioButton.Checked)
+            if (InternalEEPROMRadioButton.Checked)
             {
                 MessageBox.Show("The internal EEPROM has no assigned checksum!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
+
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Request;
+            packet.Mode = (byte)PacketHelper.RequestMode.ExtEEPROMChecksum;
+            packet.Payload = null;
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM checksum request:", PacketHelper.Serialize(packet));
+
+            SerialService.WritePacket(packet);
         }
 
-        private async void ReadEEPROMButton_Click(object sender, EventArgs e)
+        private void ReadEEPROMButton_Click(object sender, EventArgs e)
         {
             byte[] address = Util.HexStringToByte(EEPROMReadAddressTextBox.Text);
 
@@ -3576,13 +3994,16 @@ namespace ChryslerScanner
             {
                 if (readCount == 1)
                 {
-                    Packet.tx.bus = (byte)Packet.Bus.usb;
-                    Packet.tx.command = (byte)Packet.Command.debug;
-                    Packet.tx.mode = (byte)Packet.DebugMode.readIntEEPROMbyte;
-                    Packet.tx.payload = address;
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Internal EEPROM byte read request:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    Packet packet = new Packet();
+
+                    packet.Bus = (byte)PacketHelper.Bus.USB;
+                    packet.Command = (byte)PacketHelper.Command.Debug;
+                    packet.Mode = (byte)PacketHelper.DebugMode.ReadIntEEPROMbyte;
+                    packet.Payload = address;
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Internal EEPROM byte read request:", PacketHelper.Serialize(packet));
+
+                    SerialService.WritePacket(packet);
 
                     if (offset > (IntEEPROMsize - 1))
                     {
@@ -3595,13 +4016,16 @@ namespace ChryslerScanner
                     payloadList.AddRange(address);
                     payloadList.AddRange(readCountBytes);
 
-                    Packet.tx.bus = (byte)Packet.Bus.usb;
-                    Packet.tx.command = (byte)Packet.Command.debug;
-                    Packet.tx.mode = (byte)Packet.DebugMode.readIntEEPROMblock;
-                    Packet.tx.payload = payloadList.ToArray();
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Internal EEPROM block read request:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    Packet packet = new Packet();
+
+                    packet.Bus = (byte)PacketHelper.Bus.USB;
+                    packet.Command = (byte)PacketHelper.Command.Debug;
+                    packet.Mode = (byte)PacketHelper.DebugMode.ReadIntEEPROMblock;
+                    packet.Payload = payloadList.ToArray();
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Internal EEPROM block read request:", PacketHelper.Serialize(packet));
+
+                    SerialService.WritePacket(packet);
 
                     if ((offset + (readCount - 1)) > (IntEEPROMsize - 1))
                     {
@@ -3617,13 +4041,16 @@ namespace ChryslerScanner
             {
                 if (readCount == 1)
                 {
-                    Packet.tx.bus = (byte)Packet.Bus.usb;
-                    Packet.tx.command = (byte)Packet.Command.debug;
-                    Packet.tx.mode = (byte)Packet.DebugMode.readExtEEPROMbyte;
-                    Packet.tx.payload = address;
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM byte read request:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    Packet packet = new Packet();
+
+                    packet.Bus = (byte)PacketHelper.Bus.USB;
+                    packet.Command = (byte)PacketHelper.Command.Debug;
+                    packet.Mode = (byte)PacketHelper.DebugMode.ReadExtEEPROMbyte;
+                    packet.Payload = address;
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM byte read request:", PacketHelper.Serialize(packet));
+
+                    SerialService.WritePacket(packet);
 
                     if (offset > (ExtEEPROMsize - 1))
                     {
@@ -3636,13 +4063,16 @@ namespace ChryslerScanner
                     payloadList.AddRange(address);
                     payloadList.AddRange(readCountBytes);
 
-                    Packet.tx.bus = (byte)Packet.Bus.usb;
-                    Packet.tx.command = (byte)Packet.Command.debug;
-                    Packet.tx.mode = (byte)Packet.DebugMode.readExtEEPROMblock;
-                    Packet.tx.payload = payloadList.ToArray();
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM block read request:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    Packet packet = new Packet();
+
+                    packet.Bus = (byte)PacketHelper.Bus.USB;
+                    packet.Command = (byte)PacketHelper.Command.Debug;
+                    packet.Mode = (byte)PacketHelper.DebugMode.ReadExtEEPROMblock;
+                    packet.Payload = payloadList.ToArray();
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM block read request:", PacketHelper.Serialize(packet));
+
+                    SerialService.WritePacket(packet);
 
                     if ((offset + (readCount - 1)) > (ExtEEPROMsize - 1))
                     {
@@ -3656,7 +4086,7 @@ namespace ChryslerScanner
             }
         }
 
-        private async void WriteEEPROMButton_Click(object sender, EventArgs e)
+        private void WriteEEPROMButton_Click(object sender, EventArgs e)
         {
             byte[] address = Util.HexStringToByte(EEPROMWriteAddressTextBox.Text);
 
@@ -3681,13 +4111,16 @@ namespace ChryslerScanner
                     payloadList.AddRange(address);
                     payloadList.Add(values[0]);
 
-                    Packet.tx.bus = (byte)Packet.Bus.usb;
-                    Packet.tx.command = (byte)Packet.Command.debug;
-                    Packet.tx.mode = (byte)Packet.DebugMode.writeIntEEPROMbyte;
-                    Packet.tx.payload = payloadList.ToArray();
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Internal EEPROM byte write request:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    Packet packet = new Packet();
+
+                    packet.Bus = (byte)PacketHelper.Bus.USB;
+                    packet.Command = (byte)PacketHelper.Command.Debug;
+                    packet.Mode = (byte)PacketHelper.DebugMode.WriteIntEEPROMbyte;
+                    packet.Payload = payloadList.ToArray();
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Internal EEPROM byte write request:", PacketHelper.Serialize(packet));
+
+                    SerialService.WritePacket(packet);
 
                     if (offset > (IntEEPROMsize - 1))
                     {
@@ -3700,13 +4133,16 @@ namespace ChryslerScanner
                     payloadList.AddRange(address);
                     payloadList.AddRange(values);
 
-                    Packet.tx.bus = (byte)Packet.Bus.usb;
-                    Packet.tx.command = (byte)Packet.Command.debug;
-                    Packet.tx.mode = (byte)Packet.DebugMode.writeIntEEPROMblock;
-                    Packet.tx.payload = payloadList.ToArray();
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Internal EEPROM block write request:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    Packet packet = new Packet();
+
+                    packet.Bus = (byte)PacketHelper.Bus.USB;
+                    packet.Command = (byte)PacketHelper.Command.Debug;
+                    packet.Mode = (byte)PacketHelper.DebugMode.WriteIntEEPROMblock;
+                    packet.Payload = payloadList.ToArray();
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Internal EEPROM block write request:", PacketHelper.Serialize(packet));
+
+                    SerialService.WritePacket(packet);
 
                     if ((offset + (writeCount - 1)) > (IntEEPROMsize - 1))
                     {
@@ -3726,13 +4162,16 @@ namespace ChryslerScanner
                     payloadList.AddRange(address);
                     payloadList.Add(values[0]);
 
-                    Packet.tx.bus = (byte)Packet.Bus.usb;
-                    Packet.tx.command = (byte)Packet.Command.debug;
-                    Packet.tx.mode = (byte)Packet.DebugMode.writeExtEEPROMbyte;
-                    Packet.tx.payload = payloadList.ToArray();
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM byte write request:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    Packet packet = new Packet();
+
+                    packet.Bus = (byte)PacketHelper.Bus.USB;
+                    packet.Command = (byte)PacketHelper.Command.Debug;
+                    packet.Mode = (byte)PacketHelper.DebugMode.WriteExtEEPROMbyte;
+                    packet.Payload = payloadList.ToArray();
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM byte write request:", PacketHelper.Serialize(packet));
+
+                    SerialService.WritePacket(packet);
 
                     if (offset > (ExtEEPROMsize - 1))
                     {
@@ -3745,13 +4184,16 @@ namespace ChryslerScanner
                     payloadList.AddRange(address);
                     payloadList.AddRange(values);
 
-                    Packet.tx.bus = (byte)Packet.Bus.usb;
-                    Packet.tx.command = (byte)Packet.Command.debug;
-                    Packet.tx.mode = (byte)Packet.DebugMode.writeExtEEPROMblock;
-                    Packet.tx.payload = payloadList.ToArray();
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM block write request:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    Packet packet = new Packet();
+
+                    packet.Bus = (byte)PacketHelper.Bus.USB;
+                    packet.Command = (byte)PacketHelper.Command.Debug;
+                    packet.Mode = (byte)PacketHelper.DebugMode.WriteExtEEPROMblock;
+                    packet.Payload = payloadList.ToArray();
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] External EEPROM block write request:", PacketHelper.Serialize(packet));
+
+                    SerialService.WritePacket(packet);
 
                     if ((offset + (writeCount - 1)) > (ExtEEPROMsize - 1))
                     {
@@ -3765,7 +4207,7 @@ namespace ChryslerScanner
             }
         }
 
-        private async void SetLEDsButton_Click(object sender, EventArgs e)
+        private void SetLEDsButton_Click(object sender, EventArgs e)
         {
             bool success;
             List<byte> payloadList = new List<byte>();
@@ -3792,13 +4234,16 @@ namespace ChryslerScanner
 
             payloadList.AddRange(new byte[] { heartbeatInterval_HB, heartbeatInterval_LB, LEDBlinkDuration_HB, LEDBlinkDuration_LB });
 
-            Packet.tx.bus = (byte)Packet.Bus.usb;
-            Packet.tx.command = (byte)Packet.Command.settings;
-            Packet.tx.mode = (byte)Packet.SettingsMode.leds;
-            Packet.tx.payload = payloadList.ToArray();
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Change LED settings:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Settings;
+            packet.Mode = (byte)PacketHelper.SettingsMode.LEDs;
+            packet.Payload = payloadList.ToArray();
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Change LED settings:", PacketHelper.Serialize(packet));
+
+            SerialService.WritePacket(packet);
         }
 
         private void EEPROMWriteEnableCheckBox_CheckedChanged(object sender, EventArgs e)
@@ -3894,16 +4339,16 @@ namespace ChryslerScanner
             foreach (string element in messageStrings)
             {
                 byte[] message = Util.HexStringToByte(element);
+
                 if (message.Length > 0)
                 {
                     byte messageID = message[0];
                     bool match = false;
                     int rowNumber = 0;
 
-                    if (CCDBusTxMessageCalculateChecksumCheckBox.Checked && (message.Length > 1))
+                    if (CCDBusTxMessageChecksumCheckBox.Checked && (message.Length > 1))
                     {
-                        int checksumLocation = message.Length - 1;
-                        message[checksumLocation] = Util.ChecksumCalculator(message, 0, message.Length - 1);
+                        message[message.Length - 1] = Util.ChecksumCalculator(message, 0, message.Length - 1);
 
                         CCDBusTxMessageComboBox.Text = Util.ByteToHexStringSimple(message);
                         CCDBusTxMessageComboBox.SelectionStart = CCDBusTxMessageComboBox.Text.Length;
@@ -4003,7 +4448,7 @@ namespace ChryslerScanner
             CCDBusStopRepeatedMessagesButton.Enabled = false;
         }
 
-        private async void CCDBusSendMessagesButton_Click(object sender, EventArgs e)
+        private void CCDBusSendMessagesButton_Click(object sender, EventArgs e)
         {
             if (DebugRandomCCDBusMessagesButton.Text == "Stop random messages")
             {
@@ -4016,15 +4461,22 @@ namespace ChryslerScanner
                 {
                     byte[] message = Util.HexStringToByte(CCDBusTxMessagesListBox.Items[0].ToString());
 
-                    Packet.tx.bus = (byte)Packet.Bus.ccd;
-                    Packet.tx.command = (byte)Packet.Command.msgTx;
-                    Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                    Packet.tx.payload = message;
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send a CCD-bus message once:", Packet.tx.buffer);
-                    if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine +
-                                                                           "       " + Util.ByteToHexStringSimple(message));
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    Packet packet = new Packet();
+
+                    packet.Bus = (byte)PacketHelper.Bus.CCD;
+                    packet.Command = (byte)PacketHelper.Command.MsgTx;
+                    packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+                    packet.Payload = message;
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send a CCD-bus message once:", PacketHelper.Serialize(packet));
+
+                    if (message.Length > 0)
+                    {
+                        Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine +
+                                                       "       " + Util.ByteToHexStringSimple(message));
+                    }
+
+                    SerialService.WritePacket(packet);
                 }
                 else // list of messages once
                 {
@@ -4045,12 +4497,15 @@ namespace ChryslerScanner
                         payloadList.AddRange(messages[i]); // message
                     }
 
-                    Packet.tx.bus = (byte)Packet.Bus.ccd;
-                    Packet.tx.command = (byte)Packet.Command.msgTx;
-                    Packet.tx.mode = (byte)Packet.MsgTxMode.list;
-                    Packet.tx.payload = payloadList.ToArray();
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send CCD-bus message list once:", Packet.tx.buffer);
+
+                    Packet packet = new Packet();
+
+                    packet.Bus = (byte)PacketHelper.Bus.CCD;
+                    packet.Command = (byte)PacketHelper.Command.MsgTx;
+                    packet.Mode = (byte)PacketHelper.MsgTxMode.List;
+                    packet.Payload = payloadList.ToArray();
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send a CCD-bus message list once:", PacketHelper.Serialize(packet));
 
                     StringBuilder messageList = new StringBuilder();
 
@@ -4058,11 +4513,15 @@ namespace ChryslerScanner
                     {
                         messageList.Append("       " + Util.ByteToHexStringSimple(item) + Environment.NewLine);
                     }
+
                     messageList.Replace(Environment.NewLine, string.Empty, messageList.Length - 2, 2); // remove last newline character
 
-                    if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine + messageList.ToString());
+                    if (messages.Count > 0)
+                    {
+                        Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine + messageList.ToString());
+                    }
 
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    SerialService.WritePacket(packet);
                 }
             }
             else // repeat message(s) forever
@@ -4070,28 +4529,34 @@ namespace ChryslerScanner
                 if (CCDBusTxMessagesListBox.Items.Count == 1) // repeated single message
                 {
                     // First send a settings packet to configure repeat behavior
-                    SetRepeatedMessageBehavior(Packet.Bus.ccd);
+                    SetRepeatedMessageBehavior(PacketHelper.Bus.CCD);
 
                     byte[] message = Util.HexStringToByte(CCDBusTxMessagesListBox.Items[0].ToString());
                     List<byte> payloadList = new List<byte>();
 
                     payloadList.AddRange(message);
 
-                    Packet.tx.bus = (byte)Packet.Bus.ccd;
-                    Packet.tx.command = (byte)Packet.Command.msgTx;
-                    Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
-                    Packet.tx.payload = payloadList.ToArray();
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send a repeated CCD-bus message:", Packet.tx.buffer);
-                    if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine +
-                                                                           "       " + Util.ByteToHexStringSimple(message));
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    Packet packet = new Packet();
 
+                    packet.Bus = (byte)PacketHelper.Bus.CCD;
+                    packet.Command = (byte)PacketHelper.Command.MsgTx;
+                    packet.Mode = (byte)PacketHelper.MsgTxMode.RepeatedSingle;
+                    packet.Payload = payloadList.ToArray();
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send a repeated CCD-bus message:", PacketHelper.Serialize(packet));
+
+                    if (message.Length > 0)
+                    {
+                        Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine +
+                                                       "       " + Util.ByteToHexStringSimple(message));
+                    }
+
+                    SerialService.WritePacket(packet);
                 }
                 else // repeated list of messages
                 {
                     // First send a settings packet to configure repeat behavior
-                    SetRepeatedMessageBehavior(Packet.Bus.ccd);
+                    SetRepeatedMessageBehavior(PacketHelper.Bus.CCD);
 
                     List<byte[]> messages = new List<byte[]>();
                     List<byte> payloadList = new List<byte>();
@@ -4110,12 +4575,14 @@ namespace ChryslerScanner
                         payloadList.AddRange(messages[i]); // message
                     }
 
-                    Packet.tx.bus = (byte)Packet.Bus.ccd;
-                    Packet.tx.command = (byte)Packet.Command.msgTx;
-                    Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedList;
-                    Packet.tx.payload = payloadList.ToArray();
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send repeated CCD-bus message list:", Packet.tx.buffer);
+                    Packet packet = new Packet();
+
+                    packet.Bus = (byte)PacketHelper.Bus.CCD;
+                    packet.Command = (byte)PacketHelper.Command.MsgTx;
+                    packet.Mode = (byte)PacketHelper.MsgTxMode.RepeatedList;
+                    packet.Payload = payloadList.ToArray();
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send repeated CCD-bus message list:", PacketHelper.Serialize(packet));
 
                     StringBuilder messageList = new StringBuilder();
 
@@ -4127,23 +4594,26 @@ namespace ChryslerScanner
 
                     if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine + messageList.ToString());
 
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    SerialService.WritePacket(packet);
                 }
             }
         }
 
-        private async void CCDBusStopRepeatedMessagesButton_Click(object sender, EventArgs e)
+        private void CCDBusStopRepeatedMessagesButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.bus = (byte)Packet.Bus.ccd;
-            Packet.tx.command = (byte)Packet.Command.msgTx;
-            Packet.tx.mode = (byte)Packet.MsgTxMode.stop;
-            Packet.tx.payload = null;
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Stop repeated message Tx on CCD-bus:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.CCD;
+            packet.Command = (byte)PacketHelper.Command.MsgTx;
+            packet.Mode = (byte)PacketHelper.MsgTxMode.Stop;
+            packet.Payload = null;
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Stop repeated Tx on CCD-bus:", PacketHelper.Serialize(packet));
+
+            SerialService.WritePacket(packet);
         }
 
-        private async void DebugRandomCCDBusMessagesButton_Click(object sender, EventArgs e)
+        private void DebugRandomCCDBusMessagesButton_Click(object sender, EventArgs e)
         {
             if (DebugRandomCCDBusMessagesButton.Text == "Send random messages")
             {
@@ -4171,38 +4641,49 @@ namespace ChryslerScanner
                     maxIntervalHB = (byte)((maxInterval >> 8) & 0xFF);
                     maxIntervalLB = (byte)(maxInterval & 0xFF);
 
-                    Packet.tx.bus = (byte)Packet.Bus.usb;
-                    Packet.tx.command = (byte)Packet.Command.debug;
-                    Packet.tx.mode = (byte)Packet.DebugMode.randomCCDBusMessages;
-                    Packet.tx.payload = new byte[5] { 0x01, minIntervalHB, minIntervalLB, maxIntervalHB, maxIntervalLB };
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send random CCD-bus messages:", Packet.tx.buffer);
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    Packet packet = new Packet();
+
+                    packet.Bus = (byte)PacketHelper.Bus.USB;
+                    packet.Command = (byte)PacketHelper.Command.Debug;
+                    packet.Mode = (byte)PacketHelper.DebugMode.RandomCCDBusMessages;
+                    packet.Payload = new byte[5] { 0x01, minIntervalHB, minIntervalLB, maxIntervalHB, maxIntervalLB };
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send random CCD-bus messages:", PacketHelper.Serialize(packet));
+
                     DebugRandomCCDBusMessagesButton.Text = "Stop random messages";
+
+                    SerialService.WritePacket(packet);
                 }
             }
             else if (DebugRandomCCDBusMessagesButton.Text == "Stop random messages")
             {
-                Packet.tx.bus = (byte)Packet.Bus.usb;
-                Packet.tx.command = (byte)Packet.Command.debug;
-                Packet.tx.mode = (byte)Packet.DebugMode.randomCCDBusMessages;
-                Packet.tx.payload = new byte[5] { 0x00, 0x00, 0x00, 0x00, 0x00 };
-                Packet.GeneratePacket();
-                Util.UpdateTextBox(USBTextBox, "[<-TX] Stop random CCD-bus messages:", Packet.tx.buffer);
-                await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                Packet packet = new Packet();
+
+                packet.Bus = (byte)PacketHelper.Bus.USB;
+                packet.Command = (byte)PacketHelper.Command.Debug;
+                packet.Mode = (byte)PacketHelper.DebugMode.RandomCCDBusMessages;
+                packet.Payload = new byte[5] { 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+                Util.UpdateTextBox(USBTextBox, "[<-TX] Stop random CCD-bus messages:", PacketHelper.Serialize(packet));
+
                 DebugRandomCCDBusMessagesButton.Text = "Send random messages";
+
+                SerialService.WritePacket(packet);
             }
         }
 
-        private async void MeasureCCDBusVoltagesButton_Click(object sender, EventArgs e)
+        private void MeasureCCDBusVoltagesButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.bus = (byte)Packet.Bus.usb;
-            Packet.tx.command = (byte)Packet.Command.request;
-            Packet.tx.mode = (byte)Packet.RequestMode.CCDBusVoltages;
-            Packet.tx.payload = null;
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Measure CCD-bus voltages request:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Request;
+            packet.Mode = (byte)PacketHelper.RequestMode.CCDBusVoltages;
+            packet.Payload = null;
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Measure CCD-bus voltages request:", PacketHelper.Serialize(packet));
+
+            SerialService.WritePacket(packet);
         }
 
         private void CCDBusTxMessagesListBox_DoubleClick(object sender, EventArgs e)
@@ -4231,7 +4712,7 @@ namespace ChryslerScanner
             }
         }
 
-        private async void CCDBusSettingsCheckBox_CheckedChanged(object sender, EventArgs e)
+        private void CCDBusSettingsCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             byte config = 0x01; // set lowest bit to indicate 7812.5 baud speed
 
@@ -4259,13 +4740,16 @@ namespace ChryslerScanner
                 CCDBusTerminationBiasOnOffCheckBox.Text = "CCD-bus termination / bias OFF";
             }
 
-            Packet.tx.bus = (byte)Packet.Bus.usb;
-            Packet.tx.command = (byte)Packet.Command.settings;
-            Packet.tx.mode = (byte)Packet.SettingsMode.setCCDBus;
-            Packet.tx.payload = new byte[1] { config };
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Change CCD-bus settings:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Settings;
+            packet.Mode = (byte)PacketHelper.SettingsMode.SetCCDBus;
+            packet.Payload = new byte[1] { config };
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Change CCD-bus settings:", PacketHelper.Serialize(packet));
+
+            SerialService.WritePacket(packet);
         }
 
         private void CCDBusTxMessageRepeatIntervalTextBox_KeyPress(object sender, KeyPressEventArgs e)
@@ -4273,7 +4757,7 @@ namespace ChryslerScanner
             if (e.KeyChar == (char)Keys.Return)
             {
                 e.Handled = true;
-                SetRepeatedMessageBehavior(Packet.Bus.ccd);
+                SetRepeatedMessageBehavior(PacketHelper.Bus.CCD);
             }
         }
 
@@ -4295,7 +4779,7 @@ namespace ChryslerScanner
             }
         }
 
-        private async void CCDBusTxMessageComboBox_KeyPress(object sender, KeyPressEventArgs e)
+        private void CCDBusTxMessageComboBox_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == (char)Keys.Return)
             {
@@ -4320,46 +4804,37 @@ namespace ChryslerScanner
 
                 if (CCDBusTxMessageAddButton.Text != "Edit")
                 {
-                    if (CCDBusTxMessageCalculateChecksumCheckBox.Checked && (message.Length > 1))
+                    if (CCDBusTxMessageChecksumCheckBox.Checked && (message.Length > 1))
                     {
-                        byte checksum = 0;
-                        int checksumLocation = message.Length - 1;
-
-                        for (int i = 0; i < checksumLocation; i++)
-                        {
-                            checksum += message[i];
-                        }
-
-                        message[checksumLocation] = checksum;
+                        message[message.Length - 1] = Util.ChecksumCalculator(message, 0, message.Length - 1);
 
                         CCDBusTxMessageComboBox.Text = Util.ByteToHexStringSimple(message);
                         CCDBusTxMessageComboBox.SelectionStart = CCDBusTxMessageComboBox.Text.Length;
                         CCDBusTxMessageComboBox.SelectionLength = 0;
                     }
 
-                    Packet.tx.bus = (byte)Packet.Bus.ccd;
-                    Packet.tx.command = (byte)Packet.Command.msgTx;
-                    Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                    Packet.tx.payload = message;
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send a CCD-bus message once:", Packet.tx.buffer);
-                    if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine +
-                                                                           "       " + Util.ByteToHexStringSimple(message));
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    Packet packet = new Packet();
+
+                    packet.Bus = (byte)PacketHelper.Bus.CCD;
+                    packet.Command = (byte)PacketHelper.Command.MsgTx;
+                    packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+                    packet.Payload = message;
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send a CCD-bus message once:", PacketHelper.Serialize(packet));
+
+                    if (message.Length > 0)
+                    {
+                        Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus message Tx list:" + Environment.NewLine +
+                                                       "       " + Util.ByteToHexStringSimple(message));
+                    }
+
+                    SerialService.WritePacket(packet);
                 }
                 else
                 {
-                    if (CCDBusTxMessageCalculateChecksumCheckBox.Checked && (message.Length > 1))
+                    if (CCDBusTxMessageChecksumCheckBox.Checked && (message.Length > 1))
                     {
-                        byte checksum = 0;
-                        int checksumLocation = message.Length - 1;
-
-                        for (int i = 0; i < checksumLocation; i++)
-                        {
-                            checksum += message[i];
-                        }
-
-                        message[checksumLocation] = checksum;
+                        message[message.Length - 1] = Util.ChecksumCalculator(message, 0, message.Length - 1);
 
                         CCDBusTxMessageComboBox.Text = Util.ByteToHexStringSimple(message);
                         CCDBusTxMessageComboBox.SelectionStart = CCDBusTxMessageComboBox.Text.Length;
@@ -4387,28 +4862,26 @@ namespace ChryslerScanner
             foreach (string element in messageStrings)
             {
                 byte[] message = Util.HexStringToByte(element);
+
                 if (message.Length > 0)
                 {
                     byte messageID = message[0];
                     bool match = false;
                     int rowNumber = 0;
 
-                    if (SCIBusTxMessageCalculateChecksumCheckBox.Checked && (message.Length > 1))
+                    if (SCIBusTxMessageChecksumCheckBox.Checked && (message.Length > 1))
                     {
-                        byte checksum = 0;
-                        int checksumLocation = message.Length - 1;
+                        message[message.Length - 1] = Util.ChecksumCalculator(message, 0, message.Length - 1);
 
-                        for (int i = 0; i < checksumLocation; i++)
-                        {
-                            checksum += message[i];
-                        }
-
-                        message[checksumLocation] = checksum;
+                        SCIBusTxMessageComboBox.Text = Util.ByteToHexStringSimple(message);
+                        SCIBusTxMessageComboBox.SelectionStart = CCDBusTxMessageComboBox.Text.Length;
+                        SCIBusTxMessageComboBox.SelectionLength = 0;
                     }
 
                     for (int i = 0; i < SCIBusTxMessagesListBox.Items.Count; i++)
                     {
                         byte[] item = Util.HexStringToByte(SCIBusTxMessagesListBox.Items[i].ToString());
+
                         if (item[0] == messageID)
                         {
                             match = true;
@@ -4499,7 +4972,7 @@ namespace ChryslerScanner
             SCIBusStopRepeatedMessagesButton.Enabled = false;
         }
 
-        private async void SCIBusSendMessagesButton_Click(object sender, EventArgs e)
+        private void SCIBusSendMessagesButton_Click(object sender, EventArgs e)
         {
             if (!SCIBusTxMessageRepeatIntervalCheckBox.Checked) // no repeat
             {
@@ -4510,29 +4983,46 @@ namespace ChryslerScanner
                     switch (SCIBusModuleComboBox.SelectedIndex)
                     {
                         case 0: // engine
-                            Packet.tx.bus = (byte)Packet.Bus.pcm;
-                            Packet.tx.command = (byte)Packet.Command.msgTx;
-                            Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                            Packet.tx.payload = message;
-                            Packet.GeneratePacket();
-                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (PCM) message once:", Packet.tx.buffer);
-                            if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
-                                                                                   "       " + Util.ByteToHexStringSimple(message));
-                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                        {
+                            Packet packet = new Packet();
+
+                            packet.Bus = (byte)PacketHelper.Bus.PCM;
+                            packet.Command = (byte)PacketHelper.Command.MsgTx;
+                            packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+                            packet.Payload = message;
+
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (PCM) message once::", PacketHelper.Serialize(packet));
+
+                            if (message.Length > 0)
+                            {
+                                Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
+                                                               "       " + Util.ByteToHexStringSimple(message));
+                            }
+
+                            SerialService.WritePacket(packet);
                             break;
+                        }
                         case 1: // transmission
-                            Packet.tx.bus = (byte)Packet.Bus.tcm;
-                            Packet.tx.command = (byte)Packet.Command.msgTx;
-                            Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                            Packet.tx.payload = message;
-                            Packet.GeneratePacket();
-                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (TCM) message once:", Packet.tx.buffer);
-                            if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine +
-                                                                                   "       " + Util.ByteToHexStringSimple(message));
-                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                        {
+                            Packet packet = new Packet();
+
+                            packet.Bus = (byte)PacketHelper.Bus.TCM;
+                            packet.Command = (byte)PacketHelper.Command.MsgTx;
+                            packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+                            packet.Payload = message;
+
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (TCM) message once:", PacketHelper.Serialize(packet));
+
+                            if (message.Length > 0)
+                            {
+                                Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine +
+                                                               "       " + Util.ByteToHexStringSimple(message));
+                            }
+
+                            SerialService.WritePacket(packet);
                             break;
+                        }
                     }
-                   
                 }
                 else // list of messages once
                 {
@@ -4558,41 +5048,57 @@ namespace ChryslerScanner
                     switch (SCIBusModuleComboBox.SelectedIndex)
                     {
                         case 0: // engine
-                            Packet.tx.bus = (byte)Packet.Bus.pcm;
-                            Packet.tx.command = (byte)Packet.Command.msgTx;
-                            Packet.tx.mode = (byte)Packet.MsgTxMode.list;
-                            Packet.tx.payload = payloadList.ToArray();
-                            Packet.GeneratePacket();
-                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send SCI-bus (PCM) message list once:", Packet.tx.buffer);
+                        {
+                            Packet packet = new Packet();
+
+                            packet.Bus = (byte)PacketHelper.Bus.PCM;
+                            packet.Command = (byte)PacketHelper.Command.MsgTx;
+                            packet.Mode = (byte)PacketHelper.MsgTxMode.List;
+                            packet.Payload = payloadList.ToArray();
+
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send SCI-bus (PCM) message list once:", PacketHelper.Serialize(packet));
 
                             foreach (byte[] item in messages)
                             {
                                 messageList.Append("       " + Util.ByteToHexStringSimple(item) + Environment.NewLine);
                             }
+
                             messageList.Replace(Environment.NewLine, string.Empty, messageList.Length - 2, 2); // remove last newline character
 
-                            if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine + messageList.ToString());
+                            if (messages.Count > 0)
+                            {
+                                Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine + messageList.ToString());
+                            }
 
-                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                            SerialService.WritePacket(packet);
                             break;
+                        }
                         case 1: // transmission
-                            Packet.tx.bus = (byte)Packet.Bus.tcm;
-                            Packet.tx.command = (byte)Packet.Command.msgTx;
-                            Packet.tx.mode = (byte)Packet.MsgTxMode.list;
-                            Packet.tx.payload = payloadList.ToArray();
-                            Packet.GeneratePacket();
-                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send SCI-bus (TCM) message list once:", Packet.tx.buffer);
+                        {
+                            Packet packet = new Packet();
+
+                            packet.Bus = (byte)PacketHelper.Bus.TCM;
+                            packet.Command = (byte)PacketHelper.Command.MsgTx;
+                            packet.Mode = (byte)PacketHelper.MsgTxMode.List;
+                            packet.Payload = payloadList.ToArray();
+
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send SCI-bus (TCM) message list once:", PacketHelper.Serialize(packet));
 
                             foreach (byte[] item in messages)
                             {
                                 messageList.Append("       " + Util.ByteToHexStringSimple(item) + Environment.NewLine);
                             }
+
                             messageList.Replace(Environment.NewLine, string.Empty, messageList.Length - 2, 2); // remove last newline character
 
-                            if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine + messageList.ToString());
+                            if (messages.Count > 0)
+                            {
+                                Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine + messageList.ToString());
+                            }
 
-                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                            SerialService.WritePacket(packet);
                             break;
+                        }
                     }
                 }
             }
@@ -4608,31 +5114,49 @@ namespace ChryslerScanner
                     switch (SCIBusModuleComboBox.SelectedIndex)
                     {
                         case 0: // engine 
-                            SetRepeatedMessageBehavior(Packet.Bus.pcm); // first send a settings packet to configure repeat behavior
+                        {
+                            SetRepeatedMessageBehavior(PacketHelper.Bus.PCM); // first send a settings packet to configure repeat behavior
 
-                            Packet.tx.bus = (byte)Packet.Bus.pcm;
-                            Packet.tx.command = (byte)Packet.Command.msgTx;
-                            Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
-                            Packet.tx.payload = payloadList.ToArray();
-                            Packet.GeneratePacket();
-                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send a repeated SCI-bus (PCM) message:", Packet.tx.buffer);
-                            if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
-                                                                                   "       " + Util.ByteToHexStringSimple(message));
-                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                            Packet packet = new Packet();
+
+                            packet.Bus = (byte)PacketHelper.Bus.PCM;
+                            packet.Command = (byte)PacketHelper.Command.MsgTx;
+                            packet.Mode = (byte)PacketHelper.MsgTxMode.RepeatedSingle;
+                            packet.Payload = payloadList.ToArray();
+
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send a repeated SCI-bus (PCM) message:", PacketHelper.Serialize(packet));
+
+                            if (message.Length > 0)
+                            {
+                                Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
+                                                               "       " + Util.ByteToHexStringSimple(message));
+                            }
+
+                            SerialService.WritePacket(packet);
                             break;
+                        }
                         case 1: // transmission
-                            SetRepeatedMessageBehavior(Packet.Bus.tcm); // first send a settings packet to configure repeat behavior
+                        {
+                            SetRepeatedMessageBehavior(PacketHelper.Bus.TCM); // first send a settings packet to configure repeat behavior
 
-                            Packet.tx.bus = (byte)Packet.Bus.tcm;
-                            Packet.tx.command = (byte)Packet.Command.msgTx;
-                            Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
-                            Packet.tx.payload = payloadList.ToArray();
-                            Packet.GeneratePacket();
-                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send a repeated SCI-bus (TCM) message:", Packet.tx.buffer);
-                            if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine +
-                                                                                   "       " + Util.ByteToHexStringSimple(message));
-                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                            Packet packet = new Packet();
+
+                            packet.Bus = (byte)PacketHelper.Bus.TCM;
+                            packet.Command = (byte)PacketHelper.Command.MsgTx;
+                            packet.Mode = (byte)PacketHelper.MsgTxMode.RepeatedSingle;
+                            packet.Payload = payloadList.ToArray();
+
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send a repeated SCI-bus (TCM) message:", PacketHelper.Serialize(packet));
+
+                            if (message.Length > 0)
+                            {
+                                Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine +
+                                                               "       " + Util.ByteToHexStringSimple(message));
+                            }
+
+                            SerialService.WritePacket(packet);
                             break;
+                        }
                     }
                 }
                 else // repeated list of messages
@@ -4659,204 +5183,177 @@ namespace ChryslerScanner
                     switch (SCIBusModuleComboBox.SelectedIndex)
                     {
                         case 0: // engine
-                            SetRepeatedMessageBehavior(Packet.Bus.pcm); // first send a settings packet to configure repeat behavior
+                        {
+                            SetRepeatedMessageBehavior(PacketHelper.Bus.PCM); // first send a settings packet to configure repeat behavior
 
-                            Packet.tx.bus = (byte)Packet.Bus.pcm;
-                            Packet.tx.command = (byte)Packet.Command.msgTx;
-                            Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedList;
-                            Packet.tx.payload = payloadList.ToArray();
-                            Packet.GeneratePacket();
-                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send repeated SCI-bus (PCM) message list:", Packet.tx.buffer);
+                            Packet packet = new Packet();
+
+                            packet.Bus = (byte)PacketHelper.Bus.PCM;
+                            packet.Command = (byte)PacketHelper.Command.MsgTx;
+                            packet.Mode = (byte)PacketHelper.MsgTxMode.RepeatedList;
+                            packet.Payload = payloadList.ToArray();
+
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send repeated SCI-bus (PCM) message list:", PacketHelper.Serialize(packet));
 
                             foreach (byte[] item in messages)
                             {
                                 messageList.Append("       " + Util.ByteToHexStringSimple(item) + Environment.NewLine);
                             }
+
                             messageList.Replace(Environment.NewLine, string.Empty, messageList.Length - 2, 2); // remove last newline character
 
                             if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine + messageList.ToString());
 
-                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                            SerialService.WritePacket(packet);
                             break;
+                        }
                         case 1: // transmission
-                            SetRepeatedMessageBehavior(Packet.Bus.tcm); // first send a settings packet to configure repeat behavior
+                        {
+                            SetRepeatedMessageBehavior(PacketHelper.Bus.TCM); // first send a settings packet to configure repeat behavior
 
-                            Packet.tx.bus = (byte)Packet.Bus.tcm;
-                            Packet.tx.command = (byte)Packet.Command.msgTx;
-                            Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedList;
-                            Packet.tx.payload = payloadList.ToArray();
-                            Packet.GeneratePacket();
-                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send repeated SCI-bus (TCM) message list:", Packet.tx.buffer);
+                            Packet packet = new Packet();
+
+                            packet.Bus = (byte)PacketHelper.Bus.TCM;
+                            packet.Command = (byte)PacketHelper.Command.MsgTx;
+                            packet.Mode = (byte)PacketHelper.MsgTxMode.RepeatedList;
+                            packet.Payload = payloadList.ToArray();
+
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send repeated SCI-bus (TCM) message list:", PacketHelper.Serialize(packet));
 
                             foreach (byte[] item in messages)
                             {
                                 messageList.Append("       " + Util.ByteToHexStringSimple(item) + Environment.NewLine);
                             }
+
                             messageList.Replace(Environment.NewLine, string.Empty, messageList.Length - 2, 2); // remove last newline character
 
                             if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine + messageList.ToString());
 
-                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                            SerialService.WritePacket(packet);
                             break;
+                        }
                     }
                 }
             }
         }
 
-        private async void SCIBusStopRepeatedMessagesButton_Click(object sender, EventArgs e)
+        private void SCIBusStopRepeatedMessagesButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.bus = (byte)Packet.Bus.pcm;
-            Packet.tx.command = (byte)Packet.Command.msgTx;
-            Packet.tx.mode = (byte)Packet.MsgTxMode.stop;
-            Packet.tx.payload = null;
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Stop repeated message Tx on SCI-bus (PCM):", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.PCM;
+            packet.Command = (byte)PacketHelper.Command.MsgTx;
+            packet.Mode = (byte)PacketHelper.MsgTxMode.Stop;
+            packet.Payload = null;
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Stop repeated Tx on SCI-bus (PCM):", PacketHelper.Serialize(packet));
+
+            SerialService.WritePacket(packet);
         }
 
-        private async void SCIBusModuleConfigSpeedApplyButton_Click(object sender, EventArgs e)
+        private void SCIBusModuleConfigSpeedApplyButton_Click(object sender, EventArgs e)
         {
             byte config = 0x00;
 
             switch (SCIBusModuleComboBox.SelectedIndex)
             {
                 case 0: // engine
+                {
                     config = Util.ClearBit(config, 5); // PCM
-
-                    if (SCIBusLogicComboBox.SelectedIndex != 2)
-                    {
-                        switch (SCIBusLogicComboBox.SelectedIndex)
-                        {
-                            case 0: // OBD1 SBEC
-                                config = Util.SetBit(config, 6); // SBEC bit
-                                config = Util.SetBit(config, 3); // inverted logic bit
-                                break;
-                            case 1: // OBD1 JTEC
-                                config = Util.SetBit(config, 3); // inverted logic bit
-                                break;
-                            case 3: // OBD2 NGC
-                                config = Util.SetBit(config, 4); // ngc bit
-                                break;
-                        }
-                    }
-
-                    if (SCIBusOBDConfigurationComboBox.SelectedIndex == 0)
-                    {
-                        config = Util.ClearBit(config, 2);
-                    }
-                    else
-                    {
-                        config = Util.SetBit(config, 2);
-                    }
-
-                    switch (SCIBusSpeedComboBox.SelectedIndex)
-                    {
-                        case 0: // off
-                            config = Util.ClearBit(config, 7); // clear state bit (disabled)
-                            config = Util.ClearBit(config, 1);
-                            config = Util.SetBit(config, 0);
-                            break;
-                        case 1: // 976.5 baud
-                            config = Util.SetBit(config, 7); // set state bit (enabled)
-                            config = Util.ClearBit(config, 1);
-                            config = Util.ClearBit(config, 0);
-                            break;
-                        case 2: // 7812.5 baud
-                            config = Util.SetBit(config, 7); // set state bit (enabled)
-                            config = Util.ClearBit(config, 1);
-                            config = Util.SetBit(config, 0);
-                            break;
-                        case 3: // 62500 baud
-                            config = Util.SetBit(config, 7); // set state bit (enabled)
-                            config = Util.SetBit(config, 1);
-                            config = Util.ClearBit(config, 0);
-                            break;
-                        case 4: // 125000 baud
-                            config = Util.SetBit(config, 7); // set state bit (enabled)
-                            config = Util.SetBit(config, 1);
-                            config = Util.SetBit(config, 0);
-                            break;
-                        default: // 7812.5 baud
-                            config = Util.SetBit(config, 7); // set state bit (enabled)
-                            config = Util.ClearBit(config, 1);
-                            config = Util.SetBit(config, 0);
-                            break;
-                    }
                     break;
+                }
                 case 1: // transmission
+                {
                     config = Util.SetBit(config, 5); // TCM
-
-                    if (SCIBusLogicComboBox.SelectedIndex != 2)
-                    {
-                        switch (SCIBusLogicComboBox.SelectedIndex)
-                        {
-                            case 0: // OBD1 SBEC
-                                config = Util.SetBit(config, 6); // SBEC bit
-                                config = Util.SetBit(config, 3); // inverted logic bit
-                                break;
-                            case 1: // OBD1 JTEC
-                                config = Util.SetBit(config, 3); // inverted logic bit
-                                break;
-                            case 3: // OBD2 NGC
-                                config = Util.SetBit(config, 4); // ngc bit
-                                break;
-                        }
-                    }
-
-                    if (SCIBusOBDConfigurationComboBox.SelectedIndex == 0)
-                    {
-                        config = Util.ClearBit(config, 2);
-                    }
-                    else
-                    {
-                        config = Util.SetBit(config, 2);
-                    }
-
-                    switch (SCIBusSpeedComboBox.SelectedIndex)
-                    {
-                        case 0: // off
-                            config = Util.ClearBit(config, 7); // clear state bit (disabled)
-                            config = Util.ClearBit(config, 1);
-                            config = Util.SetBit(config, 0);
-                            break;
-                        case 1: // 976.5 baud
-                            config = Util.SetBit(config, 7); // set state bit (enabled)
-                            config = Util.ClearBit(config, 1);
-                            config = Util.ClearBit(config, 0);
-                            break;
-                        case 2: // 7812.5 baud
-                            config = Util.SetBit(config, 7); // set state bit (enabled)
-                            config = Util.ClearBit(config, 1);
-                            config = Util.SetBit(config, 0);
-                            break;
-                        case 3: // 62500 baud
-                            config = Util.SetBit(config, 7); // set state bit (enabled)
-                            config = Util.SetBit(config, 1);
-                            config = Util.ClearBit(config, 0);
-                            break;
-                        case 4: // 125000 baud
-                            config = Util.SetBit(config, 7); // set state bit (enabled)
-                            config = Util.SetBit(config, 1);
-                            config = Util.SetBit(config, 0);
-                            break;
-                        default: // 7812.5 baud
-                            config = Util.SetBit(config, 7); // set state bit (enabled)
-                            config = Util.ClearBit(config, 1);
-                            config = Util.SetBit(config, 0);
-                            break;
-                    }
                     break;
-                default:
-                    break;
+                }
             }
 
-            Packet.tx.bus = (byte)Packet.Bus.usb;
-            Packet.tx.command = (byte)Packet.Command.settings;
-            Packet.tx.mode = (byte)Packet.SettingsMode.setSCIBus;
-            Packet.tx.payload = new byte[1] { config };
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Change SCI-bus settings:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            switch (SCIBusLogicComboBox.SelectedIndex)
+            {
+                case 0: // OBD1 SBEC
+                {
+                    config = Util.SetBit(config, 6); // SBEC bit
+                    config = Util.SetBit(config, 3); // inverted logic bit
+                    break;
+                }
+                case 1: // OBD1 JTEC
+                {
+                    config = Util.SetBit(config, 3); // inverted logic bit
+                    break;
+                }
+                case 3: // OBD2 NGC
+                {
+                    config = Util.SetBit(config, 4); // ngc bit
+                    break;
+                }
+            }
+
+            if (SCIBusOBDConfigurationComboBox.SelectedIndex == 0)
+            {
+                config = Util.ClearBit(config, 2);
+            }
+            else
+            {
+                config = Util.SetBit(config, 2);
+            }
+
+            switch (SCIBusSpeedComboBox.SelectedIndex)
+            {
+                case 0: // off
+                {
+                    config = Util.ClearBit(config, 7); // clear state bit (disabled)
+                    config = Util.ClearBit(config, 1);
+                    config = Util.SetBit(config, 0);
+                    break;
+                }
+                case 1: // 976.5 baud
+                {
+                    config = Util.SetBit(config, 7); // set state bit (enabled)
+                    config = Util.ClearBit(config, 1);
+                    config = Util.ClearBit(config, 0);
+                    break;
+                }
+                case 2: // 7812.5 baud
+                {
+                    config = Util.SetBit(config, 7); // set state bit (enabled)
+                    config = Util.ClearBit(config, 1);
+                    config = Util.SetBit(config, 0);
+                    break;
+                }
+                case 3: // 62500 baud
+                {
+                    config = Util.SetBit(config, 7); // set state bit (enabled)
+                    config = Util.SetBit(config, 1);
+                    config = Util.ClearBit(config, 0);
+                    break;
+                }
+                case 4: // 125000 baud
+                {
+                    config = Util.SetBit(config, 7); // set state bit (enabled)
+                    config = Util.SetBit(config, 1);
+                    config = Util.SetBit(config, 0);
+                    break;
+                }
+                default: // 7812.5 baud
+                {
+                    config = Util.SetBit(config, 7); // set state bit (enabled)
+                    config = Util.ClearBit(config, 1);
+                    config = Util.SetBit(config, 0);
+                    break;
+                }
+            }
+
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Settings;
+            packet.Mode = (byte)PacketHelper.SettingsMode.SetSCIBus;
+            packet.Payload = new byte[1] { config };
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Change SCI-bus settings:", PacketHelper.Serialize(packet));
+
+            SerialService.WritePacket(packet);
         }
 
         private void SCIBusTxMessagesListBox_DoubleClick(object sender, EventArgs e)
@@ -4892,6 +5389,7 @@ namespace ChryslerScanner
                 switch (SCIBusModuleComboBox.SelectedIndex)
                 {
                     case 0: // PCM
+                    {
                         if (PCM.state == "enabled")
                         {
                             if (PCM.speed == "976.5 baud") SCIBusSpeedComboBox.SelectedIndex = 1;
@@ -4915,7 +5413,9 @@ namespace ChryslerScanner
                         PCMSelected = true;
                         TCMSelected = false;
                         break;
+                    }
                     case 1: // TCM
+                    {
                         if (TCM.state == "enabled")
                         {
                             if (TCM.speed == "976.5 baud") SCIBusSpeedComboBox.SelectedIndex = 1;
@@ -4939,8 +5439,7 @@ namespace ChryslerScanner
                         PCMSelected = false;
                         TCMSelected = true;
                         break;
-                    default:
-                        break;
+                    }
                 }
             });
         }
@@ -4950,19 +5449,24 @@ namespace ChryslerScanner
             if (e.KeyChar == (char)Keys.Return)
             {
                 e.Handled = true;
+
                 switch (SCIBusModuleComboBox.SelectedIndex)
                 {
                     case 0: // engine
-                        SetRepeatedMessageBehavior(Packet.Bus.pcm);
+                    {
+                        SetRepeatedMessageBehavior(PacketHelper.Bus.PCM);
                         break;
+                    }
                     case 1: // transmission
-                        SetRepeatedMessageBehavior(Packet.Bus.tcm);
+                    {
+                        SetRepeatedMessageBehavior(PacketHelper.Bus.TCM);
                         break;
+                    }
                 }
             }
         }
 
-        private async void SCIBusTxMessageComboBox_KeyPress(object sender, KeyPressEventArgs e)
+        private void SCIBusTxMessageComboBox_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == (char)Keys.Return)
             {
@@ -4987,17 +5491,9 @@ namespace ChryslerScanner
 
                 if (SCIBusTxMessageAddButton.Text != "Edit")
                 {
-                    if (SCIBusTxMessageCalculateChecksumCheckBox.Checked)
+                    if (SCIBusTxMessageChecksumCheckBox.Checked)
                     {
-                        byte checksum = 0;
-                        int checksumLocation = message.Length - 1;
-
-                        for (int i = 0; i < checksumLocation; i++)
-                        {
-                            checksum += message[i];
-                        }
-
-                        message[checksumLocation] = checksum;
+                        message[message.Length - 1] = Util.ChecksumCalculator(message, 0, message.Length - 1);
 
                         SCIBusTxMessageComboBox.Text = Util.ByteToHexStringSimple(message);
                         SCIBusTxMessageComboBox.SelectionStart = SCIBusTxMessageComboBox.Text.Length;
@@ -5007,42 +5503,52 @@ namespace ChryslerScanner
                     switch (SCIBusModuleComboBox.SelectedIndex)
                     {
                         case 0: // engine
-                            Packet.tx.bus = (byte)Packet.Bus.pcm;
-                            Packet.tx.command = (byte)Packet.Command.msgTx;
-                            Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                            Packet.tx.payload = message;
-                            Packet.GeneratePacket();
-                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (PCM) message once:", Packet.tx.buffer);
-                            if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
-                                                                                   "       " + Util.ByteToHexStringSimple(message));
-                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                        {
+                            Packet packet = new Packet();
+
+                            packet.Bus = (byte)PacketHelper.Bus.PCM;
+                            packet.Command = (byte)PacketHelper.Command.MsgTx;
+                            packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+                            packet.Payload = message;
+
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (PCM) message once:", PacketHelper.Serialize(packet));
+
+                            if (message.Length > 0)
+                            {
+                                Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (PCM) message Tx list:" + Environment.NewLine +
+                                                               "       " + Util.ByteToHexStringSimple(message));
+                            }
+
+                            SerialService.WritePacket(packet);
                             break;
+                        }
                         case 1: // transmission
-                            Packet.tx.bus = (byte)Packet.Bus.tcm;
-                            Packet.tx.command = (byte)Packet.Command.msgTx;
-                            Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                            Packet.tx.payload = message;
-                            Packet.GeneratePacket();
-                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (TCM) message once:", Packet.tx.buffer);
-                            if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine +
-                                                                                   "       " + Util.ByteToHexStringSimple(message));
-                            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                        {
+                            Packet packet = new Packet();
+
+                            packet.Bus = (byte)PacketHelper.Bus.TCM;
+                            packet.Command = (byte)PacketHelper.Command.MsgTx;
+                            packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+                            packet.Payload = message;
+
+                            Util.UpdateTextBox(USBTextBox, "[<-TX] Send an SCI-bus (TCM) message once:", PacketHelper.Serialize(packet));
+
+                            if (message.Length > 0)
+                            {
+                                Util.UpdateTextBox(USBTextBox, "[INFO] SCI-bus (TCM) message Tx list:" + Environment.NewLine +
+                                                               "       " + Util.ByteToHexStringSimple(message));
+                            }
+
+                            SerialService.WritePacket(packet);
                             break;
+                        }
                     }
                 }
                 else
                 {
-                    if (SCIBusTxMessageCalculateChecksumCheckBox.Checked)
+                    if (SCIBusTxMessageChecksumCheckBox.Checked)
                     {
-                        byte checksum = 0;
-                        int checksumLocation = message.Length - 1;
-
-                        for (int i = 0; i < checksumLocation; i++)
-                        {
-                            checksum += message[i];
-                        }
-
-                        message[checksumLocation] = checksum;
+                        message[message.Length - 1] = Util.ChecksumCalculator(message, 0, message.Length - 1);
 
                         SCIBusTxMessageComboBox.Text = Util.ByteToHexStringSimple(message);
                         SCIBusTxMessageComboBox.SelectionStart = SCIBusTxMessageComboBox.Text.Length;
@@ -5076,10 +5582,9 @@ namespace ChryslerScanner
                     bool match = false;
                     int rowNumber = 0;
 
-                    if (PCIBusTxMessageCalculateCRCCheckBox.Checked && (message.Length > 1))
+                    if (PCIBusTxMessageCRCCheckBox.Checked && (message.Length > 1))
                     {
-                        int crcLocation = message.Length - 1;
-                        message[crcLocation] = Util.CRCCalculator(message, 0, message.Length - 1);
+                        message[message.Length - 1] = Util.CRCCalculator(message, 0, message.Length - 1);
 
                         PCIBusTxMessageComboBox.Text = Util.ByteToHexStringSimple(message);
                         PCIBusTxMessageComboBox.SelectionStart = PCIBusTxMessageComboBox.Text.Length;
@@ -5179,7 +5684,7 @@ namespace ChryslerScanner
             PCIBusStopRepeatedMessagesButton.Enabled = false;
         }
 
-        private async void PCIBusSendMessagesButton_Click(object sender, EventArgs e)
+        private void PCIBusSendMessagesButton_Click(object sender, EventArgs e)
         {
             if (!PCIBusTxMessageRepeatIntervalCheckBox.Checked) // no repeat
             {
@@ -5187,15 +5692,22 @@ namespace ChryslerScanner
                 {
                     byte[] message = Util.HexStringToByte(PCIBusTxMessagesListBox.Items[0].ToString());
 
-                    Packet.tx.bus = (byte)Packet.Bus.pci;
-                    Packet.tx.command = (byte)Packet.Command.msgTx;
-                    Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                    Packet.tx.payload = message;
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send a PCI-bus message once:", Packet.tx.buffer);
-                    if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] PCI-bus message Tx list:" + Environment.NewLine +
-                                                                           "       " + Util.ByteToHexStringSimple(message));
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    Packet packet = new Packet();
+
+                    packet.Bus = (byte)PacketHelper.Bus.PCI;
+                    packet.Command = (byte)PacketHelper.Command.MsgTx;
+                    packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+                    packet.Payload = message;
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send a PCI-bus message once:", PacketHelper.Serialize(packet));
+
+                    if (message.Length > 0)
+                    {
+                        Util.UpdateTextBox(USBTextBox, "[INFO] PCI-bus message Tx list:" + Environment.NewLine +
+                                                       "       " + Util.ByteToHexStringSimple(message));
+                    }
+
+                    SerialService.WritePacket(packet);
                 }
                 else // list of messages once
                 {
@@ -5216,12 +5728,14 @@ namespace ChryslerScanner
                         payloadList.AddRange(messages[i]); // message
                     }
 
-                    Packet.tx.bus = (byte)Packet.Bus.pci;
-                    Packet.tx.command = (byte)Packet.Command.msgTx;
-                    Packet.tx.mode = (byte)Packet.MsgTxMode.list;
-                    Packet.tx.payload = payloadList.ToArray();
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send PCI-bus message list once:", Packet.tx.buffer);
+                    Packet packet = new Packet();
+
+                    packet.Bus = (byte)PacketHelper.Bus.PCI;
+                    packet.Command = (byte)PacketHelper.Command.MsgTx;
+                    packet.Mode = (byte)PacketHelper.MsgTxMode.List;
+                    packet.Payload = payloadList.ToArray();
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send PCI-bus message list once:", PacketHelper.Serialize(packet));
 
                     StringBuilder messageList = new StringBuilder();
 
@@ -5229,11 +5743,12 @@ namespace ChryslerScanner
                     {
                         messageList.Append("       " + Util.ByteToHexStringSimple(item) + Environment.NewLine);
                     }
+
                     messageList.Replace(Environment.NewLine, string.Empty, messageList.Length - 2, 2); // remove last newline character
 
                     if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] PCI-bus message Tx list:" + Environment.NewLine + messageList.ToString());
 
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    SerialService.WritePacket(packet);
                 }
             }
             else // repeat message(s) forever
@@ -5241,28 +5756,34 @@ namespace ChryslerScanner
                 if (PCIBusTxMessagesListBox.Items.Count == 1) // repeated single message
                 {
                     // First send a settings packet to configure repeat behavior
-                    SetRepeatedMessageBehavior(Packet.Bus.pci);
+                    SetRepeatedMessageBehavior(PacketHelper.Bus.PCI);
 
                     byte[] message = Util.HexStringToByte(PCIBusTxMessagesListBox.Items[0].ToString());
                     List<byte> payloadList = new List<byte>();
 
                     payloadList.AddRange(message);
 
-                    Packet.tx.bus = (byte)Packet.Bus.pci;
-                    Packet.tx.command = (byte)Packet.Command.msgTx;
-                    Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
-                    Packet.tx.payload = payloadList.ToArray();
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send a repeated PCI-bus message:", Packet.tx.buffer);
-                    if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] PCI-bus message Tx list:" + Environment.NewLine +
-                                                                           "       " + Util.ByteToHexStringSimple(message));
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    Packet packet = new Packet();
 
+                    packet.Bus = (byte)PacketHelper.Bus.PCI;
+                    packet.Command = (byte)PacketHelper.Command.MsgTx;
+                    packet.Mode = (byte)PacketHelper.MsgTxMode.RepeatedSingle;
+                    packet.Payload = payloadList.ToArray();
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send a repeated PCI-bus message:", PacketHelper.Serialize(packet));
+
+                    if (message.Length > 0)
+                    {
+                        Util.UpdateTextBox(USBTextBox, "[INFO] PCI-bus message Tx list:" + Environment.NewLine +
+                                                       "       " + Util.ByteToHexStringSimple(message));
+                    }
+
+                    SerialService.WritePacket(packet);
                 }
                 else // repeated list of messages
                 {
                     // First send a settings packet to configure repeat behavior
-                    SetRepeatedMessageBehavior(Packet.Bus.pci);
+                    SetRepeatedMessageBehavior(PacketHelper.Bus.PCI);
 
                     List<byte[]> messages = new List<byte[]>();
                     List<byte> payloadList = new List<byte>();
@@ -5281,12 +5802,14 @@ namespace ChryslerScanner
                         payloadList.AddRange(messages[i]); // message
                     }
 
-                    Packet.tx.bus = (byte)Packet.Bus.pci;
-                    Packet.tx.command = (byte)Packet.Command.msgTx;
-                    Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedList;
-                    Packet.tx.payload = payloadList.ToArray();
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send repeated PCI-bus message list:", Packet.tx.buffer);
+                    Packet packet = new Packet();
+
+                    packet.Bus = (byte)PacketHelper.Bus.PCI;
+                    packet.Command = (byte)PacketHelper.Command.MsgTx;
+                    packet.Mode = (byte)PacketHelper.MsgTxMode.RepeatedList;
+                    packet.Payload = payloadList.ToArray();
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send repeated PCI-bus message list:", PacketHelper.Serialize(packet));
 
                     StringBuilder messageList = new StringBuilder();
 
@@ -5294,24 +5817,28 @@ namespace ChryslerScanner
                     {
                         messageList.Append("       " + Util.ByteToHexStringSimple(item) + Environment.NewLine);
                     }
+
                     messageList.Replace(Environment.NewLine, string.Empty, messageList.Length - 2, 2); // remove last newline character
 
                     if (messages.Count > 0) Util.UpdateTextBox(USBTextBox, "[INFO] PCI-bus message Tx list:" + Environment.NewLine + messageList.ToString());
 
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    SerialService.WritePacket(packet);
                 }
             }
         }
 
-        private async void PCIBusStopRepeatedMessagesButton_Click(object sender, EventArgs e)
+        private void PCIBusStopRepeatedMessagesButton_Click(object sender, EventArgs e)
         {
-            Packet.tx.bus = (byte)Packet.Bus.pci;
-            Packet.tx.command = (byte)Packet.Command.msgTx;
-            Packet.tx.mode = (byte)Packet.MsgTxMode.stop;
-            Packet.tx.payload = null;
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Stop repeated message Tx on PCI-bus:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.PCI;
+            packet.Command = (byte)PacketHelper.Command.MsgTx;
+            packet.Mode = (byte)PacketHelper.MsgTxMode.Stop;
+            packet.Payload = null;
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Stop repeated Tx on PCI-bus:", PacketHelper.Serialize(packet));
+
+            SerialService.WritePacket(packet);
         }
 
         private void PCIBusTxMessagesListBox_DoubleClick(object sender, EventArgs e)
@@ -5340,7 +5867,7 @@ namespace ChryslerScanner
             }
         }
 
-        private async void PCIBusSettingsCheckBox_CheckedChanged(object sender, EventArgs e)
+        private void PCIBusSettingsCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             byte config = 0x40; // keep logic bit high (active-high)
 
@@ -5357,13 +5884,16 @@ namespace ChryslerScanner
                 PCI.UpdateHeader("disabled", null, null);
             }
 
-            Packet.tx.bus = (byte)Packet.Bus.usb;
-            Packet.tx.command = (byte)Packet.Command.settings;
-            Packet.tx.mode = (byte)Packet.SettingsMode.setPCIBus;
-            Packet.tx.payload = new byte[1] { config };
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Change PCI-bus settings:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Settings;
+            packet.Mode = (byte)PacketHelper.SettingsMode.SetPCIBus;
+            packet.Payload = new byte[1] { config };
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Change PCI-bus settings:", PacketHelper.Serialize(packet));
+
+            SerialService.WritePacket(packet);
         }
 
         private void PCIBusTxMessageRepeatIntervalTextBox_KeyPress(object sender, KeyPressEventArgs e)
@@ -5371,11 +5901,11 @@ namespace ChryslerScanner
             if (e.KeyChar == (char)Keys.Return)
             {
                 e.Handled = true;
-                SetRepeatedMessageBehavior(Packet.Bus.pci);
+                SetRepeatedMessageBehavior(PacketHelper.Bus.PCI);
             }
         }
 
-        private async void PCIBusTxMessageComboBox_KeyPress(object sender, KeyPressEventArgs e)
+        private void PCIBusTxMessageComboBox_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == (char)Keys.Return)
             {
@@ -5400,32 +5930,37 @@ namespace ChryslerScanner
 
                 if (PCIBusTxMessageAddButton.Text != "Edit")
                 {
-                    if (PCIBusTxMessageCalculateCRCCheckBox.Checked && (message.Length > 1))
+                    if (PCIBusTxMessageCRCCheckBox.Checked && (message.Length > 1))
                     {
-                        int crcLocation = message.Length - 1;
-                        message[crcLocation] = Util.CRCCalculator(message, 0, message.Length - 1);
+                        message[message.Length - 1] = Util.CRCCalculator(message, 0, message.Length - 1);
 
                         PCIBusTxMessageComboBox.Text = Util.ByteToHexStringSimple(message);
                         PCIBusTxMessageComboBox.SelectionStart = PCIBusTxMessageComboBox.Text.Length;
                         PCIBusTxMessageComboBox.SelectionLength = 0;
                     }
 
-                    Packet.tx.bus = (byte)Packet.Bus.pci;
-                    Packet.tx.command = (byte)Packet.Command.msgTx;
-                    Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                    Packet.tx.payload = message;
-                    Packet.GeneratePacket();
-                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send a PCI-bus message once:", Packet.tx.buffer);
-                    if (message.Length > 0) Util.UpdateTextBox(USBTextBox, "[INFO] PCI-bus message Tx list:" + Environment.NewLine +
-                                                                           "       " + Util.ByteToHexStringSimple(message));
-                    await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+                    Packet packet = new Packet();
+
+                    packet.Bus = (byte)PacketHelper.Bus.PCI;
+                    packet.Command = (byte)PacketHelper.Command.MsgTx;
+                    packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+                    packet.Payload = message;
+
+                    Util.UpdateTextBox(USBTextBox, "[<-TX] Send a PCI-bus message once:", PacketHelper.Serialize(packet));
+
+                    if (message.Length > 0)
+                    {
+                        Util.UpdateTextBox(USBTextBox, "[INFO] PCI-bus message Tx list:" + Environment.NewLine +
+                                                       "       " + Util.ByteToHexStringSimple(message));
+                    }
+
+                    SerialService.WritePacket(packet);
                 }
                 else
                 {
-                    if (PCIBusTxMessageCalculateCRCCheckBox.Checked && (message.Length > 1))
+                    if (PCIBusTxMessageCRCCheckBox.Checked && (message.Length > 1))
                     {
-                        int crcLocation = message.Length - 1;
-                        message[crcLocation] = Util.CRCCalculator(message, 0, message.Length - 1);
+                        message[message.Length - 1] = Util.CRCCalculator(message, 0, message.Length - 1);
 
                         PCIBusTxMessageComboBox.Text = Util.ByteToHexStringSimple(message);
                         PCIBusTxMessageComboBox.SelectionStart = PCIBusTxMessageComboBox.Text.Length;
@@ -5451,23 +5986,29 @@ namespace ChryslerScanner
             switch (DiagnosticsTabControl.SelectedTab.Name)
             {
                 case "CCDBusDiagnosticsTabPage":
+                {
                     CCDBusDiagnosticsListBox.Items.Clear();
                     CCDBusDiagnosticsListBox.Items.AddRange(CCD.Diagnostics.Table.ToArray());
                     break;
+                }
                 case "PCIBusDiagnosticsTabPage":
+                {
                     PCIBusDiagnosticsListBox.Items.Clear();
                     PCIBusDiagnosticsListBox.Items.AddRange(PCI.Diagnostics.Table.ToArray());
                     break;
+                }
                 case "SCIBusPCMDiagnosticsTabPage":
+                {
                     SCIBusPCMDiagnosticsListBox.Items.Clear();
                     SCIBusPCMDiagnosticsListBox.Items.AddRange(PCM.Diagnostics.Table.ToArray());
                     break;
+                }
                 case "SCIBusTCMDiagnosticsTabPage":
+                {
                     SCIBusTCMDiagnosticsListBox.Items.Clear();
                     SCIBusTCMDiagnosticsListBox.Items.AddRange(TCM.Diagnostics.Table.ToArray());
                     break;
-                default:
-                    break;
+                }
             }
         }
 
@@ -5476,6 +6017,7 @@ namespace ChryslerScanner
             switch (DiagnosticsTabControl.SelectedTab.Name)
             {
                 case "CCDBusDiagnosticsTabPage":
+                {
                     CCD.Diagnostics.IDByteList.Clear();
                     CCD.Diagnostics.UniqueIDByteList.Clear();
                     CCD.Diagnostics.B2F2IDByteList.Clear();
@@ -5487,10 +6029,12 @@ namespace ChryslerScanner
                     CCDBusDiagnosticsListBox.Items.Clear();
                     CCDBusDiagnosticsListBox.Items.AddRange(CCD.Diagnostics.Table.ToArray());
                     break;
+                }
                 case "PCIBusDiagnosticsTabPage":
+                {
                     PCI.Diagnostics.IDByteList.Clear();
                     PCI.Diagnostics.UniqueIDByteList.Clear();
-                    PCI.Diagnostics._2426IDByteList.Clear();
+                    PCI.Diagnostics.IDByte2426List.Clear();
                     PCITableBuffer.Clear();
                     PCITableBufferLocation.Clear();
                     PCITableRowCountHistory.Clear();
@@ -5499,7 +6043,9 @@ namespace ChryslerScanner
                     PCIBusDiagnosticsListBox.Items.Clear();
                     PCIBusDiagnosticsListBox.Items.AddRange(PCI.Diagnostics.Table.ToArray());
                     break;
+                }
                 case "SCIBusPCMDiagnosticsTabPage":
+                {
                     PCM.Diagnostics.IDByteList.Clear();
                     PCM.Diagnostics.UniqueIDByteList.Clear();
                     PCMTableBuffer.Clear();
@@ -5513,7 +6059,9 @@ namespace ChryslerScanner
                     SCIBusPCMDiagnosticsListBox.Items.Clear();
                     SCIBusPCMDiagnosticsListBox.Items.AddRange(PCM.Diagnostics.Table.ToArray());
                     break;
+                }
                 case "SCIBusTCMDiagnosticsTabPage":
+                {
                     TCM.Diagnostics.IDByteList.Clear();
                     TCM.Diagnostics.UniqueIDByteList.Clear();
                     TCMTableBuffer.Clear();
@@ -5527,8 +6075,7 @@ namespace ChryslerScanner
                     SCIBusTCMDiagnosticsListBox.Items.Clear();
                     SCIBusTCMDiagnosticsListBox.Items.AddRange(TCM.Diagnostics.Table.ToArray());
                     break;
-                default:
-                    break;
+                }
             }
         }
 
@@ -5539,19 +6086,25 @@ namespace ChryslerScanner
             switch (DiagnosticsTabControl.SelectedTab.Name)
             {
                 case "CCDBusDiagnosticsTabPage":
+                {
                     Clipboard.SetText(string.Join(Environment.NewLine, CCD.Diagnostics.Table.ToArray()) + Environment.NewLine);
                     break;
+                }
                 case "PCIBusDiagnosticsTabPage":
+                {
                     Clipboard.SetText(string.Join(Environment.NewLine, PCI.Diagnostics.Table.ToArray()) + Environment.NewLine);
                     break;
+                }
                 case "SCIBusPCMDiagnosticsTabPage":
+                {
                     Clipboard.SetText(string.Join(Environment.NewLine, PCM.Diagnostics.Table.ToArray()) + Environment.NewLine);
                     break;
+                }
                 case "SCIBusTCMDiagnosticsTabPage":
+                {
                     Clipboard.SetText(string.Join(Environment.NewLine, TCM.Diagnostics.Table.ToArray()) + Environment.NewLine);
                     break;
-                default:
-                    break;
+                }
             }
         }
 
@@ -5563,6 +6116,7 @@ namespace ChryslerScanner
             switch (DiagnosticsTabControl.SelectedTab.Name)
             {
                 case "CCDBusDiagnosticsTabPage":
+                {
                     DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss"); // new time for each snapshot
                     string CCDDiagnosticsSnapshotFilename = @"LOG/CCD/ccdsnapshot_" + DateTimeNow;
                     counter = 1;
@@ -5579,7 +6133,9 @@ namespace ChryslerScanner
                     CCDDiagnosticsSnapshotFilename += ".txt";
                     File.AppendAllText(CCDDiagnosticsSnapshotFilename, string.Join(Environment.NewLine, CCD.Diagnostics.Table.ToArray()) + Environment.NewLine);
                     break;
+                }
                 case "PCIBusDiagnosticsTabPage":
+                {
                     DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss"); // new time for each snapshot
                     string PCIDiagnosticsSnapshotFilename = @"LOG/PCI/pcisnapshot_" + DateTimeNow;
                     counter = 1;
@@ -5596,7 +6152,9 @@ namespace ChryslerScanner
                     PCIDiagnosticsSnapshotFilename += ".txt";
                     File.AppendAllText(PCIDiagnosticsSnapshotFilename, string.Join(Environment.NewLine, PCI.Diagnostics.Table.ToArray()) + Environment.NewLine);
                     break;
+                }
                 case "SCIBusPCMDiagnosticsTabPage":
+                {
                     DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss"); // new time for each snapshot
                     string PCMDiagnosticsSnapshotFilename = @"LOG/PCM/pcmsnapshot_" + DateTimeNow;
                     counter = 1;
@@ -5613,7 +6171,9 @@ namespace ChryslerScanner
                     PCMDiagnosticsSnapshotFilename += ".txt";
                     File.AppendAllText(PCMDiagnosticsSnapshotFilename, string.Join(Environment.NewLine, PCM.Diagnostics.Table.ToArray()) + Environment.NewLine);
                     break;
+                }
                 case "SCIBusTCMDiagnosticsTabPage":
+                {
                     DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss"); // new time for each snapshot
                     string TCMDiagnosticsSnapshotFilename = @"LOG/TCM/tcmsnapshot_" + DateTimeNow;
                     counter = 1;
@@ -5630,8 +6190,7 @@ namespace ChryslerScanner
                     TCMDiagnosticsSnapshotFilename += ".txt";
                     File.AppendAllText(TCMDiagnosticsSnapshotFilename, string.Join(Environment.NewLine, TCM.Diagnostics.Table.ToArray()) + Environment.NewLine);
                     break;
-                default:
-                    break;
+                }
             }
         }
 
@@ -5639,7 +6198,7 @@ namespace ChryslerScanner
 
         #region LCD tab
 
-        private async void LCDApplySettingsButton_Click(object sender, EventArgs e)
+        private void LCDApplySettingsButton_Click(object sender, EventArgs e)
         {
             byte LCDState = (byte)LCDStateComboBox.SelectedIndex;
 
@@ -5678,13 +6237,16 @@ namespace ChryslerScanner
 
             byte LCDDataSource = (byte)(LCDDataSourceComboBox.SelectedIndex + 1);
 
-            Packet.tx.bus = (byte)Packet.Bus.usb;
-            Packet.tx.command = (byte)Packet.Command.settings;
-            Packet.tx.mode = (byte)Packet.SettingsMode.setLCD;
-            Packet.tx.payload = new byte[7] { LCDState, LCDI2CAddress, LCDWidth, LCDHeight, LCDRefreshRate, LCDUnits, LCDDataSource };
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Change LCD settings:", Packet.tx.buffer);
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Settings;
+            packet.Mode = (byte)PacketHelper.SettingsMode.SetLCD;
+            packet.Payload = new byte[7] { LCDState, LCDI2CAddress, LCDWidth, LCDHeight, LCDRefreshRate, LCDUnits, LCDDataSource };
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Change LCD settings:", PacketHelper.Serialize(packet));
+
+            SerialService.WritePacket(packet);
 
             UpdateLCDPreviewTextBox();
         }
@@ -5703,6 +6265,7 @@ namespace ChryslerScanner
             switch (LCDStateComboBox.SelectedIndex)
             {
                 case 0: // disabled
+                {
                     if ((LCDWidthTextBox.Text == "20") && (LCDHeightTextBox.Text == "4"))
                     {
                         LCDPreviewTextBox.Clear();
@@ -5723,7 +6286,9 @@ namespace ChryslerScanner
                         LCDPreviewTextBox.AppendText("CCD/SCI");
                     }
                     break;
+                }
                 case 1: // enabled
+                {
                     if ((LCDWidthTextBox.Text == "20") && (LCDHeightTextBox.Text == "4"))
                     {
                         if (Properties.Settings.Default.Units == "imperial")
@@ -5764,6 +6329,7 @@ namespace ChryslerScanner
                         LCDPreviewTextBox.AppendText("    0rpm");
                     }
                     break;
+                }
             }
         }
 
@@ -5952,8 +6518,7 @@ namespace ChryslerScanner
 
                                     if (File.Exists(@"Tools/ChryslerCCDSCIScanner.ino.mega.hex"))
                                     {
-                                        if (Packet.SP.IsOpen)
-                                            Packet.SP.Close();
+                                        SerialService.Disconnect();
 
                                         this.Refresh();
                                         Process process = new Process();
@@ -5967,8 +6532,11 @@ namespace ChryslerScanner
                                         File.Delete(@"Tools/ChryslerCCDSCIScanner.ino.mega.hex");
                                         FWVersion = latestFWVersionString;
 
-                                        Packet.SP.Open();
-                                        Packet.MonitorSerialPort();
+                                        if (!SerialService.Connect(SelectedPort))
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Device not found on " + SelectedPort + ".");
+                                        }
+
                                         ResetButton_Click(this, EventArgs.Empty);
                                         ResetFromUpdate = true;
                                     }
@@ -6075,8 +6643,7 @@ namespace ChryslerScanner
 
                                     if (File.Exists(@"Tools/ChryslerScanner.bin"))
                                     {
-                                        if (Packet.SP.IsOpen)
-                                            Packet.SP.Close();
+                                        SerialService.Disconnect();
 
                                         this.Refresh();
                                         Process process = new Process();
@@ -6090,8 +6657,11 @@ namespace ChryslerScanner
                                         File.Delete(@"Tools/ChryslerScanner.bin");
                                         FWVersion = latestFWVersionString;
 
-                                        Packet.SP.Open();
-                                        Packet.MonitorSerialPort();
+                                        if (!SerialService.Connect(SelectedPort))
+                                        {
+                                            Util.UpdateTextBox(USBTextBox, "[INFO] Device not found on " + SelectedPort + ".");
+                                        }
+
                                         ResetButton_Click(this, EventArgs.Empty);
                                         ResetFromUpdate = true;
                                     }
@@ -6147,7 +6717,7 @@ namespace ChryslerScanner
         {
             if (ReadMemory == null)
             {
-                ReadMemory = new ReadMemoryForm(this)
+                ReadMemory = new ReadMemoryForm(this, ContainerManager.Instance.GetInstance<SerialService>())
                 {
                     StartPosition = FormStartPosition.CenterParent
                 };
@@ -6173,7 +6743,7 @@ namespace ChryslerScanner
         {
             if (ReadWriteMemory == null)
             {
-                ReadWriteMemory = new ReadWriteMemoryForm(this)
+                ReadWriteMemory = new ReadWriteMemoryForm(this, ContainerManager.Instance.GetInstance<SerialService>())
                 {
                     StartPosition = FormStartPosition.CenterParent
                 };
@@ -6204,7 +6774,7 @@ namespace ChryslerScanner
                 if (SCIBusModuleComboBox.SelectedIndex == 0) DiagnosticsTabControl.SelectedTab = SCIBusPCMDiagnosticsTabPage;
                 else if (SCIBusModuleComboBox.SelectedIndex == 1) DiagnosticsTabControl.SelectedTab = SCIBusTCMDiagnosticsTabPage;
 
-                BootstrapTools = new BootstrapToolsForm(this)
+                BootstrapTools = new BootstrapToolsForm(this, ContainerManager.Instance.GetInstance<SerialService>())
                 {
                     StartPosition = FormStartPosition.CenterParent
                 };
@@ -6233,7 +6803,7 @@ namespace ChryslerScanner
                 ScannerTabControl.SelectedTab = SCIBusControlTabPage;
                 DiagnosticsTabControl.SelectedTab = SCIBusPCMDiagnosticsTabPage;
 
-                EngineTools = new EngineToolsForm(this)
+                EngineTools = new EngineToolsForm(this, ContainerManager.Instance.GetInstance<SerialService>())
                 {
                     StartPosition = FormStartPosition.CenterParent
                 };
@@ -6262,7 +6832,7 @@ namespace ChryslerScanner
                 ScannerTabControl.SelectedTab = CCDBusControlTabPage;
                 DiagnosticsTabControl.SelectedTab = CCDBusDiagnosticsTabPage;
 
-                ABSTools = new ABSToolsForm(this)
+                ABSTools = new ABSToolsForm(this, ContainerManager.Instance.GetInstance<SerialService>())
                 {
                     StartPosition = FormStartPosition.CenterParent
                 };
@@ -6292,7 +6862,7 @@ namespace ChryslerScanner
             Properties.Settings.Default.Units = "metric";
             Properties.Settings.Default.Save(); // save setting in application configuration file
 
-            if (ReadWriteMemory != null) ReadWriteMemory.UpdateMileageUnit();
+            ReadWriteMemory?.UpdateMileageUnit();
         }
 
         private void ImperialUnitsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -6303,7 +6873,7 @@ namespace ChryslerScanner
             Properties.Settings.Default.Units = "imperial";
             Properties.Settings.Default.Save(); // save setting in application configuration file
 
-            if (ReadWriteMemory != null) ReadWriteMemory.UpdateMileageUnit();
+            ReadWriteMemory?.UpdateMileageUnit();
         }
 
         private void EnglishLangToolStripMenuItem_Click(object sender, EventArgs e)
@@ -6367,7 +6937,16 @@ namespace ChryslerScanner
             DiagnosticsGroupBox.Text = Languages.strings.Diagnostics;
 
             USBSendPacketButton.Text = Languages.strings.SendPacket;
-            ConnectButton.Text = Languages.strings.Connect;
+
+            if (DeviceFound)
+            {
+                ConnectButton.Text = Languages.strings.Disconnect;
+            }
+            else
+            {
+                ConnectButton.Text = Languages.strings.Connect;
+            }
+
             COMPortsRefreshButton.Text = Languages.strings.Refresh;
             DemoButton.Text = Languages.strings.Demo;
 
@@ -6440,9 +7019,9 @@ namespace ChryslerScanner
             }
         }
 
-        private async void UpdateUARTBaudrate(int baudrate)
+        private void UpdateUARTBaudrate(int baudrate)
         {
-            if (!Packet.SP.IsOpen)
+            if (!DeviceFound)
                 return;
             
             byte[] BaudratePayload = new byte[4];
@@ -6452,15 +7031,17 @@ namespace ChryslerScanner
             BaudratePayload[2] = (byte)((baudrate >> 8) & 0xFF);
             BaudratePayload[3] = (byte)(baudrate & 0xFF);
 
-            Packet.tx.bus = (byte)Packet.Bus.usb;
-            Packet.tx.command = (byte)Packet.Command.settings;
-            Packet.tx.mode = (byte)Packet.SettingsMode.setUARTBaudrate;
-            Packet.tx.payload = BaudratePayload;
-            Packet.GeneratePacket();
-            Util.UpdateTextBox(USBTextBox, "[<-TX] Set UART baudrate:", Packet.tx.buffer);
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Settings;
+            packet.Mode = (byte)PacketHelper.SettingsMode.SetUARTBaudrate;
+            packet.Payload = BaudratePayload;
+
+            Util.UpdateTextBox(USBTextBox, "[<-TX] Set UART baudrate:", PacketHelper.Serialize(packet));
             Util.UpdateTextBox(USBTextBox, "[INFO] GUI baudrate = " + baudrate);
 
-            await SerialPortExtension.WritePacketAsync(Packet._stream, Packet.tx.buffer);
+            SerialService.WritePacket(packet);
         }
 
         private void Baudrate250000ToolStripMenuItem_Click(object sender, EventArgs e)
@@ -6496,13 +7077,13 @@ namespace ChryslerScanner
             if (IncludeTimestampInLogFilesToolStripMenuItem.Checked)
             {
                 Properties.Settings.Default.Timestamp = true;
-                Properties.Settings.Default.Save(); // save setting in application configuration file
             }
             else
             {
                 Properties.Settings.Default.Timestamp = false;
-                Properties.Settings.Default.Save(); // save setting in application configuration file
             }
+
+            Properties.Settings.Default.Save(); // save setting in application configuration file
         }
 
         private void CCDBusOnDemandToolStripMenuItem_Click(object sender, EventArgs e)
@@ -6510,13 +7091,13 @@ namespace ChryslerScanner
             if (CCDBusOnDemandToolStripMenuItem.Checked)
             {
                 Properties.Settings.Default.CCDBusOnDemand = true;
-                Properties.Settings.Default.Save(); // save setting in application configuration file
             }
             else
             {
                 Properties.Settings.Default.CCDBusOnDemand = false;
-                Properties.Settings.Default.Save(); // save setting in application configuration file
             }
+
+            Properties.Settings.Default.Save(); // save setting in application configuration file
         }
 
         private void PCIBusOnDemandToolStripMenuItem_Click(object sender, EventArgs e)
@@ -6524,13 +7105,13 @@ namespace ChryslerScanner
             if (PCIBusOnDemandToolStripMenuItem.Checked)
             {
                 Properties.Settings.Default.PCIBusOnDemand = true;
-                Properties.Settings.Default.Save(); // save setting in application configuration file
             }
             else
             {
                 Properties.Settings.Default.PCIBusOnDemand = false;
-                Properties.Settings.Default.Save(); // save setting in application configuration file
             }
+
+            Properties.Settings.Default.Save(); // save setting in application configuration file
         }
 
         private void SortMessagesByIDByteToolStripMenuItem_Click(object sender, EventArgs e)
@@ -6538,13 +7119,13 @@ namespace ChryslerScanner
             if (SortMessagesByIDByteToolStripMenuItem.Checked)
             {
                 Properties.Settings.Default.SortByID = true;
-                Properties.Settings.Default.Save(); // save setting in application configuration file
             }
             else
             {
                 Properties.Settings.Default.SortByID = false;
-                Properties.Settings.Default.Save(); // save setting in application configuration file
             }
+
+            Properties.Settings.Default.Save(); // save setting in application configuration file
         }
 
         private void DisplayRawBusPacketsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -6552,13 +7133,13 @@ namespace ChryslerScanner
             if (DisplayRawBusPacketsToolStripMenuItem.Checked)
             {
                 Properties.Settings.Default.DisplayRawBusPackets = true;
-                Properties.Settings.Default.Save(); // save setting in application configuration file
             }
             else
             {
                 Properties.Settings.Default.DisplayRawBusPackets = false;
-                Properties.Settings.Default.Save(); // save setting in application configuration file
             }
+
+            Properties.Settings.Default.Save(); // save setting in application configuration file
         }
 
         private void AboutToolStripMenuItem_Click(object sender, EventArgs e)
@@ -6583,60 +7164,28 @@ namespace ChryslerScanner
 
         private void MainForm_KeyDown(object sender, KeyEventArgs e)
         {
-            if (DeviceFound)
+            if (!DeviceFound)
+                return;
+
+            if (e.Control && e.KeyCode == Keys.B) // Ctrl+B shortcut
             {
-                if (e.Control && e.KeyCode == Keys.L) // Ctrl+L shortcut
-                {
-                    if (SecurityKeyCalculator == null)
-                    {
-                        SecurityKeyCalculator = new SecurityKeyCalculatorForm(this)
-                        {
-                            StartPosition = FormStartPosition.CenterParent
-                        };
+                BootstrapToolsToolStripMenuItem_Click(this, EventArgs.Empty);
+            }
 
-                        SecurityKeyCalculator.FormClosed += delegate { SecurityKeyCalculator = null; };
-                        SecurityKeyCalculator.Show(this);
+            if (e.Control && e.KeyCode == Keys.E) // Ctrl+E shortcut
+            {
+                EngineToolsToolStripMenuItem_Click(this, EventArgs.Empty);
+            }
 
-                        if (SecurityKeyCalculator.StartPosition == FormStartPosition.CenterParent)
-                        {
-                            var x = Location.X + (Width - SecurityKeyCalculator.Width) / 2;
-                            var y = Location.Y + (Height - SecurityKeyCalculator.Height) / 2;
-                            SecurityKeyCalculator.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
-                        }
-                    }
-                    else
-                    {
-                        SecurityKeyCalculator.WindowState = FormWindowState.Normal;
-                        SecurityKeyCalculator.Focus();
-                    }
-                }
-
-                if (e.Control && e.KeyCode == Keys.B) // Ctrl+B shortcut
-                {
-                    BootstrapToolsToolStripMenuItem_Click(this, EventArgs.Empty);
-                }
-
-                if (e.Control && e.KeyCode == Keys.E) // Ctrl+E shortcut
-                {
-                    EngineToolsToolStripMenuItem_Click(this, EventArgs.Empty);
-                }
-
-                if (e.Control && e.KeyCode == Keys.W) // Ctrl+A shortcut
-                {
-                    ABSToolsToolStripMenuItem_Click(this, EventArgs.Empty);
-                }
+            if (e.Control && e.KeyCode == Keys.W) // Ctrl+A shortcut
+            {
+                ABSToolsToolStripMenuItem_Click(this, EventArgs.Empty);
             }
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (MSP != null)
-                MSP.Join();
+            // TODO
         }
-    }
-
-    public static class StringExt
-    {
-        public static bool IsNumeric(this string text) => double.TryParse(text, out _);
     }
 }

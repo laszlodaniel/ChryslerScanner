@@ -4,6 +4,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
+using ChryslerScanner.Helpers;
 
 namespace ChryslerScanner
 {
@@ -126,8 +127,10 @@ namespace ChryslerScanner
                 switch (ID)
                 {
                     default:
+                    {
                         DescriptionToInsert = string.Empty;
                         break;
+                    }
                 }
             }
             else if ((speed == "62500 baud") || (speed == "125000 baud"))
@@ -135,8 +138,10 @@ namespace ChryslerScanner
                 switch (ID)
                 {
                     default:
+                    {
                         DescriptionToInsert = string.Empty;
                         break;
+                    }
                 }
             }
 
@@ -189,11 +194,11 @@ namespace ChryslerScanner
             {
                 TimeSpan ElapsedTime = TimeSpan.FromMilliseconds(timestamp[0] << 24 | timestamp[1] << 16 | timestamp[2] << 8 | timestamp[3]);
                 DateTime Timestamp = DateTime.Today.Add(ElapsedTime);
-                string TimestampString = Timestamp.ToString("HH:mm:ss.fff") + " ";
+                string TimestampString = Timestamp.ToString("HH:mm:ss.fff") + ",";
                 File.AppendAllText(MainForm.TCMLogFilename, TimestampString); // no newline is appended!
             }
 
-            File.AppendAllText(MainForm.TCMLogFilename, "TCM: " + Util.ByteToHexStringSimple(message) + Environment.NewLine);
+            File.AppendAllText(MainForm.TCMLogFilename, "TCM," + Util.ByteToHexStringSimple(message) + Environment.NewLine);
         }
     }
 }

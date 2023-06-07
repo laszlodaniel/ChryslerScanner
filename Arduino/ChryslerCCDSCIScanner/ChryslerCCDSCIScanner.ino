@@ -1,7 +1,7 @@
 /*
  * ChryslerCCDSCIScanner (https://github.com/laszlodaniel/ChryslerCCDSCIScanner)
- * Copyright (C) 2018-2022, Daniel Laszlo
- *i
+ * Copyright (C) 2018-2023 Daniel Laszlo
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 09: minor
-// 09: patch
+// 10: patch
 // (00: revision)
-// = v0.9.9(.0)
-#define FW_VERSION 0x00090900
+// = v0.9.10(.0)
+#define FW_VERSION 0x00090A00
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x000909006448C47D
+#define FW_DATE 0x00090A0064807C76
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -126,6 +126,7 @@
 
 // SCI-bus setting bits
 #define SCI_STATE_BIT         7
+#define SCI_SBEC2_BIT         6
 #define SCI_MODULE_BIT        5
 #define SCI_NGC_BIT           4
 #define SCI_LOGIC_BIT         3
@@ -287,6 +288,7 @@ typedef struct {
     bool enabled = false; // bus state (enabled or disabled)
     bool termination_bias_enabled = false;
     bool inverted_logic = false; // OBD1 SCI engine adapter cable needs special message handling
+    bool sbec2_mode = false; // OBD1 reverse bit order inside byte
     bool ngc_mode = false; // NGC computers use full-duplex SCI-bus communication
     uint8_t bus_settings = 0;
     uint16_t speed = BAUD_7812; // baudrate prescaler - 1023: 976.5625 baud; 127: 7812.5 baud; 15: 62500 baud; 7: 125000 baud; 3: 250000 baud
@@ -296,19 +298,12 @@ typedef struct {
     bool response_received = false; // low-speed mode (7812.5 baud) typical 1-byte response flag
     uint8_t message[32];
     uint16_t message_length = 0;
-//    volatile uint8_t message_length = 0; // current message length
-//    volatile uint8_t message_count = 0; // number of messages in the buffer
     uint8_t msg_buffer[BUFFER_SIZE]; // temporary buffer to store outgoing or current repeated messages
     uint16_t msg_buffer_ptr = 0; // message length in the buffer, this points to the first empty slot after the last byte
     uint8_t msg_to_transmit_count = 0;
     uint8_t msg_to_transmit_count_ptr = 0;
     volatile uint32_t last_byte_millis = 0;
     bool msg_tx_pending = false; // message is awaiting to be transmitted to the bus
-    bool actuator_test_running = false; // actuator test (SCI-bus only)
-    uint32_t actuator_test_byte_last_millis = 0;
-    bool ls_request_running = false; // low-speed ROM info request (SCI-bus only)
-    uint8_t ls_request_byte = 0;
-    uint32_t ls_request_last_millis = 0;
     bool repeat = false;
     bool repeat_next = false;
     bool repeat_list_once = false;
@@ -1185,15 +1180,11 @@ void restore_pcm_eeprom_handler(uint8_t *input_data)
     // 0 = ok
     // 1 = no response to security seed request
     // 2 = checksum error
-    // 3 = no response to solution
-    // 4 = solution not accepted
+    // 3 = no response to key
+    // 4 = key not accepted
     // 5 = read EEPROM command not returning a value
     // 6 = write EEPROM command not returning a result
     // 7 = write EEPROM command failed
-
-    uint8_t buff[16];
-    uint8_t checksum = 0;
-    bool solution_required = true;
 
     wdt_reset(); // feed the watchdog
     pcm_rx_flush();
@@ -1203,7 +1194,7 @@ void restore_pcm_eeprom_handler(uint8_t *input_data)
     // Get security seed challenge.
     pcm_putc(0x2B);
 
-    while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_LS_T3_DELAY); // wait for response
+    while ((pcm_rx_available() < 4) && ((uint32_t)(millis() - pcm.last_byte_millis) < 200)); // wait for response
 
     if (pcm_rx_available() < 4)
     {
@@ -1212,6 +1203,10 @@ void restore_pcm_eeprom_handler(uint8_t *input_data)
         pcm_rx_flush();
         return;
     }
+
+    uint8_t buff[16];
+    uint8_t buff_ptr = 0;
+    uint8_t checksum = 0;
 
     for (uint8_t i = 0; i < 4; i++)
     {
@@ -1228,32 +1223,38 @@ void restore_pcm_eeprom_handler(uint8_t *input_data)
         return;
     }
 
+    send_usb_packet(bus_pcm, msg_rx, sci_ls_bytes, buff, 4);
+
+    bool key_required = true;
+
     if ((buff[1] == 0) && (buff[2] == 0))
     {
-        solution_required = false;
+        key_required = false;
     }
 
-    if (solution_required)
+    if (key_required)
     {
         uint16_t seed = to_uint16(buff[1], buff[2]);
         uint16_t a = (seed << 2) + 0x9018;
-        uint8_t seed_solution[2] = { ((a >> 8) & 0xFF), (a & 0xFF) };
+        uint8_t key[2] = { ((a >> 8) & 0xFF), (a & 0xFF) };
 
-        uint8_t send_seed_solution_cmd[4] = { 0x2C, seed_solution[0], seed_solution[1], 0 };
-        send_seed_solution_cmd[3] = calculate_checksum(send_seed_solution_cmd, 0, ARRAY_SIZE(send_seed_solution_cmd) - 1);
+        uint8_t send_key_cmd[4] = { 0x2C, key[0], key[1], 0 };
+        send_key_cmd[3] = calculate_checksum(send_key_cmd, 0, ARRAY_SIZE(send_key_cmd) - 1);
 
         wdt_reset(); // feed the watchdog
         pcm_rx_flush();
+        buff_ptr = 0;
 
-        // Write security seed solution message.
-        for (uint8_t i = 0; i < ARRAY_SIZE(send_seed_solution_cmd); i++)
+        // Write security key message.
+        for (uint8_t i = 0; i < ARRAY_SIZE(send_key_cmd); i++)
         {
-            pcm_putc(send_seed_solution_cmd[i]);
+            pcm_putc(send_key_cmd[i]);
             while (pcm_rx_available() == 0); // wait for echo
-            pcm_getc(); // read echo into oblivion
+            buff[i] = pcm_getc() & 0xFF; // read echo into buffer
+            buff_ptr++;
         }
 
-        while ((uint32_t)(millis() - pcm.last_byte_millis) < SCI_LS_T3_DELAY); // wait for response
+        while ((pcm_rx_available() == 0) && (uint32_t)(millis() - pcm.last_byte_millis) < 200); // wait for response
 
         if (pcm_rx_available() == 0)
         {
@@ -1263,10 +1264,13 @@ void restore_pcm_eeprom_handler(uint8_t *input_data)
             return;
         }
 
-        // Read seed solution status.
-        uint8_t solution_status = pcm_getc() & 0xFF;
+        // Read key status.
+        buff[buff_ptr] = pcm_getc() & 0xFF;
+        buff_ptr++;
 
-        if (solution_status != 0)
+        send_usb_packet(bus_pcm, msg_rx, sci_ls_bytes, buff, buff_ptr);
+
+        if (buff[4] != 0)
         {
             ret[0] = 4;
             send_usb_packet(bus_usb, debug, restore_pcm_eeprom, ret, 1);
@@ -1284,7 +1288,7 @@ void restore_pcm_eeprom_handler(uint8_t *input_data)
     uint8_t attempts = 0;
     bool valid_response = false;
 
-    for (uint16_t i = 0; i < 512; i++)
+    for (uint16_t i = 0; i < 512; i++) // EEPROM size = 512 bytes
     {
         // Set current offset.
         offset[0] = (i >> 8) & 0xFF;
@@ -1299,16 +1303,18 @@ void restore_pcm_eeprom_handler(uint8_t *input_data)
         {
             wdt_reset(); // feed the watchdog
             pcm_rx_flush();
+            buff_ptr = 0;
 
             // Read current EEPROM value.
             for (uint8_t j = 0; j < ARRAY_SIZE(read_eeprom_cmd); j++)
             {
                 pcm_putc(read_eeprom_cmd[j]);
                 while (pcm_rx_available() == 0); // wait for echo
-                pcm_getc(); // read echo into oblivion
+                buff[j] = pcm_getc() & 0xFF; // read echo into buffer
+                buff_ptr++;
             }
 
-            while ((uint32_t)(millis() - pcm.last_byte_millis) < (2 * SCI_LS_T2_DELAY)); // wait for response
+            while ((pcm_rx_available() == 0) && ((uint32_t)(millis() - pcm.last_byte_millis) < 300)); // wait for response
 
             if (pcm_rx_available() == 0)
             {
@@ -1330,9 +1336,13 @@ void restore_pcm_eeprom_handler(uint8_t *input_data)
             }
         }
 
-        buff[0] = pcm_getc() & 0xFF;
+        buff[buff_ptr] = pcm_getc() & 0xFF; // read response (current EEPROM byte)
+        buff_ptr++;
+        
+        send_usb_packet(bus_pcm, msg_rx, sci_ls_bytes, buff, buff_ptr);
 
-        if (input_data[i] != buff[0])
+        // Update EEPROM byte if different.
+        if (input_data[i] != buff[3])
         {
             write_eeprom_cmd[1] = offset[0];
             write_eeprom_cmd[2] = offset[1];
@@ -1345,16 +1355,18 @@ void restore_pcm_eeprom_handler(uint8_t *input_data)
             {
                 wdt_reset(); // feed the watchdog
                 pcm_rx_flush();
+                buff_ptr = 0;
 
                 // Write new EEPROM value.
                 for (uint8_t j = 0; j < ARRAY_SIZE(write_eeprom_cmd); j++)
                 {
                     pcm_putc(write_eeprom_cmd[j]);
                     while (pcm_rx_available() == 0); // wait for echo
-                    pcm_getc(); // read echo into oblivion
+                    buff[j] = pcm_getc() & 0xFF; // read echo into buffer
+                    buff_ptr++;
                 }
 
-                while ((uint32_t)(millis() - pcm.last_byte_millis) < (2 * SCI_LS_T2_DELAY)); // wait for response
+                while ((pcm_rx_available() == 0) && ((uint32_t)(millis() - pcm.last_byte_millis) < 300)); // wait for response
 
                 if (pcm_rx_available() == 0)
                 {
@@ -1372,20 +1384,33 @@ void restore_pcm_eeprom_handler(uint8_t *input_data)
                 }
                 else
                 {
-                    valid_response = true;
+                    buff[buff_ptr] = pcm_getc() & 0xFF;
+                    buff_ptr++;
+                    send_usb_packet(bus_pcm, msg_rx, sci_ls_bytes, buff, buff_ptr);
+
+                    if (buff[4] == 0xE2) // EEPROM write successful
+                    {
+                        valid_response = true;
+                    }
+                    else
+                    {
+                        attempts++;
+
+                        if (attempts >= 10)
+                        {
+                            ret[0] = 7;
+                            send_usb_packet(bus_usb, debug, restore_pcm_eeprom, ret, 1);
+                            pcm_rx_flush();
+                            return;
+                        }
+    
+                        delay(100);
+                    }
                 }
             }
-
-            buff[0] = pcm_getc() & 0xFF;
-
-            if (buff[0] != 0xE2)
-            {
-                ret[0] = 7;
-                send_usb_packet(bus_usb, debug, restore_pcm_eeprom, ret, 1);
-                pcm_rx_flush();
-                return;
-            }
         }
+
+        handle_leds();
     }
 
     wdt_reset(); // feed the watchdog
@@ -3092,7 +3117,7 @@ ISR(PCM_RECEIVE_INTERRUPT)
         /* store new index */
         PCM_RxHead = tmphead;
         /* store received data in buffer */
-        if (!pcm.inverted_logic) PCM_RxBuf[tmphead] = data;
+        if (!pcm.sbec2_mode) PCM_RxBuf[tmphead] = data;
         else PCM_RxBuf[tmphead] = ((data << 4) & 0xF0) | ((data >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
     }
     PCM_LastRxError = lastRxError;
@@ -3114,7 +3139,7 @@ ISR(PCM_TRANSMIT_INTERRUPT)
         tmptail = (PCM_TxTail + 1) & PCM_TX_BUFFER_MASK;
         PCM_TxTail = tmptail;
         /* get one byte from buffer and write it to UART */
-        if (!pcm.inverted_logic) PCM_DATA = PCM_TxBuf[tmptail]; /* start transmission */
+        if (!pcm.sbec2_mode) PCM_DATA = PCM_TxBuf[tmptail]; /* start transmission */
         else PCM_DATA = ((PCM_TxBuf[tmptail] << 4) & 0xF0) | ((PCM_TxBuf[tmptail] >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
     }
     else
@@ -3364,7 +3389,7 @@ ISR(TCM_RECEIVE_INTERRUPT)
         /* store new index */
         TCM_RxHead = tmphead;
         /* store received data in buffer */
-        if (!tcm.inverted_logic) TCM_RxBuf[tmphead] = data;
+        if (!tcm.sbec2_mode) TCM_RxBuf[tmphead] = data;
         else TCM_RxBuf[tmphead] = ((data << 4) & 0xF0) | ((data >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
     }
     TCM_LastRxError = lastRxError;
@@ -3386,7 +3411,7 @@ ISR(TCM_TRANSMIT_INTERRUPT)
         tmptail = (TCM_TxTail + 1) & TCM_TX_BUFFER_MASK;
         TCM_TxTail = tmptail;
         /* get one byte from buffer and write it to UART */
-        if (!tcm.inverted_logic) TCM_DATA = TCM_TxBuf[tmptail]; /* start transmission */
+        if (!tcm.sbec2_mode) TCM_DATA = TCM_TxBuf[tmptail]; /* start transmission */
         else TCM_DATA = ((TCM_TxBuf[tmptail] << 4) & 0xF0) | ((TCM_TxBuf[tmptail] >> 4) & 0x0F); // last 4 bits come first, then first 4 bits
     }
     else
@@ -3666,7 +3691,8 @@ Input:    setting bits
 Note:     setting bits description:
           B7: state bit:     0: disabled
                              1: enabled
-          B6: not used:      0: always clear
+          B6: sbec2 bit:     0: do not exchange first and last 4-bits
+                             1: exchange first and last 4-bits
           B5: module bit:    0: PCM (engine)
                              1: TCM (transmission)
           B4: ngc bit:       0: NGC mode off
@@ -3682,10 +3708,17 @@ Note:     setting bits description:
 **************************************************************************/
 void configure_sci_bus(uint8_t sci_settings)
 {
-    cbi(sci_settings, 6);
-
     if (sci_settings & (1 << SCI_MODULE_BIT)) // TCM
     {
+        if (sci_settings & (1 << SCI_SBEC2_BIT))
+        {
+            tcm.sbec2_mode = true;
+        }
+        else
+        {
+            tcm.sbec2_mode = false;
+        }
+        
         if (sci_settings & (1 << SCI_STATE_BIT))
         {
             tcm.enabled = true;
@@ -3789,6 +3822,15 @@ void configure_sci_bus(uint8_t sci_settings)
     }
     else // PCM
     {
+        if (sci_settings & (1 << SCI_SBEC2_BIT))
+        {
+            pcm.sbec2_mode = true;
+        }
+        else
+        {
+            pcm.sbec2_mode = false;
+        }
+
         if (sci_settings & (1 << SCI_STATE_BIT))
         {
             pcm.enabled = true;
@@ -5681,65 +5723,6 @@ void handle_ccd_data()
 /*************************************************************************
 Function: handle_sci_data()
 Purpose:  handle SCI-bus messages from both PCM and TCM
-Note:     taken from SAE J2610:
-          Although the SCI communication link is a full-duplex serial interface, in some communication sessions a half-duplex
-          mode is required. Half-duplex mode implies that the SCI communication system is capable of bidirectional
-          communications but only in one direction at a time. In the half-duplex mode, every data frame sent
-          by the diagnostic tester is "echoed" by the ECU. The tester shall not send the next data frame until receiving
-          the expected echo from the ECU. Upon receiving the echo, the tester shall assume the ECU is ready for the
-          next sequential data frame. Although the ECU shall echo the appropriate data frame as intended, this shall not
-          imply that the command sequence has been fully serviced by the ECU. An additional delay time may be
-          required by the ECU for processing the request before a command sequence has been completed. This half-duplex
-          mode allows the timing sequence to be completely managed by the diagnostic tester. This strategy
-          prevents data frame overruns from occurring, but also effectively limits the data throughput. That is, the
-          diagnostic tester shall wait for the echoed response character before sending the next request.
-          
-          Low speed mode example (half-duplex):
-          TXD1 - T1 - RXD1 - T2 - TXD2 - T1 - RXD2 - T3 - RXD3 - T4 - RXD4
-          (tx byte, wait for echo, tx next byte, wait for echo, wait for processing, rx byte, wait, rx another byte)
-
-          Additionally, multiple-frame command sequences may be sent to an ECU without echoing each character. In
-          this case, a response shall occur within a given timeframe. Otherwise, a communication timeout event shall be
-          declared, and the ECU shall disregard the entire command sequence.
-
-          High speed mode example (full duplex):
-          TXD1 - T5 - TXD2 - T5 - ... - TXDN - T3 - RXD1 - T4 - RXD2 - T4 - ... - RXDN
-          (tx byte, tx next byte, ... , tx last byte, wait, rx byte, rx next byte, ... , rx last byte)
-
-                                                   Low-Speed Mode      High-Speed Mode
-                                                   min  (ms)  max      min  (ms)   max
-          T1: ECU INTER-FRAME RESPONSE DELAY;        0         20        0           1
-              Defines the response delay from
-              the ECU after receiving a valid 
-              data transmission from the tester.
-              
-          T2: TESTER INTER-FRAME REQUEST DELAY;      0        100        0           1
-              Defines the request delay from the 
-              tester after receiving a valid
-              data acknowledgement from the ECU.
-
-          T3: ECU INTER-MESSAGE PROCESSING           0         50        0           5
-              DELAY FOR INITIAL DATA
-              TRANSMISSION;
-              Defines the response delay from
-              the ECU after processing a valid
-              request message from the tester.
-
-          T4: ECU INTER-FRAME RESPONSE DELAY         0         20        0           0
-              FOR SUBSEQUENT DATA
-              TRANSMISSION(S);
-              Defines the response delay from
-              the ECU after transmitting the
-              first data frame in a multiple
-              frame transmission.
-
-          T5: TESTER INTER-FRAME REQUEST DELAY       0        100        0           0
-              FOR SUBSEQUENT DATA
-              TRANSMISSION(S);
-              Defins the request delay from the
-              tester after transmitting the
-              first data frame in a multiple
-              frame transmission.
 **************************************************************************/
 void handle_sci_data(void)
 {
@@ -5751,13 +5734,13 @@ void handle_sci_data(void)
         // Handle completed messages
         if (pcm.speed == BAUD_7812) // handle low-speed mode first (7812.5 baud)
         {
-            if ((pcm.echo_received || pcm.response_received || pcm.actuator_test_running || pcm.ls_request_running) && (pcm_rx_available() > 0))
+            if ((pcm.echo_received || pcm.response_received) && (pcm_rx_available() > 0))
             {
                 pcm.echo_received = false;
                 pcm.response_received = false;
                 pcm.message_length = pcm_rx_available();
 
-                for (uint8_t i = 0; i < pcm.message_length; i++) // put every byte in the SCI-bus message after the timestamp
+                for (uint8_t i = 0; i < pcm.message_length; i++)
                 {
                     pcm.message[i] = pcm_getc() & 0xFF;
                 }
@@ -5779,10 +5762,10 @@ void handle_sci_data(void)
                     {
                         bool match = true;
 
-                        for (uint8_t i = 0; i < pcm.repeated_msg_length; i++)
-                        {
-                            if (pcm.msg_buffer[i] != pcm.message[i]) match = false; // compare received bytes with message sent
-                        }
+                        //for (uint8_t i = 0; i < pcm.repeated_msg_length; i++)
+                        //{
+                        //    if (pcm.msg_buffer[i] != pcm.message[i]) match = false; // compare received bytes with message sent
+                        //}
 
                         if (match) pcm.repeat_next = true; // if echo is correct prepare next message
                     }
@@ -5790,10 +5773,10 @@ void handle_sci_data(void)
                     {
                         bool match = true;
 
-                        for (uint8_t i = 0; i < pcm.repeated_msg_length; i++)
-                        {
-                            if (pcm.msg_buffer[pcm.msg_buffer_ptr + 1 + i] != pcm.message[i]) match = false; // compare received bytes with message sent
-                        }
+                        //for (uint8_t i = 0; i < pcm.repeated_msg_length; i++)
+                        //{
+                        //    if (pcm.msg_buffer[pcm.msg_buffer_ptr + 1 + i] != pcm.message[i]) match = false; // compare received bytes with message sent
+                        //}
 
                         if (match)
                         {
@@ -6037,31 +6020,30 @@ void handle_sci_data(void)
         // Send message
         if (pcm.msg_tx_pending && (pcm_rx_available() == 0))
         {
-            if (pcm.speed == BAUD_7812) // low speed mode (7812.5 baud), half-duplex mode approach
+            if (pcm.speed == BAUD_7812) // low speed mode (7812.5 baud)
             {
                 if (pcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                 {
-                    if (pcm.ngc_mode) // do not wait for echo
+                    if (pcm.ngc_mode) // OBD2 SCI-2
                     {
-                        for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
+                        for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++)
                         {
-                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
-
-                            timeout_reached = false;
-                            pcm.last_byte_millis = millis();
-
-                            while (!timeout_reached)
-                            {
-                                // wait here for response
-                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
-                            }
-    
-                            pcm.response_received = true;
+                            pcm_putc(pcm.msg_buffer[i]);
                         }
+
+                        timeout_reached = false;
+                        pcm.last_byte_millis = millis();
+
+                        while (!timeout_reached)
+                        {
+                            if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T1_DELAY) timeout_reached = true;
+                        }
+
+                        pcm.response_received = true;
                     }
-                    else // wait for echo
+                    else if (pcm.inverted_logic) // OBD1
                     {
-                        for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++) // repeat for the length of the message
+                        for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++)
                         {
                             timeout_reached = false;
                             timeout_start = millis();
@@ -6070,119 +6052,37 @@ void handle_sci_data(void)
                             while ((pcm_rx_available() <= i) && !timeout_reached)
                             {
                                 // wait here for echo
-                                if ((uint32_t)(millis() - timeout_start) >= (2 * SCI_LS_T2_DELAY)) timeout_reached = true;
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T3_DELAY) timeout_reached = true;
                             }
-
-                            if (timeout_reached) // exit for-loop if there's no echo
-                            {
-                                break;
-                            }
-                        }
-                    }
-
-                    pcm.echo_received = true;
-
-                    if ((pcm.msg_buffer_ptr > 1) && (pcm.msg_buffer[0] == 0x13) && (pcm.msg_buffer[1] != 0x00))
-                    {
-                        timeout_reached = false;
-                        timeout_start = millis();
-
-                        while ((pcm_rx_available() <= 2) && !timeout_reached)
-                        {
-                            // wait here for echo
-                            if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T1_DELAY) timeout_reached = true;
-                        }
-
-                        delay(2);
-
-                        if (!timeout_reached)
-                        {
-                            pcm_putc(0x13); // disable actuator test mode byte stream
-                        }
-                    }
-                    
-                    // Handle these messages with absolute minimum waiting (0x14, 0x15, 0x26, 0x27, 0x28).
-                    if (array_contains(sci_lo_speed_cmd_filter, 5, pcm_peek(0)))
-                    {
-                        uint8_t num_bytes = pcm_rx_available();
-                        timeout_reached = false;
-
-                        while ((pcm_rx_available() <= num_bytes) && !timeout_reached) // wait for 1 byte response only
-                        {
-                            // wait here for response
-                            if ((uint32_t)(millis() - pcm.last_byte_millis) >= (2 * SCI_LS_T2_DELAY)) timeout_reached = true;
-                        }
-
-                        pcm.response_received = true;
-                    }
-                    else
-                    {
-                        timeout_reached = false;
-
-                        while (!timeout_reached && (pcm_rx_available() < 17)) // wait until all bytes are received
-                        {
-                            // wait here for response
-                            if ((uint32_t)(millis() - pcm.last_byte_millis) >= (2 * SCI_LS_T2_DELAY)) timeout_reached = true;
-                        }
-
-                        timeout_reached = false;
-                        pcm.response_received = true;
-                    }
-                }
-                else if (pcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
-                {
-                    if (pcm.ngc_mode) // do not wait for echo
-                    {
-                        // Navigate in the main buffer after the message length byte and start sending those bytes
-                        for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++)
-                        {
-                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
-
-                            timeout_reached = false;
-                            pcm.last_byte_millis = millis();
-
-                            while (!timeout_reached)
-                            {
-                                // wait here for response
-                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T2_DELAY) timeout_reached = true;
-                            }
-
-                            pcm.response_received = true;
-                        }
-                    }
-                    else // wait for echo
-                    {
-                        // Navigate in the main buffer after the message length byte and start sending those bytes
-                        for (uint8_t i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++)
-                        {
-                            timeout_reached = false;
-                            timeout_start = millis();
-                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
-    
-                            while ((pcm_rx_available() <= (i - pcm.msg_buffer_ptr - 1)) && !timeout_reached)
-                            {
-                                // wait here for echo
-                                if ((uint32_t)(millis() - timeout_start) >= (2 * SCI_LS_T2_DELAY)) timeout_reached = true;
-                            }
-    
-                            if (timeout_reached) // exit for-loop if there's no echo
-                            {
-                                break;
-                            }
+                            
+                            if (timeout_reached) break;
                         }
 
                         pcm.echo_received = true;
-                        
-                        // Handle these messages with absolute minimum waiting (0x14, 0x15, 0x26, 0x27, 0x28).
-                        if (array_contains(sci_lo_speed_cmd_filter, 5, pcm_peek(0)))
-                        {
-                            uint8_t num_bytes = pcm_rx_available();
-                            timeout_reached = false;
 
-                            while ((pcm_rx_available() <= num_bytes) && !timeout_reached) // wait for 1 byte response only
+                        if ((pcm.msg_buffer_ptr > 1) && ((pcm.msg_buffer[0] == 0x13) || (pcm.msg_buffer[0] == 0x14)))
+                        {
+                            timeout_reached = false;
+                            timeout_start = millis();
+
+                            while ((pcm_rx_available() <= 2) && !timeout_reached)
                             {
                                 // wait here for response
-                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= (2 * SCI_LS_T2_DELAY)) timeout_reached = true;
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                            }
+
+                            if (!timeout_reached)
+                            {
+                                pcm_putc(0x00); // terminate byte stream (OBD1)
+
+                                timeout_reached = false;
+                                timeout_start = millis();
+
+                                while ((pcm_rx_available() <= 3) && !timeout_reached)
+                                {
+                                    // wait here for response
+                                    if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                                }
                             }
 
                             pcm.response_received = true;
@@ -6191,19 +6091,259 @@ void handle_sci_data(void)
                         {
                             timeout_reached = false;
 
-                            while (!timeout_reached) // wait until all bytes are received
+                            while (!timeout_reached)
                             {
                                 // wait here for response
-                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= (2 * SCI_LS_T2_DELAY)) timeout_reached = true;
+                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T3_DELAY) timeout_reached = true;
                             }
 
+                            pcm.response_received = true;
+                        }
+                    }
+                    else // OBD2 SCI-1
+                    {
+                        for (uint8_t i = 0; i < pcm.msg_buffer_ptr; i++)
+                        {
                             timeout_reached = false;
+                            timeout_start = millis();
+                            pcm_putc(pcm.msg_buffer[i]); // put the next byte in the transmit buffer
+
+                            while ((pcm_rx_available() <= i) && !timeout_reached)
+                            {
+                                // wait here for echo
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                            }
+                            
+                            if (timeout_reached) break;
+                        }
+
+                        pcm.echo_received = true;
+
+                        if ((pcm.msg_buffer_ptr > 1) && (pcm.msg_buffer[0] == 0x13) && (pcm.msg_buffer[1] != 0x00))
+                        {
+                            timeout_reached = false;
+                            timeout_start = millis();
+
+                            while ((pcm_rx_available() <= 2) && !timeout_reached)
+                            {
+                                // wait here for echo
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                            }
+
+                            pcm_putc(0x13); // terminate actuator test mode byte stream (OBD2)
+
+                            timeout_reached = false;
+                            timeout_start = millis();
+
+                            while ((pcm_rx_available() <= 3) && !timeout_reached)
+                            {
+                                // wait here for echo
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                            }
+
+                            pcm.response_received = true;
+                        }
+
+                        // Handle these messages with absolute minimum waiting (0x14, 0x15, 0x26, 0x27, 0x28).
+                        if ((pcm.msg_buffer_ptr > 1) && array_contains(sci_lo_speed_cmd_filter, 5, pcm_peek(0)))
+                        {
+                            uint8_t num_bytes = pcm_rx_available();
+                            timeout_reached = false;
+
+                            while ((pcm_rx_available() <= num_bytes) && !timeout_reached) // wait for 1 byte response only
+                            {
+                                if ((pcm_peek(0) == 0x27) || (pcm_peek(0) == 0x28))
+                                {
+                                    if ((uint32_t)(millis() - pcm.last_byte_millis) >= 300) timeout_reached = true; // apply generous timeout for JTEC EEPROM read/write (slow)
+                                    continue;
+                                }
+
+                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                                
+                            }
+
+                            pcm.response_received = true;
+                        }
+                        else
+                        {
+                            timeout_reached = false;
+
+                            while (!timeout_reached && (pcm_rx_available() < 17)) // wait until all bytes are received
+                            {
+                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                            }
+
+                            pcm.response_received = true;
+                        }
+                    }
+                }
+                else if (pcm.msg_to_transmit_count > 1) // multiple messages, send one at a time
+                {
+                    // Make a local copy of the current message.
+                    uint8_t current_message[pcm.repeated_msg_length];
+                    int j = 0;
+
+                    for (int i = (pcm.msg_buffer_ptr + 1); i < (pcm.msg_buffer_ptr + 1 + pcm.repeated_msg_length); i++)
+                    {
+                        current_message[j] = pcm.msg_buffer[i];
+                        j++;
+                    }
+                    
+                    if (pcm.ngc_mode) // do not wait for echo
+                    {
+                        // Navigate in the main buffer after the message length byte and start sending those bytes
+                        for (uint8_t i = 0; i < pcm.repeated_msg_length; i++)
+                        {
+                            pcm_putc(current_message[i]);
+                        }
+
+                        timeout_reached = false;
+                        pcm.last_byte_millis = millis();
+
+                        while (!timeout_reached)
+                        {
+                            if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T1_DELAY) timeout_reached = true;
+                        }
+
+                        pcm.response_received = true;
+                    }
+                    else if (pcm.inverted_logic) // OBD1
+                    {
+                        // Navigate in the main buffer after the message length byte and start sending those bytes
+                        for (uint8_t i = 0; i < pcm.repeated_msg_length; i++)
+                        {
+                            timeout_reached = false;
+                            timeout_start = millis();
+                            pcm_putc(current_message[i]);
+    
+                            while ((pcm_rx_available() <= i) && !timeout_reached)
+                            {
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                            }
+    
+                            if (timeout_reached) break;
+                        }
+
+                        pcm.echo_received = true;
+
+                        if ((pcm.repeated_msg_length > 1) && ((pcm_peek(0) == 0x13) || (pcm_peek(0) == 0x14)))
+                        {
+                            timeout_reached = false;
+                            timeout_start = millis();
+
+                            while ((pcm_rx_available() <= 2) && !timeout_reached)
+                            {
+                                // wait here for response
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                            }
+
+                            if (!timeout_reached)
+                            {
+                                pcm_putc(0x00); // terminate byte stream (OBD1)
+
+                                timeout_reached = false;
+                                timeout_start = millis();
+
+                                while ((pcm_rx_available() <= 3) && !timeout_reached)
+                                {
+                                    // wait here for response
+                                    if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                                }
+                            }
+
+                            pcm.response_received = true;
+                        }
+                        else
+                        {
+                            timeout_reached = false;
+
+                            while (!timeout_reached)
+                            {
+                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                            }
+
+                            pcm.response_received = true;
+                        }
+                    }
+                    else // OBD2 SCI-1
+                    {
+                        // Navigate in the main buffer after the message length byte and start sending those bytes
+                        for (uint8_t i = 0; i < pcm.repeated_msg_length; i++)
+                        {
+                            timeout_reached = false;
+                            timeout_start = millis();
+                            pcm_putc(current_message[i]);
+    
+                            while ((pcm_rx_available() <= i) && !timeout_reached)
+                            {
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                            }
+    
+                            if (timeout_reached) break;
+                        }
+
+                        pcm.echo_received = true;
+
+                        if ((pcm.repeated_msg_length > 1) && (pcm_peek(0) == 0x13) && (pcm_peek(1) != 0x00))
+                        {
+                            timeout_reached = false;
+                            timeout_start = millis();
+
+                            while ((pcm_rx_available() <= 2) && !timeout_reached)
+                            {
+                                // wait here for echo
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                            }
+
+                            pcm_putc(0x13); // terminate actuator test mode byte stream (OBD2)
+
+                            timeout_reached = false;
+                            timeout_start = millis();
+
+                            while ((pcm_rx_available() <= 3) && !timeout_reached)
+                            {
+                                // wait here for echo
+                                if ((uint32_t)(millis() - timeout_start) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                            }
+
+                            pcm.response_received = true;
+                        }
+
+                        // Handle these messages with absolute minimum waiting (0x14, 0x15, 0x26, 0x27, 0x28).
+                        if ((pcm.repeated_msg_length > 1) && array_contains(sci_lo_speed_cmd_filter, 5, pcm_peek(0)))
+                        {
+                            uint8_t num_bytes = pcm_rx_available();
+                            timeout_reached = false;
+
+                            while ((pcm_rx_available() <= num_bytes) && !timeout_reached) // wait for 1 byte response only
+                            {
+                                if ((pcm_peek(0) == 0x27) || (pcm_peek(0) == 0x28))
+                                {
+                                    if ((uint32_t)(millis() - pcm.last_byte_millis) >= 300) timeout_reached = true; // apply generous timeout for JTEC EEPROM read/write (slow)
+                                    continue;
+                                }
+
+                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                            }
+
+                            pcm.response_received = true;
+                        }
+                        else
+                        {
+                            timeout_reached = false;
+
+                            while (!timeout_reached && (pcm_rx_available() < 17)) // wait until all bytes are received
+                            {
+                                // wait here for response
+                                if ((uint32_t)(millis() - pcm.last_byte_millis) >= SCI_LS_T3_DELAY) timeout_reached = true;
+                            }
+
                             pcm.response_received = true;
                         }
                     }
                 }
             }
-            else if (pcm.speed == BAUD_62500) // high speed mode (62500 baud), full-duplex mode approach
+            else if (pcm.speed == BAUD_62500) // high speed mode (62500 baud)
             {
                 if (pcm.msg_to_transmit_count == 1) // if there's only one message in the buffer
                 {

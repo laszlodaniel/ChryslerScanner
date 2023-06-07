@@ -6,12 +6,17 @@ using System.Linq;
 using System.Threading;
 using System.Timers;
 using System.Windows.Forms;
+using ChryslerScanner.Helpers;
+using ChryslerScanner.Models;
+using ChryslerScanner.Services;
 
 namespace ChryslerScanner
 {
     public partial class ReadMemoryForm : Form
     {
-        private MainForm OriginalForm;
+        private readonly MainForm OriginalForm;
+        private readonly SerialService SerialService;
+        private readonly SynchronizationContext UIContext;
 
         private bool CCDBusAlive = false;
         private bool CCDBusEcho = false;
@@ -82,12 +87,14 @@ namespace ChryslerScanner
         private DateTime Timestamp;
         private string TimestampString;
 
-        public ReadMemoryForm(MainForm IncomingForm)
+        public ReadMemoryForm(MainForm IncomingForm, SerialService service)
         {
             OriginalForm = IncomingForm;
             InitializeComponent();
+            UIContext = SynchronizationContext.Current;
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-            MainForm.Packet.PacketReceived += PacketReceivedHandler; // subscribe to the OnPacketReceived event
+            SerialService = service;
+            SerialService.PacketReceived += PacketReceivedHandler; // subscribe to the PacketReceived event
             OriginalForm.ChangeLanguage();
 
             CCDBusAliveTimer.Elapsed += new ElapsedEventHandler(CCDBusAliveHandler);
@@ -275,53 +282,83 @@ namespace ChryslerScanner
             switch (CCDBusModule)
             {
                 case 0x10:
+                {
                     ModuleName = "VIC – Vehicle Info Center";
                     break;
+                }
                 case 0x18:
                 case 0x1B:
+                {
                     ModuleName = "VTS – Vehicle Theft Security";
                     break;
+                }
                 case 0x19:
+                {
                     ModuleName = "CMT – Compass Mini-Trip";
                     break;
+                }
                 case 0x1E:
+                {
                     ModuleName = "ACM – Airbag Control Module";
                     break;
+                }
                 case 0x20:
+                {
                     ModuleName = "BCM – Body Control Module";
                     break;
+                }
                 case 0x22:
                 case 0x60:
+                {
                     ModuleName = "MIC – Mechanical Instrument Cluster";
                     break;
+                }
                 case 0x41:
                 case 0x42:
+                {
                     ModuleName = "TCM – Transmission Control Module";
                     break;
+                }
                 case 0x43:
+                {
                     ModuleName = "ABS – Antilock Brake System";
                     break;
+                }
                 case 0x50:
+                {
                     ModuleName = "HVAC - Heat Vent Air Conditioning";
                     break;
+                }
                 case 0x80:
+                {
                     ModuleName = "DDM - Driver Door Module";
                     break;
+                }
                 case 0x81:
+                {
                     ModuleName = "PDM - Passenger Door Module";
                     break;
+                }
                 case 0x82:
+                {
                     ModuleName = "MSM - Memory Seat Module";
                     break;
+                }
                 case 0x96:
+                {
                     ModuleName = "ASM - Audio System Module";
                     break;
+                }
                 case 0xC0:
+                {
                     ModuleName = "SKIM - Sentry Key Immobilizer Module";
                     break;
+                }
                 default:
+                {
                     ModuleName = "unknown";
                     break;
+                }
             }
 
             string DateTimeNow = DateTime.Now.ToString("yyyyMMdd_HHmmss");
@@ -566,14 +603,15 @@ namespace ChryslerScanner
         {
             if (e.ProgressPercentage == 0)
             {
-                // Fill Packet class fields with data.
-                MainForm.Packet.tx.bus = (byte)Packet.Bus.ccd;
-                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                MainForm.Packet.tx.payload = CCDBusTxPayload;
-                MainForm.Packet.GeneratePacket();
+                Packet packet = new Packet();
 
-                OriginalForm.TransmitUSBPacket("[<-TX] Send a CCD-bus message once:");
+                packet.Bus = (byte)PacketHelper.Bus.CCD;
+                packet.Command = (byte)PacketHelper.Command.MsgTx;
+                packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+                packet.Payload = CCDBusTxPayload;
+
+                OriginalForm.TransmitUSBPacket("[<-TX] Send a CCD-bus message once:", packet);
+                SerialService.WritePacket(packet);
 
                 CCDBusTxTimeout = false;
                 CCDBusTxTimeoutTimer.Stop();
@@ -809,47 +847,59 @@ namespace ChryslerScanner
             switch (SCIBusPCMReadMemoryPresetComboBox.SelectedIndex)
             {
                 case 0: // ROM/32kB
+                {
                     SCIBusPCMMemoryBinaryFilename = @"ROMs/PCM/pcm_flash_" + DateTimeNow + ".bin";
                     SCIBusPCMMemoryTextFilename = @"ROMs/PCM/pcm_flash_" + DateTimeNow + ".txt";
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "Initialize memory reading session.");
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Preset: ");
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "ROM/32kB");
                     break;
+                }
                 case 1: // ROM/64kB
+                {
                     SCIBusPCMMemoryBinaryFilename = @"ROMs/PCM/pcm_flash_" + DateTimeNow + ".bin";
                     SCIBusPCMMemoryTextFilename = @"ROMs/PCM/pcm_flash_" + DateTimeNow + ".txt";
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "Initialize memory reading session.");
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Preset: ");
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "ROM/64kB");
                     break;
+                }
                 case 2: // ROM/128kB
+                {
                     SCIBusPCMMemoryBinaryFilename = @"ROMs/PCM/pcm_flash_" + DateTimeNow + ".bin";
                     SCIBusPCMMemoryTextFilename = @"ROMs/PCM/pcm_flash_" + DateTimeNow + ".txt";
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "Initialize memory reading session.");
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Preset: ");
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "ROM/128kB");
                     break;
+                }
                 case 3: // ROM/256kB
+                {
                     SCIBusPCMMemoryBinaryFilename = @"ROMs/PCM/pcm_flash_" + DateTimeNow + ".bin";
                     SCIBusPCMMemoryTextFilename = @"ROMs/PCM/pcm_flash_" + DateTimeNow + ".txt";
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "Initialize memory reading session.");
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Preset: ");
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "ROM/256kB");
                     break;
+                }
                 case 4: // EEPROM (512B)
+                {
                     SCIBusPCMMemoryBinaryFilename = @"ROMs/PCM/pcm_eeprom_" + DateTimeNow + ".bin";
                     SCIBusPCMMemoryTextFilename = @"ROMs/PCM/pcm_eeprom_" + DateTimeNow + ".txt";
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "Initialize memory reading session.");
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Preset: ");
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "EEPROM");
                     break;
+                }
                 case 5: // RAM (6kB)
+                {
                     SCIBusPCMMemoryBinaryFilename = @"ROMs/PCM/pcm_ram_" + DateTimeNow + ".bin";
                     SCIBusPCMMemoryTextFilename = @"ROMs/PCM/pcm_ram_" + DateTimeNow + ".txt";
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "Initialize memory reading session.");
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Preset: ");
                     UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, "RAM");
                     break;
+                }
             }
 
             UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "Command: " + Util.ByteToHexStringSimple(new byte[] { SCIBusPCMReadMemoryCommand }));
@@ -1017,14 +1067,16 @@ namespace ChryslerScanner
             {
                 UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "TX: " + Util.ByteToHexStringSimple(SCIBusPCMTxPayload));
 
-                // Fill Packet class fields with data.
-                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                MainForm.Packet.tx.payload = SCIBusPCMTxPayload;
-                MainForm.Packet.GeneratePacket();
+                Packet packet = new Packet();
 
-                OriginalForm.TransmitUSBPacket("[<-TX] Send an SCI-bus (PCM) message once:");
+                packet.Bus = (byte)PacketHelper.Bus.PCM;
+                packet.Command = (byte)PacketHelper.Command.MsgTx;
+                packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+                packet.Payload = SCIBusPCMTxPayload;
+
+                OriginalForm.TransmitUSBPacket("[<-TX] Send an SCI-bus (PCM) message once:", packet);
+                SerialService.WritePacket(packet);
+
                 SCIBusPCMRxTimeout = false;
                 SCIBusPCMRxTimeoutTimer.Stop();
                 SCIBusPCMRxTimeoutTimer.Start();
@@ -1066,6 +1118,7 @@ namespace ChryslerScanner
             switch (SCIBusPCMReadMemoryPresetComboBox.SelectedIndex)
             {
                 case 0: // ROM/32kB
+                {
                     SCIBusPCMReadMemoryCommandTextBox.Text = "15";
                     SCIBusPCMReadMemoryStartOffsetTextBox.Text = "80 00";
                     SCIBusPCMReadMemoryEndOffsetTextBox.Text = "FF FF";
@@ -1073,7 +1126,9 @@ namespace ChryslerScanner
                     SCIBusPCMReadMemoryCurrentOffsetTextBox.Text = "00 00";
                     SCIBusPCMReadMemoryValueTextBox.Text = "00";
                     break;
+                }
                 case 1: // ROM/64kB
+                {
                     SCIBusPCMReadMemoryCommandTextBox.Text = "15";
                     SCIBusPCMReadMemoryStartOffsetTextBox.Text = "00 00";
                     SCIBusPCMReadMemoryEndOffsetTextBox.Text = "FF FF";
@@ -1081,7 +1136,9 @@ namespace ChryslerScanner
                     SCIBusPCMReadMemoryCurrentOffsetTextBox.Text = "00 00";
                     SCIBusPCMReadMemoryValueTextBox.Text = "00";
                     break;
+                }
                 case 2: // ROM/128kB
+                {
                     SCIBusPCMReadMemoryCommandTextBox.Text = "26";
                     SCIBusPCMReadMemoryStartOffsetTextBox.Text = "00 00 00";
                     SCIBusPCMReadMemoryEndOffsetTextBox.Text = "01 FF FF";
@@ -1089,7 +1146,9 @@ namespace ChryslerScanner
                     SCIBusPCMReadMemoryCurrentOffsetTextBox.Text = "00 00 00";
                     SCIBusPCMReadMemoryValueTextBox.Text = "00";
                     break;
+                }
                 case 3: // ROM/256kB
+                {
                     SCIBusPCMReadMemoryCommandTextBox.Text = "26";
                     SCIBusPCMReadMemoryStartOffsetTextBox.Text = "00 00 00";
                     SCIBusPCMReadMemoryEndOffsetTextBox.Text = "03 FF FF";
@@ -1097,7 +1156,9 @@ namespace ChryslerScanner
                     SCIBusPCMReadMemoryCurrentOffsetTextBox.Text = "00 00 00";
                     SCIBusPCMReadMemoryValueTextBox.Text = "00";
                     break;
+                }
                 case 4: // EEPROM (512B)
+                {
                     SCIBusPCMReadMemoryCommandTextBox.Text = "28";
                     SCIBusPCMReadMemoryStartOffsetTextBox.Text = "00 00";
                     SCIBusPCMReadMemoryEndOffsetTextBox.Text = "01 FF";
@@ -1105,7 +1166,9 @@ namespace ChryslerScanner
                     SCIBusPCMReadMemoryCurrentOffsetTextBox.Text = "00 00";
                     SCIBusPCMReadMemoryValueTextBox.Text = "00";
                     break;
+                }
                 case 5: // RAM (6kB)
+                {
                     SCIBusPCMReadMemoryCommandTextBox.Text = "26";
                     SCIBusPCMReadMemoryStartOffsetTextBox.Text = "0F 80 00";
                     SCIBusPCMReadMemoryEndOffsetTextBox.Text = "0F 97 FF";
@@ -1113,6 +1176,7 @@ namespace ChryslerScanner
                     SCIBusPCMReadMemoryCurrentOffsetTextBox.Text = "0F 80 00";
                     SCIBusPCMReadMemoryValueTextBox.Text = "00";
                     break;
+                }
             }
         }
 
@@ -1120,33 +1184,33 @@ namespace ChryslerScanner
 
         #region Methods
 
-        private void PacketReceivedHandler(object sender, EventArgs e)
+        private void PacketReceivedHandler(object sender, Packet packet)
         {
-            Invoke((MethodInvoker)delegate
+            UIContext.Post(state =>
             {
-                if (MainForm.Packet.rx.payload.Length > 4)
+                if (packet.Payload.Length > 4)
                 {
-                    //ElapsedMillis = TimeSpan.FromMilliseconds((MainForm.Packet.rx.payload[0] << 24) | (MainForm.Packet.rx.payload[1] << 16) | (MainForm.Packet.rx.payload[2] << 8) | MainForm.Packet.rx.payload[3]);
+                    //ElapsedMillis = TimeSpan.FromMilliseconds((packet.payload[0] << 24) | (packet.payload[1] << 16) | (packet.payload[2] << 8) | packet.payload[3]);
                     //Timestamp = DateTime.Today.Add(ElapsedMillis);
                     //TimestampString = Timestamp.ToString("HH:mm:ss.fff");
                     //UpdateTextBox(CCDBusReadMemoryInfoTextBox, Environment.NewLine + "T: " + TimestampString);
                 }
 
-                if (MainForm.Packet.rx.bus == (byte)Packet.Bus.usb)
+                if (packet.Bus == (byte)PacketHelper.Bus.USB)
                 {
-                    if ((MainForm.Packet.rx.command == (byte)Packet.Command.error) && (MainForm.Packet.rx.mode == (byte)Packet.ErrorMode.errorInternal))
+                    if ((packet.Command == (byte)PacketHelper.Command.Error) && (packet.Mode == (byte)PacketHelper.ErrorMode.ErrorInternal))
                     {
                         UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, " | error: internal error"); // most likely SCI-bus is disconnected
                     }
                 }
 
-                if (MainForm.Packet.rx.bus == (byte)Packet.Bus.ccd)
+                if (packet.Bus == (byte)PacketHelper.Bus.CCD)
                 {
                     CCDBusAliveTimer.Stop();
                     CCDBusAliveTimer.Start();
                     CCDBusAlive = true;
 
-                    byte[] CCDBusResponseBytes = MainForm.Packet.rx.payload.Skip(4).ToArray(); // skip 4 timestamp bytes
+                    byte[] CCDBusResponseBytes = packet.Payload.Skip(4).ToArray(); // skip 4 timestamp bytes
 
                     if (CCDBusResponseBytes[0] == 0xB2)
                     {
@@ -1241,9 +1305,9 @@ namespace ChryslerScanner
                     }
                 }
 
-                if (MainForm.Packet.rx.bus == (byte)Packet.Bus.pcm)
+                if (packet.Bus == (byte)PacketHelper.Bus.PCM)
                 {
-                    byte[] SCIBusPCMResponseBytes = MainForm.Packet.rx.payload.Skip(4).ToArray(); // skip 4 timestamp bytes
+                    byte[] SCIBusPCMResponseBytes = packet.Payload.Skip(4).ToArray(); // skip 4 timestamp bytes
 
                     if ((SCIBusPCMReadMemoryCommand == 0x33) || (SCIBusPCMReadMemoryCommand == 0x39) || (SCIBusPCMReadMemoryCommand == 0x45)) UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "RX: " + Environment.NewLine + Util.ByteToHexStringSimple(SCIBusPCMResponseBytes));
                     else UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, Environment.NewLine + "RX: " + Util.ByteToHexStringSimple(SCIBusPCMResponseBytes));
@@ -1413,7 +1477,7 @@ namespace ChryslerScanner
                         UpdateTextBox(SCIBusPCMReadMemoryInfoTextBox, " | error: invalid command");
                     }
                 }
-            });
+            }, null);
         }
 
         private void UpdateTextBox(TextBox TB, string text)
@@ -1441,7 +1505,7 @@ namespace ChryslerScanner
             if (CCDBusReadMemoryWorker.IsBusy) CCDBusReadMemoryStopButton_Click(this, EventArgs.Empty);
             if (SCIBusPCMReadMemoryWorker.IsBusy) SCIBusPCMReadMemoryStopButton_Click(this, EventArgs.Empty);
 
-            MainForm.Packet.PacketReceived -= PacketReceivedHandler; // unsubscribe from the OnPacketReceived event
+            SerialService.PacketReceived -= PacketReceivedHandler; // unsubscribe from the PacketReceived event
         }
 
         #endregion

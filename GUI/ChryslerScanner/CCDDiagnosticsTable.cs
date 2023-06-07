@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Windows.Forms;
 
 namespace ChryslerScanner
 {
@@ -84,6 +83,7 @@ namespace ChryslerScanner
             switch (modifiedID >> 8)
             {
                 case 0xB2:
+                {
                     if (!B2F2IDByteList.Contains(0xB2)) B2F2IDByteList.Add(0xB2);
                     B2F2IDByteList.Sort();
                     Table.RemoveAt(B2Row);
@@ -92,15 +92,16 @@ namespace ChryslerScanner
                     //Table.Insert(F2Row, "│ F2 -- -- -- -- --       │ RESPONSE |                                          │                         │             │");
                     LastUpdatedLine = B2Row;
                     break;
+                }
                 case 0xF2:
+                {
                     if (!B2F2IDByteList.Contains(0xF2)) B2F2IDByteList.Add(0xF2);
                     B2F2IDByteList.Sort();
                     Table.RemoveAt(F2Row);
                     Table.Insert(F2Row, row);
                     LastUpdatedLine = F2Row;
                     break;
-                default:
-                    break;
+                }
             }
         }
 

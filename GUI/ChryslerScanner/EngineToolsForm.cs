@@ -1,20 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Data.OleDb;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Forms;
+using ChryslerScanner.Helpers;
+using ChryslerScanner.Models;
+using ChryslerScanner.Services;
 
 namespace ChryslerScanner
 {
     public partial class EngineToolsForm : Form
     {
-        private MainForm OriginalForm;
+        private readonly MainForm OriginalForm;
+        private readonly SerialService SerialService;
+        private readonly SynchronizationContext UIContext;
 
         private string CSVFilename = string.Empty;
         private string CSVHeader = string.Empty;
@@ -41,12 +43,14 @@ namespace ChryslerScanner
             SCILoSpeed = 0xFE
         }
 
-        public EngineToolsForm(MainForm IncomingForm)
+        public EngineToolsForm(MainForm IncomingForm, SerialService service)
         {
             OriginalForm = IncomingForm;
             InitializeComponent();
+            UIContext = SynchronizationContext.Current;
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-            MainForm.Packet.PacketReceived += PacketReceivedHandler; // subscribe to the OnPacketReceived event
+            SerialService = service;
+            SerialService.PacketReceived += PacketReceivedHandler; // subscribe to the PacketReceived event
             OriginalForm.ChangeLanguage();
 
             CHTComboBox.SelectedIndex = OriginalForm.PCM.ControllerHardwareType;
@@ -130,13 +134,17 @@ namespace ChryslerScanner
                 case 23:
                 case 24:
                 case 29:
+                {
                     RAMTableComboBox.SelectedIndex = 11; // FB
                     OriginalForm.PCM.CumminsSelected = true;
                     break;
+                }
                 default:
+                {
                     RAMTableComboBox.SelectedIndex = 4; // F4
                     OriginalForm.PCM.CumminsSelected = false;
                     break;
+                }
             }
 
             OriginalForm.PCM.ControllerHardwareType = (byte)CHTComboBox.SelectedIndex;
@@ -144,19 +152,21 @@ namespace ChryslerScanner
 
         private void ReadFaultCodesButton_Click(object sender, EventArgs e)
         {
+            Packet packet = new Packet();
+
             if (OriginalForm.PCM.speed == "7812.5 baud")
             {
-                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.list;
+                packet.Bus = (byte)PacketHelper.Bus.PCM;
+                packet.Command = (byte)PacketHelper.Command.MsgTx;
+                packet.Mode = (byte)PacketHelper.MsgTxMode.List;
 
                 if (OriginalForm.PCM.CumminsSelected)
-                {                                           // cnt   len   msg   len   msg
-                    MainForm.Packet.tx.payload = new byte[5] { 0x02, 0x01, 0x32, 0x01, 0x33 }; // request stored and one-trip fault codes
+                {                               // cnt   len   msg   len   msg
+                    packet.Payload = new byte[5] { 0x02, 0x01, 0x32, 0x01, 0x33 }; // request stored and one-trip fault codes
                 }
                 else
-                {                                           // cnt   len   msg   len   msg   len   msg
-                    MainForm.Packet.tx.payload = new byte[7] { 0x03, 0x01, 0x10, 0x01, 0x11, 0x01, 0x2E }; // request stored, pending and one-trip fault codes
+                {                               // cnt   len   msg   len   msg   len   msg
+                    packet.Payload = new byte[7] { 0x03, 0x01, 0x10, 0x01, 0x11, 0x01, 0x2E }; // request stored, pending and one-trip fault codes
                 }
             }
             else if (OriginalForm.PCM.speed == "62500 baud")
@@ -175,60 +185,65 @@ namespace ChryslerScanner
                 repeatIntervalArray[0] = (byte)((repeatInterval >> 8) & 0xFF);
                 repeatIntervalArray[1] = (byte)(repeatInterval & 0xFF);
 
-                payloadList.Add((byte)Packet.Bus.pcm);
+                payloadList.Add((byte)PacketHelper.Bus.PCM);
                 payloadList.AddRange(repeatIntervalArray);
 
-                MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
-                MainForm.Packet.tx.command = (byte)Packet.Command.settings;
-                MainForm.Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
-                MainForm.Packet.tx.payload = payloadList.ToArray();
-                MainForm.Packet.GeneratePacket();
-                OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:");
+                packet.Bus = (byte)PacketHelper.Bus.USB;
+                packet.Command = (byte)PacketHelper.Command.Settings;
+                packet.Mode = (byte)PacketHelper.SettingsMode.SetRepeatBehavior;
+                packet.Payload = payloadList.ToArray();
 
-                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.list;
+                OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:", packet);
+                SerialService.WritePacket(packet);
+
+                packet = new Packet();
+
+                packet.Bus = (byte)PacketHelper.Bus.PCM;
+                packet.Command = (byte)PacketHelper.Command.MsgTx;
+                packet.Mode = (byte)PacketHelper.MsgTxMode.List;
 
                 if (OriginalForm.PCM.CumminsSelected)
                 {
-                    MainForm.Packet.tx.payload = new byte[25] { 0x08, 0x02, 0xFB, 0xBB, 0x02, 0xFB, 0xBC, 0x02, 0xFB, 0xBD, 0x02, 0xFB, 0xBE, 0x02, 0xFB, 0xBF, 0x02, 0xFB, 0xC0, 0x02, 0xFB, 0xC1, 0x02, 0xFB, 0xC2 };
+                    packet.Payload = new byte[25] { 0x08, 0x02, 0xFB, 0xBB, 0x02, 0xFB, 0xBC, 0x02, 0xFB, 0xBD, 0x02, 0xFB, 0xBE, 0x02, 0xFB, 0xBF, 0x02, 0xFB, 0xC0, 0x02, 0xFB, 0xC1, 0x02, 0xFB, 0xC2 };
                 }
                 else
                 {
-                    MainForm.Packet.tx.payload = new byte[25] { 0x08, 0x02, 0xF4, 0x01, 0x02, 0xF4, 0x02, 0x02, 0xF4, 0x74, 0x02, 0xF4, 0x75, 0x02, 0xF4, 0x76, 0x02, 0xF4, 0x77, 0x02, 0xF4, 0x78, 0x02, 0xF4, 0x79 };
+                    packet.Payload = new byte[25] { 0x08, 0x02, 0xF4, 0x01, 0x02, 0xF4, 0x02, 0x02, 0xF4, 0x74, 0x02, 0xF4, 0x75, 0x02, 0xF4, 0x76, 0x02, 0xF4, 0x77, 0x02, 0xF4, 0x78, 0x02, 0xF4, 0x79 };
                 }
             }
             else
             {
-                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                MainForm.Packet.tx.payload = new byte[1] { 0x10 };
+                packet.Bus = (byte)PacketHelper.Bus.PCM;
+                packet.Command = (byte)PacketHelper.Command.MsgTx;
+                packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+                packet.Payload = new byte[1] { 0x10 };
             }
 
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] PCM fault code list request:");
+            OriginalForm.TransmitUSBPacket("[<-TX] PCM fault code list request:", packet);
+            SerialService.WritePacket(packet);
         }
 
         private void EraseFaultCodesButton_Click(object sender, EventArgs e)
         {
+            Packet packet = new Packet();
+            
             if (OriginalForm.PCM.speed == "7812.5 baud")
             {
-                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+                packet.Bus = (byte)PacketHelper.Bus.PCM;
+                packet.Command = (byte)PacketHelper.Command.MsgTx;
+                packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
 
                 if (OriginalForm.PCM.CumminsSelected)
                 {
-                    MainForm.Packet.tx.payload = new byte[2] { 0x25, 0x01 };
+                    packet.Payload = new byte[2] { 0x25, 0x01 };
                 }
                 else
                 {
-                    MainForm.Packet.tx.payload = new byte[1] { 0x17 }; // 23 01 works as well
+                    packet.Payload = new byte[1] { 0x17 }; // 23 01 works as well
                 }
 
-                MainForm.Packet.GeneratePacket();
-                OriginalForm.TransmitUSBPacket("[<-TX] Erase PCM fault code(s) request:");
+                OriginalForm.TransmitUSBPacket("[<-TX] Erase PCM fault code(s) request:", packet);
+                SerialService.WritePacket(packet);
             }
             else
             {
@@ -258,46 +273,57 @@ namespace ChryslerScanner
             repeatIntervalArray[0] = (byte)((repeatInterval >> 8) & 0xFF);
             repeatIntervalArray[1] = (byte)(repeatInterval & 0xFF);
 
-            payloadList.Add((byte)Packet.Bus.pcm);
+            payloadList.Add((byte)PacketHelper.Bus.PCM);
             payloadList.AddRange(repeatIntervalArray);
 
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
-            MainForm.Packet.tx.command = (byte)Packet.Command.settings;
-            MainForm.Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
-            MainForm.Packet.tx.payload = payloadList.ToArray();
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:");
+            Packet packet = new Packet();
 
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.list;
-            MainForm.Packet.tx.payload = new byte[47] { 0x0F, 0x03, 0xF5, 0xCB, 0xCC, 0x02, 0xF4, 0xA7, 0x02, 0xF4, 0xA8, 0x02, 0xF4, 0xA9, 0x02, 0xF4, 0xAA, 0x02, 0xF4, 0xAB, 0x02, 0xF4, 0xAC, 0x02, 0xF4, 0xAD, 0x02, 0xF4, 0xAE, 0x02, 0xF4, 0xAF, 0x02, 0xF4, 0xB0, 0x02, 0xF4, 0xB1, 0x02, 0xF4, 0xB2, 0x02, 0xF4, 0xB3, 0x02, 0xF4, 0xB4 };
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Settings;
+            packet.Mode = (byte)PacketHelper.SettingsMode.SetRepeatBehavior;
+            packet.Payload = payloadList.ToArray();
 
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] PCM freeze frame request:");
+            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:", packet);
+            SerialService.WritePacket(packet);
+
+            packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.PCM;
+            packet.Command = (byte)PacketHelper.Command.MsgTx;
+            packet.Mode = (byte)PacketHelper.MsgTxMode.List;
+            packet.Payload = new byte[47] { 0x0F, 0x03, 0xF5, 0xCB, 0xCC, 0x02, 0xF4, 0xA7, 0x02, 0xF4, 0xA8, 0x02, 0xF4, 0xA9, 0x02, 0xF4, 0xAA, 0x02, 0xF4, 0xAB, 0x02, 0xF4, 0xAC, 0x02, 0xF4, 0xAD, 0x02, 0xF4, 0xAE, 0x02, 0xF4, 0xAF, 0x02, 0xF4, 0xB0, 0x02, 0xF4, 0xB1, 0x02, 0xF4, 0xB2, 0x02, 0xF4, 0xB3, 0x02, 0xF4, 0xB4 };
+
+            OriginalForm.TransmitUSBPacket("[<-TX] PCM freeze frame request:", packet);
+            SerialService.WritePacket(packet);
         }
 
         private void Baud7812Button_Click(object sender, EventArgs e)
         {
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-            MainForm.Packet.tx.payload = new byte[1] { 0xFE };
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Select SCI-bus low-speed mode:");
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.PCM;
+            packet.Command = (byte)PacketHelper.Command.MsgTx;
+            packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+            packet.Payload = new byte[1] { 0xFE };
+
+            OriginalForm.TransmitUSBPacket("[<-TX] Select SCI-bus low-speed mode:", packet);
+            SerialService.WritePacket(packet);
         }
 
         private void Baud62500Button_Click(object sender, EventArgs e)
         {
-            if (OriginalForm.PCM.speed == "7812.5 baud")
-            {
-                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                MainForm.Packet.tx.payload = new byte[1] { 0x12 };
-                MainForm.Packet.GeneratePacket();
-                OriginalForm.TransmitUSBPacket("[<-TX] Select SCI-bus high-speed mode:");
-            }
+            if (OriginalForm.PCM.speed != "7812.5 baud")
+                return;
+
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.PCM;
+            packet.Command = (byte)PacketHelper.Command.MsgTx;
+            packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+            packet.Payload = new byte[1] { 0x12 };
+
+            OriginalForm.TransmitUSBPacket("[<-TX] Select SCI-bus high-speed mode:", packet);
+            SerialService.WritePacket(packet);
         }
 
         private void RAMTableSelectButton_Click(object sender, EventArgs e)
@@ -307,94 +333,77 @@ namespace ChryslerScanner
 
         private void ActuatorTestStartButton_Click(object sender, EventArgs e)
         {
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+            Packet packet = new Packet();
 
-            if (OriginalForm.PCM.logic == "non-inverted")
-            {
-                MainForm.Packet.tx.payload = new byte[2] { 0x13, (byte)ActuatorTestComboBox.SelectedIndex };
-            }
-            else if (OriginalForm.PCM.logic == "inverted")
-            {
-                MainForm.Packet.tx.payload = new byte[3] { 0x13, (byte)ActuatorTestComboBox.SelectedIndex, 0x00 };
-            }
-            
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Start PCM actuator test:");
+            packet.Bus = (byte)PacketHelper.Bus.PCM;
+            packet.Command = (byte)PacketHelper.Command.MsgTx;
+            packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+            packet.Payload = new byte[2] { 0x13, (byte)ActuatorTestComboBox.SelectedIndex };
+
+            OriginalForm.TransmitUSBPacket("[<-TX] Start PCM actuator test:", packet);
+            SerialService.WritePacket(packet);
         }
 
         private void ActuatorTestStopButton_Click(object sender, EventArgs e)
         {
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+            Packet packet = new Packet();
 
-            if (OriginalForm.PCM.logic == "non-inverted")
-            {
-                MainForm.Packet.tx.payload = new byte[2] { 0x13, 0x00 };
-            }
-            else if (OriginalForm.PCM.logic == "inverted")
-            {
-                MainForm.Packet.tx.payload = new byte[3] { 0x13, 0x00, 0x00 };
-            }
+            packet.Bus = (byte)PacketHelper.Bus.PCM;
+            packet.Command = (byte)PacketHelper.Command.MsgTx;
+            packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+            packet.Payload = new byte[2] { 0x13, 0x00 };
 
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Stop PCM actuator test:");
+            OriginalForm.TransmitUSBPacket("[<-TX] Stop PCM actuator test:", packet);
+            SerialService.WritePacket(packet);
         }
 
         private void DiagnosticDataReadButton_Click(object sender, EventArgs e)
         {
             byte count = (byte)DiagnosticDataListBox.SelectedIndices.Count;
 
+            Packet packet = new Packet();
+
             if (count == 1)
             {
                 if (DiagnosticDataRepeatIntervalCheckBox.Checked)
                 {
                     SetupRepeat();
-                    MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
+                    packet.Mode = (byte)PacketHelper.MsgTxMode.RepeatedSingle;
                 }
                 else
                 {
-                    MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+                    packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
                 }
 
                 if (OriginalForm.PCM.speed == "7812.5 baud")
                 {
-                    MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
+                    packet.Bus = (byte)PacketHelper.Bus.PCM;
+                    packet.Command = (byte)PacketHelper.Command.MsgTx;
+                    packet.Payload = new byte[2] { 0x14, (byte)DiagnosticDataListBox.SelectedIndex };
 
-                    if (OriginalForm.PCM.logic == "non-inverted")
-                    {
-                        MainForm.Packet.tx.payload = new byte[2] { 0x14, (byte)DiagnosticDataListBox.SelectedIndex };
-                    }
-                    else if (OriginalForm.PCM.logic == "inverted")
-                    {
-                        MainForm.Packet.tx.payload = new byte[3] { 0x14, (byte)DiagnosticDataListBox.SelectedIndex, 0x00 }; // 0x00 terminates byte stream
-                    }
-
-                    MainForm.Packet.GeneratePacket();
-                    OriginalForm.TransmitUSBPacket("[<-TX] Request diagnostic data:");
+                    OriginalForm.TransmitUSBPacket("[<-TX] Request diagnostic data:", packet);
+                    SerialService.WritePacket(packet);
                 }
                 else if (OriginalForm.PCM.speed == "62500 baud")
                 {
                     if (WordRequestFilter[RAMTableComboBox.SelectedIndex].Contains((byte)DiagnosticDataListBox.SelectedIndex))
                     {
-                        MainForm.Packet.tx.payload = new byte[3] { (byte)(0xF0 + RAMTableComboBox.SelectedIndex), (byte)DiagnosticDataListBox.SelectedIndex, (byte)(DiagnosticDataListBox.SelectedIndex + 1) };
+                        packet.Payload = new byte[3] { (byte)(0xF0 + RAMTableComboBox.SelectedIndex), (byte)DiagnosticDataListBox.SelectedIndex, (byte)(DiagnosticDataListBox.SelectedIndex + 1) };
                     }
                     else if (DWordRequestFilter[RAMTableComboBox.SelectedIndex].Contains((byte)DiagnosticDataListBox.SelectedIndex))
                     {
-                        MainForm.Packet.tx.payload = new byte[5] { (byte)(0xF0 + RAMTableComboBox.SelectedIndex), (byte)DiagnosticDataListBox.SelectedIndex, (byte)(DiagnosticDataListBox.SelectedIndex + 1), (byte)(DiagnosticDataListBox.SelectedIndex + 2), (byte)(DiagnosticDataListBox.SelectedIndex + 3) };
+                        packet.Payload = new byte[5] { (byte)(0xF0 + RAMTableComboBox.SelectedIndex), (byte)DiagnosticDataListBox.SelectedIndex, (byte)(DiagnosticDataListBox.SelectedIndex + 1), (byte)(DiagnosticDataListBox.SelectedIndex + 2), (byte)(DiagnosticDataListBox.SelectedIndex + 3) };
                     }
                     else
                     {
-                        MainForm.Packet.tx.payload = new byte[2] { (byte)(0xF0 + RAMTableComboBox.SelectedIndex), (byte)DiagnosticDataListBox.SelectedIndex };
+                        packet.Payload = new byte[2] { (byte)(0xF0 + RAMTableComboBox.SelectedIndex), (byte)DiagnosticDataListBox.SelectedIndex };
                     }
 
-                    MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;                    
-                    MainForm.Packet.GeneratePacket();
-                    OriginalForm.TransmitUSBPacket("[<-TX] Request diagnostic data:");
+                    packet.Bus = (byte)PacketHelper.Bus.PCM;
+                    packet.Command = (byte)PacketHelper.Command.MsgTx;                    
+
+                    OriginalForm.TransmitUSBPacket("[<-TX] Request diagnostic data:", packet);
+                    SerialService.WritePacket(packet);
                 }
             }
             else if (count > 1)
@@ -403,51 +412,33 @@ namespace ChryslerScanner
 
                 if (DiagnosticDataRepeatIntervalCheckBox.Checked)
                 {
-                    MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedList;
+                    packet.Mode = (byte)PacketHelper.MsgTxMode.RepeatedList;
                 }
                 else
                 {
-                    MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.list;
+                    packet.Mode = (byte)PacketHelper.MsgTxMode.List;
                 }
 
                 if (OriginalForm.PCM.speed == "7812.5 baud")
                 {
-                    if (OriginalForm.PCM.logic == "non-inverted")
+                    packet.Payload = new byte[(3 * count) + 1];
+                    packet.Payload[0] = count;
+
+                    ushort bp = 1; // buffer pointer
+
+                    for (int i = 0; i < count; i++)
                     {
-                        MainForm.Packet.tx.payload = new byte[(3 * count) + 1];
-                        MainForm.Packet.tx.payload[0] = count;
-
-                        ushort bp = 1; // buffer pointer
-
-                        for (int i = 0; i < count; i++)
-                        {
-                            MainForm.Packet.tx.payload[bp] = 2; // message length
-                            MainForm.Packet.tx.payload[bp + 1] = 0x14; // request ID
-                            MainForm.Packet.tx.payload[bp + 2] = (byte)DiagnosticDataListBox.SelectedIndices[i]; // request parameter
-                            bp += 3;
-                        }
+                        packet.Payload[bp] = 2; // message length
+                        packet.Payload[bp + 1] = 0x14; // request ID
+                        packet.Payload[bp + 2] = (byte)DiagnosticDataListBox.SelectedIndices[i]; // request parameter
+                        bp += 3;
                     }
-                    else if (OriginalForm.PCM.logic == "inverted")
-                    {
-                        MainForm.Packet.tx.payload = new byte[(4 * count) + 1];
-                        MainForm.Packet.tx.payload[0] = count;
+                    
+                    packet.Bus = (byte)PacketHelper.Bus.PCM;
+                    packet.Command = (byte)PacketHelper.Command.MsgTx;
 
-                        ushort bp = 1; // buffer pointer
-
-                        for (int i = 0; i < count; i++)
-                        {
-                            MainForm.Packet.tx.payload[bp] = 3; // message length
-                            MainForm.Packet.tx.payload[bp + 1] = 0x14; // request ID
-                            MainForm.Packet.tx.payload[bp + 2] = (byte)DiagnosticDataListBox.SelectedIndices[i]; // request parameter
-                            MainForm.Packet.tx.payload[bp + 3] = 0; // stop byte stream
-                            bp += 4;
-                        }
-                    }
-
-                    MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                    MainForm.Packet.GeneratePacket();
-                    OriginalForm.TransmitUSBPacket("[<-TX] Request diagnostic data:");
+                    OriginalForm.TransmitUSBPacket("[<-TX] Request diagnostic data:", packet);
+                    SerialService.WritePacket(packet);
                 }
                 else if (OriginalForm.PCM.speed == "62500 baud")
                 {
@@ -465,8 +456,8 @@ namespace ChryslerScanner
 
                     int PayloadLength = 1 + ((count - WordRequestCount - DWordRequestCount) * 3) + (WordRequestCount * 4) + (WordRequestCount * 6);
 
-                    MainForm.Packet.tx.payload = new byte[PayloadLength];
-                    MainForm.Packet.tx.payload[0] = count;
+                    packet.Payload = new byte[PayloadLength];
+                    packet.Payload[0] = count;
 
                     ushort bp = 1; // buffer pointer
 
@@ -474,35 +465,36 @@ namespace ChryslerScanner
                     {
                         if (WordRequestFilter[RAMTableComboBox.SelectedIndex].Contains((byte)DiagnosticDataListBox.SelectedIndices[i]))
                         {
-                            MainForm.Packet.tx.payload[bp] = 3;
-                            MainForm.Packet.tx.payload[bp + 1] = (byte)(0xF0 + RAMTableComboBox.SelectedIndex);
-                            MainForm.Packet.tx.payload[bp + 2] = (byte)DiagnosticDataListBox.SelectedIndices[i];
-                            MainForm.Packet.tx.payload[bp + 3] = (byte)(DiagnosticDataListBox.SelectedIndices[i] + 1);
+                            packet.Payload[bp] = 3;
+                            packet.Payload[bp + 1] = (byte)(0xF0 + RAMTableComboBox.SelectedIndex);
+                            packet.Payload[bp + 2] = (byte)DiagnosticDataListBox.SelectedIndices[i];
+                            packet.Payload[bp + 3] = (byte)(DiagnosticDataListBox.SelectedIndices[i] + 1);
                             bp += 4;
                         }
                         else if (DWordRequestFilter[RAMTableComboBox.SelectedIndex].Contains((byte)DiagnosticDataListBox.SelectedIndices[i]))
                         {
-                            MainForm.Packet.tx.payload[bp] = 5;
-                            MainForm.Packet.tx.payload[bp + 1] = (byte)(0xF0 + RAMTableComboBox.SelectedIndex);
-                            MainForm.Packet.tx.payload[bp + 2] = (byte)DiagnosticDataListBox.SelectedIndices[i];
-                            MainForm.Packet.tx.payload[bp + 3] = (byte)(DiagnosticDataListBox.SelectedIndices[i] + 1);
-                            MainForm.Packet.tx.payload[bp + 4] = (byte)(DiagnosticDataListBox.SelectedIndices[i] + 2);
-                            MainForm.Packet.tx.payload[bp + 5] = (byte)(DiagnosticDataListBox.SelectedIndices[i] + 3);
+                            packet.Payload[bp] = 5;
+                            packet.Payload[bp + 1] = (byte)(0xF0 + RAMTableComboBox.SelectedIndex);
+                            packet.Payload[bp + 2] = (byte)DiagnosticDataListBox.SelectedIndices[i];
+                            packet.Payload[bp + 3] = (byte)(DiagnosticDataListBox.SelectedIndices[i] + 1);
+                            packet.Payload[bp + 4] = (byte)(DiagnosticDataListBox.SelectedIndices[i] + 2);
+                            packet.Payload[bp + 5] = (byte)(DiagnosticDataListBox.SelectedIndices[i] + 3);
                             bp += 6;
                         }
                         else
                         {
-                            MainForm.Packet.tx.payload[bp] = 2;
-                            MainForm.Packet.tx.payload[bp + 1] = (byte)(0xF0 + RAMTableComboBox.SelectedIndex);
-                            MainForm.Packet.tx.payload[bp + 2] = (byte)DiagnosticDataListBox.SelectedIndices[i];
+                            packet.Payload[bp] = 2;
+                            packet.Payload[bp + 1] = (byte)(0xF0 + RAMTableComboBox.SelectedIndex);
+                            packet.Payload[bp + 2] = (byte)DiagnosticDataListBox.SelectedIndices[i];
                             bp += 3;
                         }
                     }
 
-                    MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                    MainForm.Packet.GeneratePacket();
-                    OriginalForm.TransmitUSBPacket("[<-TX] Request diagnostic data:");
+                    packet.Bus = (byte)PacketHelper.Bus.PCM;
+                    packet.Command = (byte)PacketHelper.Command.MsgTx;
+
+                    OriginalForm.TransmitUSBPacket("[<-TX] Request diagnostic data:", packet);
+                    SerialService.WritePacket(packet);
                 }
             }
 
@@ -539,6 +531,9 @@ namespace ChryslerScanner
 
                 string Header = "Milliseconds";
 
+                if (DiagnosticItems.Count == 0)
+                    return;
+
                 foreach (var item in DiagnosticItems)
                 {
                     Header += "," + Util.ByteToHexStringSimple(item);
@@ -565,12 +560,15 @@ namespace ChryslerScanner
             FirstDiagnosticItemID = 0;
             DiagnosticItems.Clear();
 
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.stop;
-            MainForm.Packet.tx.payload = null;
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Stop diagnostic data request:");
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.PCM;
+            packet.Command = (byte)PacketHelper.Command.MsgTx;
+            packet.Mode = (byte)PacketHelper.MsgTxMode.Stop;
+            packet.Payload = null;
+
+            OriginalForm.TransmitUSBPacket("[<-TX] Stop diagnostic data request:", packet);
+            SerialService.WritePacket(packet);
         }
 
         private void DiagnosticDataClearButton_Click(object sender, EventArgs e)
@@ -586,15 +584,18 @@ namespace ChryslerScanner
             repeatIntervalArray[0] = (byte)((repeatInterval >> 8) & 0xFF);
             repeatIntervalArray[1] = (byte)(repeatInterval & 0xFF);
 
-            payloadList.Add((byte)Packet.Bus.pcm);
+            payloadList.Add((byte)PacketHelper.Bus.PCM);
             payloadList.AddRange(repeatIntervalArray);
 
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
-            MainForm.Packet.tx.command = (byte)Packet.Command.settings;
-            MainForm.Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
-            MainForm.Packet.tx.payload = payloadList.ToArray();
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:");
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Settings;
+            packet.Mode = (byte)PacketHelper.SettingsMode.SetRepeatBehavior;
+            packet.Payload = payloadList.ToArray();
+
+            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:", packet);
+            SerialService.WritePacket(packet);
 
             bool success = int.TryParse(SetIdleSpeedTextBox.Text, out int SetRPM);
 
@@ -612,22 +613,28 @@ namespace ChryslerScanner
                 SetIdleSpeedTrackBar.Value = 2000;
             }
 
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.repeatedSingle;
-            MainForm.Packet.tx.payload = new byte[2] { 0x19, (byte)(SetRPM / 7.85) };
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Set idle speed:");
+            packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.PCM;
+            packet.Command = (byte)PacketHelper.Command.MsgTx;
+            packet.Mode = (byte)PacketHelper.MsgTxMode.RepeatedSingle;
+            packet.Payload = new byte[2] { 0x19, (byte)(SetRPM / 7.85) };
+
+            OriginalForm.TransmitUSBPacket("[<-TX] Set idle speed:", packet);
+            SerialService.WritePacket(packet);
         }
 
         private void SetIdleSpeedStopButton_Click(object sender, EventArgs e)
         {
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.stop;
-            MainForm.Packet.tx.payload = null;
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Restore default idle speed:");
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.PCM;
+            packet.Command = (byte)PacketHelper.Command.MsgTx;
+            packet.Mode = (byte)PacketHelper.MsgTxMode.Stop;
+            packet.Payload = null;
+
+            OriginalForm.TransmitUSBPacket("[<-TX] Restore default idle speed:", packet);
+            SerialService.WritePacket(packet);
         }
 
         private void SetIdleSpeedTextBox_KeyPress(object sender, KeyPressEventArgs e)
@@ -654,42 +661,53 @@ namespace ChryslerScanner
 
         private void ResetMemoryOKButton_Click(object sender, EventArgs e)
         {
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-            MainForm.Packet.tx.payload = new byte[2] { 0x23, (byte)ResetMemoryComboBox.SelectedIndex };
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Reset memory value:");
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.PCM;
+            packet.Command = (byte)PacketHelper.Command.MsgTx;
+            packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+            packet.Payload = new byte[2] { 0x23, (byte)ResetMemoryComboBox.SelectedIndex };
+
+            OriginalForm.TransmitUSBPacket("[<-TX] Reset memory value:", packet);
+            SerialService.WritePacket(packet);
         }
 
         private void SecurityUnlockButton_Click(object sender, EventArgs e)
         {
-            if (SecurityLevelComboBox.SelectedIndex == 0)
-            {
-                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
+            Packet packet = new Packet();
 
-                if (LegacySecurityCheckBox.Checked)
-                {
-                    MainForm.Packet.tx.payload = new byte[1] { 0x2B };
-                }
-                else
-                {
-                    MainForm.Packet.tx.payload = new byte[2] { 0x35, 0x01 };
-                }
-
-                MainForm.Packet.GeneratePacket();
-                OriginalForm.TransmitUSBPacket("[<-TX] Request level 1 security seed:");
-            }
-            else if (SecurityLevelComboBox.SelectedIndex == 1)
+            switch (SecurityLevelComboBox.SelectedIndex)
             {
-                MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                MainForm.Packet.tx.payload = new byte[2] { 0x35, 0x02 };
-                MainForm.Packet.GeneratePacket();
-                OriginalForm.TransmitUSBPacket("[<-TX] Request level 2 security seed:");
+                case 0:
+                {
+                    packet.Bus = (byte)PacketHelper.Bus.PCM;
+                    packet.Command = (byte)PacketHelper.Command.MsgTx;
+                    packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+
+                    if (LegacySecurityCheckBox.Checked)
+                    {
+                        packet.Payload = new byte[1] { 0x2B };
+                    }
+                    else
+                    {
+                        packet.Payload = new byte[2] { 0x35, 0x01 };
+                    }
+
+                    OriginalForm.TransmitUSBPacket("[<-TX] Request level 1 security seed:", packet);
+                    SerialService.WritePacket(packet);
+                    break;
+                }
+                case 1:
+                {
+                    packet.Bus = (byte)PacketHelper.Bus.PCM;
+                    packet.Command = (byte)PacketHelper.Command.MsgTx;
+                    packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+                    packet.Payload = new byte[2] { 0x35, 0x02 };
+
+                    OriginalForm.TransmitUSBPacket("[<-TX] Request level 2 security seed:", packet);
+                    SerialService.WritePacket(packet);
+                    break;
+                }
             }
         }
 
@@ -707,12 +725,15 @@ namespace ChryslerScanner
 
         private void ConfigurationGetButton_Click(object sender, EventArgs e)
         {
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-            MainForm.Packet.tx.payload = new byte[3] { 0x2A, (byte)ConfigurationComboBox.SelectedIndex, 0xFE };
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Information request:");
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.PCM;
+            packet.Command = (byte)PacketHelper.Command.MsgTx;
+            packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+            packet.Payload = new byte[3] { 0x2A, (byte)ConfigurationComboBox.SelectedIndex, 0xFE };
+
+            OriginalForm.TransmitUSBPacket("[<-TX] Information request:", packet);
+            SerialService.WritePacket(packet);
         }
 
         private void ConfigurationGetPartNumberButton_Click(object sender, EventArgs e)
@@ -731,24 +752,30 @@ namespace ChryslerScanner
             repeatIntervalArray[0] = (byte)((repeatInterval >> 8) & 0xFF);
             repeatIntervalArray[1] = (byte)(repeatInterval & 0xFF);
 
-            payloadList.Add((byte)Packet.Bus.pcm);
+            payloadList.Add((byte)PacketHelper.Bus.PCM);
             payloadList.AddRange(repeatIntervalArray);
 
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
-            MainForm.Packet.tx.command = (byte)Packet.Command.settings;
-            MainForm.Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
-            MainForm.Packet.tx.payload = payloadList.ToArray();
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:");
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Settings;
+            packet.Mode = (byte)PacketHelper.SettingsMode.SetRepeatBehavior;
+            packet.Payload = payloadList.ToArray();
+
+            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:", packet);
+            SerialService.WritePacket(packet);
 
             const byte infoCount = 6; // part number is stored in 6 bytes
 
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.list;
-            MainForm.Packet.tx.payload = new byte[(4 * infoCount) + 1] { infoCount, 0x03, 0x2A, 0x01, 0xFE, 0x03, 0x2A, 0x02, 0xFE, 0x03, 0x2A, 0x03, 0xFE, 0x03, 0x2A, 0x04, 0xFE, 0x03, 0x2A, 0x17, 0xFE, 0x03, 0x2A, 0x18, 0xFE };
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] PCM part number request:");
+            packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.PCM;
+            packet.Command = (byte)PacketHelper.Command.MsgTx;
+            packet.Mode = (byte)PacketHelper.MsgTxMode.List;
+            packet.Payload = new byte[(4 * infoCount) + 1] { infoCount, 0x03, 0x2A, 0x01, 0xFE, 0x03, 0x2A, 0x02, 0xFE, 0x03, 0x2A, 0x03, 0xFE, 0x03, 0x2A, 0x04, 0xFE, 0x03, 0x2A, 0x17, 0xFE, 0x03, 0x2A, 0x18, 0xFE };
+
+            OriginalForm.TransmitUSBPacket("[<-TX] PCM part number request:", packet);
+            SerialService.WritePacket(packet);
         }
 
         private void ConfigurationGetAllButton_Click(object sender, EventArgs e)
@@ -767,53 +794,59 @@ namespace ChryslerScanner
             repeatIntervalArray[0] = (byte)((repeatInterval >> 8) & 0xFF);
             repeatIntervalArray[1] = (byte)(repeatInterval & 0xFF);
 
-            payloadList.Add((byte)Packet.Bus.pcm);
+            payloadList.Add((byte)PacketHelper.Bus.PCM);
             payloadList.AddRange(repeatIntervalArray);
 
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
-            MainForm.Packet.tx.command = (byte)Packet.Command.settings;
-            MainForm.Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
-            MainForm.Packet.tx.payload = payloadList.ToArray();
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:");
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Settings;
+            packet.Mode = (byte)PacketHelper.SettingsMode.SetRepeatBehavior;
+            packet.Payload = payloadList.ToArray();
+
+            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:", packet);
+            SerialService.WritePacket(packet);
 
             const byte infoCount = 31; // there are fixed 31 information records available
             const byte infoCountSBEC2 = 3;
 
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-            MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-            MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.list;
-            MainForm.Packet.tx.payload = new byte[(4 * infoCount) + (3 * infoCountSBEC2) + 1];
-            MainForm.Packet.tx.payload[0] = infoCount + infoCountSBEC2;
+            packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.PCM;
+            packet.Command = (byte)PacketHelper.Command.MsgTx;
+            packet.Mode = (byte)PacketHelper.MsgTxMode.List;
+            packet.Payload = new byte[(4 * infoCount) + (3 * infoCountSBEC2) + 1];
+            packet.Payload[0] = infoCount + infoCountSBEC2;
 
             for (int i = 0; i < infoCountSBEC2; i++)
             {
-                MainForm.Packet.tx.payload[1 + (i * 3)] = 2; // message length
-                MainForm.Packet.tx.payload[1 + (i * 3) + 1] = 0x16; // request ID
-                MainForm.Packet.tx.payload[1 + (i * 3) + 1 + 1] = (byte)(0x80 + i); // request parameter
+                packet.Payload[1 + (i * 3)] = 2; // message length
+                packet.Payload[1 + (i * 3) + 1] = 0x16; // request ID
+                packet.Payload[1 + (i * 3) + 1 + 1] = (byte)(0x80 + i); // request parameter
             }
 
             for (int i = 0; i < infoCount; i++)
             {
-                MainForm.Packet.tx.payload[10 + (i * 4)] = 3; // message length
-                MainForm.Packet.tx.payload[10 + (i * 4) + 1] = 0x2A; // request ID
-                MainForm.Packet.tx.payload[10 + (i * 4) + 1 + 1] = (byte)(i + 1); // request parameter
-                MainForm.Packet.tx.payload[10 + (i * 4) + 1 + 1 + 1] = 0xFE; // termination command, some earlier SBEC3 won't stop streaming response byte without it
+                packet.Payload[10 + (i * 4)] = 3; // message length
+                packet.Payload[10 + (i * 4) + 1] = 0x2A; // request ID
+                packet.Payload[10 + (i * 4) + 1 + 1] = (byte)(i + 1); // request parameter
+                packet.Payload[10 + (i * 4) + 1 + 1 + 1] = 0xFE; // termination command, some earlier SBEC3 won't stop streaming response byte without it
             }
 
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Information request:");
+            OriginalForm.TransmitUSBPacket("[<-TX] Information request:", packet);
+            SerialService.WritePacket(packet);
         }
 
-        private void PacketReceivedHandler(object sender, EventArgs e)
+        private void PacketReceivedHandler(object sender, Packet packet)
         {
-            Invoke((MethodInvoker)delegate
+            UIContext.Post(state =>
             {
-                switch (MainForm.Packet.rx.bus)
+                switch (packet.Bus)
                 {
-                    case (byte)Packet.Bus.pcm:
-                    case (byte)Packet.Bus.tcm:
-                        byte[] SCIBusResponseBytes = MainForm.Packet.rx.payload.Skip(4).ToArray(); // skip 4 timestamp bytes
+                    case (byte)PacketHelper.Bus.PCM:
+                    case (byte)PacketHelper.Bus.TCM:
+                    {
+                        byte[] SCIBusResponseBytes = packet.Payload.Skip(4).ToArray(); // skip 4 timestamp bytes
 
                         if (SCIBusResponseBytes.Length == 0) break;
 
@@ -822,10 +855,13 @@ namespace ChryslerScanner
                             switch (SCIBusResponseBytes[0])
                             {
                                 case (byte)SCI_ID.SCIHiSpeed:
+                                {
                                     HighSpeedLayout();
                                     AddHighSpeedDiagnosticData((byte)(0xF0 + RAMTableComboBox.SelectedIndex));
                                     break;
+                                }
                                 case (byte)SCI_ID.DiagnosticData:
+                                {
                                     if (SCIBusResponseBytes.Length < 3)
                                     {
                                         if (DiagnosticDataCSVCheckBox.Checked)
@@ -847,7 +883,7 @@ namespace ChryslerScanner
 
                                     if ((DiagnosticItems.Count == DiagnosticItemCount) && (DiagnosticItemCount > 0))
                                     {
-                                        uint Millis = (uint)((MainForm.Packet.rx.payload[0] << 24) + (MainForm.Packet.rx.payload[1] << 16) + (MainForm.Packet.rx.payload[2] << 8) + MainForm.Packet.rx.payload[3]);
+                                        uint Millis = (uint)((packet.Payload[0] << 24) + (packet.Payload[1] << 16) + (packet.Payload[2] << 8) + packet.Payload[3]);
                                         CSVLine = Millis.ToString();
 
                                         foreach (var item in DiagnosticItems)
@@ -859,7 +895,9 @@ namespace ChryslerScanner
                                         DiagnosticItems.Clear();
                                     }
                                     break;
+                                }
                                 case (byte)SCI_ID.ActuatorTest:
+                                {
                                     if (SCIBusResponseBytes.Length < 3) break;
 
                                     if (((SCIBusResponseBytes.Length == 4) || (SCIBusResponseBytes.Length == 5)) && (SCIBusResponseBytes[1] != 0) && (SCIBusResponseBytes[2] == 0))
@@ -876,127 +914,145 @@ namespace ChryslerScanner
 
                                     ActuatorTestStatusLabel.Text = "Status: running";
                                     break;
+                                }
                                 case (byte)SCI_ID.ConfigDataSBEC2:
+                                {
                                     if (SCIBusResponseBytes.Length < 7) break;
 
                                     UpdateCHTGroup();
                                     UpdateStatusBar();
                                     break;
+                                }
                                 case (byte)SCI_ID.ResetMemory:
+                                {
                                     if (SCIBusResponseBytes.Length < 3) break;
 
                                     switch (SCIBusResponseBytes[2])
                                     {
                                         case 0x00:
+                                        {
                                             ResetMemoryStatusLabel.Text = "Status: stop engine";
                                             break;
+                                        }
                                         case 0x01:
+                                        {
                                             ResetMemoryStatusLabel.Text = "Status: mode not available";
                                             break;
+                                        }
                                         case 0x02:
+                                        {
                                             ResetMemoryStatusLabel.Text = "Status: denied (module busy)";
                                             break;
+                                        }
                                         case 0x03:
+                                        {
                                             ResetMemoryStatusLabel.Text = "Status: denied (security level)";
                                             break;
+                                        }
                                         case 0xF0:
+                                        {
                                             ResetMemoryStatusLabel.Text = "Status: ok";
                                             break;
+                                        }
                                         default:
+                                        {
                                             ResetMemoryStatusLabel.Text = "Status: unknown";
                                             break;
+                                        }
                                     }
                                     break;
+                                }
                                 case (byte)SCI_ID.ConfigData:
+                                {
                                     if (SCIBusResponseBytes.Length < 3) break;
 
                                     UpdateCHTGroup();
                                     UpdateStatusBar();
                                     break;
+                                }
                                 case (byte)SCI_ID.GetSecuritySeedLegacy:
+                                {
                                     if (SCIBusResponseBytes.Length < 4) break;
 
-                                    byte ChecksumA = (byte)(SCIBusResponseBytes[0] + SCIBusResponseBytes[1] + SCIBusResponseBytes[2]);
+                                    if (SCIBusResponseBytes[3] != Util.ChecksumCalculator(SCIBusResponseBytes, 0, SCIBusResponseBytes.Length - 1))
+                                        break;
 
-                                    if (SCIBusResponseBytes[3] != ChecksumA) break;
+                                    if ((SCIBusResponseBytes[1] == 0) && (SCIBusResponseBytes[2] == 0))
+                                        break;
 
-                                    ushort SeedA = (ushort)((SCIBusResponseBytes[1] << 8) + SCIBusResponseBytes[2]);
+                                    byte[] key = UnlockAlgorithm.GetSecurityKey(UnlockAlgorithm.Controllers.SBEC,
+                                                                                UnlockAlgorithm.SecurityLevels.Level1,
+                                                                                SCIBusResponseBytes.Skip(1).Take(2).ToArray());
 
-                                    if (SeedA == 0) break;
+                                    byte[] UnlockRequest = new byte[4] { 0x2C, key[0], key[1], (byte)(0x2C + key[0] + key[1]) };
 
-                                    ushort KeyA = (ushort)((SeedA << 2) + 0x9018);
-                                    byte KeyHBA = (byte)(KeyA >> 8);
-                                    byte KeyLBA = (byte)(KeyA);
-                                    byte KeyChecksumA = (byte)(0x2C + KeyHBA + KeyLBA);
-                                    byte[] KeyArrayA = { (byte)SCI_ID.SendSecurityKey, KeyHBA, KeyLBA, KeyChecksumA };
+                                    Packet PacketTx = new Packet();
 
-                                    MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                                    MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                                    MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                                    MainForm.Packet.tx.payload = KeyArrayA;
-                                    MainForm.Packet.GeneratePacket();
-                                    OriginalForm.TransmitUSBPacket("[<-TX] Send level 1 security key:");
+                                    PacketTx.Bus = (byte)PacketHelper.Bus.PCM;
+                                    PacketTx.Command = (byte)PacketHelper.Command.MsgTx;
+                                    PacketTx.Mode = (byte)PacketHelper.MsgTxMode.Single;
+                                    PacketTx.Payload = UnlockRequest;
+
+                                    OriginalForm.TransmitUSBPacket("[<-TX] Send level 1 security key:", PacketTx);
+                                    SerialService.WritePacket(PacketTx);
                                     break;
+                                }
                                 case (byte)SCI_ID.GetSecuritySeed:
+                                {
                                     if (SCIBusResponseBytes.Length < 5) break;
 
-                                    if (SCIBusResponseBytes[1] == 0x01)
+                                    if (SCIBusResponseBytes[4] != Util.ChecksumCalculator(SCIBusResponseBytes, 0, SCIBusResponseBytes.Length - 1))
+                                        break; // checksum error
+
+                                    if ((SCIBusResponseBytes[2] == 0) && (SCIBusResponseBytes[3] == 0))
+                                        break; // PCM already unlocked
+
+                                    byte[] key = new byte[2] { 0, 0 };
+
+                                    switch (SCIBusResponseBytes[1])
                                     {
-                                        byte ChecksumB = (byte)(SCIBusResponseBytes[0] + SCIBusResponseBytes[1] + SCIBusResponseBytes[2] + SCIBusResponseBytes[3]);
-
-                                        if (SCIBusResponseBytes[4] != ChecksumB) break;
-
-                                        ushort SeedB = (ushort)((SCIBusResponseBytes[2] << 8) + SCIBusResponseBytes[3]);
-
-                                        if (SeedB == 0) break;
-
-                                        ushort KeyB = (ushort)((SeedB << 2) + 0x9018);
-                                        byte KeyHBB = (byte)(KeyB >> 8);
-                                        byte KeyLBB = (byte)(KeyB);
-                                        byte KeyChecksumB = (byte)(0x2C + KeyHBB + KeyLBB);
-                                        byte[] KeyArrayB = { (byte)SCI_ID.SendSecurityKey, KeyHBB, KeyLBB, KeyChecksumB };
-
-                                        MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                                        MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                                        MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                                        MainForm.Packet.tx.payload = KeyArrayB;
-                                        MainForm.Packet.GeneratePacket();
-                                        OriginalForm.TransmitUSBPacket("[<-TX] Send level 1 security key:");
+                                        case 1:
+                                        {
+                                            key = UnlockAlgorithm.GetSecurityKey(UnlockAlgorithm.Controllers.SBEC,
+                                                                                 UnlockAlgorithm.SecurityLevels.Level1,
+                                                                                 SCIBusResponseBytes.Skip(2).Take(2).ToArray());
+                                            break;
+                                        }
+                                        case 2:
+                                        {
+                                            key = UnlockAlgorithm.GetSecurityKey(UnlockAlgorithm.Controllers.SBEC,
+                                                                                 UnlockAlgorithm.SecurityLevels.Level2,
+                                                                                 SCIBusResponseBytes.Skip(2).Take(2).ToArray());
+                                            break;
+                                        }
                                     }
-                                    else if (SCIBusResponseBytes[1] == 0x02)
+
+                                    byte[] UnlockRequest = new byte[4] { 0x2C, key[0], key[1], (byte)(0x2C + key[0] + key[1]) };
+
+                                    Packet PacketTx = new Packet();
+
+                                    PacketTx.Bus = (byte)PacketHelper.Bus.PCM;
+                                    PacketTx.Command = (byte)PacketHelper.Command.MsgTx;
+                                    PacketTx.Mode = (byte)PacketHelper.MsgTxMode.Single;
+                                    PacketTx.Payload = UnlockRequest;
+
+                                    switch (SCIBusResponseBytes[1])
                                     {
-                                        byte ChecksumC = (byte)(SCIBusResponseBytes[0] + SCIBusResponseBytes[1] + SCIBusResponseBytes[2] + SCIBusResponseBytes[3]);
-
-                                        if (SCIBusResponseBytes[4] != ChecksumC) break;
-
-                                        ushort SeedC = (ushort)((SCIBusResponseBytes[2] << 8) + SCIBusResponseBytes[3]);
-
-                                        if (SeedC == 0) break;
-
-                                        ushort KeyC = (ushort)(SeedC & 0xFF00);
-                                        KeyC |= (ushort)(KeyC >> 8);
-
-                                        ushort mask = (ushort)(SeedC & 0xFF);
-                                        mask |= (ushort)(mask << 8);
-                                        KeyC ^= 0x9340; // polinom
-                                        KeyC += 0x1010;
-                                        KeyC ^= mask;
-                                        KeyC += 0x1911;
-                                        uint tmp = (uint)((KeyC << 16) | KeyC);
-                                        KeyC += (ushort)(tmp >> 3);
-                                        byte KeyHBC = (byte)(KeyC >> 8);
-                                        byte KeyLBC = (byte)(KeyC);
-                                        byte KeyChecksumC = (byte)(0x2C + KeyHBC + KeyLBC);
-                                        byte[] KeyArrayC = { 0x2C, KeyHBC, KeyLBC, KeyChecksumC };
-
-                                        MainForm.Packet.tx.bus = (byte)Packet.Bus.pcm;
-                                        MainForm.Packet.tx.command = (byte)Packet.Command.msgTx;
-                                        MainForm.Packet.tx.mode = (byte)Packet.MsgTxMode.single;
-                                        MainForm.Packet.tx.payload = KeyArrayC;
-                                        MainForm.Packet.GeneratePacket();
-                                        OriginalForm.TransmitUSBPacket("[<-TX] Send level 2 security key:");
+                                        case 1:
+                                        {
+                                            OriginalForm.TransmitUSBPacket("[<-TX] Send level 1 security key:", PacketTx);
+                                            break;
+                                        }
+                                        case 2:
+                                        {
+                                            OriginalForm.TransmitUSBPacket("[<-TX] Send level 2 security key:", PacketTx);
+                                            break;
+                                        }
                                     }
+
+                                    SerialService.WritePacket(PacketTx);
                                     break;
+                                }
                             }
                         }
                         else if (OriginalForm.PCM.speed == "62500 baud")
@@ -1017,7 +1073,7 @@ namespace ChryslerScanner
 
                                     if ((DiagnosticItems.Count == DiagnosticItemCount) && (DiagnosticItemCount > 0))
                                     {
-                                        uint Millis = (uint)((MainForm.Packet.rx.payload[0] << 24) + (MainForm.Packet.rx.payload[1] << 16) + (MainForm.Packet.rx.payload[2] << 8) + MainForm.Packet.rx.payload[3]);
+                                        uint Millis = (uint)((packet.Payload[0] << 24) + (packet.Payload[1] << 16) + (packet.Payload[2] << 8) + packet.Payload[3]);
                                         CSVLine = Millis.ToString();
 
                                         foreach (var item in DiagnosticItems)
@@ -1057,8 +1113,9 @@ namespace ChryslerScanner
                             }
                         }
                         break;
+                    }
                 }
-            });
+            }, null);
         }
 
         private void LowSpeedLayout()
@@ -1246,22 +1303,31 @@ namespace ChryslerScanner
             switch (RAMTable)
             {
                 case 0xF0:
+                {
                     DiagnosticDataListBox.Items.AddRange(new object[] {
                     "F000 |"});
                     break;
+                }
                 case 0xF1:
+                {
                     DiagnosticDataListBox.Items.AddRange(new object[] {
                     "F100 |"});
                     break;
+                }
                 case 0xF2:
+                {
                     DiagnosticDataListBox.Items.AddRange(new object[] {
                     "F200 |"});
                     break;
+                }
                 case 0xF3:
+                {
                     DiagnosticDataListBox.Items.AddRange(new object[] {
                     "F300 |"});
                     break;
+                }
                 case 0xF4:
+                {
                     DiagnosticDataListBox.Items.AddRange(new object[] {
                     "F400 |",
                     "F401 | DTC 1",
@@ -1504,19 +1570,27 @@ namespace ChryslerScanner
                     "F4EE | Cruise control satuts 2",
                     "F4EF | Calculated TPS voltage"});
                     break;
+                }
                 case 0xF5:
+                {
                     DiagnosticDataListBox.Items.AddRange(new object[] {
                     "F500 |"});
                     break;
+                }
                 case 0xF6:
+                {
                     DiagnosticDataListBox.Items.AddRange(new object[] {
                     "F600 |"});
                     break;
+                }
                 case 0xF7:
+                {
                     DiagnosticDataListBox.Items.AddRange(new object[] {
                     "F700 |"});
                     break;
+                }
                 case 0xF8:
+                {
                     if ((OriginalForm.PCM.Year < 2003) && OriginalForm.PCM.CumminsSelected)
                     {
                         DiagnosticDataListBox.Items.AddRange(new object[] {
@@ -2011,15 +2085,21 @@ namespace ChryslerScanner
                         "F800 |" });
                     }
                     break;
+                }
                 case 0xF9:
+                {
                     DiagnosticDataListBox.Items.AddRange(new object[] {
                     "F900 |"});
                     break;
+                }
                 case 0xFA:
+                {
                     DiagnosticDataListBox.Items.AddRange(new object[] {
                     "FA00 |"});
                     break;
+                }
                 case 0xFB:
+                {
                     if ((OriginalForm.PCM.Year < 2003) && OriginalForm.PCM.CumminsSelected)
                     {
                         DiagnosticDataListBox.Items.AddRange(new object[] {
@@ -2514,7 +2594,9 @@ namespace ChryslerScanner
                         "FB00 |"});
                     }
                     break;
+                }
                 case 0xFC:
+                {
                     DiagnosticDataListBox.Items.AddRange(new object[] {
                         "FC00 | CUMMINS STATISTICS 1",
                         "FC0104 | Total fuel used",
@@ -2757,7 +2839,9 @@ namespace ChryslerScanner
                         "FCEE |",
                         "FCEF |"});
                     break;
+                }
                 case 0xFD:
+                {
                     DiagnosticDataListBox.Items.AddRange(new object[] {
                         "FD00 | CUMMINS STATISTICS 2",
                         "FD01 |",
@@ -3000,8 +3084,11 @@ namespace ChryslerScanner
                         "FDEE |",
                         "FDEF |"});
                     break;
+                }
                 default:
+                {
                     break;
+                }
 
             }
         }
@@ -3022,23 +3109,23 @@ namespace ChryslerScanner
             repeatIntervalArray[0] = (byte)((repeatInterval >> 8) & 0xFF);
             repeatIntervalArray[1] = (byte)(repeatInterval & 0xFF);
 
-            payloadList.Add((byte)Packet.Bus.pcm);
+            payloadList.Add((byte)PacketHelper.Bus.PCM);
             payloadList.AddRange(repeatIntervalArray);
 
-            MainForm.Packet.tx.bus = (byte)Packet.Bus.usb;
-            MainForm.Packet.tx.command = (byte)Packet.Command.settings;
-            MainForm.Packet.tx.mode = (byte)Packet.SettingsMode.setRepeatBehavior;
-            MainForm.Packet.tx.payload = payloadList.ToArray();
-            MainForm.Packet.GeneratePacket();
-            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:");
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Settings;
+            packet.Mode = (byte)PacketHelper.SettingsMode.SetRepeatBehavior;
+            packet.Payload = payloadList.ToArray();
+
+            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:", packet);
+            SerialService.WritePacket(packet);
         }
 
         private void UpdateCHTGroup()
         {
-            Invoke((MethodInvoker)delegate
-            {
-                CHTComboBox.SelectedIndex = OriginalForm.PCM.ControllerHardwareType;
-            });
+            CHTComboBox.SelectedIndex = OriginalForm.PCM.ControllerHardwareType;
         }
 
         private void UpdateStatusBar()
@@ -3085,7 +3172,7 @@ namespace ChryslerScanner
 
         private void EngineToolsForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            MainForm.Packet.PacketReceived -= PacketReceivedHandler; // unsubscribe from the OnPacketReceived event
+            SerialService.PacketReceived -= PacketReceivedHandler; // unsubscribe from the OnPacketReceived event
         }
     }
 }

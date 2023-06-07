@@ -107,7 +107,7 @@
             this.CCDBusTxMessageRepeatIntervalTextBox = new System.Windows.Forms.TextBox();
             this.CCDBusTxMessageRepeatIntervalCheckBox = new System.Windows.Forms.CheckBox();
             this.CCDBusSendMessagesButton = new System.Windows.Forms.Button();
-            this.CCDBusTxMessageCalculateChecksumCheckBox = new System.Windows.Forms.CheckBox();
+            this.CCDBusTxMessageChecksumCheckBox = new System.Windows.Forms.CheckBox();
             this.CCDBusOverwriteDuplicateIDCheckBox = new System.Windows.Forms.CheckBox();
             this.CCDBusTxMessageClearListButton = new System.Windows.Forms.Button();
             this.CCDBusTxMessageRemoveItemButton = new System.Windows.Forms.Button();
@@ -122,7 +122,7 @@
             this.PCIBusTxMessageRepeatIntervalTextBox = new System.Windows.Forms.TextBox();
             this.PCIBusTxMessageRepeatIntervalCheckBox = new System.Windows.Forms.CheckBox();
             this.PCIBusSendMessagesButton = new System.Windows.Forms.Button();
-            this.PCIBusTxMessageCalculateCRCCheckBox = new System.Windows.Forms.CheckBox();
+            this.PCIBusTxMessageCRCCheckBox = new System.Windows.Forms.CheckBox();
             this.PCIBusOverwriteDuplicateIDCheckBox = new System.Windows.Forms.CheckBox();
             this.PCIBusTxMessageClearListButton = new System.Windows.Forms.Button();
             this.PCIBusTxMessageRemoveItemButton = new System.Windows.Forms.Button();
@@ -144,7 +144,7 @@
             this.SCIBusTxMessageRepeatIntervalTextBox = new System.Windows.Forms.TextBox();
             this.SCIBusTxMessageRepeatIntervalCheckBox = new System.Windows.Forms.CheckBox();
             this.SCIBusSendMessagesButton = new System.Windows.Forms.Button();
-            this.SCIBusTxMessageCalculateChecksumCheckBox = new System.Windows.Forms.CheckBox();
+            this.SCIBusTxMessageChecksumCheckBox = new System.Windows.Forms.CheckBox();
             this.SCIBusOverwriteDuplicateIDCheckBox = new System.Windows.Forms.CheckBox();
             this.SCIBusTxMessageClearListButton = new System.Windows.Forms.Button();
             this.SCIBusTxMessageRemoveItemButton = new System.Windows.Forms.Button();
@@ -206,6 +206,7 @@
             // 
             // MenuStrip
             // 
+            this.MenuStrip.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.MenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.ToolsToolStripMenuItem,
             this.SettingsToolStripMenuItem,
@@ -699,7 +700,7 @@
             this.CCDBusControlTabPage.Controls.Add(this.CCDBusTxMessageRepeatIntervalTextBox);
             this.CCDBusControlTabPage.Controls.Add(this.CCDBusTxMessageRepeatIntervalCheckBox);
             this.CCDBusControlTabPage.Controls.Add(this.CCDBusSendMessagesButton);
-            this.CCDBusControlTabPage.Controls.Add(this.CCDBusTxMessageCalculateChecksumCheckBox);
+            this.CCDBusControlTabPage.Controls.Add(this.CCDBusTxMessageChecksumCheckBox);
             this.CCDBusControlTabPage.Controls.Add(this.CCDBusOverwriteDuplicateIDCheckBox);
             this.CCDBusControlTabPage.Controls.Add(this.CCDBusTxMessageClearListButton);
             this.CCDBusControlTabPage.Controls.Add(this.CCDBusTxMessageRemoveItemButton);
@@ -790,13 +791,13 @@
             this.CCDBusSendMessagesButton.UseVisualStyleBackColor = true;
             this.CCDBusSendMessagesButton.Click += new System.EventHandler(this.CCDBusSendMessagesButton_Click);
             // 
-            // CCDBusTxMessageCalculateChecksumCheckBox
+            // CCDBusTxMessageChecksumCheckBox
             // 
-            resources.ApplyResources(this.CCDBusTxMessageCalculateChecksumCheckBox, "CCDBusTxMessageCalculateChecksumCheckBox");
-            this.CCDBusTxMessageCalculateChecksumCheckBox.Checked = true;
-            this.CCDBusTxMessageCalculateChecksumCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.CCDBusTxMessageCalculateChecksumCheckBox.Name = "CCDBusTxMessageCalculateChecksumCheckBox";
-            this.CCDBusTxMessageCalculateChecksumCheckBox.UseVisualStyleBackColor = true;
+            resources.ApplyResources(this.CCDBusTxMessageChecksumCheckBox, "CCDBusTxMessageChecksumCheckBox");
+            this.CCDBusTxMessageChecksumCheckBox.Checked = true;
+            this.CCDBusTxMessageChecksumCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.CCDBusTxMessageChecksumCheckBox.Name = "CCDBusTxMessageChecksumCheckBox";
+            this.CCDBusTxMessageChecksumCheckBox.UseVisualStyleBackColor = true;
             // 
             // CCDBusOverwriteDuplicateIDCheckBox
             // 
@@ -858,7 +859,7 @@
             this.PCIBusControlTabPage.Controls.Add(this.PCIBusTxMessageRepeatIntervalTextBox);
             this.PCIBusControlTabPage.Controls.Add(this.PCIBusTxMessageRepeatIntervalCheckBox);
             this.PCIBusControlTabPage.Controls.Add(this.PCIBusSendMessagesButton);
-            this.PCIBusControlTabPage.Controls.Add(this.PCIBusTxMessageCalculateCRCCheckBox);
+            this.PCIBusControlTabPage.Controls.Add(this.PCIBusTxMessageCRCCheckBox);
             this.PCIBusControlTabPage.Controls.Add(this.PCIBusOverwriteDuplicateIDCheckBox);
             this.PCIBusControlTabPage.Controls.Add(this.PCIBusTxMessageClearListButton);
             this.PCIBusControlTabPage.Controls.Add(this.PCIBusTxMessageRemoveItemButton);
@@ -907,13 +908,13 @@
             this.PCIBusSendMessagesButton.UseVisualStyleBackColor = true;
             this.PCIBusSendMessagesButton.Click += new System.EventHandler(this.PCIBusSendMessagesButton_Click);
             // 
-            // PCIBusTxMessageCalculateCRCCheckBox
+            // PCIBusTxMessageCRCCheckBox
             // 
-            resources.ApplyResources(this.PCIBusTxMessageCalculateCRCCheckBox, "PCIBusTxMessageCalculateCRCCheckBox");
-            this.PCIBusTxMessageCalculateCRCCheckBox.Checked = true;
-            this.PCIBusTxMessageCalculateCRCCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.PCIBusTxMessageCalculateCRCCheckBox.Name = "PCIBusTxMessageCalculateCRCCheckBox";
-            this.PCIBusTxMessageCalculateCRCCheckBox.UseVisualStyleBackColor = true;
+            resources.ApplyResources(this.PCIBusTxMessageCRCCheckBox, "PCIBusTxMessageCRCCheckBox");
+            this.PCIBusTxMessageCRCCheckBox.Checked = true;
+            this.PCIBusTxMessageCRCCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.PCIBusTxMessageCRCCheckBox.Name = "PCIBusTxMessageCRCCheckBox";
+            this.PCIBusTxMessageCRCCheckBox.UseVisualStyleBackColor = true;
             // 
             // PCIBusOverwriteDuplicateIDCheckBox
             // 
@@ -976,7 +977,7 @@
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusTxMessageRepeatIntervalTextBox);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusTxMessageRepeatIntervalCheckBox);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusSendMessagesButton);
-            this.SCIBusControlTabPage.Controls.Add(this.SCIBusTxMessageCalculateChecksumCheckBox);
+            this.SCIBusControlTabPage.Controls.Add(this.SCIBusTxMessageChecksumCheckBox);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusOverwriteDuplicateIDCheckBox);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusTxMessageClearListButton);
             this.SCIBusControlTabPage.Controls.Add(this.SCIBusTxMessageRemoveItemButton);
@@ -1091,11 +1092,11 @@
             this.SCIBusSendMessagesButton.UseVisualStyleBackColor = true;
             this.SCIBusSendMessagesButton.Click += new System.EventHandler(this.SCIBusSendMessagesButton_Click);
             // 
-            // SCIBusTxMessageCalculateChecksumCheckBox
+            // SCIBusTxMessageChecksumCheckBox
             // 
-            resources.ApplyResources(this.SCIBusTxMessageCalculateChecksumCheckBox, "SCIBusTxMessageCalculateChecksumCheckBox");
-            this.SCIBusTxMessageCalculateChecksumCheckBox.Name = "SCIBusTxMessageCalculateChecksumCheckBox";
-            this.SCIBusTxMessageCalculateChecksumCheckBox.UseVisualStyleBackColor = true;
+            resources.ApplyResources(this.SCIBusTxMessageChecksumCheckBox, "SCIBusTxMessageChecksumCheckBox");
+            this.SCIBusTxMessageChecksumCheckBox.Name = "SCIBusTxMessageChecksumCheckBox";
+            this.SCIBusTxMessageChecksumCheckBox.UseVisualStyleBackColor = true;
             // 
             // SCIBusOverwriteDuplicateIDCheckBox
             // 
@@ -1498,7 +1499,7 @@
         private System.Windows.Forms.Button CCDBusTxMessageRemoveItemButton;
         private System.Windows.Forms.Button CCDBusTxMessageClearListButton;
         private System.Windows.Forms.CheckBox CCDBusOverwriteDuplicateIDCheckBox;
-        private System.Windows.Forms.CheckBox CCDBusTxMessageCalculateChecksumCheckBox;
+        private System.Windows.Forms.CheckBox CCDBusTxMessageChecksumCheckBox;
         private System.Windows.Forms.Button CCDBusSendMessagesButton;
         private System.Windows.Forms.CheckBox CCDBusTxMessageRepeatIntervalCheckBox;
         private System.Windows.Forms.Label MillisecondsLabel03;
@@ -1517,7 +1518,7 @@
         private System.Windows.Forms.TextBox SCIBusTxMessageRepeatIntervalTextBox;
         private System.Windows.Forms.CheckBox SCIBusTxMessageRepeatIntervalCheckBox;
         private System.Windows.Forms.Button SCIBusSendMessagesButton;
-        private System.Windows.Forms.CheckBox SCIBusTxMessageCalculateChecksumCheckBox;
+        private System.Windows.Forms.CheckBox SCIBusTxMessageChecksumCheckBox;
         private System.Windows.Forms.CheckBox SCIBusOverwriteDuplicateIDCheckBox;
         private System.Windows.Forms.Button SCIBusTxMessageClearListButton;
         private System.Windows.Forms.Button SCIBusTxMessageRemoveItemButton;
@@ -1574,7 +1575,7 @@
         private System.Windows.Forms.TextBox PCIBusTxMessageRepeatIntervalTextBox;
         private System.Windows.Forms.CheckBox PCIBusTxMessageRepeatIntervalCheckBox;
         private System.Windows.Forms.Button PCIBusSendMessagesButton;
-        private System.Windows.Forms.CheckBox PCIBusTxMessageCalculateCRCCheckBox;
+        private System.Windows.Forms.CheckBox PCIBusTxMessageCRCCheckBox;
         private System.Windows.Forms.CheckBox PCIBusOverwriteDuplicateIDCheckBox;
         private System.Windows.Forms.Button PCIBusTxMessageClearListButton;
         private System.Windows.Forms.Button PCIBusTxMessageRemoveItemButton;

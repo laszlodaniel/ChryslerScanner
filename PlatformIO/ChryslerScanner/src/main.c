@@ -1063,7 +1063,7 @@ void configure_pci_bus(uint8_t settings)
     // B3: not used:         0: always clear
     // B2: not used:         0: always clear
     // B1: not used:         0: always clear
-    // B0: not used:         1: always clear
+    // B0: not used:         0: always clear
 
     settings &= 0xC0; // keep upper two bits
 
@@ -2450,6 +2450,7 @@ bool IRAM_ATTR sci_idle_timer_isr_callback(void *arg)
     sci.msg.rx_ptr = 0;
     sci.state.idle = true;
     sci.state.echo_received = true;
+    sci.state.response_received = true;
     return true;
 }
 
@@ -2811,15 +2812,14 @@ void sci_msg_task(void *pvParameters)
 
                 if (sci.msg.tx_count == 1)
                 {
-                    if (sci.state.ngc_mode) // do not wait for echo
+                    if (sci.state.ngc_mode) // OBD2 SCI-2
                     {
                         uart_write_bytes(UART_SCI, (const uint8_t *)sci.msg.tx_buffer, sci.msg.tx_length);
                         uart_wait_tx_idle_polling(UART_SCI);
-                        vTaskDelay(pdMS_TO_TICKS(5));
 
                         while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
                     }
-                    else // wait for echo
+                    else if (sci.state.inverted_logic) // OBD1
                     {
                         for (int i = 0; i < sci.msg.tx_length; i++)
                         {
@@ -2828,24 +2828,64 @@ void sci_msg_task(void *pvParameters)
                             uart_wait_tx_idle_polling(UART_SCI);
                             while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
                             sci.msg.byte_received = false;
+                            if (sci.state.idle) break;
                         }
 
-                        if ((sci.msg.tx_length > 1) && (sci.msg.rx_buffer[0] == 0x13) && (sci.msg.rx_buffer[1] != 0x00))
+                        if ((sci.msg.tx_length > 1) && ((sci.msg.tx_buffer[0] == 0x13) || (sci.msg.tx_buffer[0] == 0x14)))
                         {
                             while (!sci.msg.byte_received && !sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
 
                             if (sci.msg.byte_received)
                             {
-                                vTaskDelay(pdMS_TO_TICKS(2));
-                                buff[0] = 0x13;
-                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1); // disable actuator test mode byte stream
+                                sci.msg.byte_received = false;
+                                buff[0] = 0x00;
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1); // terminate byte stream (OBD1)
                                 uart_wait_tx_idle_polling(UART_SCI);
+
+                                while (!sci.msg.byte_received && !sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+                                
+                                sci_idle_timer_isr_callback(NULL);
                             }
+                        }
+                        else
+                        {
+                            while (!sci.msg.byte_received && !sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+                        }
+                    }
+                    else // OBD2 SCI-1
+                    {
+                        for (int i = 0; i < sci.msg.tx_length; i++)
+                        {
+                            buff[0] = sci.msg.tx_buffer[i];
+                            uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                            uart_wait_tx_idle_polling(UART_SCI);
+                            while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                            sci.msg.byte_received = false;
+                            if (sci.state.idle) break;
+                        }
+
+                        if ((sci.msg.tx_length > 1) && (sci.msg.tx_buffer[0] == 0x13) && (sci.msg.tx_buffer[1] != 0x00))
+                        {
+                            while (!sci.msg.byte_received && !sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+
+                            sci.msg.byte_received = false;
+                            buff[0] = 0x13;
+                            uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1); // disable actuator test mode byte stream
+                            uart_wait_tx_idle_polling(UART_SCI);
+
+                            while (!sci.msg.byte_received && !sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+
+                            sci.msg.byte_received = false;
                         }
 
                         if (array_contains(sci_lo_speed_cmd_filter, sizeof(sci_lo_speed_cmd_filter), sci.msg.tx_buffer[0]))
                         {
-                            while (!sci.msg.byte_received && !sci.state.idle);
+                            if ((sci.msg.tx_buffer[0] == 0x27) || (sci.msg.tx_buffer[0] == 0x28))
+                            {
+                                sci_set_timeout(300); // apply generous timeout for JTEC EEPROM read/write (slow)
+                            }
+                            
+                            while (!sci.msg.byte_received && !sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
 
                             if (sci.msg.byte_received)
                             {
@@ -2874,15 +2914,16 @@ void sci_msg_task(void *pvParameters)
                         j++;
                     }
 
-                    if (sci.state.ngc_mode) // do not wait for echo
+                    if (sci.state.ngc_mode) // OBD2 SCI-2
                     {
                         uart_write_bytes(UART_SCI, (const uint8_t *)current_message, sci.msg.tx_length);
                         uart_wait_tx_idle_polling(UART_SCI);
-                        vTaskDelay(pdMS_TO_TICKS(5));
 
                         while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+
+                        sci.state.response_received = true;
                     }
-                    else // wait for echo
+                    else if (sci.state.inverted_logic) // OBD1
                     {
                         for (int i = 0; i < sci.msg.tx_length; i++)
                         {
@@ -2891,11 +2932,64 @@ void sci_msg_task(void *pvParameters)
                             uart_wait_tx_idle_polling(UART_SCI);
                             while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
                             sci.msg.byte_received = false;
+                            if (sci.state.idle) break;
+                        }
+
+                        if ((sci.msg.tx_length > 1) && ((current_message[0] == 0x13) || (current_message[0] == 0x14)))
+                        {
+                            while (!sci.msg.byte_received && !sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+
+                            if (sci.msg.byte_received)
+                            {
+                                sci.msg.byte_received = false;
+                                buff[0] = 0x00;
+                                uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1); // terminate byte stream (OBD1)
+                                uart_wait_tx_idle_polling(UART_SCI);
+
+                                while (!sci.msg.byte_received && !sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+                                
+                                sci_idle_timer_isr_callback(NULL);
+                            }
+                        }
+                        else
+                        {
+                            while (!sci.msg.byte_received && !sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+                        }
+                    }
+                    else // OBD2 SCI-1
+                    {
+                        for (int i = 0; i < sci.msg.tx_length; i++)
+                        {
+                            buff[0] = current_message[i];
+                            uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1);
+                            uart_wait_tx_idle_polling(UART_SCI);
+                            while (!sci.msg.byte_received && !sci.state.idle); // wait for echo
+                            sci.msg.byte_received = false;
+                            if (sci.state.idle) break;
+                        }
+
+                        if ((sci.msg.tx_length > 1) && (current_message[0] == 0x13) && (current_message[1] != 0x00))
+                        {
+                            while (!sci.msg.byte_received && !sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+
+                            sci.msg.byte_received = false;
+                            buff[0] = 0x13;
+                            uart_write_bytes(UART_SCI, (const uint8_t *)buff, 1); // disable actuator test mode byte stream
+                            uart_wait_tx_idle_polling(UART_SCI);
+
+                            while (!sci.msg.byte_received && !sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
+
+                            sci.msg.byte_received = false;
                         }
 
                         if (array_contains(sci_lo_speed_cmd_filter, sizeof(sci_lo_speed_cmd_filter), current_message[0]))
                         {
-                            while (!sci.msg.byte_received && !sci.state.idle);
+                            if ((current_message[0] == 0x27) || (current_message[0] == 0x28))
+                            {
+                                sci_set_timeout(300); // apply generous timeout for JTEC EEPROM read/write (slow)
+                            }
+                            
+                            while (!sci.msg.byte_received && !sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
 
                             if (sci.msg.byte_received)
                             {
@@ -2909,7 +3003,7 @@ void sci_msg_task(void *pvParameters)
                         else
                         {
                             while (!sci.state.idle) vTaskDelay(pdMS_TO_TICKS(1));
-                        }
+                        } 
                     }
                 }
             }

@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ChryslerScanner
 {
@@ -13,12 +10,12 @@ namespace ChryslerScanner
         public List<string> Table = new List<string>();
         public List<ushort> IDByteList = new List<ushort>();
         public List<byte> UniqueIDByteList = new List<byte>();
-        public List<byte> _2426IDByteList = new List<byte>(2);
+        public List<byte> IDByte2426List = new List<byte>(2);
 
-        public int _24Row = 5; // PCI request
-        public int _26Row = 6; // PCI response
-        public int _48Row = 7; // OBD2 response
-        public int _68Row = 8; // OBD2 request
+        public int Row24 = 5; // PCI request
+        public int Row26 = 6; // PCI response
+        public int Row48 = 7; // OBD2 response
+        public int Row68 = 8; // OBD2 request
         public const int ListStart = 10;
         public int LastUpdatedLine = 1;
 
@@ -90,35 +87,41 @@ namespace ChryslerScanner
             switch (modifiedID >> 8)
             {
                 case 0x24:
-                    if (!_2426IDByteList.Contains(0x24)) _2426IDByteList.Add(0x24);
-                    _2426IDByteList.Sort();
-                    Table.RemoveAt(_24Row);
-                    Table.Insert(_24Row, row);
-                    LastUpdatedLine = _24Row;
+                {
+                    if (!IDByte2426List.Contains(0x24)) IDByte2426List.Add(0x24);
+                    IDByte2426List.Sort();
+                    Table.RemoveAt(Row24);
+                    Table.Insert(Row24, row);
+                    LastUpdatedLine = Row24;
                     break;
+                }
                 case 0x26:
-                    if (!_2426IDByteList.Contains(0x26)) _2426IDByteList.Add(0x26);
-                    _2426IDByteList.Sort();
-                    Table.RemoveAt(_26Row);
-                    Table.Insert(_26Row, row);
-                    LastUpdatedLine = _26Row;
+                {
+                    if (!IDByte2426List.Contains(0x26)) IDByte2426List.Add(0x26);
+                    IDByte2426List.Sort();
+                    Table.RemoveAt(Row26);
+                    Table.Insert(Row26, row);
+                    LastUpdatedLine = Row26;
                     break;
+                }
                 case 0x48:
-                    if (!_2426IDByteList.Contains(0x48)) _2426IDByteList.Add(0x48);
-                    _2426IDByteList.Sort();
-                    Table.RemoveAt(_48Row);
-                    Table.Insert(_48Row, row);
-                    LastUpdatedLine = _48Row;
+                {
+                    if (!IDByte2426List.Contains(0x48)) IDByte2426List.Add(0x48);
+                    IDByte2426List.Sort();
+                    Table.RemoveAt(Row48);
+                    Table.Insert(Row48, row);
+                    LastUpdatedLine = Row48;
                     break;
+                }
                 case 0x68:
-                    if (!_2426IDByteList.Contains(0x68)) _2426IDByteList.Add(0x68);
-                    _2426IDByteList.Sort();
-                    Table.RemoveAt(_68Row);
-                    Table.Insert(_68Row, row);
-                    LastUpdatedLine = _68Row;
+                {
+                    if (!IDByte2426List.Contains(0x68)) IDByte2426List.Add(0x68);
+                    IDByte2426List.Sort();
+                    Table.RemoveAt(Row68);
+                    Table.Insert(Row68, row);
+                    LastUpdatedLine = Row68;
                     break;
-                default:
-                    break;
+                }
             }
         }
 

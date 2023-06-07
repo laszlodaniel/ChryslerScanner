@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using ChryslerScanner.Helpers;
 
 namespace ChryslerScanner
 {
@@ -42,7 +43,7 @@ namespace ChryslerScanner
 
             if ((this.state == "enabled") && (this.speed != null) && (this.logic != null))
             {
-                HeaderModified = HeaderEnabled.Replace("@ BAUD", "@ " + this.speed.ToUpper()).Replace("LOGIC:", "LOGIC: " + this.logic.ToUpper()).Replace("ID BYTES: ", "ID BYTES: " + (Diagnostics.UniqueIDByteList.Count + Diagnostics._2426IDByteList.Count).ToString());
+                HeaderModified = HeaderEnabled.Replace("@ BAUD", "@ " + this.speed.ToUpper()).Replace("LOGIC:", "LOGIC: " + this.logic.ToUpper()).Replace("ID BYTES: ", "ID BYTES: " + (Diagnostics.UniqueIDByteList.Count + Diagnostics.IDByte2426List.Count).ToString());
                 HeaderModified = Util.TruncateString(HeaderModified, EmptyLine.Length);
                 Diagnostics.UpdateHeader(HeaderModified);
             }
@@ -92,12 +93,15 @@ namespace ChryslerScanner
             switch (ID)
             {
                 case 0x0A:
+                {
                     DescriptionToInsert = "AIRBAG LAMP REQUEST";
 
                     if (message.Length < 4) break;
 
                     break;
+                }
                 case 0x10:
+                {
                     DescriptionToInsert = "ENGINE SPEED | VEHICLE SPEED | MAP";
 
                     if (message.Length < 7) break;
@@ -119,7 +123,9 @@ namespace ChryslerScanner
                         ValueToInsert = "MAP: " + MAPKPA.ToString("0") + " KPA";
                     }
                     break;
+                }
                 case 0x14:
+                {
                     DescriptionToInsert = "VEHICLE SPEED SENSOR PULSE INTERVAL";
 
                     if (message.Length < 4) break;
@@ -158,7 +164,9 @@ namespace ChryslerScanner
                         UnitToInsert = "KM/H";
                     }
                     break;
+                }
                 case 0x16:
+                {
                     DescriptionToInsert = "STATUS: ";
 
                     if (message.Length < 5) break;
@@ -193,7 +201,9 @@ namespace ChryslerScanner
                         DescriptionToInsert += StatusString;
                     }
                     break;
+                }
                 case 0x1A:
+                {
                     DescriptionToInsert = "TPS | CRUISE SET SPEED | CRUISE STATE | TARGET IDLE";
 
                     if (message.Length < 6) break;
@@ -243,14 +253,18 @@ namespace ChryslerScanner
 
                     UnitToInsert = "TPS: " + Math.Round(TPSVolts, 3).ToString("0.000").Replace(",", ".") + "V";
                     break;
+                }
                 case 0x1F:
+                {
                     DescriptionToInsert = "INSTRUMENT CLUSTER STATUS";
 
                     if (message.Length < 4) break;
 
                     ValueToInsert = Util.ByteToHexString(payload, 0, 2);
                     break;
+                }
                 case 0x24:
+                {
                     DescriptionToInsert = "REQUEST  |";
 
                     if (message.Length < 7) break;
@@ -258,13 +272,17 @@ namespace ChryslerScanner
                     // TODO
 
                     break;
+                }
                 case 0x25:
+                {
                     DescriptionToInsert = "FRONT DOOR AJAR SWITCH";
 
                     if (message.Length < 4) break;
 
                     break;
+                }
                 case 0x26:
+                {
                     DescriptionToInsert = "RESPONSE |";
 
                     if (message.Length < 7) break;
@@ -272,21 +290,27 @@ namespace ChryslerScanner
                     // TODO
 
                     break;
+                }
                 case 0x2B:
+                {
                     DescriptionToInsert = "AUTOMATIC TEMPERATURE CONTROL STATUS";
 
                     if (message.Length < 5) break;
 
                     ValueToInsert = Util.ByteToHexString(payload, 0, 3);
                     break;
+                }
                 case 0x2D:
+                {
                     DescriptionToInsert = "INSTRUMENT CLUSTER LAMP STATUS";
 
                     if (message.Length < 4) break;
 
                     ValueToInsert = Util.ByteToHexString(payload, 0, 2);
                     break;
+                }
                 case 0x33:
+                {
                     DescriptionToInsert = "SEAT BELT SWITCH";
 
                     if (message.Length < 3) break;
@@ -295,7 +319,9 @@ namespace ChryslerScanner
                     else ValueToInsert = "OPEN";
 
                     break;
+                }
                 case 0x35:
+                {
                     DescriptionToInsert = "STATUS: ";
 
                     if (message.Length < 4) break;
@@ -333,7 +359,9 @@ namespace ChryslerScanner
 
                     if (DescriptionToInsert.Length > 2) DescriptionToInsert = DescriptionToInsert.Remove(DescriptionToInsert.Length - 3); // remove last "|" character
                     break;
+                }
                 case 0x37:
+                {
                     DescriptionToInsert = "SHIFT LEVER POSITION";
 
                     if (message.Length < 4) break;
@@ -341,23 +369,35 @@ namespace ChryslerScanner
                     switch (payload[0])
                     {
                         case 0x01:
+                        {
                             ValueToInsert = "PARK";
                             break;
+                        }
                         case 0x02:
+                        {
                             ValueToInsert = "REVERSE";
                             break;
+                        }
                         case 0x03:
+                        {
                             ValueToInsert = "NEUTRAL";
                             break;
+                        }
                         case 0x05:
+                        {
                             ValueToInsert = "DRIVE";
                             break;
+                        }
                         case 0x06:
+                        {
                             ValueToInsert = "AUTOSTICK";
                             break;
+                        }
                         default:
+                        {
                             ValueToInsert = "UNDEFINED";
                             break;
+                        }
                     }
 
                     if ((payload[0] == 0x06) && Util.IsBitSet(payload[1], 7)) // Autostick equipped
@@ -365,23 +405,31 @@ namespace ChryslerScanner
                         switch (payload[1] & 0xF0)
                         {
                             case 0x90:
+                            {
                                 ValueToInsert += " | 1ST";
                                 break;
+                            }
                             case 0xA0:
+                            {
                                 ValueToInsert += " | 2ND";
                                 break;
+                            }
                             case 0xB0:
+                            {
                                 ValueToInsert += " | 3RD";
                                 break;
+                            }
                             case 0xC0:
+                            {
                                 ValueToInsert += " | 4TH";
                                 break;
-                            default:
-                                break;
+                            }
                         }
                     }
                     break;
+                }
                 case 0x3A:
+                {
                     DescriptionToInsert = "TRANSMISSION SELECTED GEAR";
 
                     if (message.Length < 3) break;
@@ -407,7 +455,9 @@ namespace ChryslerScanner
                             break;
                     }
                     break;
+                }
                 case 0x3F:
+                {
                     DescriptionToInsert = "PCM SEED FOR SKIM";
 
                     if (message.Length < 6) break;
@@ -416,13 +466,15 @@ namespace ChryslerScanner
 
                     if (VIN.Contains("-")) break;
 
-                    byte[] key = Util.GetSKIMUnlockKey(payload, VIN);
-                    byte[] KeyArray = { 0x4F, 0xC0, 0x00, key[0], key[1], key[2], 0x00 };
+                    byte[] key = UnlockAlgorithm.GetSKIMUnlockKey(payload, VIN);
+                    byte[] UnlockRequest = { 0x4F, 0xC0, 0x00, key[0], key[1], key[2], 0x00 };
 
-                    KeyArray[KeyArray.Length - 1] = Util.CRCCalculator(KeyArray, 0, KeyArray.Length - 1);
-                    DescriptionToInsert += " | KEY: " + Util.ByteToHexStringSimple(KeyArray);
+                    UnlockRequest[UnlockRequest.Length - 1] = Util.CRCCalculator(UnlockRequest, 0, UnlockRequest.Length - 1);
+                    DescriptionToInsert += " | KEY: " + Util.ByteToHexStringSimple(UnlockRequest);
                     break;
+                }
                 case 0x42:
+                {
                     DescriptionToInsert = "LAST ENGINE SHUTDOWN";
 
                     if (message.Length < 4) break;
@@ -433,7 +485,9 @@ namespace ChryslerScanner
                     ValueToInsert = Timestamp.ToString(@"hh\:mm");
                     UnitToInsert = "HH:MM";
                     break;
+                }
                 case 0x48:
+                {
                     DescriptionToInsert = "REQUEST  |"; // OBD2
 
                     if (message.Length < 7) break;
@@ -441,7 +495,9 @@ namespace ChryslerScanner
                     // TODO
 
                     break;
+                }
                 case 0x4F:
+                {
                     DescriptionToInsert = "SKIM | SECRET KEY AND SEED/KEY VALIDATION";
 
                     if (message.Length < 7) break;
@@ -451,64 +507,88 @@ namespace ChryslerScanner
                     switch (payload[0])
                     {
                         case 0x10: // packet sent to SKIM to write to SKIM EEPROM (DRB3 SKIM replaced menu)
+                        {
                             DescriptionToInsert = "PAYLOAD FROM PCM EEPROM";
 
                             switch (payload[1] & 0x03)
                             {
                                 case 0x01:
+                                {
                                     Array.Copy(payload, 2, SKIMPayloadPCM, 0, 3);
                                     ValueToInsert = Util.ByteToHexString(payload, 2, 3);
                                     break;
+                                }
                                 case 0x02:
+                                {
                                     Array.Copy(payload, 2, SKIMPayloadPCM, 3, 2);
                                     ValueToInsert = Util.ByteToHexStringSimple(SKIMPayloadPCM);
                                     UnitToInsert = "EEPROM 01D8";
                                     break;
+                                }
                                 default:
+                                {
                                     ValueToInsert = "INVALID MSG";
                                     break;
+                                }
                             }
                             break;
+                        }
                         case 0x40: // packet received from SKIM to write to PCM EEPROM (DRB3 PCM replaced menu)
+                        {
                             DescriptionToInsert = "PAYLOAD FROM SKIM EEPROM";
 
                             switch (payload[1] & 0x03)
                             {
                                 case 0x01:
+                                {
                                     Array.Copy(payload, 2, SKIMPayload, 0, 3);
                                     ValueToInsert = Util.ByteToHexString(payload, 2, 3);
                                     break;
+                                }
                                 case 0x02:
+                                {
                                     Array.Copy(payload, 2, SKIMPayload, 3, 2);
                                     ValueToInsert = Util.ByteToHexStringSimple(SKIMPayload);
                                     UnitToInsert = "EEPROM 01D8";
                                     break;
+                                }
                                 default:
+                                {
                                     ValueToInsert = "INVALID MSG";
                                     break;
+                                }
                             }
                             break;
+                        }
                         case 0xC0: // secret key and seed/key validation
+                        {
                             switch (payload[1])
                             {
                                 case 0x00:
+                                {
                                     DescriptionToInsert = "SKIM | KEY RECEIVED";
                                     ValueToInsert = Util.ByteToHexString(payload, 2, 3);
                                     break;
+                                }
                                 case 0x01:
+                                {
                                     DescriptionToInsert = "SKIM | SECRET KEY RECEIVED";
                                     ValueToInsert = Util.ByteToHexString(payload, 2, 3);
                                     break;
+                                }
                                 case 0x80:
+                                {
                                     DescriptionToInsert = "SKIM | REQUEST SEED FROM PCM";
                                     break;
-                                default:
-                                    break;
+                                }
                             }
                             break;
+                        }
                     }
                     break;
+                }
                 case 0x52:
+                {
                     DescriptionToInsert = "A/C RELAY STATES";
 
                     if (message.Length < 3) break;
@@ -538,7 +618,9 @@ namespace ChryslerScanner
 
                     ValueToInsert = Convert.ToString(payload[0], 2).PadLeft(8, '0');
                     break;
+                }
                 case 0x5A:
+                {
                     DescriptionToInsert = "IGNITION SWITCH STATUS";
 
                     if (message.Length < 5) break;
@@ -546,13 +628,17 @@ namespace ChryslerScanner
                     ValueToInsert = Util.ByteToHexString(payload, 0, 3);
 
                     break;
+                }
                 case 0x5B:
+                {
                     DescriptionToInsert = "RUN RELAY";
 
                     if (message.Length < 4) break;
 
                     break;
+                }
                 case 0x5D:
+                {
                     DescriptionToInsert = "MILEAGE INCREMENT | INJECTOR PULSE WIDTH | FUEL USED";
 
                     if (message.Length < 7) break;
@@ -573,14 +659,18 @@ namespace ChryslerScanner
                         UnitToInsert = "KM | MS";
                     }
                     break;
+                }
                 case 0x60:
+                {
                     DescriptionToInsert = "AUTO HEAD LAMP STATUS 1";
 
                     if (message.Length < 4) break;
 
                     ValueToInsert = Util.ByteToHexString(payload, 0, 2);
                     break;
+                }
                 case 0x68:
+                {
                     DescriptionToInsert = "RESPONSE |"; // OBD2
 
                     if (message.Length < 6) break;
@@ -588,7 +678,9 @@ namespace ChryslerScanner
                     // TODO
 
                     break;
+                }
                 case 0x6C:
+                {
                     DescriptionToInsert = "TCM | FAULT CODE PRESENT";
 
                     if (message.Length < 7) break;
@@ -601,21 +693,27 @@ namespace ChryslerScanner
 
                     ValueToInsert = "OBD2 P" + Util.ByteToHexString(payload, 1, 2).Replace(" ", "");
                     break;
+                }
                 case 0x6E:
+                {
                     DescriptionToInsert = "PCM BEACON PAYLOAD #1";
 
                     if (message.Length < 7) break;
 
                     ValueToInsert = Util.ByteToHexString(payload, 0, 5);
                     break;
+                }
                 case 0x6F:
+                {
                     DescriptionToInsert = "PCM BEACON PAYLOAD #2";
 
                     if (message.Length < 7) break;
 
                     ValueToInsert = Util.ByteToHexString(payload, 0, 5);
                     break;
+                }
                 case 0x72:
+                {
                     DescriptionToInsert = "BCM MILEAGE";
 
                     if (message.Length < 6) break;
@@ -634,21 +732,27 @@ namespace ChryslerScanner
                         UnitToInsert = "KILOMETER";
                     }
                     break;
+                }
                 case 0x87:
+                {
                     DescriptionToInsert = "UPDATE BEACON MESSAGE PAYLOAD IN PCM EEPROM";
 
                     if (message.Length < 4) break;
 
                     ValueToInsert = Util.ByteToHexString(payload, 0, 2);
                     break;
+                }
                 case 0x8D:
+                {
                     DescriptionToInsert = "RADIO STATUS";
 
                     if (message.Length < 4) break;
 
                     ValueToInsert = Util.ByteToHexString(payload, 0, 2);
                     break;
+                }
                 case 0xA0:
+                {
                     DescriptionToInsert = "DISTANCE TO EMPTY";
 
                     if (message.Length < 4) break;
@@ -667,7 +771,9 @@ namespace ChryslerScanner
                         UnitToInsert = "KILOMETER";
                     }
                     break;
+                }
                 case 0xA3:
+                {
                     DescriptionToInsert = "AMBIENT TEMPERATURE SENSOR VOLTAGE";
 
                     if (message.Length < 4) break;
@@ -677,7 +783,9 @@ namespace ChryslerScanner
                     ValueToInsert = Math.Round(ATSVolts, 3).ToString("0.000").Replace(",", ".");
                     UnitToInsert = "V";
                     break;
+                }
                 case 0xA4:
+                {
                     DescriptionToInsert = "FUEL LEVEL";
 
                     if (message.Length < 3) break;
@@ -687,7 +795,9 @@ namespace ChryslerScanner
                     ValueToInsert = Math.Round(FuelLevelPercent, 1).ToString("0.0").Replace(",", ".");
                     UnitToInsert = "PERCENT";
                     break;
+                }
                 case 0xA5:
+                {
                     DescriptionToInsert = "FUEL LEVEL SENSOR VOLTAGE | FUEL LEVEL";
 
                     if (message.Length < 4) break;
@@ -707,13 +817,17 @@ namespace ChryslerScanner
                         UnitToInsert = "V | LITER";
                     }
                     break;
+                }
                 case 0xA7:
+                {
                     DescriptionToInsert = "FOB NUMBER/BUTTON";
 
                     if (message.Length < 4) break;
 
                     break;
+                }
                 case 0xAC:
+                {
                     DescriptionToInsert = "RADIO CLOCK DISPLAY";
 
                     if (message.Length < 4) break;
@@ -721,7 +835,9 @@ namespace ChryslerScanner
                     ValueToInsert = Util.ByteToHexString(payload, 0, 1) + ":" + Util.ByteToHexString(payload, 1, 1);
                     UnitToInsert = "HH:MM";
                     break;
+                }
                 case 0xB0:
+                {
                     DescriptionToInsert = "CHECK ENGINE LAMP STATE";
 
                     if (message.Length < 5) break;
@@ -735,7 +851,9 @@ namespace ChryslerScanner
                         ValueToInsert = "OFF";
                     }
                     break;
+                }
                 case 0xB1:
+                {
                     DescriptionToInsert = "SKIM STATUS";
 
                     if (message.Length < 3) break;
@@ -765,14 +883,18 @@ namespace ChryslerScanner
                         if (ValueToInsert.Length > 2) ValueToInsert = ValueToInsert.Remove(ValueToInsert.Length - 3); // remove last "|" character
                     }
                     break;
+                }
                 case 0xB8:
+                {
                     DescriptionToInsert = "AIRBAG STATUS";
 
                     if (message.Length < 4) break;
 
                     ValueToInsert = Util.ByteToHexString(payload, 0, 2);
                     break;
+                }
                 case 0xC0:
+                {
                     DescriptionToInsert = "BATTERY | OIL | COOLANT | AMBIENT";
 
                     if (message.Length < 6) break;
@@ -796,7 +918,9 @@ namespace ChryslerScanner
                         ValueToInsert = "AMBIENT: " + AmbientTemperatureC.ToString("0") + " °C";
                     }
                     break;
+                }
                 case 0xCC:
+                {
                     DescriptionToInsert = "OUTSIDE AIR TEMPERATURE";
 
                     if (message.Length < 4) break;
@@ -815,7 +939,9 @@ namespace ChryslerScanner
                         UnitToInsert = "°C";
                     }
                     break;
+                }
                 case 0xD0:
+                {
                     DescriptionToInsert = "LIMP-IN STATE";
 
                     if (message.Length < 4) break;
@@ -847,7 +973,9 @@ namespace ChryslerScanner
                         DescriptionToInsert = "NO LIMP-IN STATE";
                     }
                     break;
+                }
                 case 0xD1:
+                {
                     DescriptionToInsert = "LIMP-IN STATE | PWM FAN DUTY CYCLE";
 
                     if (message.Length < 7) break;
@@ -884,7 +1012,9 @@ namespace ChryslerScanner
                     ValueToInsert = "PWM FAN DUTY: " + Math.Round(PWMFANDutyCycle, 1).ToString("0.0").Replace(",", ".");
                     UnitToInsert = "PERCENT";
                     break;
+                }
                 case 0xD2:
+                {
                     DescriptionToInsert = "BARO | IAT | A/C HSP | ETHANOL PERCENT";
 
                     if (message.Length < 6) break;
@@ -908,7 +1038,9 @@ namespace ChryslerScanner
                         ValueToInsert = "ETHANOL: " + Math.Round(EthanolPercent, 1).ToString("0.0").Replace(",", ".") + " PERCENT";
                     }
                     break;
+                }
                 case 0xDF:
+                {
                     DescriptionToInsert = "PCM MILEAGE";
 
                     if (message.Length < 3) break;
@@ -927,14 +1059,18 @@ namespace ChryslerScanner
                         UnitToInsert = "KILOMETER";
                     }
                     break;
+                }
                 case 0xE4:
+                {
                     DescriptionToInsert = "AUTO HEAD LAMP STATUS 2";
 
                     if (message.Length < 4) break;
 
                     ValueToInsert = Util.ByteToHexString(payload, 0, 2);
                     break;
+                }
                 case 0xEA:
+                {
                     DescriptionToInsert = "TRANSMISSION TEMPERATURE";
 
                     if (message.Length < 3) break;
@@ -953,14 +1089,18 @@ namespace ChryslerScanner
                         UnitToInsert = "°C";
                     }
                     break;
+                }
                 case 0xED:
+                {
                     DescriptionToInsert = "CONFIGURATION | CRBFUL ENGDSP CYLVPC SALENG BSTYLE";
 
                     if (message.Length < 7) break;
 
                     ValueToInsert = Util.ByteToHexString(payload, 0, 5);
                     break;
+                }
                 case 0xF0:
+                {
                     DescriptionToInsert = "VEHICLE IDENTIFICATION NUMBER (VIN) CHARACTER";
 
                     if (((payload[0] == 0x01) && (message.Length >= 4)) || ((payload[0] == 0x02) && (message.Length >= 7)) || ((payload[0] == 0x06) && (message.Length >= 7)) || ((payload[0] == 0x0A) && (message.Length >= 7)) || ((payload[0] == 0x0E) && (message.Length >= 7)))
@@ -969,9 +1109,12 @@ namespace ChryslerScanner
                         ValueToInsert = VIN;
                     }
                     break;
+                }
                 default:
+                {
                     DescriptionToInsert = string.Empty;
                     break;
+                }
             }
 
             string HexBytesToInsert;
@@ -1023,11 +1166,11 @@ namespace ChryslerScanner
             {
                 TimeSpan ElapsedTime = TimeSpan.FromMilliseconds(timestamp[0] << 24 | timestamp[1] << 16 | timestamp[2] << 8 | timestamp[3]);
                 DateTime Timestamp = DateTime.Today.Add(ElapsedTime);
-                string TimestampString = Timestamp.ToString("HH:mm:ss.fff") + " ";
+                string TimestampString = Timestamp.ToString("HH:mm:ss.fff") + ",";
                 File.AppendAllText(MainForm.PCILogFilename, TimestampString); // no newline is appended!
             }
 
-            File.AppendAllText(MainForm.PCILogFilename, "PCI: " + Util.ByteToHexStringSimple(message) + Environment.NewLine);
+            File.AppendAllText(MainForm.PCILogFilename, "PCI," + Util.ByteToHexStringSimple(message) + Environment.NewLine);
         }
     }
 }
