@@ -984,6 +984,8 @@ namespace ChryslerScanner
                                                                                 UnlockAlgorithm.SecurityLevels.Level1,
                                                                                 SCIBusResponseBytes.Skip(1).Take(2).ToArray());
 
+                                    if (key == null) break;
+
                                     byte[] UnlockRequest = new byte[4] { 0x2C, key[0], key[1], (byte)(0x2C + key[0] + key[1]) };
 
                                     Packet PacketTx = new Packet();
@@ -1007,7 +1009,7 @@ namespace ChryslerScanner
                                     if ((SCIBusResponseBytes[2] == 0) && (SCIBusResponseBytes[3] == 0))
                                         break; // PCM already unlocked
 
-                                    byte[] key = new byte[2] { 0, 0 };
+                                    byte[] key = null;
 
                                     switch (SCIBusResponseBytes[1])
                                     {
@@ -1026,6 +1028,8 @@ namespace ChryslerScanner
                                             break;
                                         }
                                     }
+
+                                    if (key == null) break;
 
                                     byte[] UnlockRequest = new byte[4] { 0x2C, key[0], key[1], (byte)(0x2C + key[0] + key[1]) };
 

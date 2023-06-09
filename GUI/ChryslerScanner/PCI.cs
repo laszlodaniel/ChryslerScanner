@@ -446,13 +446,15 @@ namespace ChryslerScanner
                     switch ((payload[0] >> 6) & 0x03)
                     {
                         case 1:
+                        {
                             ValueToInsert += "| LOCK: PART";
                             break;
+                        }
                         case 2:
+                        {
                             ValueToInsert += "| LOCK: FULL";
                             break;
-                        default:
-                            break;
+                        }
                     }
                     break;
                 }
@@ -467,6 +469,9 @@ namespace ChryslerScanner
                     if (VIN.Contains("-")) break;
 
                     byte[] key = UnlockAlgorithm.GetSKIMUnlockKey(payload, VIN);
+
+                    if (key == null) break;
+
                     byte[] UnlockRequest = { 0x4F, 0xC0, 0x00, key[0], key[1], key[2], 0x00 };
 
                     UnlockRequest[UnlockRequest.Length - 1] = Util.CRCCalculator(UnlockRequest, 0, UnlockRequest.Length - 1);
@@ -501,8 +506,6 @@ namespace ChryslerScanner
                     DescriptionToInsert = "SKIM | SECRET KEY AND SEED/KEY VALIDATION";
 
                     if (message.Length < 7) break;
-
-                    if ((payload[0] != 0xC0) && (payload[0] != 0x40) && (payload[0] != 0x10)) break;
 
                     switch (payload[0])
                     {

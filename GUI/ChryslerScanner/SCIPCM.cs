@@ -5217,6 +5217,8 @@ namespace ChryslerScanner
                                                                     UnlockAlgorithm.SecurityLevels.Level1,
                                                                     payload.Take(2).ToArray());
 
+                        if (key == null) break;
+
                         byte[] UnlockRequest = new byte[4] { 0x2C, key[0], key[1], (byte)(0x2C + key[0] + key[1]) };
                         DescriptionToInsert += " | KEY: " + Util.ByteToHexStringSimple(UnlockRequest);
                         ValueToInsert = Util.ByteToHexString(payload, 0, 2);
@@ -5345,7 +5347,7 @@ namespace ChryslerScanner
                             break;
                         }
 
-                        byte[] key = new byte[2] { 0, 0 };
+                        byte[] key = null;
 
                         switch (payload[0])
                         {
@@ -5364,6 +5366,8 @@ namespace ChryslerScanner
                                 break;
                             }
                         }
+
+                        if (key == null) break;
 
                         byte[] UnlockRequest = new byte[4] { 0x2C, key[0], key[1], (byte)(0x2C + key[0] + key[1]) };
                         DescriptionToInsert += " | KEY: " + Util.ByteToHexStringSimple(UnlockRequest);

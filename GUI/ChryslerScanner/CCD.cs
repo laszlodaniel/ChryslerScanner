@@ -1120,6 +1120,9 @@ namespace ChryslerScanner
                     if (VIN.Contains("-")) break;
 
                     byte[] key = UnlockAlgorithm.GetSKIMUnlockKey(payload, VIN);
+
+                    if (key == null) break;
+
                     byte[] UnlockRequest = { 0xC2, 0xC0, key[0], key[1], key[2], 0x00 };
 
                     UnlockRequest[UnlockRequest.Length - 1] = Util.ChecksumCalculator(UnlockRequest, 0, UnlockRequest.Length - 1);

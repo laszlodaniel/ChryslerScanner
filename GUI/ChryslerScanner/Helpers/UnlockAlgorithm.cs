@@ -36,6 +36,9 @@ namespace ChryslerScanner.Helpers
             //    seedword = BitConverter.ToUInt16(seed, 0);
             //}
 
+            if (seedword == 0)
+                return null;
+
             ushort keyword = 0;
 
             switch (controller)

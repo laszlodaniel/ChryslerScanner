@@ -70,13 +70,22 @@ namespace ChryslerScanner.Services
 
         public void WritePacket(Packet packet)
         {
+            if (packet == null)
+                return;
+
             TxQueue.Enqueue(packet);
         }
 
         public void WritePacket(List<Packet> packets)
         {
+            if (packets == null)
+                return;
+
             foreach (Packet packet in packets)
             {
+                if (packet == null)
+                    continue;
+
                 TxQueue.Enqueue(packet);
             }
         }
@@ -177,7 +186,13 @@ namespace ChryslerScanner.Services
                 {
                     if (TxQueue.TryDequeue(out Packet packet))
                     {
+                        if (packet == null)
+                            continue;
+
                         byte[] serialized = PacketHelper.Serialize(packet);
+
+                        if (serialized == null)
+                            continue;
 
                         await SP.BaseStream.WriteAsync(serialized, 0, serialized.Length);
 

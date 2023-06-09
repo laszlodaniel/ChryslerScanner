@@ -2167,6 +2167,8 @@ namespace ChryslerScanner
                             //                                        UnlockAlgorithm.SecurityLevels.Level1,
                             //                                        SCIBusPCMResponseBytes.Skip(1).Take(2).ToArray());
 
+                            //if (key == null) break;
+
                             //byte[] UnlockRequest = { (byte)SCI_ID.SendSecurityKey, key[0], key[1], (byte)(SCI_ID.SendSecurityKey + key[0] + key[1]) };
 
                             //Packet PacketTx = new Packet();
