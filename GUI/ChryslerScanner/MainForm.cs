@@ -111,6 +111,12 @@ namespace ChryslerScanner
 
             SerialService = service;
 
+            //CultureInfo ci = new CultureInfo("en-US", true);
+            //ci.NumberFormat.NumberDecimalSeparator = ".";
+            //Thread.CurrentThread.CurrentCulture = ci;
+
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US", true);
+
             if (fi.Exists) db = new Database(fi); // load DRB3 database
 
             GUIVersion = "v" + Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
@@ -685,7 +691,7 @@ namespace ChryslerScanner
                                     }
                                     default:
                                     {
-                                        Util.UpdateTextBox(USBTextBox, "[INFO] Unknown reset PacketHelper.");
+                                        Util.UpdateTextBox(USBTextBox, "[INFO] Unknown reset packet.");
                                         break;
                                     }
                                 }
@@ -745,7 +751,7 @@ namespace ChryslerScanner
                                     if (packet.Payload[12] == 0x01) connectedToVehicle = "yes";
                                     else connectedToVehicle = "no";
 
-                                    string batteryVoltageString = (((packet.Payload[13] << 8) + packet.Payload[14]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
+                                    string batteryVoltageString = (((packet.Payload[13] << 8) + packet.Payload[14]) / 1000.00).ToString("0.000") + " V";
 
                                     string CCDBusStateString = string.Empty;
                                     string CCDBusLogicString = string.Empty;
@@ -1175,9 +1181,9 @@ namespace ChryslerScanner
 
                                     int freeRAM = (packet.Payload[4] << 24) + (packet.Payload[5] << 16) + (packet.Payload[6] << 8) + packet.Payload[7];
                                     string freeRAMString = (100.0 * (freeRAM / 532480.0)).ToString("0.0") + "% (" + freeRAM.ToString("0") + "/532480 bytes)";
-                                    string batteryVoltageString = (((packet.Payload[8] << 8) + packet.Payload[9]) / 1000.0).ToString("0.000").Replace(",", ".") + " V";
-                                    string bootstrapVoltageString = (((packet.Payload[10] << 8) + packet.Payload[11]) / 1000.0).ToString("0.000").Replace(",", ".") + " V";
-                                    string programmingVoltageString = (((packet.Payload[12] << 8) + packet.Payload[13]) / 1000.0).ToString("0.000").Replace(",", ".") + " V";
+                                    string batteryVoltageString = (((packet.Payload[8] << 8) + packet.Payload[9]) / 1000.0).ToString("0.000") + " V";
+                                    string bootstrapVoltageString = (((packet.Payload[10] << 8) + packet.Payload[11]) / 1000.0).ToString("0.000") + " V";
+                                    string programmingVoltageString = (((packet.Payload[12] << 8) + packet.Payload[13]) / 1000.0).ToString("0.000") + " V";
 
                                     string CCDBusStateString = string.Empty;
                                     string CCDBusLogicString = string.Empty;
@@ -2095,7 +2101,7 @@ namespace ChryslerScanner
                                             if ((packet.Payload[0] == 0) && (packet.Payload.Length >= 30)) // V1.5.0 and below
                                             {
                                                 double HardwareVersion = ((packet.Payload[0] << 8) + packet.Payload[1]) / 100.00;
-                                                string HardwareVersionString = "v" + (HardwareVersion).ToString("0.00").Replace(",", ".").Insert(3, ".");
+                                                string HardwareVersionString = "v" + (HardwareVersion).ToString("0.00").Insert(3, ".");
                                                 DateTime HardwareDate = Util.UnixTimeStampToDateTime((packet.Payload[6] << 24) + (packet.Payload[7] << 16) + (packet.Payload[8] << 8) + packet.Payload[9]);
                                                 DateTime AssemblyDate = Util.UnixTimeStampToDateTime((packet.Payload[14] << 24) + (packet.Payload[15] << 16) + (packet.Payload[16] << 8) + packet.Payload[17]);
                                                 DateTime FirmwareDate = Util.UnixTimeStampToDateTime((packet.Payload[22] << 24) + (packet.Payload[23] << 16) + (packet.Payload[24] << 8) + packet.Payload[25]);
@@ -2257,7 +2263,7 @@ namespace ChryslerScanner
                                     {
                                         if ((packet.Payload != null) && (packet.Payload.Length > 1))
                                         {
-                                            string BatteryVoltageString = (((packet.Payload[0] << 8) + packet.Payload[1]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
+                                            string BatteryVoltageString = (((packet.Payload[0] << 8) + packet.Payload[1]) / 1000.00).ToString("0.000") + " V";
                                             Util.UpdateTextBox(USBTextBox, "[RX->] Battery voltage response:", PacketHelper.Serialize(packet));
                                             Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + BatteryVoltageString);
                                         }
@@ -2302,8 +2308,8 @@ namespace ChryslerScanner
                                     {
                                         if ((packet.Payload != null) && (packet.Payload.Length > 3))
                                         {
-                                            string CCDPositiveVoltage = (((packet.Payload[0] << 8) + packet.Payload[1]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
-                                            string CCDNegativeVoltage = (((packet.Payload[2] << 8) + packet.Payload[3]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
+                                            string CCDPositiveVoltage = (((packet.Payload[0] << 8) + packet.Payload[1]) / 1000.00).ToString("0.000") + " V";
+                                            string CCDNegativeVoltage = (((packet.Payload[2] << 8) + packet.Payload[3]) / 1000.00).ToString("0.000") + " V";
 
                                             Util.UpdateTextBox(USBTextBox, "[RX->] CCD-bus voltage measurements response:", PacketHelper.Serialize(packet));
                                             Util.UpdateTextBox(USBTextBox, "[INFO] CCD-bus wire voltages:" + Environment.NewLine +
@@ -2320,7 +2326,7 @@ namespace ChryslerScanner
                                     {
                                         if ((packet.Payload != null) && (packet.Payload.Length > 1))
                                         {
-                                            string BootstrapVoltageString = (((packet.Payload[0] << 8) + packet.Payload[1]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
+                                            string BootstrapVoltageString = (((packet.Payload[0] << 8) + packet.Payload[1]) / 1000.00).ToString("0.000") + " V";
                                             Util.UpdateTextBox(USBTextBox, "[RX->] Bootstrap voltage response:", PacketHelper.Serialize(packet));
                                             Util.UpdateTextBox(USBTextBox, "[INFO] Bootstrap voltage: " + BootstrapVoltageString);
                                         }
@@ -2334,7 +2340,7 @@ namespace ChryslerScanner
                                     {
                                         if ((packet.Payload != null) && (packet.Payload.Length > 1))
                                         {
-                                            string ProgrammingVoltageString = (((packet.Payload[0] << 8) + packet.Payload[1]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
+                                            string ProgrammingVoltageString = (((packet.Payload[0] << 8) + packet.Payload[1]) / 1000.00).ToString("0.000") + " V";
                                             Util.UpdateTextBox(USBTextBox, "[RX->] Programming voltage response:", PacketHelper.Serialize(packet));
                                             Util.UpdateTextBox(USBTextBox, "[INFO] Programming voltage: " + ProgrammingVoltageString);
                                         }
@@ -2348,9 +2354,9 @@ namespace ChryslerScanner
                                     {
                                         if ((packet.Payload != null) && (packet.Payload.Length > 5))
                                         {
-                                            string BatteryVoltageString = (((packet.Payload[0] << 8) + packet.Payload[1]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
-                                            string BootstrapVoltageString = (((packet.Payload[2] << 8) + packet.Payload[3]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
-                                            string ProgrammingVoltageString = (((packet.Payload[4] << 8) + packet.Payload[5]) / 1000.00).ToString("0.000").Replace(",", ".") + " V";
+                                            string BatteryVoltageString = (((packet.Payload[0] << 8) + packet.Payload[1]) / 1000.00).ToString("0.000") + " V";
+                                            string BootstrapVoltageString = (((packet.Payload[2] << 8) + packet.Payload[3]) / 1000.00).ToString("0.000") + " V";
+                                            string ProgrammingVoltageString = (((packet.Payload[4] << 8) + packet.Payload[5]) / 1000.00).ToString("0.000") + " V";
                                             Util.UpdateTextBox(USBTextBox, "[RX->] Voltage measurements response:", PacketHelper.Serialize(packet));
                                             Util.UpdateTextBox(USBTextBox, "[INFO] Battery voltage: " + BatteryVoltageString + Environment.NewLine +
                                                                            "       Bootstrap voltage: " + BootstrapVoltageString + Environment.NewLine +
@@ -2688,17 +2694,17 @@ namespace ChryslerScanner
                                                 if ((start == 0) && (length == 256))
                                                 {
                                                     double HardwareVersion = ((packet.Payload[3] << 8) + packet.Payload[4]) / 100.00;
-                                                    string HardwareVersionString = "v" + (HardwareVersion).ToString("0.00").Replace(",", ".").Insert(3, ".");
+                                                    string HardwareVersionString = "v" + (HardwareVersion).ToString("0.00").Insert(3, ".");
                                                     DateTime HardwareDate = Util.UnixTimeStampToDateTime((packet.Payload[9] << 24) + (packet.Payload[10] << 16) + (packet.Payload[11] << 8) + packet.Payload[12]);
                                                     DateTime AssemblyDate = Util.UnixTimeStampToDateTime((packet.Payload[17] << 24) + (packet.Payload[18] << 16) + (packet.Payload[19] << 8) + packet.Payload[20]);
                                                     string HardwareDateString = HardwareDate.ToString("yyyy.MM.dd HH:mm:ss");
                                                     string AssemblyDateString = AssemblyDate.ToString("yyyy.MM.dd HH:mm:ss");
                                                     double ADCVoltage = ((packet.Payload[21] << 8) + packet.Payload[22]) / 100.00;
-                                                    string ADCVoltageString = ADCVoltage.ToString("0.00").Replace(",", ".") + " V";
+                                                    string ADCVoltageString = ADCVoltage.ToString("0.00") + " V";
                                                     double RDHighResistance = ((packet.Payload[23] << 8) + packet.Payload[24]) / 1000.0;
                                                     double RDLowResistance = ((packet.Payload[25] << 8) + packet.Payload[26]) / 1000.0;
-                                                    string RDHighResistanceString = RDHighResistance.ToString("0.000").Replace(",", ".") + " kΩ";
-                                                    string RDLowResistanceString = RDLowResistance.ToString("0.000").Replace(",", ".") + " kΩ";
+                                                    string RDHighResistanceString = RDHighResistance.ToString("0.000") + " kΩ";
+                                                    string RDLowResistanceString = RDLowResistance.ToString("0.000") + " kΩ";
                                                     string LCDStateString = string.Empty;
 
                                                     if (Util.IsBitSet(packet.Payload[27], 0)) LCDStateString = "enabled";
@@ -3726,6 +3732,12 @@ namespace ChryslerScanner
             }
 
             Packet packet = PacketHelper.Deserialize(bytes);
+
+            if (packet == null)
+            {
+                Util.UpdateTextBox(USBTextBox, "[INFO] Invalid packet", null);
+                return;
+            }
 
             if (!USBSendPacketComboBox.Items.Contains(USBSendPacketComboBox.Text)) // only add unique items (no repeat!)
             {
@@ -6340,7 +6352,7 @@ namespace ChryslerScanner
         private void UpdateToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Uri GUIAssemblyInfoFile = new Uri("https://raw.githubusercontent.com/laszlodaniel/ChryslerScanner/master/GUI/ChryslerScanner/Properties/AssemblyInfo.cs");
-            Uri GUIZIPDownload = new Uri("https://github.com/laszlodaniel/ChryslerScanner/raw/master/GUI/ChryslerScanner/bin/Debug/ChryslerScanner_GUI.zip");
+            Uri GUIZIPDownload = new Uri("https://github.com/laszlodaniel/ChryslerScanner/raw/master/GUI/ChryslerScanner/bin/Release/ChryslerScanner_GUI.zip");
 
             // First check if GUI update is available.
             // Download the latest AssemblyInfo.cs file from GitHub and compare version numbers.

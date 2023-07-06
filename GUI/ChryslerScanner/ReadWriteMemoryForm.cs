@@ -24,6 +24,10 @@ namespace ChryslerScanner
         private const ushort EEPROMSize = 512; // bytes
         private const ushort RAMSize = 6144; // bytes
 
+        private const ushort SRIMileageOffsetStartOBD1 = 0xB600;
+        private const ushort SRIMileageOffsetEndOBD1 = 0xB60F;
+
+        // OBD2
         private const ushort SRIMileageOffsetStart = 0x0000;
         private const ushort SRIMileageOffsetEnd = 0x0007;
         private const ushort SKIMVTSSOffset = 0x0008;
@@ -118,7 +122,17 @@ namespace ChryslerScanner
             BCMMileage = 0xCE
         }
 
-        private enum SCI_ID
+        private enum SCI_ID_OBD1
+        {
+            ReadMemory = 0x15,
+            PCMInfo = 0x16,
+            WriteEEPROM = 0x1C,
+            WriteRAM1 = 0x1D,
+            WriteRAM2 = 0x1E,
+            WriteRAM3 = 0x1F,
+        }
+
+        private enum SCI_ID_OBD2
         {
             ReadROMRAM = 0x26,
             WriteEEPROM = 0x27,
@@ -204,7 +218,7 @@ namespace ChryslerScanner
             {
                 if (SCIBusPCMWriteMemorySRIMileageTextBox.Text.Length > 8)
                 {
-                    string NewText = Util.TruncateString(SCIBusPCMWriteMemorySRIMileageTextBox.Text, 8).Replace(",", ".");
+                    string NewText = Util.TruncateString(SCIBusPCMWriteMemorySRIMileageTextBox.Text, 8);
                     SCIBusPCMWriteMemorySRIMileageTextBox.Text = NewText;
                     SCIBusPCMWriteMemorySRIMileageTextBox.SelectionStart = SCIBusPCMWriteMemorySRIMileageTextBox.Text.Length;
                     SCIBusPCMWriteMemorySRIMileageTextBox.ScrollToCaret();
@@ -227,10 +241,31 @@ namespace ChryslerScanner
 
         private void SCIBusPCMWriteMemorySRIMileageReadButton_Click(object sender, EventArgs e)
         {
-            if (!SCIBusPCMReadMemoryWorker.IsBusy && !SCIBusPCMWriteMemoryWorker.IsBusy)
+            if (SCIBusPCMReadMemoryWorker.IsBusy || SCIBusPCMWriteMemoryWorker.IsBusy)
             {
-                UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Read SRI Mileage.");
+                return;
+            }
 
+            UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Read SRI Mileage.");
+
+            if (OriginalForm.PCM.logic == "inverted") // OBD1
+            {
+                SCIBusPCMMemoryOffsetStart = (uint)SRIMileageOffsetStartOBD1;
+                SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(SRIMileageOffsetStartOBD1 >> 8);
+                SCIBusPCMMemoryOffsetStartBytes[1] = unchecked((byte)SRIMileageOffsetStartOBD1);
+
+                SCIBusPCMMemoryOffsetEnd = SCIBusPCMMemoryOffsetStart + 1; // read first instance only
+                SCIBusPCMMemoryOffsetEndBytes[0] = (byte)(SRIMileageOffsetEndOBD1 >> 8);
+                SCIBusPCMMemoryOffsetEndBytes[1] = unchecked((byte)SRIMileageOffsetEndOBD1);
+
+                SCIBusPCMCurrentMemoryOffset = SCIBusPCMMemoryOffsetStart;
+                SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
+                SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
+
+                SCIBusPCMTxPayload = new byte[3] { (byte)SCI_ID_OBD1.ReadMemory, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1] };
+            }
+            else // OBD2
+            {
                 SCIBusPCMMemoryOffsetStart = (uint)SRIMileageOffsetStart;
                 SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(SRIMileageOffsetStart >> 8);
                 SCIBusPCMMemoryOffsetStartBytes[1] = (byte)SRIMileageOffsetStart;
@@ -243,48 +278,76 @@ namespace ChryslerScanner
                 SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
                 SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
 
-                SCIBusPCMTxPayload = new byte[3] { (byte)SCI_ID.ReadEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1] };
-
-                SCIBusPCMReadMemoryFinished = false;
-                SCIBusPCMNextRequest = true;
-                CurrentTask = Task.ReadSRIMileage;
-                SCIBusPCMReadMemoryWorker.RunWorkerAsync();
-                SCIBusPCMWriteMemorySRIMileageReadButton.Enabled = false;
+                SCIBusPCMTxPayload = new byte[3] { (byte)SCI_ID_OBD2.ReadEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1] };
             }
+
+            SCIBusPCMReadMemoryFinished = false;
+            SCIBusPCMNextRequest = true;
+            CurrentTask = Task.ReadSRIMileage;
+            SCIBusPCMReadMemoryWorker.RunWorkerAsync();
+            SCIBusPCMWriteMemorySRIMileageReadButton.Enabled = false;
         }
 
         private void SCIBusPCMWriteMemorySRIMileageWriteButton_Click(object sender, EventArgs e)
         {
-            if (!SCIBusPCMReadMemoryWorker.IsBusy && !SCIBusPCMWriteMemoryWorker.IsBusy)
+            if (OriginalForm.PCM.logic == "inverted")
             {
-                if (Properties.Settings.Default.Units == "imperial")
-                {
-                    double.TryParse(SCIBusPCMWriteMemorySRIMileageTextBox.Text, out SRIMileageNewMi);
-                    SRIMileageNewKm = SRIMileageNewMi * 1.609344D;
-                }
-                else if (Properties.Settings.Default.Units == "metric")
-                {
-                    double.TryParse(SCIBusPCMWriteMemorySRIMileageTextBox.Text, out SRIMileageNewKm);
-                    SRIMileageNewMi = SRIMileageNewKm / 1.609344D;
-                }
+                MessageBox.Show("Not supported yet.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
-                SRIMileageNewRaw = (uint)(Math.Round(SRIMileageNewMi / 8.192D)); // first instance is the real mileage
-                SRIMileageNew[0] = (byte)(SRIMileageNewRaw >> 8);
-                SRIMileageNew[1] = (byte)SRIMileageNewRaw;
+            if (SCIBusPCMReadMemoryWorker.IsBusy || SCIBusPCMWriteMemoryWorker.IsBusy)
+            {
+                return;
+            }
 
-                SRIMileageNewRaw++; // second instance is incremented by 1 unit
-                SRIMileageNew[2] = (byte)(SRIMileageNewRaw >> 8);
-                SRIMileageNew[3] = (byte)SRIMileageNewRaw;
-                SRIMileageNewRaw--;
+            if (Properties.Settings.Default.Units == "imperial")
+            {
+                double.TryParse(SCIBusPCMWriteMemorySRIMileageTextBox.Text, out SRIMileageNewMi);
+                SRIMileageNewKm = SRIMileageNewMi * 1.609344D;
+            }
+            else if (Properties.Settings.Default.Units == "metric")
+            {
+                double.TryParse(SCIBusPCMWriteMemorySRIMileageTextBox.Text, out SRIMileageNewKm);
+                SRIMileageNewMi = SRIMileageNewKm / 1.609344D;
+            }
 
-                SRIMileageNew[4] = 0xFF; // 3rd and 4th instance can be FF'd out
-                SRIMileageNew[5] = 0xFF;
-                SRIMileageNew[6] = 0xFF;
-                SRIMileageNew[7] = 0xFF;
+            SRIMileageNewRaw = (uint)(Math.Round(SRIMileageNewMi / 8.192D)); // first instance is the real mileage
+            SRIMileageNew[0] = (byte)(SRIMileageNewRaw >> 8);
+            SRIMileageNew[1] = (byte)SRIMileageNewRaw;
 
-                SRIMileageMi = SRIMileageNewRaw * 8.192D;
-                SRIMileageKm = SRIMileageMi * 1.609344D;
+            SRIMileageNewRaw++; // second instance is incremented by 1 unit
+            SRIMileageNew[2] = (byte)(SRIMileageNewRaw >> 8);
+            SRIMileageNew[3] = (byte)SRIMileageNewRaw;
+            SRIMileageNewRaw--;
 
+            SRIMileageNew[4] = 0xFF; // 3rd and 4th instance can be FF'd out
+            SRIMileageNew[5] = 0xFF;
+            SRIMileageNew[6] = 0xFF;
+            SRIMileageNew[7] = 0xFF;
+
+            SRIMileageMi = SRIMileageNewRaw * 8.192D;
+            SRIMileageKm = SRIMileageMi * 1.609344D;
+
+            if (OriginalForm.PCM.logic == "inverted") // OBD1
+            {
+                SCIBusPCMMemoryOffsetStart = SRIMileageOffsetStartOBD1;
+                SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(SCIBusPCMMemoryOffsetStart >> 8);
+                SCIBusPCMMemoryOffsetStartBytes[1] = (byte)SCIBusPCMMemoryOffsetStart;
+
+                SCIBusPCMMemoryOffsetEnd = SCIBusPCMMemoryOffsetStart + 7;
+                SCIBusPCMMemoryOffsetEndBytes[0] = (byte)(SCIBusPCMMemoryOffsetEnd >> 8);
+                SCIBusPCMMemoryOffsetEndBytes[1] = (byte)SCIBusPCMMemoryOffsetEnd;
+
+                SCIBusPCMCurrentMemoryOffset = SCIBusPCMMemoryOffsetStart;
+                SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
+                SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
+
+                // SCI 1C limits EEPROM writes to first 256 bytes (00-FF)!
+                SCIBusPCMTxPayload = new byte[3] { (byte)SCI_ID_OBD1.WriteEEPROM, SCIBusPCMMemoryOffsetStartBytes[1], SRIMileageNew[0] };
+            }
+            else // OBD2
+            {
                 SCIBusPCMMemoryOffsetStart = SRIMileageOffsetStart;
                 SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(SCIBusPCMMemoryOffsetStart >> 8);
                 SCIBusPCMMemoryOffsetStartBytes[1] = (byte)SCIBusPCMMemoryOffsetStart;
@@ -297,28 +360,28 @@ namespace ChryslerScanner
                 SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
                 SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
 
-                SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID.WriteEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1], SRIMileageNew[0] };
-
-                if (Properties.Settings.Default.Units == "imperial")
-                {
-                    SCIBusPCMWriteMemorySRIMileageTextBox.Text = Math.Round(SRIMileageMi, 1).ToString("0.0").Replace(",", ".");
-                    SCIBusPCMWriteMemorySRIMileageTextBox.SelectionStart = SCIBusPCMWriteMemorySRIMileageTextBox.Text.Length;
-                    SCIBusPCMWriteMemorySRIMileageTextBox.ScrollToCaret();
-
-                }
-                else if (Properties.Settings.Default.Units == "metric")
-                {
-                    SCIBusPCMWriteMemorySRIMileageTextBox.Text = Math.Round(SRIMileageKm, 1).ToString("0.0").Replace(",", ".");
-                    SCIBusPCMWriteMemorySRIMileageTextBox.SelectionStart = SCIBusPCMWriteMemorySRIMileageTextBox.Text.Length;
-                    SCIBusPCMWriteMemorySRIMileageTextBox.ScrollToCaret();
-                }
-
-                SCIBusPCMWriteMemoryFinished = false;
-                SCIBusPCMNextRequest = true;
-                CurrentTask = Task.WriteSRIMileage;
-                SCIBusPCMWriteMemoryWorker.RunWorkerAsync();
-                SCIBusPCMWriteMemorySRIMileageWriteButton.Enabled = false;
+                SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID_OBD2.WriteEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1], SRIMileageNew[0] };
             }
+
+            if (Properties.Settings.Default.Units == "imperial")
+            {
+                SCIBusPCMWriteMemorySRIMileageTextBox.Text = Math.Round(SRIMileageMi, 1).ToString("0.0");
+                SCIBusPCMWriteMemorySRIMileageTextBox.SelectionStart = SCIBusPCMWriteMemorySRIMileageTextBox.Text.Length;
+                SCIBusPCMWriteMemorySRIMileageTextBox.ScrollToCaret();
+
+            }
+            else if (Properties.Settings.Default.Units == "metric")
+            {
+                SCIBusPCMWriteMemorySRIMileageTextBox.Text = Math.Round(SRIMileageKm, 1).ToString("0.0");
+                SCIBusPCMWriteMemorySRIMileageTextBox.SelectionStart = SCIBusPCMWriteMemorySRIMileageTextBox.Text.Length;
+                SCIBusPCMWriteMemorySRIMileageTextBox.ScrollToCaret();
+            }
+
+            SCIBusPCMWriteMemoryFinished = false;
+            SCIBusPCMNextRequest = true;
+            CurrentTask = Task.WriteSRIMileage;
+            SCIBusPCMWriteMemoryWorker.RunWorkerAsync();
+            SCIBusPCMWriteMemorySRIMileageWriteButton.Enabled = false;
         }
 
         private void SCIBusPCMWriteMemorySRIMileageTextBox_KeyPress(object sender, KeyPressEventArgs e)
@@ -345,77 +408,91 @@ namespace ChryslerScanner
 
         private void SCIBusPCMWriteMemorySKIMVTSSReadButton_Click(object sender, EventArgs e)
         {
-            if (!SCIBusPCMReadMemoryWorker.IsBusy && !SCIBusPCMWriteMemoryWorker.IsBusy)
+            if (OriginalForm.PCM.logic == "inverted")
             {
-                UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Read SKIM status.");
-
-                SCIBusPCMMemoryOffsetStart = (uint)SKIMVTSSOffset;
-                SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(SKIMVTSSOffset >> 8);
-                SCIBusPCMMemoryOffsetStartBytes[1] = (byte)SKIMVTSSOffset;
-
-                SCIBusPCMMemoryOffsetEnd = (uint)(SKIMVTSSOffset);
-                SCIBusPCMMemoryOffsetEndBytes[0] = (byte)(SKIMVTSSOffset >> 8);
-                SCIBusPCMMemoryOffsetEndBytes[1] = (byte)SKIMVTSSOffset;
-
-                SCIBusPCMCurrentMemoryOffset = SCIBusPCMMemoryOffsetStart;
-                SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
-                SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
-
-                SCIBusPCMTxPayload = new byte[3] { (byte)SCI_ID.ReadEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1] };
-
-                SCIBusPCMReadMemoryFinished = false;
-                SCIBusPCMNextRequest = true;
-                CurrentTask = Task.ReadSKIMVTSS;
-                SCIBusPCMReadMemoryWorker.RunWorkerAsync();
-                SCIBusPCMWriteMemorySKIMVTSSReadButton.Enabled = false;
+                MessageBox.Show("Not supported.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
+
+            if (SCIBusPCMReadMemoryWorker.IsBusy || SCIBusPCMWriteMemoryWorker.IsBusy)
+            {
+                return;
+            }
+
+            UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Read SKIM status.");
+
+            SCIBusPCMMemoryOffsetStart = (uint)SKIMVTSSOffset;
+            SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(SKIMVTSSOffset >> 8);
+            SCIBusPCMMemoryOffsetStartBytes[1] = (byte)SKIMVTSSOffset;
+
+            SCIBusPCMMemoryOffsetEnd = (uint)(SKIMVTSSOffset);
+            SCIBusPCMMemoryOffsetEndBytes[0] = (byte)(SKIMVTSSOffset >> 8);
+            SCIBusPCMMemoryOffsetEndBytes[1] = (byte)SKIMVTSSOffset;
+
+            SCIBusPCMCurrentMemoryOffset = SCIBusPCMMemoryOffsetStart;
+            SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
+            SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
+
+            SCIBusPCMTxPayload = new byte[3] { (byte)SCI_ID_OBD2.ReadEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1] };
+
+            SCIBusPCMReadMemoryFinished = false;
+            SCIBusPCMNextRequest = true;
+            CurrentTask = Task.ReadSKIMVTSS;
+            SCIBusPCMReadMemoryWorker.RunWorkerAsync();
+            SCIBusPCMWriteMemorySKIMVTSSReadButton.Enabled = false;
         }
 
         private void SCIBusPCMWriteMemorySKIMVTSSWriteButton_Click(object sender, EventArgs e)
         {
-            if (!SCIBusPCMReadMemoryWorker.IsBusy && !SCIBusPCMWriteMemoryWorker.IsBusy)
+            if (OriginalForm.PCM.logic == "inverted")
             {
-                //UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "SKIM/VTSS write is not yet supported. Please write desired byte at 00 08 EEPROM offset manually.");
-
-                UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Write SKIM status.");
-
-                SCIBusPCMMemoryOffsetStart = (uint)SKIMVTSSOffset;
-                SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(SKIMVTSSOffset >> 8);
-                SCIBusPCMMemoryOffsetStartBytes[1] = (byte)SKIMVTSSOffset;
-
-                SCIBusPCMMemoryOffsetEnd = (uint)(SKIMVTSSOffset);
-                SCIBusPCMMemoryOffsetEndBytes[0] = (byte)(SKIMVTSSOffset >> 8);
-                SCIBusPCMMemoryOffsetEndBytes[1] = (byte)SKIMVTSSOffset;
-
-                SCIBusPCMCurrentMemoryOffset = SCIBusPCMMemoryOffsetStart;
-                SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
-                SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
-
-                byte NewSKIMStatus = 0xFF;
-
-                switch (SCIBusPCMWriteMemorySKIMVTSSComboBox.SelectedIndex)
-                {
-                    case 0:
-                    case 3:
-                    {
-                        NewSKIMStatus = 0xFF;
-                        break;
-                    }
-                    case 1:
-                    {
-                        NewSKIMStatus = 0x00;
-                        break;
-                    }
-                }
-
-                SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID.WriteEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1], NewSKIMStatus };
-
-                SCIBusPCMWriteMemoryFinished = false;
-                SCIBusPCMNextRequest = true;
-                CurrentTask = Task.WriteSKIMVTSS;
-                SCIBusPCMWriteMemoryWorker.RunWorkerAsync();
-                SCIBusPCMWriteMemorySKIMVTSSWriteButton.Enabled = false;
+                MessageBox.Show("Not supported.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
+
+            if (SCIBusPCMReadMemoryWorker.IsBusy || SCIBusPCMWriteMemoryWorker.IsBusy)
+            {
+                return;
+            }
+
+            UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Write SKIM status.");
+
+            SCIBusPCMMemoryOffsetStart = (uint)SKIMVTSSOffset;
+            SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(SKIMVTSSOffset >> 8);
+            SCIBusPCMMemoryOffsetStartBytes[1] = (byte)SKIMVTSSOffset;
+
+            SCIBusPCMMemoryOffsetEnd = (uint)(SKIMVTSSOffset);
+            SCIBusPCMMemoryOffsetEndBytes[0] = (byte)(SKIMVTSSOffset >> 8);
+            SCIBusPCMMemoryOffsetEndBytes[1] = (byte)SKIMVTSSOffset;
+
+            SCIBusPCMCurrentMemoryOffset = SCIBusPCMMemoryOffsetStart;
+            SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
+            SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
+
+            byte NewSKIMStatus = 0xFF;
+
+            switch (SCIBusPCMWriteMemorySKIMVTSSComboBox.SelectedIndex)
+            {
+                case 0:
+                case 3:
+                {
+                    NewSKIMStatus = 0xFF;
+                    break;
+                }
+                case 1:
+                {
+                    NewSKIMStatus = 0x00;
+                    break;
+                }
+            }
+
+            SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID_OBD2.WriteEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1], NewSKIMStatus };
+
+            SCIBusPCMWriteMemoryFinished = false;
+            SCIBusPCMNextRequest = true;
+            CurrentTask = Task.WriteSKIMVTSS;
+            SCIBusPCMWriteMemoryWorker.RunWorkerAsync();
+            SCIBusPCMWriteMemorySKIMVTSSWriteButton.Enabled = false;
         }
 
         private void SCIBusPCMWriteMemoryVINTextBox_TextChanged(object sender, EventArgs e)
@@ -436,59 +513,69 @@ namespace ChryslerScanner
 
         private void SCIBusPCMWriteMemoryVINReadButton_Click(object sender, EventArgs e)
         {
-            if (!SCIBusPCMReadMemoryWorker.IsBusy && !SCIBusPCMWriteMemoryWorker.IsBusy)
+            if (SCIBusPCMReadMemoryWorker.IsBusy || SCIBusPCMWriteMemoryWorker.IsBusy)
             {
-                UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Read VIN.");
-
-                SCIBusPCMMemoryOffsetStart = (uint)VINOffsetStart;
-                SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(VINOffsetStart >> 8);
-                SCIBusPCMMemoryOffsetStartBytes[1] = (byte)VINOffsetStart;
-
-                SCIBusPCMMemoryOffsetEnd = (uint)(VINOffsetEnd);
-                SCIBusPCMMemoryOffsetEndBytes[0] = (byte)(VINOffsetEnd >> 8);
-                SCIBusPCMMemoryOffsetEndBytes[1] = (byte)VINOffsetEnd;
-
-                SCIBusPCMCurrentMemoryOffset = SCIBusPCMMemoryOffsetStart;
-                SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
-                SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
-
-                SCIBusPCMTxPayload = new byte[3] { (byte)SCI_ID.ReadEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1] };
-
-                SCIBusPCMReadMemoryFinished = false;
-                SCIBusPCMNextRequest = true;
-                CurrentTask = Task.ReadVIN;
-                SCIBusPCMReadMemoryWorker.RunWorkerAsync();
-                SCIBusPCMWriteMemoryVINReadButton.Enabled = false;
+                return;
             }
+
+            UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Read VIN.");
+
+            SCIBusPCMMemoryOffsetStart = (uint)VINOffsetStart;
+            SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(VINOffsetStart >> 8);
+            SCIBusPCMMemoryOffsetStartBytes[1] = (byte)VINOffsetStart;
+
+            SCIBusPCMMemoryOffsetEnd = (uint)(VINOffsetEnd);
+            SCIBusPCMMemoryOffsetEndBytes[0] = (byte)(VINOffsetEnd >> 8);
+            SCIBusPCMMemoryOffsetEndBytes[1] = (byte)VINOffsetEnd;
+
+            SCIBusPCMCurrentMemoryOffset = SCIBusPCMMemoryOffsetStart;
+            SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
+            SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
+
+            SCIBusPCMTxPayload = new byte[3] { (byte)SCI_ID_OBD2.ReadEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1] };
+
+            SCIBusPCMReadMemoryFinished = false;
+            SCIBusPCMNextRequest = true;
+            CurrentTask = Task.ReadVIN;
+            SCIBusPCMReadMemoryWorker.RunWorkerAsync();
+            SCIBusPCMWriteMemoryVINReadButton.Enabled = false;
         }
 
         private void SCIBusPCMWriteMemoryVINWriteButton_Click(object sender, EventArgs e)
         {
-            if (!SCIBusPCMReadMemoryWorker.IsBusy && !SCIBusPCMWriteMemoryWorker.IsBusy && (SCIBusPCMWriteMemoryVINTextBox.Text.Length == VINLength))
+            if (OriginalForm.PCM.logic == "inverted")
             {
-                VINString = SCIBusPCMWriteMemoryVINTextBox.Text.ToUpper();
-                VIN = Encoding.ASCII.GetBytes(VINString);
-
-                SCIBusPCMMemoryOffsetStart = VINOffsetStart;
-                SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(SCIBusPCMMemoryOffsetStart >> 8);
-                SCIBusPCMMemoryOffsetStartBytes[1] = (byte)SCIBusPCMMemoryOffsetStart;
-
-                SCIBusPCMMemoryOffsetEnd = VINOffsetEnd;
-                SCIBusPCMMemoryOffsetEndBytes[0] = (byte)(SCIBusPCMMemoryOffsetEnd >> 8);
-                SCIBusPCMMemoryOffsetEndBytes[1] = (byte)SCIBusPCMMemoryOffsetEnd;
-
-                SCIBusPCMCurrentMemoryOffset = SCIBusPCMMemoryOffsetStart;
-                SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
-                SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
-
-                SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID.WriteEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1], VIN[0] };
-
-                SCIBusPCMWriteMemoryFinished = false;
-                SCIBusPCMNextRequest = true;
-                CurrentTask = Task.WriteVIN;
-                SCIBusPCMWriteMemoryWorker.RunWorkerAsync();
-                SCIBusPCMWriteMemoryVINWriteButton.Enabled = false;
+                MessageBox.Show("Not supported yet.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
+
+            if (SCIBusPCMReadMemoryWorker.IsBusy || !SCIBusPCMWriteMemoryWorker.IsBusy || (SCIBusPCMWriteMemoryVINTextBox.Text.Length != VINLength))
+            {
+                return;
+            }
+
+            VINString = SCIBusPCMWriteMemoryVINTextBox.Text.ToUpper();
+            VIN = Encoding.ASCII.GetBytes(VINString);
+
+            SCIBusPCMMemoryOffsetStart = VINOffsetStart;
+            SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(SCIBusPCMMemoryOffsetStart >> 8);
+            SCIBusPCMMemoryOffsetStartBytes[1] = (byte)SCIBusPCMMemoryOffsetStart;
+
+            SCIBusPCMMemoryOffsetEnd = VINOffsetEnd;
+            SCIBusPCMMemoryOffsetEndBytes[0] = (byte)(SCIBusPCMMemoryOffsetEnd >> 8);
+            SCIBusPCMMemoryOffsetEndBytes[1] = (byte)SCIBusPCMMemoryOffsetEnd;
+
+            SCIBusPCMCurrentMemoryOffset = SCIBusPCMMemoryOffsetStart;
+            SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
+            SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
+
+            SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID_OBD2.WriteEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1], VIN[0] };
+
+            SCIBusPCMWriteMemoryFinished = false;
+            SCIBusPCMNextRequest = true;
+            CurrentTask = Task.WriteVIN;
+            SCIBusPCMWriteMemoryWorker.RunWorkerAsync();
+            SCIBusPCMWriteMemoryVINWriteButton.Enabled = false;
         }
 
         private void SCIBusPCMWriteMemoryVINTextBox_KeyPress(object sender, KeyPressEventArgs e)
@@ -528,132 +615,150 @@ namespace ChryslerScanner
 
         private void SCIBusPCMWriteMemoryPartNumberReadButton_Click(object sender, EventArgs e)
         {
-            if (!SCIBusPCMReadMemoryWorker.IsBusy && !SCIBusPCMWriteMemoryWorker.IsBusy)
+            if (OriginalForm.PCM.logic == "inverted")
             {
-                UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Read Part Number.");
-
-                SCIBusPCMMemoryOffsetStart = (uint)PartNumberOffset1Start;
-                SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(PartNumberOffset1Start >> 8);
-                SCIBusPCMMemoryOffsetStartBytes[1] = unchecked((byte)PartNumberOffset1Start);
-
-                SCIBusPCMMemoryOffsetEnd = (uint)(PartNumberOffset2End);
-                SCIBusPCMMemoryOffsetEndBytes[0] = (PartNumberOffset2End >> 8);
-                SCIBusPCMMemoryOffsetEndBytes[1] = unchecked((byte)PartNumberOffset2End);
-
-                SCIBusPCMCurrentMemoryOffset = SCIBusPCMMemoryOffsetStart;
-                SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
-                SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
-
-                SCIBusPCMTxPayload = new byte[3] { (byte)SCI_ID.ReadEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1] };
-
-                SCIBusPCMReadMemoryFinished = false;
-                SCIBusPCMNextRequest = true;
-                CurrentTask = Task.ReadPartNumber;
-                SCIBusPCMReadMemoryWorker.RunWorkerAsync();
-                SCIBusPCMWriteMemoryPartNumberReadButton.Enabled = false;
+                MessageBox.Show("Not supported.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
+
+            if (SCIBusPCMReadMemoryWorker.IsBusy || SCIBusPCMWriteMemoryWorker.IsBusy)
+            {
+                return;
+            }
+
+            UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Read Part Number.");
+
+            SCIBusPCMMemoryOffsetStart = (uint)PartNumberOffset1Start;
+            SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(PartNumberOffset1Start >> 8);
+            SCIBusPCMMemoryOffsetStartBytes[1] = unchecked((byte)PartNumberOffset1Start);
+
+            SCIBusPCMMemoryOffsetEnd = (uint)(PartNumberOffset2End);
+            SCIBusPCMMemoryOffsetEndBytes[0] = (PartNumberOffset2End >> 8);
+            SCIBusPCMMemoryOffsetEndBytes[1] = unchecked((byte)PartNumberOffset2End);
+
+            SCIBusPCMCurrentMemoryOffset = SCIBusPCMMemoryOffsetStart;
+            SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
+            SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
+
+            SCIBusPCMTxPayload = new byte[3] { (byte)SCI_ID_OBD2.ReadEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1] };
+
+            SCIBusPCMReadMemoryFinished = false;
+            SCIBusPCMNextRequest = true;
+            CurrentTask = Task.ReadPartNumber;
+            SCIBusPCMReadMemoryWorker.RunWorkerAsync();
+            SCIBusPCMWriteMemoryPartNumberReadButton.Enabled = false;
         }
 
         private void SCIBusPCMWriteMemoryPartNumberWriteButton_Click(object sender, EventArgs e)
         {
-            if (!SCIBusPCMReadMemoryWorker.IsBusy && !SCIBusPCMWriteMemoryWorker.IsBusy && PartNumberLocation != 0)
+            if (OriginalForm.PCM.logic == "inverted")
             {
-                byte[] a;
+                MessageBox.Show("Not supported.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
-                switch (SCIBusPCMWriteMemoryPartNumberTextBox.Text.Length)
+            if (SCIBusPCMReadMemoryWorker.IsBusy || SCIBusPCMWriteMemoryWorker.IsBusy)
+            {
+                return;
+            }
+
+            if (PartNumberLocation == 0)
+            {
+                UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Part Number needs to be read first before writing a new one!");
+                return;
+            }
+
+            byte[] a;
+
+            switch (SCIBusPCMWriteMemoryPartNumberTextBox.Text.Length)
+            {
+                case 8:
                 {
-                    case 8:
-                    {
-                        a = Util.HexStringToByte(SCIBusPCMWriteMemoryPartNumberTextBox.Text);
-                        Array.Copy(a, PartNumberBuffer, a.Length);
+                    a = Util.HexStringToByte(SCIBusPCMWriteMemoryPartNumberTextBox.Text);
+                    Array.Copy(a, PartNumberBuffer, a.Length);
 
-                        PartNumber[0] = PartNumberBuffer[0];
-                        PartNumber[1] = PartNumberBuffer[1];
-                        PartNumber[2] = PartNumberBuffer[2];
-                        PartNumber[3] = PartNumberBuffer[3];
-                        PartNumber[4] = 0;
-                        PartNumber[5] = 0;
+                    PartNumber[0] = PartNumberBuffer[0];
+                    PartNumber[1] = PartNumberBuffer[1];
+                    PartNumber[2] = PartNumberBuffer[2];
+                    PartNumber[3] = PartNumberBuffer[3];
+                    PartNumber[4] = 0;
+                    PartNumber[5] = 0;
 
-                        break;
-                    }
-                    case 10:
-                    {
-                        string EditedPartNumber = Util.TruncateString(SCIBusPCMWriteMemoryPartNumberTextBox.Text, 8);
-                        a = Util.HexStringToByte(EditedPartNumber);
-                        Array.Copy(a, PartNumberBuffer, a.Length);
-
-                        PartNumber[0] = PartNumberBuffer[0];
-                        PartNumber[1] = PartNumberBuffer[1];
-                        PartNumber[2] = PartNumberBuffer[2];
-                        PartNumber[3] = PartNumberBuffer[3];
-                        PartNumber[4] = Encoding.ASCII.GetBytes(SCIBusPCMWriteMemoryPartNumberTextBox.Text)[8];
-                        PartNumber[5] = Encoding.ASCII.GetBytes(SCIBusPCMWriteMemoryPartNumberTextBox.Text)[9];
-
-                        break;
-                    }
-                    default:
-                    {
-                        UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Invalid Part Number length.");
-                        break;
-                    }
+                    break;
                 }
-
-                switch (PartNumberLocation)
+                case 10:
                 {
-                    case PartNumberOffset1Start:
-                    {
-                        if ((PartNumber[4] != 0) && (PartNumber[5] != 0)) // 2 revision letters are present
-                        {
-                            SCIBusPCMMemoryOffsetStart = PartNumberOffset1Start;
-                            SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(SCIBusPCMMemoryOffsetStart >> 8);
-                            SCIBusPCMMemoryOffsetStartBytes[1] = (byte)SCIBusPCMMemoryOffsetStart;
+                    string EditedPartNumber = Util.TruncateString(SCIBusPCMWriteMemoryPartNumberTextBox.Text, 8);
+                    a = Util.HexStringToByte(EditedPartNumber);
+                    Array.Copy(a, PartNumberBuffer, a.Length);
 
-                            SCIBusPCMMemoryOffsetEnd = PartNumberOffset1End;
-                            SCIBusPCMMemoryOffsetEndBytes[0] = (byte)(SCIBusPCMMemoryOffsetEnd >> 8);
-                            SCIBusPCMMemoryOffsetEndBytes[1] = (byte)SCIBusPCMMemoryOffsetEnd;
-                        }
-                        else // no revision letters are present, write first 8 characters (4 bytes) only
-                        {
-                            SCIBusPCMMemoryOffsetStart = PartNumberOffset1Start;
-                            SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(SCIBusPCMMemoryOffsetStart >> 8);
-                            SCIBusPCMMemoryOffsetStartBytes[1] = (byte)SCIBusPCMMemoryOffsetStart;
+                    PartNumber[0] = PartNumberBuffer[0];
+                    PartNumber[1] = PartNumberBuffer[1];
+                    PartNumber[2] = PartNumberBuffer[2];
+                    PartNumber[3] = PartNumberBuffer[3];
+                    PartNumber[4] = Encoding.ASCII.GetBytes(SCIBusPCMWriteMemoryPartNumberTextBox.Text)[8];
+                    PartNumber[5] = Encoding.ASCII.GetBytes(SCIBusPCMWriteMemoryPartNumberTextBox.Text)[9];
 
-                            SCIBusPCMMemoryOffsetEnd = SCIBusPCMMemoryOffsetStart + 3;
-                            SCIBusPCMMemoryOffsetEndBytes[0] = (byte)(SCIBusPCMMemoryOffsetEnd >> 8);
-                            SCIBusPCMMemoryOffsetEndBytes[1] = (byte)SCIBusPCMMemoryOffsetEnd;
-                        }
-                        break;
-                    }
-                    case PartNumberOffset2Start: // 2 revision letters are not written if present in input field 
+                    break;
+                }
+                default:
+                {
+                    UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Invalid Part Number length.");
+                    break;
+                }
+            }
+
+            switch (PartNumberLocation)
+            {
+                case PartNumberOffset1Start:
+                {
+                    if ((PartNumber[4] != 0) && (PartNumber[5] != 0)) // 2 revision letters are present
                     {
-                        SCIBusPCMMemoryOffsetStart = PartNumberOffset2Start;
+                        SCIBusPCMMemoryOffsetStart = PartNumberOffset1Start;
                         SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(SCIBusPCMMemoryOffsetStart >> 8);
                         SCIBusPCMMemoryOffsetStartBytes[1] = (byte)SCIBusPCMMemoryOffsetStart;
 
-                        SCIBusPCMMemoryOffsetEnd = PartNumberOffset2End;
+                        SCIBusPCMMemoryOffsetEnd = PartNumberOffset1End;
                         SCIBusPCMMemoryOffsetEndBytes[0] = (byte)(SCIBusPCMMemoryOffsetEnd >> 8);
                         SCIBusPCMMemoryOffsetEndBytes[1] = (byte)SCIBusPCMMemoryOffsetEnd;
-
-                        break;
                     }
+                    else // no revision letters are present, write first 8 characters (4 bytes) only
+                    {
+                        SCIBusPCMMemoryOffsetStart = PartNumberOffset1Start;
+                        SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(SCIBusPCMMemoryOffsetStart >> 8);
+                        SCIBusPCMMemoryOffsetStartBytes[1] = (byte)SCIBusPCMMemoryOffsetStart;
+
+                        SCIBusPCMMemoryOffsetEnd = SCIBusPCMMemoryOffsetStart + 3;
+                        SCIBusPCMMemoryOffsetEndBytes[0] = (byte)(SCIBusPCMMemoryOffsetEnd >> 8);
+                        SCIBusPCMMemoryOffsetEndBytes[1] = (byte)SCIBusPCMMemoryOffsetEnd;
+                    }
+                    break;
                 }
+                case PartNumberOffset2Start: // 2 revision letters are not written if present in input field 
+                {
+                    SCIBusPCMMemoryOffsetStart = PartNumberOffset2Start;
+                    SCIBusPCMMemoryOffsetStartBytes[0] = (byte)(SCIBusPCMMemoryOffsetStart >> 8);
+                    SCIBusPCMMemoryOffsetStartBytes[1] = (byte)SCIBusPCMMemoryOffsetStart;
 
-                SCIBusPCMCurrentMemoryOffset = SCIBusPCMMemoryOffsetStart;
-                SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
-                SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
+                    SCIBusPCMMemoryOffsetEnd = PartNumberOffset2End;
+                    SCIBusPCMMemoryOffsetEndBytes[0] = (byte)(SCIBusPCMMemoryOffsetEnd >> 8);
+                    SCIBusPCMMemoryOffsetEndBytes[1] = (byte)SCIBusPCMMemoryOffsetEnd;
 
-                SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID.WriteEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1], PartNumber[0] };
-
-                SCIBusPCMWriteMemoryFinished = false;
-                SCIBusPCMNextRequest = true;
-                CurrentTask = Task.WritePartNumber;
-                SCIBusPCMWriteMemoryWorker.RunWorkerAsync();
-                SCIBusPCMWriteMemoryPartNumberWriteButton.Enabled = false;
+                    break;
+                }
             }
-            else if (PartNumberLocation == 0)
-            {
-                UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Part Number needs to be read first before writing a new one!");
-            }
+
+            SCIBusPCMCurrentMemoryOffset = SCIBusPCMMemoryOffsetStart;
+            SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
+            SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
+
+            SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID_OBD2.WriteEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1], PartNumber[0] };
+
+            SCIBusPCMWriteMemoryFinished = false;
+            SCIBusPCMNextRequest = true;
+            CurrentTask = Task.WritePartNumber;
+            SCIBusPCMWriteMemoryWorker.RunWorkerAsync();
+            SCIBusPCMWriteMemoryPartNumberWriteButton.Enabled = false;
         }
 
         private void SCIBusPCMWriteMemoryPartNumberTextBox_KeyPress(object sender, KeyPressEventArgs e)
@@ -740,6 +845,12 @@ namespace ChryslerScanner
 
         private void SCIBusPCMWriteMemoryEEPROMReadButton_Click(object sender, EventArgs e)
         {
+            if (OriginalForm.PCM.logic == "inverted")
+            {
+                MessageBox.Show("Not supported yet.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             if (SCIBusPCMWriteMemoryEEPROMReadButton.Text == "Stop")
             {
                 SCIBusPCMReadMemoryWorker.CancelAsync();
@@ -786,7 +897,7 @@ namespace ChryslerScanner
                 SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
                 SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
 
-                SCIBusPCMTxPayload = new byte[3] { (byte)SCI_ID.ReadEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1] };
+                SCIBusPCMTxPayload = new byte[3] { (byte)SCI_ID_OBD2.ReadEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1] };
 
                 SCIBusPCMWriteMemoryEEPROMValueTextBox.Clear();
 
@@ -801,6 +912,12 @@ namespace ChryslerScanner
 
         private void SCIBusPCMWriteMemoryEEPROMWriteButton_Click(object sender, EventArgs e)
         {
+            if (OriginalForm.PCM.logic == "inverted")
+            {
+                MessageBox.Show("Not supported yet.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             if (SCIBusPCMWriteMemoryEEPROMWriteButton.Text == "Stop")
             {
                 SCIBusPCMWriteMemoryWorker.CancelAsync();
@@ -849,7 +966,7 @@ namespace ChryslerScanner
                 SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
                 SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
 
-                SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID.WriteEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1], EEPROMBuffer[0] };
+                SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID_OBD2.WriteEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1], EEPROMBuffer[0] };
 
                 SCIBusPCMWriteMemoryEEPROMValueCountTextBox.Text = count.ToString();
                 SCIBusPCMWriteMemoryEEPROMWriteButton.Text = "Stop";
@@ -863,6 +980,12 @@ namespace ChryslerScanner
 
         private void SCIBusPCMWriteMemoryEEPROMBackupButton_Click(object sender, EventArgs e)
         {
+            if (OriginalForm.PCM.logic == "inverted")
+            {
+                MessageBox.Show("Not supported yet.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             if (SCIBusPCMWriteMemoryEEPROMBackupButton.Text == "Stop")
             {
                 SCIBusPCMReadMemoryWorker.CancelAsync();
@@ -889,7 +1012,7 @@ namespace ChryslerScanner
                 SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
                 SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
 
-                SCIBusPCMTxPayload = new byte[3] { (byte)SCI_ID.ReadEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1] };
+                SCIBusPCMTxPayload = new byte[3] { (byte)SCI_ID_OBD2.ReadEEPROM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1] };
 
                 SCIBusPCMWriteMemoryEEPROMBackupButton.Text = "Stop";
 
@@ -902,6 +1025,12 @@ namespace ChryslerScanner
 
         private void SCIBusPCMWriteMemoryEEPROMRestoreButton_Click(object sender, EventArgs e)
         {
+            if (OriginalForm.PCM.logic == "inverted")
+            {
+                MessageBox.Show("Not supported yet.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
                 openFileDialog.InitialDirectory = Path.Combine(Application.StartupPath, @"ROMs\PCM");
@@ -1044,6 +1173,12 @@ namespace ChryslerScanner
 
         private void SCIBusPCMWriteMemoryRAMReadButton_Click(object sender, EventArgs e)
         {
+            if (OriginalForm.PCM.logic == "inverted")
+            {
+                MessageBox.Show("Not supported yet.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             if (SCIBusPCMWriteMemoryRAMReadButton.Text == "Stop")
             {
                 SCIBusPCMReadMemoryWorker.CancelAsync();
@@ -1090,7 +1225,7 @@ namespace ChryslerScanner
                 SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
                 SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
 
-                SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID.ReadROMRAM, 0x0F, (byte)(SCIBusPCMMemoryOffsetStartBytes[0] + 0x80), SCIBusPCMMemoryOffsetStartBytes[1] };
+                SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID_OBD2.ReadROMRAM, 0x0F, (byte)(SCIBusPCMMemoryOffsetStartBytes[0] + 0x80), SCIBusPCMMemoryOffsetStartBytes[1] };
 
                 SCIBusPCMWriteMemoryRAMValueTextBox.Clear();
 
@@ -1105,6 +1240,12 @@ namespace ChryslerScanner
 
         private void SCIBusPCMWriteMemoryRAMWriteButton_Click(object sender, EventArgs e)
         {
+            if (OriginalForm.PCM.logic == "inverted")
+            {
+                MessageBox.Show("Not supported yet.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             if (SCIBusPCMWriteMemoryRAMWriteButton.Text == "Stop")
             {
                 SCIBusPCMWriteMemoryWorker.CancelAsync();
@@ -1153,7 +1294,7 @@ namespace ChryslerScanner
                 SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
                 SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
 
-                SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID.WriteRAM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1], RAMBuffer[0] };
+                SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID_OBD2.WriteRAM, SCIBusPCMMemoryOffsetStartBytes[0], SCIBusPCMMemoryOffsetStartBytes[1], RAMBuffer[0] };
 
                 SCIBusPCMWriteMemoryRAMValueCountTextBox.Text = count.ToString();
                 SCIBusPCMWriteMemoryRAMWriteButton.Text = "Stop";
@@ -1167,6 +1308,12 @@ namespace ChryslerScanner
 
         private void SCIBusPCMWriteMemoryRAMBackupButton_Click(object sender, EventArgs e)
         {
+            if (OriginalForm.PCM.logic == "inverted")
+            {
+                MessageBox.Show("Not supported yet.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             if (SCIBusPCMWriteMemoryRAMBackupButton.Text == "Stop")
             {
                 SCIBusPCMReadMemoryWorker.CancelAsync();
@@ -1193,7 +1340,7 @@ namespace ChryslerScanner
                 SCIBusPCMCurrentMemoryOffsetBytes[0] = SCIBusPCMMemoryOffsetStartBytes[0];
                 SCIBusPCMCurrentMemoryOffsetBytes[1] = SCIBusPCMMemoryOffsetStartBytes[1];
 
-                SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID.ReadROMRAM, 0x0F, (byte)(SCIBusPCMMemoryOffsetStartBytes[0] + 0x80), SCIBusPCMMemoryOffsetStartBytes[1] };
+                SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID_OBD2.ReadROMRAM, 0x0F, (byte)(SCIBusPCMMemoryOffsetStartBytes[0] + 0x80), SCIBusPCMMemoryOffsetStartBytes[1] };
 
                 SCIBusPCMWriteMemoryRAMBackupButton.Text = "Stop";
 
@@ -1206,7 +1353,8 @@ namespace ChryslerScanner
 
         private void SCIBusPCMWriteMemoryRAMRestoreButton_Click(object sender, EventArgs e)
         {
-
+            MessageBox.Show("Not supported.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
         }
 
         private void SCIBusPCMWriteMemoryRAMOffsetTextBox_KeyPress(object sender, KeyPressEventArgs e)
@@ -1246,14 +1394,14 @@ namespace ChryslerScanner
 
             if (Properties.Settings.Default.Units == "imperial")
             {
-                SCIBusPCMWriteMemorySRIMileageTextBox.Text = Math.Round(SRIMileageMi, 1).ToString("0.0").Replace(",", ".");
+                SCIBusPCMWriteMemorySRIMileageTextBox.Text = Math.Round(SRIMileageMi, 1).ToString("0.0");
                 SCIBusPCMWriteMemorySRIMileageTextBox.SelectionStart = SCIBusPCMWriteMemorySRIMileageTextBox.Text.Length;
                 SCIBusPCMWriteMemorySRIMileageTextBox.ScrollToCaret();
 
             }
             else if (Properties.Settings.Default.Units == "metric")
             {
-                SCIBusPCMWriteMemorySRIMileageTextBox.Text = Math.Round(SRIMileageKm, 1).ToString("0.0").Replace(",", ".");
+                SCIBusPCMWriteMemorySRIMileageTextBox.Text = Math.Round(SRIMileageKm, 1).ToString("0.0");
                 SCIBusPCMWriteMemorySRIMileageTextBox.SelectionStart = SCIBusPCMWriteMemorySRIMileageTextBox.Text.Length;
                 SCIBusPCMWriteMemorySRIMileageTextBox.ScrollToCaret();
             }
@@ -1428,16 +1576,16 @@ namespace ChryslerScanner
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, " Done." + Environment.NewLine + "SRI Mileage: " + Math.Round(SRIMileageMi, 1).ToString("0.0").Replace(",", ".") + " mi");
-                            SCIBusPCMWriteMemorySRIMileageTextBox.Text = Math.Round(SRIMileageMi, 1).ToString("0.0").Replace(",", ".");
+                            UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, " Done." + Environment.NewLine + "SRI Mileage: " + Math.Round(SRIMileageMi, 1).ToString("0.0") + " mi");
+                            SCIBusPCMWriteMemorySRIMileageTextBox.Text = Math.Round(SRIMileageMi, 1).ToString("0.0");
                             SCIBusPCMWriteMemorySRIMileageTextBox.SelectionStart = SCIBusPCMWriteMemorySRIMileageTextBox.Text.Length;
                             SCIBusPCMWriteMemorySRIMileageTextBox.ScrollToCaret();
 
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, " Done." + Environment.NewLine + "SRI Mileage: " + Math.Round(SRIMileageKm, 1).ToString("0.0").Replace(",", ".") + " km");
-                            SCIBusPCMWriteMemorySRIMileageTextBox.Text = Math.Round(SRIMileageKm, 1).ToString("0.0").Replace(",", ".");
+                            UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, " Done." + Environment.NewLine + "SRI Mileage: " + Math.Round(SRIMileageKm, 1).ToString("0.0") + " km");
+                            SCIBusPCMWriteMemorySRIMileageTextBox.Text = Math.Round(SRIMileageKm, 1).ToString("0.0");
                             SCIBusPCMWriteMemorySRIMileageTextBox.SelectionStart = SCIBusPCMWriteMemorySRIMileageTextBox.Text.Length;
                             SCIBusPCMWriteMemorySRIMileageTextBox.ScrollToCaret();
                         }
@@ -1675,7 +1823,7 @@ namespace ChryslerScanner
                     packet.Bus = (byte)PacketHelper.Bus.PCM;
                     packet.Command = (byte)PacketHelper.Command.MsgTx;
                     packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
-                    packet.Payload = new byte[1] { (byte)SCI_ID.GetSecuritySeed };
+                    packet.Payload = new byte[1] { (byte)SCI_ID_OBD2.GetSecuritySeed };
                 }
                 else
                 {
@@ -1755,11 +1903,11 @@ namespace ChryslerScanner
 
                         if (Properties.Settings.Default.Units == "imperial")
                         {
-                            UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + "New SRI Mileage: " + Math.Round(SRIMileageMi, 1).ToString("0.0").Replace(",", ".") + " mi");
+                            UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + "New SRI Mileage: " + Math.Round(SRIMileageMi, 1).ToString("0.0") + " mi");
                         }
                         else if (Properties.Settings.Default.Units == "metric")
                         {
-                            UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + "New SRI Mileage: " + Math.Round(SRIMileageKm, 1).ToString("0.0").Replace(",", ".") + " km");
+                            UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + "New SRI Mileage: " + Math.Round(SRIMileageKm, 1).ToString("0.0") + " km");
                         }
 
                         SCIBusPCMWriteMemorySRIMileageTextBox_TextChanged(this, EventArgs.Empty);
@@ -1894,11 +2042,11 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "BCM Mileage: " + CCDBCMMileageMi.ToString("0.0").Replace(",", ".") + " mi");
+                                    UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "BCM Mileage: " + CCDBCMMileageMi.ToString("0.0") + " mi");
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "BCM Mileage: " + CCDBCMMileageKm.ToString("0.0").Replace(",", ".") + " km");
+                                    UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "BCM Mileage: " + CCDBCMMileageKm.ToString("0.0") + " km");
                                 }
 
                                 CCDBCMMileageReceived = true;
@@ -1915,7 +2063,52 @@ namespace ChryslerScanner
 
                     switch (SCIBusPCMResponseBytes[0])
                     {
-                        case (byte)SCI_ID.ReadROMRAM:
+                        case (byte)SCI_ID_OBD1.ReadMemory:
+                        {
+                            if (SCIBusPCMResponseBytes.Length < 4)
+                                break;
+
+                            uint Index = SCIBusPCMCurrentMemoryOffset - SCIBusPCMMemoryOffsetStart;
+
+                            switch (CurrentTask)
+                            {
+                                case Task.ReadSRIMileage:
+                                {
+                                    SRIMileage[Index] = SCIBusPCMResponseBytes[3];
+                                    break;
+                                }
+                                case Task.ReadVIN:
+                                {
+                                    VIN[Index] = SCIBusPCMResponseBytes[3];
+                                    break;
+                                }
+                                case Task.ReadEEPROM:
+                                {
+                                    EEPROMBuffer[Index] = SCIBusPCMResponseBytes[3];
+                                    break;
+                                }
+                                case Task.BackupEEPROM:
+                                {
+                                    using (BinaryWriter writer = new BinaryWriter(File.Open(SCIBusPCMMemoryEEPROMBackupFilename, FileMode.Append)))
+                                    {
+                                        writer.Write(SCIBusPCMResponseBytes[3]);
+                                        writer.Close();
+                                    }
+
+                                    SCIBusPCMWriteMemoryEEPROMOffsetTextBox.Text = Util.ByteToHexString(SCIBusPCMResponseBytes, 1, 2);
+                                    SCIBusPCMWriteMemoryEEPROMValueTextBox.Text = Util.ByteToHexString(SCIBusPCMResponseBytes, 3, 1);
+                                    break;
+                                }
+                            }
+
+                            SCIBusPCMResponse = true;
+                            SCIBusPCMCurrentMemoryOffset++;
+                            SCIBusPCMCurrentMemoryOffsetBytes[0] = (byte)(SCIBusPCMCurrentMemoryOffset >> 8);
+                            SCIBusPCMCurrentMemoryOffsetBytes[1] = (byte)SCIBusPCMCurrentMemoryOffset;
+                            SCIBusPCMTxPayload = new byte[3] { (byte)SCI_ID_OBD1.ReadMemory, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1] };
+                            break;
+                        }
+                        case (byte)SCI_ID_OBD2.ReadROMRAM:
                         {
                             if (SCIBusPCMResponseBytes.Length > 4)
                             {
@@ -1946,11 +2139,11 @@ namespace ChryslerScanner
                                 SCIBusPCMCurrentMemoryOffset++;
                                 SCIBusPCMCurrentMemoryOffsetBytes[0] = (byte)(SCIBusPCMCurrentMemoryOffset >> 8);
                                 SCIBusPCMCurrentMemoryOffsetBytes[1] = (byte)SCIBusPCMCurrentMemoryOffset;
-                                SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID.ReadROMRAM, 0x0F, (byte)(SCIBusPCMCurrentMemoryOffsetBytes[0] + 0x80), SCIBusPCMCurrentMemoryOffsetBytes[1] };
+                                SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID_OBD2.ReadROMRAM, 0x0F, (byte)(SCIBusPCMCurrentMemoryOffsetBytes[0] + 0x80), SCIBusPCMCurrentMemoryOffsetBytes[1] };
                             }
                             break;
                         }
-                        case (byte)SCI_ID.WriteEEPROM:
+                        case (byte)SCI_ID_OBD2.WriteEEPROM:
                         {
                             if (SCIBusPCMResponseBytes.Length < 5)
                             {
@@ -2021,7 +2214,7 @@ namespace ChryslerScanner
                                         }
                                     }
 
-                                    SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID.WriteEEPROM, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], Payload };
+                                    SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID_OBD2.WriteEEPROM, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], Payload };
                                     break;
                                 }
                                 case 0xF0:  // offset out of range
@@ -2036,7 +2229,7 @@ namespace ChryslerScanner
                             }
                             break;
                         }
-                        case (byte)SCI_ID.ReadEEPROM:
+                        case (byte)SCI_ID_OBD2.ReadEEPROM:
                         {
                             if (SCIBusPCMResponseBytes.Length < 4)
                             {
@@ -2090,10 +2283,10 @@ namespace ChryslerScanner
                             SCIBusPCMCurrentMemoryOffset++;
                             SCIBusPCMCurrentMemoryOffsetBytes[0] = (byte)(SCIBusPCMCurrentMemoryOffset >> 8);
                             SCIBusPCMCurrentMemoryOffsetBytes[1] = (byte)SCIBusPCMCurrentMemoryOffset;
-                            SCIBusPCMTxPayload = new byte[3] { (byte)SCI_ID.ReadEEPROM, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1] };
+                            SCIBusPCMTxPayload = new byte[3] { (byte)SCI_ID_OBD2.ReadEEPROM, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1] };
                             break;
                         }
-                        case (byte)SCI_ID.WriteRAM:
+                        case (byte)SCI_ID_OBD2.WriteRAM:
                         {
                             if (SCIBusPCMResponseBytes.Length < 5)
                             {
@@ -2120,7 +2313,7 @@ namespace ChryslerScanner
                                             break;
                                     }
 
-                                    SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID.WriteRAM, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], Payload };
+                                    SCIBusPCMTxPayload = new byte[4] { (byte)SCI_ID_OBD2.WriteRAM, SCIBusPCMCurrentMemoryOffsetBytes[0], SCIBusPCMCurrentMemoryOffsetBytes[1], Payload };
                                     break;
                                 }
                                 case 0xF0: // offset out of range
@@ -2135,7 +2328,7 @@ namespace ChryslerScanner
                             }
                             break;
                         }
-                        case (byte)SCI_ID.GetSecuritySeed:
+                        case (byte)SCI_ID_OBD2.GetSecuritySeed:
                         {
                             if (SCIBusPCMResponseBytes.Length < 4)
                             {
@@ -2182,7 +2375,7 @@ namespace ChryslerScanner
                             //SerialService.WritePacket(PacketTx);
                             break;
                         }
-                        case (byte)SCI_ID.SendSecurityKey:
+                        case (byte)SCI_ID_OBD2.SendSecurityKey:
                         {
                             if (SCIBusPCMResponseBytes.Length < 5)
                             {
@@ -2244,13 +2437,13 @@ namespace ChryslerScanner
             {
                 SCIBusPCMWriteMemorySRIMileageUnitLabel.Text = "mi";
 
-                if (SRIMileageMi != 0) SCIBusPCMWriteMemorySRIMileageTextBox.Text = SRIMileageMi.ToString("0.0").Replace(",", ".");
+                if (SRIMileageMi != 0) SCIBusPCMWriteMemorySRIMileageTextBox.Text = SRIMileageMi.ToString("0.0");
             }
             else if (Properties.Settings.Default.Units == "metric")
             {
                 SCIBusPCMWriteMemorySRIMileageUnitLabel.Text = "km";
 
-                if (SRIMileageKm != 0) SCIBusPCMWriteMemorySRIMileageTextBox.Text = SRIMileageKm.ToString("0.0").Replace(",", ".");
+                if (SRIMileageKm != 0) SCIBusPCMWriteMemorySRIMileageTextBox.Text = SRIMileageKm.ToString("0.0");
             }
         }
 

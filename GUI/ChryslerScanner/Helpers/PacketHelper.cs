@@ -168,6 +168,8 @@ namespace ChryslerScanner.Helpers
         }
 
         public const byte PacketSync = 0x3D;
+        public const ushort MinPacketSize = 6;
+        public const ushort MaxPacketSize = 4096;
 
         public static byte[] ExpectedHandshake_V1 = new byte[] { 0x3D, 0x00, 0x17, 0x81, 0x00, 0x43, 0x48, 0x52, 0x59, 0x53, 0x4C, 0x45, 0x52, 0x43, 0x43, 0x44, 0x53, 0x43, 0x49, 0x53, 0x43, 0x41, 0x4E, 0x4E, 0x45, 0x52, 0xF4 };
         public static byte[] ExpectedHandshake_V2 = new byte[] { 0x3D, 0x00, 0x11, 0x81, 0x00, 0x43, 0x48, 0x52, 0x59, 0x53, 0x4C, 0x45, 0x52, 0x53, 0x43, 0x41, 0x4E, 0x4E, 0x45, 0x52, 0x45 };
@@ -178,17 +180,12 @@ namespace ChryslerScanner.Helpers
                 return null;
 
             packet.Sync = PacketSync;
+            packet.Length = 2;
 
             if (packet.Payload != null)
-            {
-                packet.Length = 2 + packet.Payload.Length;
-            }
-            else
-            {
-                packet.Length = 2;
-            }
+                packet.Length += packet.Payload.Length;
 
-            if (packet.Length > 2044)
+            if (packet.Length > (MaxPacketSize - 4)) // -4 -> SYNC byte, LENGTH word, CHECKSUM byte
                 return null;
 
             byte[] bytes = new byte[packet.Length + 4];
@@ -220,14 +217,19 @@ namespace ChryslerScanner.Helpers
 
         public static Packet Deserialize(byte[] bytes)
         {
+            if (bytes.Length < MinPacketSize)
+                return null;
+
+            if (bytes[0] != PacketSync)
+                return null;
+
             Packet packet = new Packet();
 
             packet.Sync = bytes[0];
-
-            if (packet.Sync != PacketSync)
-                return null;
-
             packet.Length = (bytes[1] << 8) + bytes[2];
+
+            if (packet.Length > (MaxPacketSize - 4)) // -4 -> SYNC byte, LENGTH word, CHECKSUM byte
+                return null;
 
             if (Util.IsBitSet(bytes[3], 7))
             {
@@ -244,6 +246,9 @@ namespace ChryslerScanner.Helpers
 
             if (packet.Length > 2)
             {
+                if (bytes.Length < (packet.Length - 2))
+                    return null;
+
                 int PayloadLength = packet.Length - 2;
                 packet.Payload = new byte[PayloadLength];
                 Array.Copy(bytes, 5, packet.Payload, 0, PayloadLength);
@@ -256,9 +261,7 @@ namespace ChryslerScanner.Helpers
             packet.Checksum = bytes[bytes.Length - 1];
 
             if (packet.Checksum != Util.ChecksumCalculator(bytes, 0, bytes.Length - 1))
-            {
                 return null;
-            }
 
             return packet;
         }

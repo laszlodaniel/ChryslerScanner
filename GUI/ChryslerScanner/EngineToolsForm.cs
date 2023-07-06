@@ -117,11 +117,71 @@ namespace ChryslerScanner
         {
             if (OriginalForm.PCM.speed != "7812.5 baud")
             {
-                MessageBox.Show("Detector works in low-speed mode only!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Detector works in low-speed mode only.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            ConfigurationGetAllButton_Click(this, EventArgs.Empty);
+            int repeatInterval = 50; // ms
+            byte[] repeatIntervalArray = new byte[2];
+
+            repeatIntervalArray[0] = (byte)((repeatInterval >> 8) & 0xFF);
+            repeatIntervalArray[1] = (byte)(repeatInterval & 0xFF);
+
+            List<byte> payloadList = new List<byte>();
+
+            payloadList.Add((byte)PacketHelper.Bus.PCM);
+            payloadList.AddRange(repeatIntervalArray);
+
+            Packet packet = new Packet();
+
+            packet.Bus = (byte)PacketHelper.Bus.USB;
+            packet.Command = (byte)PacketHelper.Command.Settings;
+            packet.Mode = (byte)PacketHelper.SettingsMode.SetRepeatBehavior;
+            packet.Payload = payloadList.ToArray();
+
+            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:", packet);
+            SerialService.WritePacket(packet);
+
+            packet = new Packet();
+
+            if (OriginalForm.PCM.logic == "inverted") // OBD1
+            {
+                const byte InfoCount = 3;
+
+                packet.Bus = (byte)PacketHelper.Bus.PCM;
+                packet.Command = (byte)PacketHelper.Command.MsgTx;
+                packet.Mode = (byte)PacketHelper.MsgTxMode.List;
+                packet.Payload = new byte[(3 * InfoCount) + 1];
+                packet.Payload[0] = InfoCount;
+
+                for (int i = 0; i < InfoCount; i++)
+                {
+                    packet.Payload[1 + (i * 3)] = 2; // message length
+                    packet.Payload[1 + (i * 3) + 1] = 0x16; // request ID
+                    packet.Payload[1 + (i * 3) + 1 + 1] = (byte)(0x80 + i); // request parameter
+                }
+            }
+            else // OBD2
+            {
+                const byte InfoCount = 31; // there are fixed 31 information records available
+
+                packet.Bus = (byte)PacketHelper.Bus.PCM;
+                packet.Command = (byte)PacketHelper.Command.MsgTx;
+                packet.Mode = (byte)PacketHelper.MsgTxMode.List;
+                packet.Payload = new byte[(4 * InfoCount) + 1];
+                packet.Payload[0] = InfoCount;
+
+                for (int i = 0; i < InfoCount; i++)
+                {
+                    packet.Payload[1 + (i * 4)] = 3; // message length
+                    packet.Payload[1 + (i * 4) + 1] = 0x2A; // request ID
+                    packet.Payload[1 + (i * 4) + 1 + 1] = (byte)(i + 1); // request parameter
+                    packet.Payload[1 + (i * 4) + 1 + 1 + 1] = 0xFE; // termination command, some earlier SBEC3 won't stop streaming response byte without it
+                }
+            }
+
+            OriginalForm.TransmitUSBPacket("[<-TX] Information request:", packet);
+            SerialService.WritePacket(packet);
         }
 
         private void CHTComboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -171,6 +231,12 @@ namespace ChryslerScanner
             }
             else if (OriginalForm.PCM.speed == "62500 baud")
             {
+                if (OriginalForm.PCM.logic == "inverted")
+                {
+                    MessageBox.Show("Select 7812.5 baud to read fault codes on OBD1 vehicles.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
                 bool success = int.TryParse(DiagnosticDataRepeatIntervalTextBox.Text, out int repeatInterval);
 
                 if (!success || (repeatInterval == 0))
@@ -255,7 +321,13 @@ namespace ChryslerScanner
         {
             if (OriginalForm.PCM.CumminsSelected)
             {
-                MessageBox.Show("This feature is not supported yet.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Freeze frames are not supported yet.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            if (OriginalForm.PCM.logic == "inverted")
+            {
+                MessageBox.Show("Freeze frames are not supported on OBD1 vehicles.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             
@@ -725,6 +797,12 @@ namespace ChryslerScanner
 
         private void ConfigurationGetButton_Click(object sender, EventArgs e)
         {
+            if (OriginalForm.PCM.logic == "inverted")
+            {
+                MessageBox.Show("This feature is not available on OBD1 vehicles.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             Packet packet = new Packet();
 
             packet.Bus = (byte)PacketHelper.Bus.PCM;
@@ -738,41 +816,45 @@ namespace ChryslerScanner
 
         private void ConfigurationGetPartNumberButton_Click(object sender, EventArgs e)
         {
-            bool success = int.TryParse(DiagnosticDataRepeatIntervalTextBox.Text, out int repeatInterval);
-
-            if (!success || (repeatInterval == 0))
-            {
-                repeatInterval = 50;
-                DiagnosticDataRepeatIntervalTextBox.Text = "50";
-            }
-
-            List<byte> payloadList = new List<byte>();
-            byte[] repeatIntervalArray = new byte[2];
-
-            repeatIntervalArray[0] = (byte)((repeatInterval >> 8) & 0xFF);
-            repeatIntervalArray[1] = (byte)(repeatInterval & 0xFF);
-
-            payloadList.Add((byte)PacketHelper.Bus.PCM);
-            payloadList.AddRange(repeatIntervalArray);
-
             Packet packet = new Packet();
 
-            packet.Bus = (byte)PacketHelper.Bus.USB;
-            packet.Command = (byte)PacketHelper.Command.Settings;
-            packet.Mode = (byte)PacketHelper.SettingsMode.SetRepeatBehavior;
-            packet.Payload = payloadList.ToArray();
+            if (OriginalForm.PCM.logic == "inverted") // OBD1
+            {
+                packet.Bus = (byte)PacketHelper.Bus.PCM;
+                packet.Command = (byte)PacketHelper.Command.MsgTx;
+                packet.Mode = (byte)PacketHelper.MsgTxMode.Single;
+                packet.Payload = new byte[2] { 0x16, 0x80 };
+            }
+            else // OBD2
+            {
+                int repeatInterval = 50; // ms
+                byte[] repeatIntervalArray = new byte[2];
 
-            OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:", packet);
-            SerialService.WritePacket(packet);
+                repeatIntervalArray[0] = (byte)((repeatInterval >> 8) & 0xFF);
+                repeatIntervalArray[1] = (byte)(repeatInterval & 0xFF);
 
-            const byte infoCount = 6; // part number is stored in 6 bytes
+                List<byte> payloadList = new List<byte>();
 
-            packet = new Packet();
+                payloadList.Add((byte)PacketHelper.Bus.PCM);
+                payloadList.AddRange(repeatIntervalArray);
 
-            packet.Bus = (byte)PacketHelper.Bus.PCM;
-            packet.Command = (byte)PacketHelper.Command.MsgTx;
-            packet.Mode = (byte)PacketHelper.MsgTxMode.List;
-            packet.Payload = new byte[(4 * infoCount) + 1] { infoCount, 0x03, 0x2A, 0x01, 0xFE, 0x03, 0x2A, 0x02, 0xFE, 0x03, 0x2A, 0x03, 0xFE, 0x03, 0x2A, 0x04, 0xFE, 0x03, 0x2A, 0x17, 0xFE, 0x03, 0x2A, 0x18, 0xFE };
+                packet.Bus = (byte)PacketHelper.Bus.USB;
+                packet.Command = (byte)PacketHelper.Command.Settings;
+                packet.Mode = (byte)PacketHelper.SettingsMode.SetRepeatBehavior;
+                packet.Payload = payloadList.ToArray();
+
+                OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:", packet);
+                SerialService.WritePacket(packet);
+
+                packet = new Packet();
+
+                const byte infoCount = 6; // part number is stored in 6 bytes
+
+                packet.Bus = (byte)PacketHelper.Bus.PCM;
+                packet.Command = (byte)PacketHelper.Command.MsgTx;
+                packet.Mode = (byte)PacketHelper.MsgTxMode.List;
+                packet.Payload = new byte[(4 * infoCount) + 1] { infoCount, 0x03, 0x2A, 0x01, 0xFE, 0x03, 0x2A, 0x02, 0xFE, 0x03, 0x2A, 0x03, 0xFE, 0x03, 0x2A, 0x04, 0xFE, 0x03, 0x2A, 0x17, 0xFE, 0x03, 0x2A, 0x18, 0xFE };
+            }
 
             OriginalForm.TransmitUSBPacket("[<-TX] PCM part number request:", packet);
             SerialService.WritePacket(packet);
@@ -780,19 +862,19 @@ namespace ChryslerScanner
 
         private void ConfigurationGetAllButton_Click(object sender, EventArgs e)
         {
-            bool success = int.TryParse(DiagnosticDataRepeatIntervalTextBox.Text, out int repeatInterval);
-
-            if (!success || (repeatInterval == 0))
+            if (OriginalForm.PCM.logic == "inverted")
             {
-                repeatInterval = 50;
-                DiagnosticDataRepeatIntervalTextBox.Text = "50";
+                MessageBox.Show("This feature is not available on OBD1 vehicles.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
-
-            List<byte> payloadList = new List<byte>();
+            
+            int repeatInterval = 50; // ms
             byte[] repeatIntervalArray = new byte[2];
 
             repeatIntervalArray[0] = (byte)((repeatInterval >> 8) & 0xFF);
             repeatIntervalArray[1] = (byte)(repeatInterval & 0xFF);
+
+            List<byte> payloadList = new List<byte>();
 
             payloadList.Add((byte)PacketHelper.Bus.PCM);
             payloadList.AddRange(repeatIntervalArray);
@@ -807,30 +889,22 @@ namespace ChryslerScanner
             OriginalForm.TransmitUSBPacket("[<-TX] Set SCI-bus (PCM) message repeat:", packet);
             SerialService.WritePacket(packet);
 
-            const byte infoCount = 31; // there are fixed 31 information records available
-            const byte infoCountSBEC2 = 3;
+            const byte InfoCount = 31; // there are fixed 31 information records available
 
             packet = new Packet();
 
             packet.Bus = (byte)PacketHelper.Bus.PCM;
             packet.Command = (byte)PacketHelper.Command.MsgTx;
             packet.Mode = (byte)PacketHelper.MsgTxMode.List;
-            packet.Payload = new byte[(4 * infoCount) + (3 * infoCountSBEC2) + 1];
-            packet.Payload[0] = infoCount + infoCountSBEC2;
+            packet.Payload = new byte[(4 * InfoCount) + 1];
+            packet.Payload[0] = InfoCount;
 
-            for (int i = 0; i < infoCountSBEC2; i++)
+            for (int i = 0; i < InfoCount; i++)
             {
-                packet.Payload[1 + (i * 3)] = 2; // message length
-                packet.Payload[1 + (i * 3) + 1] = 0x16; // request ID
-                packet.Payload[1 + (i * 3) + 1 + 1] = (byte)(0x80 + i); // request parameter
-            }
-
-            for (int i = 0; i < infoCount; i++)
-            {
-                packet.Payload[10 + (i * 4)] = 3; // message length
-                packet.Payload[10 + (i * 4) + 1] = 0x2A; // request ID
-                packet.Payload[10 + (i * 4) + 1 + 1] = (byte)(i + 1); // request parameter
-                packet.Payload[10 + (i * 4) + 1 + 1 + 1] = 0xFE; // termination command, some earlier SBEC3 won't stop streaming response byte without it
+                packet.Payload[1 + (i * 4)] = 3; // message length
+                packet.Payload[1 + (i * 4) + 1] = 0x2A; // request ID
+                packet.Payload[1 + (i * 4) + 1 + 1] = (byte)(i + 1); // request parameter
+                packet.Payload[1 + (i * 4) + 1 + 1 + 1] = 0xFE; // termination command, some earlier SBEC3 won't stop streaming response byte without it
             }
 
             OriginalForm.TransmitUSBPacket("[<-TX] Information request:", packet);

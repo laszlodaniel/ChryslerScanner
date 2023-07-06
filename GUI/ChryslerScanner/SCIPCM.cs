@@ -97,12 +97,12 @@ namespace ChryslerScanner
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x05;
-            Row["description"] = "CHARGING SYSTEM VOLTAGE TOO LOW";
+            Row["description"] = "CHARGING SYSTEM VOLTAGE LOW";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x06;
-            Row["description"] = "CHARGING SYSTEM VOLTAGE TOO HIGH";
+            Row["description"] = "CHARGING SYSTEM VOLTAGE HIGH";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
@@ -222,12 +222,12 @@ namespace ChryslerScanner
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x1E;
-            Row["description"] = "COOLANT TEMPERATURE SENSOR VOLTAGE TOO LOW";
+            Row["description"] = "COOLANT TEMPERATURE SENSOR VOLTAGE LOW";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x1F;
-            Row["description"] = "COOLANT TEMPERATURE SENSOR VOLTAGE TOO HIGH";
+            Row["description"] = "COOLANT TEMPERATURE SENSOR VOLTAGE HIGH";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
@@ -252,12 +252,12 @@ namespace ChryslerScanner
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x24;
-            Row["description"] = "MAP SENSOR VOLTAGE TOO LOW";
+            Row["description"] = "MAP SENSOR VOLTAGE LOW";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x25;
-            Row["description"] = "MAP SENSOR VOLTAGE TOO HIGH";
+            Row["description"] = "MAP SENSOR VOLTAGE HIGH";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
@@ -442,12 +442,12 @@ namespace ChryslerScanner
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x4A;
-            Row["description"] = "TRANSMISSION TEMPERATURE SENSOR VOLTAGE TOO LOW";
+            Row["description"] = "TRANSMISSION TEMPERATURE SENSOR VOLTAGE LOW";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x4B;
-            Row["description"] = "TRANSMISSION TEMPERATURE SENSOR VOLTAGE TOO HIGH";
+            Row["description"] = "TRANSMISSION TEMPERATURE SENSOR VOLTAGE HIGH";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
@@ -492,12 +492,12 @@ namespace ChryslerScanner
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x54;
-            Row["description"] = "FLEX FUEL SENSOR VOLTS TOO HIGH";
+            Row["description"] = "FLEX FUEL SENSOR VOLTS HIGH";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x55;
-            Row["description"] = "FLEX FUEL SENSOR VOLTS TOO LOW";
+            Row["description"] = "FLEX FUEL SENSOR VOLTS LOW";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
@@ -522,12 +522,12 @@ namespace ChryslerScanner
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x5A;
-            Row["description"] = "A/C PRESSURE SENSOR VOLTS TOO HIGH";
+            Row["description"] = "A/C PRESSURE SENSOR VOLTS HIGH";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x5B;
-            Row["description"] = "A/C PRESSURE SENSOR VOLTS TOO LOW";
+            Row["description"] = "A/C PRESSURE SENSOR VOLTS LOW";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
@@ -542,12 +542,12 @@ namespace ChryslerScanner
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x5E;
-            Row["description"] = "CNG TEMPERATURE SENSOR VOLTAGE TOO LOW";
+            Row["description"] = "CNG TEMPERATURE SENSOR VOLTAGE LOW";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x5F;
-            Row["description"] = "CNG TEMPERATURE SENSOR VOLTAGE TOO HIGH";
+            Row["description"] = "CNG TEMPERATURE SENSOR VOLTAGE HIGH";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
@@ -562,12 +562,12 @@ namespace ChryslerScanner
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x62;
-            Row["description"] = "CNG PRESSURE SENSOR VOLTAGE TOO HIGH";
+            Row["description"] = "CNG PRESSURE SENSOR VOLTAGE HIGH";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x63;
-            Row["description"] = "CNG PRESSURE SENSOR VOLTAGE TOO LOW";
+            Row["description"] = "CNG PRESSURE SENSOR VOLTAGE LOW";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
@@ -802,7 +802,7 @@ namespace ChryslerScanner
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x92;
-            Row["description"] = "5 VOLT SUPPLY, OUTPUT TOO LOW";
+            Row["description"] = "5 VOLT SUPPLY, OUTPUT LOW";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
@@ -817,12 +817,12 @@ namespace ChryslerScanner
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x95;
-            Row["description"] = "FUEL LEVEL SENDING UNIT VOLTS TOO LOW";
+            Row["description"] = "FUEL LEVEL SENDING UNIT VOLTS LOW";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x96;
-            Row["description"] = "FUEL LEVEL SENDING UNIT VOLTS TOO HIGH";
+            Row["description"] = "FUEL LEVEL SENDING UNIT VOLTS HIGH";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
@@ -837,12 +837,12 @@ namespace ChryslerScanner
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x99;
-            Row["description"] = "BATTERY TEMPERATURE SENSOR VOLTS TOO LOW";
+            Row["description"] = "BATTERY TEMPERATURE SENSOR VOLTS LOW";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0x9A;
-            Row["description"] = "BATTERY TEMPERATURE SENSOR VOLTS TOO HIGH";
+            Row["description"] = "BATTERY TEMPERATURE SENSOR VOLTS HIGH";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
@@ -907,17 +907,17 @@ namespace ChryslerScanner
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0xA7;
-            Row["description"] = "GOVERNOR PRESSURE SENSOR VOLTS TOO LOW";
+            Row["description"] = "GOVERNOR PRESSURE SENSOR VOLTS LOW";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0xA8;
-            Row["description"] = "GOVERNOR PRESSURE SENSOR VOLTS TOO HIGH";
+            Row["description"] = "GOVERNOR PRESSURE SENSOR VOLTS HIGH";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0xA9;
-            Row["description"] = "GOVERNOR PRESSURE SENSOR OFFSET VOLTS TOO LOW OR HIGH";
+            Row["description"] = "GOVERNOR PRESSURE SENSOR OFFSET VOLTS LOW OR HIGH";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
@@ -997,7 +997,7 @@ namespace ChryslerScanner
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0xB9;
-            Row["description"] = "AUXILIARY 5 VOLT SUPPLY OUTPUT TOO LOW";
+            Row["description"] = "AUXILIARY 5 VOLT SUPPLY OUTPUT LOW";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
@@ -1037,12 +1037,12 @@ namespace ChryslerScanner
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0xC8;
-            Row["description"] = "RADIATOR TEMPERATURE SENSOR VOLTS TOO LOW";
+            Row["description"] = "RADIATOR TEMPERATURE SENSOR VOLTS LOW";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0xC9;
-            Row["description"] = "RADIATOR TEMPERATURE SENSOR VOLTS TOO HIGH";
+            Row["description"] = "RADIATOR TEMPERATURE SENSOR VOLTS HIGH";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
@@ -1097,12 +1097,12 @@ namespace ChryslerScanner
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0xD4;
-            Row["description"] = "EGR POSITION SENSOR VOLTS TOO LOW";
+            Row["description"] = "EGR POSITION SENSOR VOLTS LOW";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0xD5;
-            Row["description"] = "EGR POSITION SENSOR VOLTS TOO HIGH";
+            Row["description"] = "EGR POSITION SENSOR VOLTS HIGH";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
@@ -1132,12 +1132,12 @@ namespace ChryslerScanner
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0xDB;
-            Row["description"] = "CATALYST TEMPERATURE SENSOR VOLTS TOO HIGH";
+            Row["description"] = "CATALYST TEMPERATURE SENSOR VOLTS HIGH";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0xDC;
-            Row["description"] = "CATALYST TEMPERATURE SENSOR VOLTS TOO LOW";
+            Row["description"] = "CATALYST TEMPERATURE SENSOR VOLTS LOW";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
@@ -1217,12 +1217,12 @@ namespace ChryslerScanner
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0xED;
-            Row["description"] = "AW4 TRANSMISSION BATTERY VOLTS SENSE TOO LOW";
+            Row["description"] = "AW4 TRANSMISSION BATTERY VOLTS SENSE LOW";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
             Row["id"] = 0xEE;
-            Row["description"] = "AW4 TRANSMISSION BATTERY VOLTS SENSE TOO HIGH";
+            Row["description"] = "AW4 TRANSMISSION BATTERY VOLTS SENSE HIGH";
             SBEC3EngineDTC.Rows.Add(Row);
 
             Row = SBEC3EngineDTC.NewRow();
@@ -1745,7 +1745,7 @@ namespace ChryslerScanner
 
                                 double BTSVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(BTSVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(BTSVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -1755,7 +1755,7 @@ namespace ChryslerScanner
 
                                 double O2S11Voltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(O2S11Voltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(O2S11Voltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -1784,7 +1784,7 @@ namespace ChryslerScanner
 
                                 double ECTSVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(ECTSVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(ECTSVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -1794,7 +1794,7 @@ namespace ChryslerScanner
 
                                 double TPSVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(TPSVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TPSVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -1804,7 +1804,7 @@ namespace ChryslerScanner
 
                                 double MinTPSVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(MinTPSVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(MinTPSVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -1814,7 +1814,7 @@ namespace ChryslerScanner
 
                                 double KnockSensorVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(KnockSensorVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(KnockSensorVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -1824,7 +1824,7 @@ namespace ChryslerScanner
 
                                 double BatteryVoltage = payload[1] * 0.0625;
 
-                                ValueToInsert = Math.Round(BatteryVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(BatteryVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -1837,12 +1837,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(MAPPSI, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(MAPPSI, 1).ToString("0.0");
                                     UnitToInsert = "PSI";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(MAPKPA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(MAPKPA, 1).ToString("0.0");
                                     UnitToInsert = "KPA";
                                 }
                                 break;
@@ -1861,7 +1861,7 @@ namespace ChryslerScanner
 
                                 if (payload[1] >= 0x80) LTFT1 -= 50.0;
 
-                                ValueToInsert = Math.Round(LTFT1, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(LTFT1, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -1874,12 +1874,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(BarometricPressurePSI, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(BarometricPressurePSI, 1).ToString("0.0");
                                     UnitToInsert = "PSI";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(BarometricPressureKPA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(BarometricPressureKPA, 1).ToString("0.0");
                                     UnitToInsert = "KPA";
                                 }
                                 break;
@@ -1922,7 +1922,7 @@ namespace ChryslerScanner
 
                                 double SparkAdvance = payload[1] * 0.5;
 
-                                ValueToInsert = Math.Round(SparkAdvance, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(SparkAdvance, 1).ToString("0.0");
                                 UnitToInsert = "DEG";
                                 break;
                             }
@@ -1933,7 +1933,7 @@ namespace ChryslerScanner
 
                                 double Cylinder1Retard = payload[1] * 0.5;
 
-                                ValueToInsert = Math.Round(Cylinder1Retard, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(Cylinder1Retard, 1).ToString("0.0");
                                 UnitToInsert = "DEG";
                                 break;
                             }
@@ -1943,7 +1943,7 @@ namespace ChryslerScanner
 
                                 double Cylinder2Retard = payload[1] * 0.5;
 
-                                ValueToInsert = Math.Round(Cylinder2Retard, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(Cylinder2Retard, 1).ToString("0.0");
                                 UnitToInsert = "DEG";
                                 break;
                             }
@@ -1953,7 +1953,7 @@ namespace ChryslerScanner
 
                                 double Cylinder3Retard = payload[1] * 0.5;
 
-                                ValueToInsert = Math.Round(Cylinder3Retard, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(Cylinder3Retard, 1).ToString("0.0");
                                 UnitToInsert = "DEG";
                                 break;
                             }
@@ -1963,7 +1963,7 @@ namespace ChryslerScanner
 
                                 double Cylinder4Retard = payload[1] * 0.5;
 
-                                ValueToInsert = Math.Round(Cylinder4Retard, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(Cylinder4Retard, 1).ToString("0.0");
                                 UnitToInsert = "DEG";
                                 break;
                             }
@@ -1976,12 +1976,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(TargetBoostPSI, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TargetBoostPSI, 1).ToString("0.0");
                                     UnitToInsert = "PSI";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(TargetBoostKPA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TargetBoostKPA, 1).ToString("0.0");
                                     UnitToInsert = "KPA";
                                 }
                                 break;
@@ -2011,7 +2011,7 @@ namespace ChryslerScanner
 
                                 double IATVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(IATVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(IATVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -2252,7 +2252,7 @@ namespace ChryslerScanner
 
                                 double BatteryChargingVoltage = payload[1] * 0.0625;
 
-                                ValueToInsert = Math.Round(BatteryChargingVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(BatteryChargingVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -2268,7 +2268,7 @@ namespace ChryslerScanner
 
                                 double WDCPercent = payload[1] * 0.5;
 
-                                ValueToInsert = Math.Round(WDCPercent, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(WDCPercent, 1).ToString("0.0");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -2296,7 +2296,7 @@ namespace ChryslerScanner
 
                                 double CSWVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(CSWVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(CSWVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -2331,7 +2331,7 @@ namespace ChryslerScanner
 
                                 double O2S21Voltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(O2S21Voltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(O2S21Voltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -2341,7 +2341,7 @@ namespace ChryslerScanner
 
                                 double KnockSensor2Voltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(KnockSensor2Voltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(KnockSensor2Voltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -2353,7 +2353,7 @@ namespace ChryslerScanner
 
                                 if (payload[1] >= 0x80) LTFT2 -= 50.0;
 
-                                ValueToInsert = Math.Round(LTFT2, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(LTFT2, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -2363,7 +2363,7 @@ namespace ChryslerScanner
 
                                 double ACHSPSVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(ACHSPSVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(ACHSPSVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -2376,12 +2376,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(ACHSPressurePSI, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(ACHSPressurePSI, 1).ToString("0.0");
                                     UnitToInsert = "PSI";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(ACHSPressureKPA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(ACHSPressureKPA, 1).ToString("0.0");
                                     UnitToInsert = "KPA";
                                 }
                                 break;
@@ -2392,7 +2392,7 @@ namespace ChryslerScanner
 
                                 double FlexFuelSensorVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(FlexFuelSensorVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(FlexFuelSensorVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -2420,7 +2420,7 @@ namespace ChryslerScanner
 
                                 double CalPotVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(CalPotVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(CalPotVoltage, 3).ToString("0.000");
                                 break;
                             }
                             case 0x3F:
@@ -2429,7 +2429,7 @@ namespace ChryslerScanner
 
                                 double O2S12Voltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(O2S12Voltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(O2S12Voltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -2439,7 +2439,7 @@ namespace ChryslerScanner
 
                                 double MAPSensorVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(MAPSensorVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(MAPSensorVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -2500,12 +2500,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(MAPVacuumPSI, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(MAPVacuumPSI, 1).ToString("0.0");
                                     UnitToInsert = "PSI";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(MAPVacuumKPA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(MAPVacuumKPA, 1).ToString("0.0");
                                     UnitToInsert = "KPA";
                                 }
                                 break;
@@ -2516,7 +2516,7 @@ namespace ChryslerScanner
 
                                 double DeltaThrottlePosition = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(DeltaThrottlePosition, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(DeltaThrottlePosition, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -2526,7 +2526,7 @@ namespace ChryslerScanner
 
                                 double SparkAdvance2 = payload[1] * 0.5;
 
-                                ValueToInsert = Math.Round(SparkAdvance2, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(SparkAdvance2, 1).ToString("0.0");
                                 UnitToInsert = "DEG";
                                 break;
                             }
@@ -2565,7 +2565,7 @@ namespace ChryslerScanner
 
                                 double O2S22Voltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(O2S22Voltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(O2S22Voltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -2633,7 +2633,7 @@ namespace ChryslerScanner
 
                                 double FuelLevelSensorVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(FuelLevelSensorVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(FuelLevelSensorVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -2646,12 +2646,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(FuelLevelG, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(FuelLevelG, 1).ToString("0.0");
                                     UnitToInsert = "GALLON";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(FuelLevelL, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(FuelLevelL, 1).ToString("0.0");
                                     UnitToInsert = "LITER";
                                 }
                                 break;
@@ -2932,7 +2932,7 @@ namespace ChryslerScanner
 
                                 double GovPDC = payload[1] * 0.3921568627;
 
-                                ValueToInsert = Math.Round(GovPDC, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(GovPDC, 1).ToString("0.0");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -2942,7 +2942,7 @@ namespace ChryslerScanner
 
                                 double EngineLoadB = payload[1] * 0.3921568627;
 
-                                ValueToInsert = Math.Round(EngineLoadB, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(EngineLoadB, 1).ToString("0.0");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -2952,7 +2952,7 @@ namespace ChryslerScanner
 
                                 double EGRSensorVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(EGRSensorVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(EGRSensorVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -2968,7 +2968,7 @@ namespace ChryslerScanner
 
                                 double ActualPurgeCurrent = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(ActualPurgeCurrent, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(ActualPurgeCurrent, 1).ToString("0.0");
                                 UnitToInsert = "A";
                                 break;
                             }
@@ -2978,7 +2978,7 @@ namespace ChryslerScanner
 
                                 double CTSVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(CTSVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(CTSVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -3007,7 +3007,7 @@ namespace ChryslerScanner
 
                                 double ATSVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(ATSVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(ATSVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -3017,7 +3017,7 @@ namespace ChryslerScanner
 
                                 double TCSwVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(TCSwVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TCSwVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -3027,7 +3027,7 @@ namespace ChryslerScanner
 
                                 double FCACurrent = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(FCACurrent, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(FCACurrent, 1).ToString("0.0");
                                 UnitToInsert = "A";
                                 break;
                             }
@@ -3037,7 +3037,7 @@ namespace ChryslerScanner
 
                                 double OTSVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(OTSVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(OTSVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -3072,11 +3072,11 @@ namespace ChryslerScanner
                     }
                     case 0x15:
                     {
-                        DescriptionToInsert = "READ FLASH MEMORY";
+                        DescriptionToInsert = "READ MEMORY";
 
                         if (message.Length < 4) break;
 
-                        DescriptionToInsert = "READ FLASH MEMORY | OFFSET: " + Util.ByteToHexString(payload, 0, 2);
+                        DescriptionToInsert = "READ MEMORY | OFFSET: " + Util.ByteToHexString(payload, 0, 2);
                         ValueToInsert = Util.ByteToHexString(payload, 2, 1);
                         break;
                     }
@@ -3124,9 +3124,29 @@ namespace ChryslerScanner
 
                         if (message.Length < 2) break;
 
-                        if (payload[0] == 0xE0) ValueToInsert = "ERASED";
-                        else ValueToInsert = "FAILED";
-
+                        switch (payload[0])
+                        {
+                            case 0x00:
+                            {
+                                ValueToInsert = "DENIED (STOP ENGINE)";
+                                break;
+                            }
+                            case 0xE0:
+                            {
+                                ValueToInsert = "ERASED";
+                                break;
+                            }
+                            case 0xFF:
+                            {
+                                ValueToInsert = "DENIED (START ENGINE)";
+                                break;
+                            }
+                            default:
+                            {
+                                ValueToInsert = "UNKNOWN RESULT";
+                                break;
+                            }
+                        }
                         break;
                     }
                     case 0x18:
@@ -3229,84 +3249,94 @@ namespace ChryslerScanner
                     }
                     case 0x1C:
                     {
-                        DescriptionToInsert = "WRITE MEMORY";
+                        DescriptionToInsert = "WRITE EEPROM";
 
                         if (message.Length < 4) break;
 
-                        switch (payload[0])
+                        if (payload[0] < 0x10)
                         {
-                            case 0x10:
+                            DescriptionToInsert += " | PCM MILEAGE " + (payload[0] + 1).ToString("0");
+                        }
+                        else if ((payload[0] >= 0x10) && (payload[0] <= 0x11))
+                        {
+                            DescriptionToInsert += " | EMR " + (payload[0] - 0x0F).ToString("0");
+                        }
+                        else if ((payload[0] >= 0xB2) && (payload[0] <= 0xC2))
+                        {
+                            DescriptionToInsert += " | VIN " + (payload[0] - 0xB1).ToString("0");
+                        }
+                        else
+                        {
+                            switch (payload[0])
                             {
-                                DescriptionToInsert = "WRITE MEMORY | RESET EMR 1";
-                                if ((payload[1] == 0x00) && (payload[2] == 0xFF)) ValueToInsert = "OK";
-                                else ValueToInsert = "FAILED";
-                                break;
-                            }
-                            case 0x11:
-                            {
-                                DescriptionToInsert = "WRITE MEMORY | RESET EMR 2";
-                                if ((payload[1] == 0x00) && (payload[2] == 0xFF)) ValueToInsert = "OK";
-                                else ValueToInsert = "FAILED";
-                                break;
-                            }
-                            case 0x1A:
-                            {
-                                if (payload[1] == 0xFF)
+                                case 0x1A:
                                 {
-                                    DescriptionToInsert = "WRITE MEMORY | ENABLE VAR IDLE";
-
-                                    if (payload[2] == 0xFF)
+                                    switch (payload[1])
                                     {
-                                        ValueToInsert = "OK";
+                                        case 0x00:
+                                        {
+                                            DescriptionToInsert += " | DISABLE VARIABLE IDLE";
+                                            break;
+                                        }
+                                        case 0xFF:
+                                        {
+                                            DescriptionToInsert += " | ENABLE VARIABLE IDLE";
+                                            break;
+                                        }
+                                        default:
+                                        {
+                                            DescriptionToInsert += " | VARIABLE IDLE SETTING";
+                                            break;
+                                        }
                                     }
-                                    else
-                                    {
-                                        ValueToInsert = "FAILED";
-                                    }
+                                    break;
                                 }
-                                else if (payload[1] == 0x00)
+                                default:
                                 {
-                                    DescriptionToInsert = "WRITE MEMORY | DISABLE VAR IDLE";
-
-                                    if (payload[2] == 0xFF)
-                                    {
-                                        ValueToInsert = "OK";
-                                    }
-                                    else
-                                    {
-                                        ValueToInsert = "FAILED";
-                                    }
+                                    DescriptionToInsert += " | OFFSET: " + Util.ByteToHexString(payload, 0, 1);
+                                    break;
                                 }
+                            }
+                        }
+
+                        ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+
+                        switch (payload[2])
+                        {
+                            case 0x00:
+                            {
+                                ValueToInsert = "DENIED (MODULE BUSY)";
                                 break;
                             }
-                            default:
+                            case 0xE2:
                             {
-                                DescriptionToInsert = "WRITE MEMORY | OFFSET: " + Util.ByteToHexString(payload, 0, 1);
-                                ValueToInsert = Util.ByteToHexString(payload, 1, 1);
+                                UnitToInsert = "OK";
                                 break;
                             }
                         }
                         break;
                     }
+                    case 0x1D:
+                    case 0x1E:
                     case 0x1F:
                     {
-                        DescriptionToInsert = "WRITE RAM WORKER";
+                        DescriptionToInsert = "WRITE RAM";
 
                         if (message.Length < 4) break;
 
-                        DescriptionToInsert = "WRITE RAM | OFFSET: 07 " + Util.ByteToHexString(payload, 0, 1);
+                        DescriptionToInsert += " | OFFSET: " + Util.ByteToHexString(payload, 0, 1);
 
                         switch (payload[2])
                         {
+                            case 0x00:
+                            {
+                                ValueToInsert = "DENIED (INVALID OFFSET)";
+                                break;
+                            }
                             case 0xE5:
                             {
                                 ValueToInsert = Util.ByteToHexString(payload, 1, 1);
                                 UnitToInsert = "OK";
-                                break;
-                            }
-                            case 0x00:
-                            {
-                                ValueToInsert = "DENIED (INVALID OFFSET)";
                                 break;
                             }
                             case 0xF1:
@@ -3432,7 +3462,7 @@ namespace ChryslerScanner
                             {
                                 double EngineSpeed2 = ((payload[1] << 8) + payload[2]) * 0.125;
                                 DescriptionToInsert = "ENGINE SPEED";
-                                ValueToInsert = Math.Round(EngineSpeed2, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(EngineSpeed2, 3).ToString("0.000");
                                 UnitToInsert = "RPM";
                                 break;
                             }
@@ -3448,7 +3478,7 @@ namespace ChryslerScanner
                             {
                                 double TargetIdleSpeed = ((payload[1] << 8) + payload[2]) * 0.125;
                                 DescriptionToInsert = "TARGET IDLE SPEED";
-                                ValueToInsert = Math.Round(TargetIdleSpeed, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TargetIdleSpeed, 3).ToString("0.000");
                                 UnitToInsert = "RPM";
                                 break;
                             }
@@ -5262,12 +5292,571 @@ namespace ChryslerScanner
                     }
                     case 0x2D:
                     {
-                        DescriptionToInsert = "READ CONFIGURATION CONSTANT";
+                        DescriptionToInsert = "CONSTANTS";
 
                         if (message.Length < 5) break;
 
-                        DescriptionToInsert = "CONFIGURATION | PAGE: " + Util.ByteToHexString(payload, 0, 1) + " | ITEM: " + Util.ByteToHexString(payload, 1, 1);
-                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
+                        switch (payload[0])
+                        {
+                            case 0x00:
+                            {
+                                DescriptionToInsert += " | MONITORS";
+
+                                switch (payload[1])
+                                {
+                                    case 0x01:
+                                    {
+                                        DescriptionToInsert += " | MIN ENG COOL TEMP";
+
+                                        double MINECTC = payload[3] - 128;
+                                        double MINECTF = 1.8 * MINECTC + 32.0;
+                                        
+                                        if (Properties.Settings.Default.Units == "imperial")
+                                        {
+                                            ValueToInsert = Math.Round(MINECTF).ToString("0");
+                                            UnitToInsert = "°F";
+                                        }
+                                        else if (Properties.Settings.Default.Units == "metric")
+                                        {
+                                            ValueToInsert = Math.Round(MINECTC).ToString("0");
+                                            UnitToInsert = "°C";
+                                        }
+                                        break;
+                                    }
+                                    case 0x02:
+                                    {
+                                        DescriptionToInsert += " | MAX ENG COOL TEMP";
+
+                                        double MAXECTC = payload[3] - 128;
+                                        double MAXECTF = 1.8 * MAXECTC + 32.0;
+
+                                        if (Properties.Settings.Default.Units == "imperial")
+                                        {
+                                            ValueToInsert = Math.Round(MAXECTF).ToString("0");
+                                            UnitToInsert = "°F";
+                                        }
+                                        else if (Properties.Settings.Default.Units == "metric")
+                                        {
+                                            ValueToInsert = Math.Round(MAXECTC).ToString("0");
+                                            UnitToInsert = "°C";
+                                        }
+                                        break;
+                                    }
+                                    case 0x03:
+                                    {
+                                        DescriptionToInsert += " | MIN AMB/BATT TEMP";
+
+                                        double MINAMBC = payload[3] - 128;
+                                        double MINAMBF = 1.8 * MINAMBC + 32.0;
+
+                                        if (Properties.Settings.Default.Units == "imperial")
+                                        {
+                                            ValueToInsert = Math.Round(MINAMBF).ToString("0");
+                                            UnitToInsert = "°F";
+                                        }
+                                        else if (Properties.Settings.Default.Units == "metric")
+                                        {
+                                            ValueToInsert = Math.Round(MINAMBC).ToString("0");
+                                            UnitToInsert = "°C";
+                                        }
+                                        break;
+                                    }
+                                    case 0x04:
+                                    {
+                                        DescriptionToInsert += " | MAX AMB/BATT TEMP";
+
+                                        double MAXAMBC = payload[3] - 128;
+                                        double MAXAMBF = 1.8 * MAXAMBC + 32.0;
+
+                                        if (Properties.Settings.Default.Units == "imperial")
+                                        {
+                                            ValueToInsert = Math.Round(MAXAMBF).ToString("0");
+                                            UnitToInsert = "°F";
+                                        }
+                                        else if (Properties.Settings.Default.Units == "metric")
+                                        {
+                                            ValueToInsert = Math.Round(MAXAMBC).ToString("0");
+                                            UnitToInsert = "°C";
+                                        }
+                                        break;
+                                    }
+                                    case 0x05:
+                                    {
+                                        DescriptionToInsert += " | MIN TIME FROM START";
+
+                                        double MTFS = payload[3] * 0.0471;
+
+                                        ValueToInsert = Math.Round(MTFS, 1).ToString("0.0");
+                                        UnitToInsert = "MINUTES";
+                                        break;
+                                    }
+                                    case 0x06:
+                                    {
+                                        DescriptionToInsert += " | MIN VEH SPEED MPH";
+
+                                        double MVSMPH = ((payload[2] << 8) + payload[3]) * 0.015625;
+                                        double MVSKMH = MVSMPH * 1.609344;
+
+                                        if (Properties.Settings.Default.Units == "imperial")
+                                        {
+                                            ValueToInsert = Math.Round(MVSMPH, 1).ToString("0.0");
+                                            UnitToInsert = "MPH";
+                                        }
+                                        else if (Properties.Settings.Default.Units == "metric")
+                                        {
+                                            ValueToInsert = Math.Round(MVSKMH, 1).ToString("0.0");
+                                            UnitToInsert = "KM/H";
+                                        }
+                                        break;
+                                    }
+                                    case 0x07:
+                                    {
+                                        DescriptionToInsert += " | MIN OPEN THROTTLE TIME";
+
+                                        double MOTT = payload[3] * 3.211;
+
+                                        ValueToInsert = Math.Round(MOTT, 1).ToString("0.0");
+                                        UnitToInsert = "MINUTES";
+                                        break;
+                                    }
+                                    case 0x08:
+                                    {
+                                        DescriptionToInsert += " | MAX RPM/SPEED RATIO";
+
+                                        double MRPMVSSR = payload[3];
+
+                                        ValueToInsert = MRPMVSSR.ToString("0");
+                                        break;
+                                    }
+                                    case 0x09:
+                                    {
+                                        DescriptionToInsert += " | MIN BARO PRESSURE";
+
+                                        double MBPPSI = payload[3] * 0.059756;
+                                        double MBPKPA = MBPPSI * 6.894757;
+
+                                        if (Properties.Settings.Default.Units == "imperial")
+                                        {
+                                            ValueToInsert = Math.Round(MBPPSI, 1).ToString("0.0");
+                                            UnitToInsert = "PSI";
+                                        }
+                                        else if (Properties.Settings.Default.Units == "metric")
+                                        {
+                                            ValueToInsert = Math.Round(MBPKPA, 1).ToString("0.0");
+                                            UnitToInsert = "KPA";
+                                        }
+                                        break;
+                                    }
+                                    case 0x0A:
+                                    {
+                                        DescriptionToInsert += " | MAX ECT/AMB TEMP DIFF";
+
+                                        double MEATDF = payload[3] * 1.8;
+                                        double MEATDC = (MEATDF - 32.0) / 1.8;
+
+                                        if (Properties.Settings.Default.Units == "imperial")
+                                        {
+                                            ValueToInsert = Math.Round(MEATDF).ToString("0");
+                                            UnitToInsert = "°F";
+                                        }
+                                        else if (Properties.Settings.Default.Units == "metric")
+                                        {
+                                            ValueToInsert = Math.Round(MEATDC).ToString("0");
+                                            UnitToInsert = "°C";
+                                        }
+                                        break;
+                                    }
+                                    case 0x0C:
+                                    {
+                                        DescriptionToInsert += " | MIN ENGINE RPM";
+                                        break;
+                                    }
+                                    case 0x0D:
+                                    {
+                                        DescriptionToInsert += " | MAX ENGINE RPM";
+                                        break;
+                                    }
+                                    case 0x0E:
+                                    {
+                                        DescriptionToInsert += " | MIN MAP VACUUM";
+                                        break;
+                                    }
+                                    case 0x0F:
+                                    {
+                                        DescriptionToInsert += " | MAX MAP VACUUM";
+                                        break;
+                                    }
+                                    case 0x10:
+                                    {
+                                        DescriptionToInsert += " | MIN TPS PERCENT DIFF";
+                                        break;
+                                    }
+                                    case 0x11:
+                                    {
+                                        DescriptionToInsert += " | MAX TPS PERCENT DIFF";
+                                        break;
+                                    }
+                                    case 0x12:
+                                    {
+                                        DescriptionToInsert += " | MAX VEH SPEED MPH";
+                                        break;
+                                    }
+                                    case 0x13:
+                                    {
+                                        DescriptionToInsert += " | MIN CATALYST TEMP";
+                                        break;
+                                    }
+                                    case 0x14:
+                                    {
+                                        DescriptionToInsert += " | MAX CATALYST TEMP";
+                                        break;
+                                    }
+                                    case 0x15:
+                                    {
+                                        DescriptionToInsert += " | MIN CAT MILEAGE";
+                                        break;
+                                    }
+                                    case 0x16:
+                                    {
+                                        DescriptionToInsert += " | MAX CAT MILEAGE";
+                                        break;
+                                    }
+                                    case 0x17:
+                                    {
+                                        DescriptionToInsert += " | MIN DELAY TIME";
+                                        break;
+                                    }
+                                    case 0x18:
+                                    {
+                                        DescriptionToInsert += " | MAX DELAY TIME";
+                                        break;
+                                    }
+                                    case 0x19:
+                                    {
+                                        DescriptionToInsert += " | MIN TIME ABOVE VEH SPEED";
+                                        break;
+                                    }
+                                    case 0x1A:
+                                    {
+                                        DescriptionToInsert += " | MIN UPSTREAM O2 VOLTS";
+                                        break;
+                                    }
+                                    case 0x1B:
+                                    {
+                                        DescriptionToInsert += " | MIN DOWNSTREAM O2 VOLTS";
+                                        break;
+                                    }
+                                    case 0x1C:
+                                    {
+                                        DescriptionToInsert += " | MAX TEMP FOR .02 LEAK DETECT";
+                                        break;
+                                    }
+                                    case 0x1D:
+                                    {
+                                        DescriptionToInsert += " | MIN FUEL LEVEL";
+                                        break;
+                                    }
+                                    case 0x1E:
+                                    {
+                                        DescriptionToInsert += " | MAX FUEL LEVEL";
+                                        break;
+                                    }
+                                    case 0x20:
+                                    {
+                                        DescriptionToInsert += " | MIN ENGINE RPM";
+                                        break;
+                                    }
+                                    case 0x21:
+                                    {
+                                        DescriptionToInsert += " | MAX ENGINE RPM";
+                                        break;
+                                    }
+                                    case 0x22:
+                                    {
+                                        DescriptionToInsert += " | MIN MAP VACUUM";
+                                        break;
+                                    }
+                                    case 0x23:
+                                    {
+                                        DescriptionToInsert += " | MAX MAP VACUUM";
+                                        break;
+                                    }
+                                    case 0x24:
+                                    {
+                                        DescriptionToInsert += " | MIN TPS PERCENT DIFF";
+                                        break;
+                                    }
+                                    case 0x25:
+                                    {
+                                        DescriptionToInsert += " | MAX TPS PERCENT DIFF";
+                                        break;
+                                    }
+                                    case 0x26:
+                                    {
+                                        DescriptionToInsert += " | MIN STFT PERCENT";
+                                        break;
+                                    }
+                                    case 0x27:
+                                    {
+                                        DescriptionToInsert += " | MAX STFT PERCENT";
+                                        break;
+                                    }
+                                    case 0x28:
+                                    {
+                                        DescriptionToInsert += " | MIN LTFT PERCENT";
+                                        break;
+                                    }
+                                    case 0x29:
+                                    {
+                                        DescriptionToInsert += " | MAX LTFT PERCENT";
+                                        break;
+                                    }
+                                    case 0x2A:
+                                    {
+                                        DescriptionToInsert += " | MAX VEH SPEED MPH";
+                                        break;
+                                    }
+                                    case 0x2B:
+                                    {
+                                        DescriptionToInsert += " | MAX IGN OFF TIME";
+                                        break;
+                                    }
+                                    case 0x2C:
+                                    {
+                                        DescriptionToInsert += " | MIN CHARGING VOLTS";
+                                        break;
+                                    }
+                                    case 0x2D:
+                                    {
+                                        DescriptionToInsert += " | MAX VOLT FROM TARGET";
+                                        break;
+                                    }
+                                    case 0x2E:
+                                    {
+                                        DescriptionToInsert += " | MAX RPM FROM TARGET";
+                                        break;
+                                    }
+                                    case 0x2F:
+                                    {
+                                        DescriptionToInsert += " | MIN MAP VACUUM";
+                                        break;
+                                    }
+                                    case 0x30:
+                                    {
+                                        DescriptionToInsert += " | DELTA OPEN/CLOSE THR";
+                                        break;
+                                    }
+                                    case 0x31:
+                                    {
+                                        DescriptionToInsert += " | MAX BATTERY VOLTS";
+                                        break;
+                                    }
+                                    case 0x32:
+                                    {
+                                        DescriptionToInsert += " | MIN CAT TEMP";
+                                        break;
+                                    }
+                                    case 0x33:
+                                    {
+                                        DescriptionToInsert += " | MAX CAT TEMP";
+                                        break;
+                                    }
+                                    case 0x34:
+                                    {
+                                        DescriptionToInsert += " | MIN VEH SPEED MPH";
+                                        break;
+                                    }
+                                    case 0x35:
+                                    {
+                                        DescriptionToInsert += " | MIN TEST TIME";
+                                        break;
+                                    }
+                                    case 0x36:
+                                    {
+                                        DescriptionToInsert += " | MAX TEST TIME";
+                                        break;
+                                    }
+                                    case 0x37:
+                                    {
+                                        DescriptionToInsert += " | ADAP MEM TEST CELL ID";
+                                        break;
+                                    }
+                                    case 0x39:
+                                    {
+                                        DescriptionToInsert += " | MIN O2 HEATER DUTY CYCLE";
+                                        break;
+                                    }
+                                    case 0x3A:
+                                    {
+                                        DescriptionToInsert += " | MAX O2 HEATER DUTY CYCLE";
+                                        break;
+                                    }
+                                    case 0x3B:
+                                    {
+                                        DescriptionToInsert += " | MIN MASS AIR FLOW";
+                                        break;
+                                    }
+                                    case 0x3C:
+                                    {
+                                        DescriptionToInsert += " | MAX MASS AIR FLOW";
+                                        break;
+                                    }
+                                    case 0x3D:
+                                    {
+                                        DescriptionToInsert += " | MAX DELTA MAF";
+                                        break;
+                                    }
+                                    case 0x3E:
+                                    {
+                                        DescriptionToInsert += " | MIN MAF (GPS)";
+                                        break;
+                                    }
+                                    case 0x3F:
+                                    {
+                                        DescriptionToInsert += " | MAX MAF (GPS)";
+                                        break;
+                                    }
+                                    case 0x43:
+                                    {
+                                        DescriptionToInsert += " | MAX CANISTER LOAD";
+                                        break;
+                                    }
+                                    default:
+                                    {
+                                        DescriptionToInsert += " | ITEM: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            case 0x01:
+                            {
+                                DescriptionToInsert += " | EGR MONITOR";
+
+                                switch (payload[1])
+                                {
+                                    default:
+                                    {
+                                        DescriptionToInsert += " | ITEM: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            case 0x02:
+                            {
+                                DescriptionToInsert += " | O2 HEATER";
+
+                                switch (payload[1])
+                                {
+                                    default:
+                                    {
+                                        DescriptionToInsert += " | ITEM: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            case 0x03:
+                            {
+                                DescriptionToInsert += " | O2 MONITOR";
+
+                                switch (payload[1])
+                                {
+                                    default:
+                                    {
+                                        DescriptionToInsert += " | ITEM: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            case 0x04:
+                            {
+                                DescriptionToInsert += " | MISFIRE MONITOR";
+
+                                switch (payload[1])
+                                {
+                                    default:
+                                    {
+                                        DescriptionToInsert += " | ITEM: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            case 0x05:
+                            {
+                                DescriptionToInsert += " | ADAPTIVE MEMORY";
+
+                                switch (payload[1])
+                                {
+                                    default:
+                                    {
+                                        DescriptionToInsert += " | ITEM: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            case 0x06:
+                            {
+                                DescriptionToInsert += " | PURGE MONITOR";
+
+                                switch (payload[1])
+                                {
+                                    default:
+                                    {
+                                        DescriptionToInsert += " | ITEM: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            case 0x07:
+                            {
+                                DescriptionToInsert += " | LDP MONITOR";
+
+                                switch (payload[1])
+                                {
+                                    default:
+                                    {
+                                        DescriptionToInsert += " | ITEM: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            case 0x09:
+                            {
+                                DescriptionToInsert += " | CATALYST MONITOR";
+
+                                switch (payload[1])
+                                {
+                                    default:
+                                    {
+                                        DescriptionToInsert += " | ITEM: " + Util.ByteToHexString(payload, 1, 1);
+                                        ValueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            default:
+                            {
+                                DescriptionToInsert += " | PAGE: " + Util.ByteToHexString(payload, 0, 1) + " | ITEM: " + Util.ByteToHexString(payload, 1, 1);
+                                ValueToInsert = Util.ByteToHexString(payload, 2, 2);
+                                break;
+                            }
+                        }
                         break;
                     }
                     case 0x2E: // SBEC
@@ -5981,7 +6570,7 @@ namespace ChryslerScanner
 
                                 double EngineSpeed = ((payload[1] << 8) + payload[3]) * 0.125;
 
-                                ValueToInsert = Math.Round(EngineSpeed, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(EngineSpeed, 3).ToString("0.000");
                                 UnitToInsert = "RPM";
                                 break;
                             }
@@ -6007,12 +6596,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(VehicleSpeedMPH, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(VehicleSpeedMPH, 3).ToString("0.000");
                                     UnitToInsert = "MPH";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(VehicleSpeedKMH, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(VehicleSpeedKMH, 3).ToString("0.000");
                                     UnitToInsert = "KM/H";
                                 }
                                 break;
@@ -6053,7 +6642,7 @@ namespace ChryslerScanner
 
                                 double BatteryVoltage = payload[1] * 0.0625;
 
-                                ValueToInsert = Math.Round(BatteryVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(BatteryVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6063,7 +6652,7 @@ namespace ChryslerScanner
 
                                 double ATSVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(ATSVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(ATSVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6092,7 +6681,7 @@ namespace ChryslerScanner
 
                                 double TPSVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(TPSVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TPSVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6102,7 +6691,7 @@ namespace ChryslerScanner
 
                                 double MinTPSVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(MinTPSVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(MinTPSVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6112,7 +6701,7 @@ namespace ChryslerScanner
 
                                 double CalculatedTPSVoltageA = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(CalculatedTPSVoltageA, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(CalculatedTPSVoltageA, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6122,7 +6711,7 @@ namespace ChryslerScanner
 
                                 double ECTSensorVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(ECTSensorVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(ECTSensorVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6151,7 +6740,7 @@ namespace ChryslerScanner
 
                                 double MAPSensorVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(MAPSensorVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(MAPSensorVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6164,12 +6753,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(MAPPSI, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(MAPPSI, 1).ToString("0.0");
                                     UnitToInsert = "PSI";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(MAPKPA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(MAPKPA, 1).ToString("0.0");
                                     UnitToInsert = "KPA";
                                 }
                                 break;
@@ -6183,12 +6772,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(BarometricPressurePSI, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(BarometricPressurePSI, 1).ToString("0.0");
                                     UnitToInsert = "PSI";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(BarometricPressureKPA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(BarometricPressureKPA, 1).ToString("0.0");
                                     UnitToInsert = "KPA";
                                 }
                                 break;
@@ -6202,12 +6791,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(MAPVacuumPSI, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(MAPVacuumPSI, 1).ToString("0.0");
                                     UnitToInsert = "PSI";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(MAPVacuumKPA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(MAPVacuumKPA, 1).ToString("0.0");
                                     UnitToInsert = "KPA";
                                 }
                                 break;
@@ -6218,7 +6807,7 @@ namespace ChryslerScanner
 
                                 double O2S11Voltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(O2S11Voltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(O2S11Voltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6228,7 +6817,7 @@ namespace ChryslerScanner
 
                                 double O2S21Voltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(O2S21Voltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(O2S21Voltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6238,7 +6827,7 @@ namespace ChryslerScanner
 
                                 double IATVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(IATVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(IATVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6267,7 +6856,7 @@ namespace ChryslerScanner
 
                                 double KnockSensor1Voltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(KnockSensor1Voltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(KnockSensor1Voltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6277,7 +6866,7 @@ namespace ChryslerScanner
 
                                 double KnockSensor2Voltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(KnockSensor2Voltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(KnockSensor2Voltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6287,7 +6876,7 @@ namespace ChryslerScanner
 
                                 double CruiseSwitchVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(CruiseSwitchVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(CruiseSwitchVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6297,7 +6886,7 @@ namespace ChryslerScanner
 
                                 double BatteryTemperatureVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(BatteryTemperatureVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(BatteryTemperatureVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6307,7 +6896,7 @@ namespace ChryslerScanner
 
                                 double FlexFuelSensorVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(FlexFuelSensorVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(FlexFuelSensorVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6317,7 +6906,7 @@ namespace ChryslerScanner
 
                                 double FlexFuelEthanolPercent = payload[1] * 0.5;
 
-                                ValueToInsert = Math.Round(FlexFuelEthanolPercent, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(FlexFuelEthanolPercent, 1).ToString("0.0");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -6327,7 +6916,7 @@ namespace ChryslerScanner
 
                                 double ACHSPressureVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(ACHSPressureVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(ACHSPressureVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6340,12 +6929,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(ACHSPressurePSI, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(ACHSPressurePSI, 1).ToString("0.0");
                                     UnitToInsert = "PSI";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(ACHSPressureKPA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(ACHSPressureKPA, 1).ToString("0.0");
                                     UnitToInsert = "KPA";
                                 }
                                 break;
@@ -6364,7 +6953,7 @@ namespace ChryslerScanner
 
                                 double InjectorPulseWidth1 = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                ValueToInsert = Math.Round(InjectorPulseWidth1, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(InjectorPulseWidth1, 3).ToString("0.000");
                                 UnitToInsert = "MS";
                                 break;
                             }
@@ -6387,7 +6976,7 @@ namespace ChryslerScanner
 
                                 double InjectorPulseWidth2 = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                ValueToInsert = Math.Round(InjectorPulseWidth2, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(InjectorPulseWidth2, 3).ToString("0.000");
                                 UnitToInsert = "MS";
                                 break;
                             }
@@ -6404,7 +6993,7 @@ namespace ChryslerScanner
 
                                 if (payload[1] >= 0x80) LTFT1 -= 50.0;
 
-                                ValueToInsert = Math.Round(LTFT1, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(LTFT1, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -6416,7 +7005,7 @@ namespace ChryslerScanner
 
                                 if (payload[1] >= 0x80) LTFT2 -= 50.0;
 
-                                ValueToInsert = Math.Round(LTFT2, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(LTFT2, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -6464,7 +7053,7 @@ namespace ChryslerScanner
 
                                 double SparkAdvance = payload[1] * 0.5;
 
-                                ValueToInsert = Math.Round(SparkAdvance, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(SparkAdvance, 1).ToString("0.0");
                                 UnitToInsert = "DEG";
                                 break;
                             }
@@ -6474,7 +7063,7 @@ namespace ChryslerScanner
 
                                 double TotalKnockRetard = payload[1] * 0.5;
 
-                                ValueToInsert = Math.Round(TotalKnockRetard, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(TotalKnockRetard, 1).ToString("0.0");
                                 UnitToInsert = "DEG";
                                 break;
                             }
@@ -6484,7 +7073,7 @@ namespace ChryslerScanner
 
                                 double Cylinder1Retard = payload[1] * 0.5;
 
-                                ValueToInsert = Math.Round(Cylinder1Retard, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(Cylinder1Retard, 1).ToString("0.0");
                                 UnitToInsert = "DEG";
                                 break;
                             }
@@ -6494,7 +7083,7 @@ namespace ChryslerScanner
 
                                 double Cylinder2Retard = payload[1] * 0.5;
 
-                                ValueToInsert = Math.Round(Cylinder2Retard, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(Cylinder2Retard, 1).ToString("0.0");
                                 UnitToInsert = "DEG";
                                 break;
                             }
@@ -6504,7 +7093,7 @@ namespace ChryslerScanner
 
                                 double Cylinder3Retard = payload[1] * 0.5;
 
-                                ValueToInsert = Math.Round(Cylinder3Retard, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(Cylinder3Retard, 1).ToString("0.0");
                                 UnitToInsert = "DEG";
                                 break;
                             }
@@ -6514,7 +7103,7 @@ namespace ChryslerScanner
 
                                 double Cylinder4Retard = payload[1] * 0.5;
 
-                                ValueToInsert = Math.Round(Cylinder4Retard, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(Cylinder4Retard, 1).ToString("0.0");
                                 UnitToInsert = "DEG";
                                 break;
                             }
@@ -6532,7 +7121,7 @@ namespace ChryslerScanner
 
                                 double IdleSpeed = ((payload[1] << 8) + payload[3]) * 0.125;
 
-                                ValueToInsert = Math.Round(IdleSpeed, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(IdleSpeed, 3).ToString("0.000");
                                 UnitToInsert = "RPM";
                                 break;
                             }
@@ -6553,7 +7142,7 @@ namespace ChryslerScanner
 
                                 double ChargingVoltage = payload[1] * 0.0625;
 
-                                ValueToInsert = Math.Round(ChargingVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(ChargingVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6566,12 +7155,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(CruiseSetSpeedMPH, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(CruiseSetSpeedMPH, 1).ToString("0.0");
                                     UnitToInsert = "MPH";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(CruiseSetSpeedKMH, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(CruiseSetSpeedKMH, 1).ToString("0.0");
                                     UnitToInsert = "KM/H";
                                 }
                                 break;
@@ -6861,7 +7450,7 @@ namespace ChryslerScanner
 
                                 if (payload[1] >= 0x80) STFT1 -= 50.0;
 
-                                ValueToInsert = Math.Round(STFT1, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(STFT1, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -6873,7 +7462,7 @@ namespace ChryslerScanner
 
                                 if (payload[1] >= 0x80) STFT2 -= 50.0;
 
-                                ValueToInsert = Math.Round(STFT2, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(STFT2, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -6895,7 +7484,7 @@ namespace ChryslerScanner
 
                                 double O2S12Voltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(O2S12Voltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(O2S12Voltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6905,7 +7494,7 @@ namespace ChryslerScanner
 
                                 double O2S22Voltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(O2S22Voltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(O2S22Voltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -6915,7 +7504,7 @@ namespace ChryslerScanner
 
                                 double ClosedLoopTimer = payload[1] * 0.0535;
 
-                                ValueToInsert = Math.Round(ClosedLoopTimer, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(ClosedLoopTimer, 3).ToString("0.000");
                                 UnitToInsert = "MINUTES";
                                 break;
                             }
@@ -6933,7 +7522,7 @@ namespace ChryslerScanner
 
                                 double TimeFromStartRun = ((payload[1] << 8) + payload[3]) * 0.000208984375;
 
-                                ValueToInsert = Math.Round(TimeFromStartRun, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TimeFromStartRun, 3).ToString("0.000");
                                 UnitToInsert = "MINUTES";
                                 break;
                             }
@@ -6948,7 +7537,7 @@ namespace ChryslerScanner
 
                                 double RuntimeAtStall = payload[1] * 0.0535;
 
-                                ValueToInsert = Math.Round(RuntimeAtStall, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(RuntimeAtStall, 3).ToString("0.000");
                                 UnitToInsert = "MINUTES";
                                 break;
                             }
@@ -7014,7 +7603,7 @@ namespace ChryslerScanner
 
                                 double DwellCoil1 = payload[1] * 0.008;
 
-                                ValueToInsert = Math.Round(DwellCoil1, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(DwellCoil1, 3).ToString("0.000");
                                 UnitToInsert = "MS";
                                 break;
                             }
@@ -7024,7 +7613,7 @@ namespace ChryslerScanner
 
                                 double DwellCoil2 = payload[1] * 0.008;
 
-                                ValueToInsert = Math.Round(DwellCoil2, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(DwellCoil2, 3).ToString("0.000");
                                 UnitToInsert = "MS";
                                 break;
                             }
@@ -7034,7 +7623,7 @@ namespace ChryslerScanner
 
                                 double DwellCoil3 = payload[1] * 0.008;
 
-                                ValueToInsert = Math.Round(DwellCoil3, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(DwellCoil3, 3).ToString("0.000");
                                 UnitToInsert = "MS";
                                 break;
                             }
@@ -7044,7 +7633,7 @@ namespace ChryslerScanner
 
                                 double FanDutyCycle = payload[1] * 0.3921568627;
 
-                                ValueToInsert = Math.Round(FanDutyCycle, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(FanDutyCycle, 1).ToString("0.0");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -7063,12 +7652,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(DistanceMi, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(DistanceMi, 3).ToString("0.000");
                                     UnitToInsert = "MILE";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(DistanceKm, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(DistanceKm, 3).ToString("0.000");
                                     UnitToInsert = "KILOMETER";
                                 }
                                 break;
@@ -7107,7 +7696,7 @@ namespace ChryslerScanner
                             case 0x78:
                             case 0x79:
                             {
-                                DescriptionToInsert = "DTC " + (message[0] - 0x72).ToString("0") + ": ";
+                                DescriptionToInsert = "DTC " + (payload[0] - 0x72).ToString("0") + ": ";
 
                                 if (payload[1] == 0) ValueToInsert = "EMPTY SLOT";
                                 else
@@ -7163,7 +7752,7 @@ namespace ChryslerScanner
 
                                 double EGRPosVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(EGRPosVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(EGRPosVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -7173,7 +7762,7 @@ namespace ChryslerScanner
 
                                 double ActualPurgeCurrent = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(ActualPurgeCurrent, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(ActualPurgeCurrent, 3).ToString("0.000");
                                 UnitToInsert = "A";
                                 break;
                             }
@@ -7208,7 +7797,7 @@ namespace ChryslerScanner
 
                                 double CamTimingPosition = payload[1] * 0.5;
 
-                                ValueToInsert = Math.Round(CamTimingPosition, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(CamTimingPosition, 1).ToString("0.0");
                                 UnitToInsert = "DEG";
                                 break;
                             }
@@ -7301,7 +7890,7 @@ namespace ChryslerScanner
 
                                 double EngineLoadC = payload[1] * 0.3921568627;
 
-                                ValueToInsert = Math.Round(EngineLoadC, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(EngineLoadC, 1).ToString("0.0");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -7332,7 +7921,7 @@ namespace ChryslerScanner
 
                                 if (payload[1] >= 0x80) STFT1F -= 50.0;
 
-                                ValueToInsert = Math.Round(STFT1F, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(STFT1F, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -7344,7 +7933,7 @@ namespace ChryslerScanner
 
                                 if (payload[1] >= 0x80) LTFT1F -= 50.0;
 
-                                ValueToInsert = Math.Round(LTFT1F, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(LTFT1F, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -7356,7 +7945,7 @@ namespace ChryslerScanner
 
                                 if (payload[1] >= 0x80) STFT2F -= 50.0;
 
-                                ValueToInsert = Math.Round(STFT2F, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(STFT2F, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -7368,7 +7957,7 @@ namespace ChryslerScanner
 
                                 if (payload[1] >= 0x80) LTFT2F -= 50.0;
 
-                                ValueToInsert = Math.Round(LTFT2F, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(LTFT2F, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -7381,12 +7970,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(MAPFPSI, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(MAPFPSI, 1).ToString("0.0");
                                     UnitToInsert = "PSI";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(MAPFKPA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(MAPFKPA, 1).ToString("0.0");
                                     UnitToInsert = "KPA";
                                 }
                                 break;
@@ -7429,12 +8018,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(MAPVacuumFPSI, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(MAPVacuumFPSI, 1).ToString("0.0");
                                     UnitToInsert = "PSI";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(MAPVacuumFKPA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(MAPVacuumFKPA, 1).ToString("0.0");
                                     UnitToInsert = "KPA";
                                 }
                                 break;
@@ -7465,7 +8054,7 @@ namespace ChryslerScanner
 
                                 double CTSVoltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(CTSVoltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(CTSVoltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -7475,7 +8064,7 @@ namespace ChryslerScanner
 
                                 double GovPDC = payload[1] * 0.3921568627;
 
-                                ValueToInsert = Math.Round(GovPDC, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(GovPDC, 1).ToString("0.0");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -7528,7 +8117,7 @@ namespace ChryslerScanner
 
                                 double FLS3Voltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(FLS3Voltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(FLS3Voltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -7594,7 +8183,7 @@ namespace ChryslerScanner
 
                                 double FLS2Voltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(FLS2Voltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(FLS2Voltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -7610,7 +8199,7 @@ namespace ChryslerScanner
 
                                 double FLS1Voltage = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(FLS1Voltage, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(FLS1Voltage, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -7623,12 +8212,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(FuelLevelG, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(FuelLevelG, 1).ToString("0.0");
                                     UnitToInsert = "GALLON";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(FuelLevelL, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(FuelLevelL, 1).ToString("0.0");
                                     UnitToInsert = "LITER";
                                 }
                                 break;
@@ -7642,12 +8231,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(FuelUsedG, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(FuelUsedG, 1).ToString("0.0");
                                     UnitToInsert = "GALLON";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(FuelUsedL, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(FuelUsedL, 1).ToString("0.0");
                                     UnitToInsert = "LITER";
                                 }
                                 break;
@@ -7658,7 +8247,7 @@ namespace ChryslerScanner
 
                                 double EngineLoadD = payload[1] * 0.3921568627;
 
-                                ValueToInsert = Math.Round(EngineLoadD, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(EngineLoadD, 1).ToString("0.0");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -7744,7 +8333,7 @@ namespace ChryslerScanner
 
                                 double CalculatedTPSVoltageB = payload[1] * 0.0196;
 
-                                ValueToInsert = Math.Round(CalculatedTPSVoltageB, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(CalculatedTPSVoltageB, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -7788,12 +8377,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(ActGovernorPressurePSI, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(ActGovernorPressurePSI, 3).ToString("0.000");
                                     UnitToInsert = "PSI";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(ActGovernorPressureKPA, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(ActGovernorPressureKPA, 3).ToString("0.000");
                                     UnitToInsert = "KPA";
                                 }
                                 break;
@@ -7817,7 +8406,7 @@ namespace ChryslerScanner
 
                                 double TTVAAdjustedPosition = ((payload[1] << 8) + payload[3]) * 0.0078125;
 
-                                ValueToInsert = Math.Round(TTVAAdjustedPosition, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TTVAAdjustedPosition, 3).ToString("0.000");
                                 UnitToInsert = "DEGREE";
                                 break;
                             }
@@ -7840,7 +8429,7 @@ namespace ChryslerScanner
 
                                 double TTVATargetPosition = ((payload[1] << 8) + payload[3]) * 0.0078125;
 
-                                ValueToInsert = Math.Round(TTVATargetPosition, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TTVATargetPosition, 3).ToString("0.000");
                                 UnitToInsert = "DEGREE";
                                 break;
                             }
@@ -7863,7 +8452,7 @@ namespace ChryslerScanner
 
                                 double TTVAActualPosition = ((payload[1] << 8) + payload[3]) * 0.0078125;
 
-                                ValueToInsert = Math.Round(TTVAActualPosition, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TTVAActualPosition, 3).ToString("0.000");
                                 UnitToInsert = "DEGREE";
                                 break;
                             }
@@ -7886,7 +8475,7 @@ namespace ChryslerScanner
 
                                 double TTVADutyCycle = ((payload[1] << 8) + payload[3]) * 0.0078125;
 
-                                ValueToInsert = Math.Round(TTVADutyCycle, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TTVADutyCycle, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -8009,12 +8598,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(VehicleSpeedAMPH, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(VehicleSpeedAMPH, 3).ToString("0.000");
                                         UnitToInsert = "MPH";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(VehicleSpeedAKMH, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(VehicleSpeedAKMH, 3).ToString("0.000");
                                         UnitToInsert = "KM/H";
                                     }
                                     break;
@@ -8038,7 +8627,7 @@ namespace ChryslerScanner
 
                                     double EngineSpeedA = ((payload[1] << 8) + payload[3]) * 0.125;
 
-                                    ValueToInsert = Math.Round(EngineSpeedA, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(EngineSpeedA, 3).ToString("0.000");
                                     UnitToInsert = "RPM";
                                     break;
                                 }
@@ -8088,7 +8677,7 @@ namespace ChryslerScanner
 
                                     double EngineLoadA = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                    ValueToInsert = Math.Round(EngineLoadA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(EngineLoadA, 1).ToString("0.0");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -8111,7 +8700,7 @@ namespace ChryslerScanner
 
                                     double APPSPercentA = ((payload[1] << 8) + payload[3]) * 0.25;
 
-                                    ValueToInsert = Math.Round(APPSPercentA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(APPSPercentA, 1).ToString("0.0");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -8137,12 +8726,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(BoostPressureAPSI, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(BoostPressureAPSI, 3).ToString("0.000");
                                         UnitToInsert = "PSI";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(BoostPressureAKPA, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(BoostPressureAKPA, 3).ToString("0.000");
                                         UnitToInsert = "KPA";
                                     }
                                     break;
@@ -8169,12 +8758,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(ECT1F, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(ECT1F, 1).ToString("0.0");
                                         UnitToInsert = "°F";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(ECT1C, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(ECT1C, 1).ToString("0.0");
                                         UnitToInsert = "°C";
                                     }
                                     break;
@@ -8201,12 +8790,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(IAT1F, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(IAT1F, 1).ToString("0.0");
                                         UnitToInsert = "°F";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(IAT1C, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(IAT1C, 1).ToString("0.0");
                                         UnitToInsert = "°C";
                                     }
                                     break;
@@ -8233,12 +8822,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(OilPressureAPSI, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(OilPressureAPSI, 3).ToString("0.000");
                                         UnitToInsert = "PSI";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(OilPressureAKPA, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(OilPressureAKPA, 3).ToString("0.000");
                                         UnitToInsert = "KPA";
                                     }
                                     break;
@@ -8523,7 +9112,7 @@ namespace ChryslerScanner
 
                                     double BatteryVoltsA = ((payload[1] << 8) + payload[3]) * 0.0625;
 
-                                    ValueToInsert = Math.Round(BatteryVoltsA, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(BatteryVoltsA, 3).ToString("0.000");
                                     UnitToInsert = "V";
                                     break;
                                 }
@@ -8546,7 +9135,7 @@ namespace ChryslerScanner
 
                                     double CalculatedFuelA = ((payload[1] << 8) + payload[3]) * 0.001953155;
 
-                                    ValueToInsert = Math.Round(CalculatedFuelA, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(CalculatedFuelA, 3).ToString("0.000");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -8569,7 +9158,7 @@ namespace ChryslerScanner
 
                                     double CalculatedTimingA = (((payload[1] << 8) + payload[3]) * 0.1176475) - 20.0;
 
-                                    ValueToInsert = Math.Round(CalculatedTimingA, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(CalculatedTimingA, 3).ToString("0.000");
                                     UnitToInsert = "DEGREE";
                                     break;
                                 }
@@ -8592,7 +9181,7 @@ namespace ChryslerScanner
 
                                     double RVCA = ((payload[1] << 8) + payload[3]) * 1.220721752;
 
-                                    ValueToInsert = Math.Round(RVCA, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(RVCA, 3).ToString("0.000");
                                     UnitToInsert = "MILLIAMPS";
                                     break;
                                 }
@@ -8618,12 +9207,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(InjPumpFuelTempAF, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(InjPumpFuelTempAF, 1).ToString("0.0");
                                         UnitToInsert = "°F";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(InjPumpFuelTempAC, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(InjPumpFuelTempAC, 1).ToString("0.0");
                                         UnitToInsert = "°C";
                                     }
                                     break;
@@ -8647,7 +9236,7 @@ namespace ChryslerScanner
 
                                     double InjPumpEngineSpeedA = ((payload[1] << 8) + payload[3]) * 0.125;
 
-                                    ValueToInsert = Math.Round(InjPumpEngineSpeedA, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(InjPumpEngineSpeedA, 3).ToString("0.000");
                                     UnitToInsert = "RPM";
                                     break;
                                 }
@@ -8699,12 +9288,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(VehicleSpeedBMPH, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(VehicleSpeedBMPH, 3).ToString("0.000");
                                         UnitToInsert = "MPH";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(VehicleSpeedBKMH, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(VehicleSpeedBKMH, 3).ToString("0.000");
                                         UnitToInsert = "KM/H";
                                     }
                                     break;
@@ -8728,7 +9317,7 @@ namespace ChryslerScanner
 
                                     double EngineSpeedB = ((payload[1] << 8) + payload[3]) * 0.125;
 
-                                    ValueToInsert = Math.Round(EngineSpeedB, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(EngineSpeedB, 3).ToString("0.000");
                                     UnitToInsert = "RPM";
                                     break;
                                 }
@@ -8778,7 +9367,7 @@ namespace ChryslerScanner
 
                                     double EngineLoadB = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                    ValueToInsert = Math.Round(EngineLoadB, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(EngineLoadB, 1).ToString("0.0");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -8801,7 +9390,7 @@ namespace ChryslerScanner
 
                                     double APPSPercentB = ((payload[1] << 8) + payload[3]) * 0.25;
 
-                                    ValueToInsert = Math.Round(APPSPercentB, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(APPSPercentB, 1).ToString("0.0");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -8827,12 +9416,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(BoostPressureBPSI, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(BoostPressureBPSI, 3).ToString("0.000");
                                         UnitToInsert = "PSI";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(BoostPressureBKPA, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(BoostPressureBKPA, 3).ToString("0.000");
                                         UnitToInsert = "KPA";
                                     }
                                     break;
@@ -8859,12 +9448,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(ECT2F, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(ECT2F, 1).ToString("0.0");
                                         UnitToInsert = "°F";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(ECT2C, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(ECT2C, 1).ToString("0.0");
                                         UnitToInsert = "°C";
                                     }
                                     break;
@@ -8891,12 +9480,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(IAT2F, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(IAT2F, 1).ToString("0.0");
                                         UnitToInsert = "°F";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(IAT2C, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(IAT2C, 1).ToString("0.0");
                                         UnitToInsert = "°C";
                                     }
                                     break;
@@ -8923,12 +9512,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(OilPressureBPSI, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(OilPressureBPSI, 3).ToString("0.000");
                                         UnitToInsert = "PSI";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(OilPressureBKPA, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(OilPressureBKPA, 3).ToString("0.000");
                                         UnitToInsert = "KPA";
                                     }
                                     break;
@@ -9213,7 +9802,7 @@ namespace ChryslerScanner
 
                                     double BatteryVoltsB = ((payload[1] << 8) + payload[3]) * 0.0625;
 
-                                    ValueToInsert = Math.Round(BatteryVoltsB, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(BatteryVoltsB, 3).ToString("0.000");
                                     UnitToInsert = "V";
                                     break;
                                 }
@@ -9236,7 +9825,7 @@ namespace ChryslerScanner
 
                                     double CalculatedFuelB = ((payload[1] << 8) + payload[3]) * 0.001953155;
 
-                                    ValueToInsert = Math.Round(CalculatedFuelB, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(CalculatedFuelB, 3).ToString("0.000");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -9259,7 +9848,7 @@ namespace ChryslerScanner
 
                                     double CalculatedTimingB = (((payload[1] << 8) + payload[3]) * 0.1176475) - 20.0;
 
-                                    ValueToInsert = Math.Round(CalculatedTimingB, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(CalculatedTimingB, 3).ToString("0.000");
                                     UnitToInsert = "DEGREE";
                                     break;
                                 }
@@ -9282,7 +9871,7 @@ namespace ChryslerScanner
 
                                     double RVCB = ((payload[1] << 8) + payload[3]) * 1.220721752;
 
-                                    ValueToInsert = Math.Round(RVCB, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(RVCB, 3).ToString("0.000");
                                     UnitToInsert = "MILLIAMPS";
                                     break;
                                 }
@@ -9308,12 +9897,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(InjPumpFuelTempBF, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(InjPumpFuelTempBF, 1).ToString("0.0");
                                         UnitToInsert = "°F";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(InjPumpFuelTempBC, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(InjPumpFuelTempBC, 1).ToString("0.0");
                                         UnitToInsert = "°C";
                                     }
                                     break;
@@ -9337,7 +9926,7 @@ namespace ChryslerScanner
 
                                     double InjPumpEngineSpeedB = ((payload[1] << 8) + payload[3]) * 0.125;
 
-                                    ValueToInsert = Math.Round(InjPumpEngineSpeedB, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(InjPumpEngineSpeedB, 3).ToString("0.000");
                                     UnitToInsert = "RPM";
                                     break;
                                 }
@@ -9408,12 +9997,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(VehicleSpeedAMPH, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(VehicleSpeedAMPH, 3).ToString("0.000");
                                         UnitToInsert = "MPH";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(VehicleSpeedAKMH, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(VehicleSpeedAKMH, 3).ToString("0.000");
                                         UnitToInsert = "KM/H";
                                     }
                                     break;
@@ -9437,7 +10026,7 @@ namespace ChryslerScanner
 
                                     double EngineSpeedA = ((payload[1] << 8) + payload[3]) * 0.125;
 
-                                    ValueToInsert = Math.Round(EngineSpeedA, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(EngineSpeedA, 3).ToString("0.000");
                                     UnitToInsert = "RPM";
                                     break;
                                 }
@@ -9514,7 +10103,7 @@ namespace ChryslerScanner
 
                                     double EngineLoadA = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                    ValueToInsert = Math.Round(EngineLoadA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(EngineLoadA, 1).ToString("0.0");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -9537,7 +10126,7 @@ namespace ChryslerScanner
 
                                     double APPSPercentA = ((payload[1] << 8) + payload[3]) * 0.25;
 
-                                    ValueToInsert = Math.Round(APPSPercentA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(APPSPercentA, 1).ToString("0.0");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -9563,12 +10152,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(BoostPressureAPSI, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(BoostPressureAPSI, 3).ToString("0.000");
                                         UnitToInsert = "PSI";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(BoostPressureAKPA, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(BoostPressureAKPA, 3).ToString("0.000");
                                         UnitToInsert = "KPA";
                                     }
                                     break;
@@ -9595,12 +10184,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(ECT1F, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(ECT1F, 1).ToString("0.0");
                                         UnitToInsert = "°F";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(ECT1C, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(ECT1C, 1).ToString("0.0");
                                         UnitToInsert = "°C";
                                     }
                                     break;
@@ -9627,12 +10216,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(IAT1F, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(IAT1F, 1).ToString("0.0");
                                         UnitToInsert = "°F";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(IAT1C, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(IAT1C, 1).ToString("0.0");
                                         UnitToInsert = "°C";
                                     }
                                     break;
@@ -9917,7 +10506,7 @@ namespace ChryslerScanner
 
                                     double BatteryVoltsA = ((payload[1] << 8) + payload[3]) * 0.0625;
 
-                                    ValueToInsert = Math.Round(BatteryVoltsA, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(BatteryVoltsA, 3).ToString("0.000");
                                     UnitToInsert = "V";
                                     break;
                                 }
@@ -9940,7 +10529,7 @@ namespace ChryslerScanner
 
                                     double CalculatedFuelA = ((payload[1] << 8) + payload[3]) * 0.001953155;
 
-                                    ValueToInsert = Math.Round(CalculatedFuelA, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(CalculatedFuelA, 3).ToString("0.000");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -9963,7 +10552,7 @@ namespace ChryslerScanner
 
                                     double CalculatedTimingA = (((payload[1] << 8) + payload[3]) * 0.1176475) - 20.0;
 
-                                    ValueToInsert = Math.Round(CalculatedTimingA, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(CalculatedTimingA, 3).ToString("0.000");
                                     UnitToInsert = "DEGREE";
                                     break;
                                 }
@@ -9986,7 +10575,7 @@ namespace ChryslerScanner
 
                                     double RVCA = ((payload[1] << 8) + payload[3]) * 1.220721752;
 
-                                    ValueToInsert = Math.Round(RVCA, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(RVCA, 3).ToString("0.000");
                                     UnitToInsert = "MILLIAMPS";
                                     break;
                                 }
@@ -10082,7 +10671,7 @@ namespace ChryslerScanner
 
                                     double FuelPressureVoltsA = ((payload[1] << 8) + payload[3]) * 0.0049;
 
-                                    ValueToInsert = Math.Round(FuelPressureVoltsA, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(FuelPressureVoltsA, 3).ToString("0.000");
                                     UnitToInsert = "V";
                                     break;
                                 }
@@ -10105,7 +10694,7 @@ namespace ChryslerScanner
 
                                     double FuelLevelPercentA = ((payload[1] << 8) + payload[3]) * 0.3921568627;
 
-                                    ValueToInsert = Math.Round(FuelLevelPercentA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(FuelLevelPercentA, 1).ToString("0.0");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -10157,12 +10746,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(VehicleSpeedBMPH, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(VehicleSpeedBMPH, 3).ToString("0.000");
                                         UnitToInsert = "MPH";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(VehicleSpeedBKMH, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(VehicleSpeedBKMH, 3).ToString("0.000");
                                         UnitToInsert = "KM/H";
                                     }
                                     break;
@@ -10186,7 +10775,7 @@ namespace ChryslerScanner
 
                                     double EngineSpeedB = ((payload[1] << 8) + payload[3]) * 0.125;
 
-                                    ValueToInsert = Math.Round(EngineSpeedB, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(EngineSpeedB, 3).ToString("0.000");
                                     UnitToInsert = "RPM";
                                     break;
                                 }
@@ -10263,7 +10852,7 @@ namespace ChryslerScanner
 
                                     double EngineLoadB = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                    ValueToInsert = Math.Round(EngineLoadB, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(EngineLoadB, 1).ToString("0.0");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -10286,7 +10875,7 @@ namespace ChryslerScanner
 
                                     double APPSPercentB = ((payload[1] << 8) + payload[3]) * 0.25;
 
-                                    ValueToInsert = Math.Round(APPSPercentB, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(APPSPercentB, 1).ToString("0.0");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -10312,12 +10901,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(BoostPressureBPSI, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(BoostPressureBPSI, 3).ToString("0.000");
                                         UnitToInsert = "PSI";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(BoostPressureBKPA, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(BoostPressureBKPA, 3).ToString("0.000");
                                         UnitToInsert = "KPA";
                                     }
                                     break;
@@ -10344,12 +10933,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(ECT2F, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(ECT2F, 1).ToString("0.0");
                                         UnitToInsert = "°F";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(ECT2C, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(ECT2C, 1).ToString("0.0");
                                         UnitToInsert = "°C";
                                     }
                                     break;
@@ -10376,12 +10965,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(IAT2F, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(IAT2F, 1).ToString("0.0");
                                         UnitToInsert = "°F";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(IAT2C, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(IAT2C, 1).ToString("0.0");
                                         UnitToInsert = "°C";
                                     }
                                     break;
@@ -10666,7 +11255,7 @@ namespace ChryslerScanner
 
                                     double BatteryVoltsB = ((payload[1] << 8) + payload[3]) * 0.0625;
 
-                                    ValueToInsert = Math.Round(BatteryVoltsB, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(BatteryVoltsB, 3).ToString("0.000");
                                     UnitToInsert = "V";
                                     break;
                                 }
@@ -10689,7 +11278,7 @@ namespace ChryslerScanner
 
                                     double CalculatedFuelB = ((payload[1] << 8) + payload[3]) * 0.001953155;
 
-                                    ValueToInsert = Math.Round(CalculatedFuelB, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(CalculatedFuelB, 3).ToString("0.000");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -10712,7 +11301,7 @@ namespace ChryslerScanner
 
                                     double CalculatedTimingB = (((payload[1] << 8) + payload[3]) * 0.1176475) - 20.0;
 
-                                    ValueToInsert = Math.Round(CalculatedTimingB, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(CalculatedTimingB, 3).ToString("0.000");
                                     UnitToInsert = "DEGREE";
                                     break;
                                 }
@@ -10735,7 +11324,7 @@ namespace ChryslerScanner
 
                                     double RVCB = ((payload[1] << 8) + payload[3]) * 1.220721752;
 
-                                    ValueToInsert = Math.Round(RVCB, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(RVCB, 3).ToString("0.000");
                                     UnitToInsert = "MILLIAMPS";
                                     break;
                                 }
@@ -10831,7 +11420,7 @@ namespace ChryslerScanner
 
                                     double FuelPressureVoltsB = ((payload[1] << 8) + payload[3]) * 0.0049;
 
-                                    ValueToInsert = Math.Round(FuelPressureVoltsB, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(FuelPressureVoltsB, 3).ToString("0.000");
                                     UnitToInsert = "V";
                                     break;
                                 }
@@ -10854,7 +11443,7 @@ namespace ChryslerScanner
 
                                     double FuelLevelPercentB = ((payload[1] << 8) + payload[3]) * 0.3921568627;
 
-                                    ValueToInsert = Math.Round(FuelLevelPercentB, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(FuelLevelPercentB, 1).ToString("0.0");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -10991,7 +11580,7 @@ namespace ChryslerScanner
 
                                 double EngineSpeed = ((payload[1] << 8) + payload[3]) * 0.125;
 
-                                ValueToInsert = Math.Round(EngineSpeed, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(EngineSpeed, 3).ToString("0.000");
                                 UnitToInsert = "RPM";
                                 break;
                             }
@@ -11017,12 +11606,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(TransTempF, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TransTempF, 1).ToString("0.0");
                                     UnitToInsert = "°F";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(TransTempC, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TransTempC, 1).ToString("0.0");
                                     UnitToInsert = "°C";
                                 }
                                 break;
@@ -11049,12 +11638,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(VehicleSpeedMPH, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(VehicleSpeedMPH, 3).ToString("0.000");
                                     UnitToInsert = "MPH";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(VehicleSpeedKMH, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(VehicleSpeedKMH, 3).ToString("0.000");
                                     UnitToInsert = "KM/H";
                                 }
                                 break;
@@ -11078,7 +11667,7 @@ namespace ChryslerScanner
 
                                 double APPSPercent = ((payload[1] << 8) + payload[3]) * 0.25;
 
-                                ValueToInsert = Math.Round(APPSPercent, 1).ToString("0.0").Replace(",", ".");
+                                ValueToInsert = Math.Round(APPSPercent, 1).ToString("0.0");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -11101,7 +11690,7 @@ namespace ChryslerScanner
 
                                 double TransTempSensorVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
 
-                                ValueToInsert = Math.Round(TransTempSensorVolts, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TransTempSensorVolts, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -11127,12 +11716,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(ECTF, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(ECTF, 1).ToString("0.0");
                                     UnitToInsert = "°F";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(ECTC, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(ECTC, 1).ToString("0.0");
                                     UnitToInsert = "°C";
                                 }
                                 break;
@@ -11156,7 +11745,7 @@ namespace ChryslerScanner
 
                                 double ECTVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
 
-                                ValueToInsert = Math.Round(ECTVolts, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(ECTVolts, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -11182,12 +11771,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(BoostPressureAPSI, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(BoostPressureAPSI, 3).ToString("0.000");
                                     UnitToInsert = "PSI";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(BoostPressureAKPA, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(BoostPressureAKPA, 3).ToString("0.000");
                                     UnitToInsert = "KPA";
                                 }
                                 break;
@@ -11214,12 +11803,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(IATF, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(IATF, 1).ToString("0.0");
                                     UnitToInsert = "°F";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(IATC, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(IATC, 1).ToString("0.0");
                                     UnitToInsert = "°C";
                                 }
                                 break;
@@ -11243,7 +11832,7 @@ namespace ChryslerScanner
 
                                 double IATVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
 
-                                ValueToInsert = Math.Round(IATVolts, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(IATVolts, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -11266,7 +11855,7 @@ namespace ChryslerScanner
 
                                 double BatteryVolts = ((payload[1] << 8) + payload[3]) * 0.0625;
 
-                                ValueToInsert = Math.Round(BatteryVolts, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(BatteryVolts, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -11295,7 +11884,7 @@ namespace ChryslerScanner
 
                                     double InjPumpBatteryVolts = ((payload[1] << 8) + payload[3]) * 0.0183;
 
-                                    ValueToInsert = Math.Round(InjPumpBatteryVolts, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(InjPumpBatteryVolts, 3).ToString("0.000");
                                     UnitToInsert = "V";
                                     break;
                                 }
@@ -11321,12 +11910,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(InjPumpFuelTempF, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(InjPumpFuelTempF, 1).ToString("0.0");
                                         UnitToInsert = "°F";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(InjPumpFuelTempC, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(InjPumpFuelTempC, 1).ToString("0.0");
                                         UnitToInsert = "°C";
                                     }
                                     break;
@@ -11612,7 +12201,7 @@ namespace ChryslerScanner
 
                                     double BoostVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
 
-                                    ValueToInsert = Math.Round(BoostVolts, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(BoostVolts, 3).ToString("0.000");
                                     UnitToInsert = "V";
                                     break;
                                 }
@@ -11635,7 +12224,7 @@ namespace ChryslerScanner
 
                                     double WIFVoltsB = ((payload[1] << 8) + payload[3]) * 0.0049;
 
-                                    ValueToInsert = Math.Round(WIFVoltsB, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(WIFVoltsB, 3).ToString("0.000");
                                     UnitToInsert = "V";
                                     break;
                                 }
@@ -11658,7 +12247,7 @@ namespace ChryslerScanner
 
                                     double EngineLoadA = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                    ValueToInsert = Math.Round(EngineLoadA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(EngineLoadA, 1).ToString("0.0");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -11684,12 +12273,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(BatteryTempteratureF, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(BatteryTempteratureF, 1).ToString("0.0");
                                         UnitToInsert = "°F";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(BatteryTemperatureC, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(BatteryTemperatureC, 1).ToString("0.0");
                                         UnitToInsert = "°C";
                                     }
                                     break;
@@ -11736,7 +12325,7 @@ namespace ChryslerScanner
 
                                     double EngineSpeedCKD = ((payload[1] << 8) + payload[3]) * 0.125;
 
-                                    ValueToInsert = Math.Round(EngineSpeedCKD, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(EngineSpeedCKD, 3).ToString("0.000");
                                     UnitToInsert = "RPM";
                                     break;
                                 }
@@ -11759,7 +12348,7 @@ namespace ChryslerScanner
 
                                     double EngineSpeedCMP = ((payload[1] << 8) + payload[3]) * 0.125;
 
-                                    ValueToInsert = Math.Round(EngineSpeedCMP, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(EngineSpeedCMP, 3).ToString("0.000");
                                     UnitToInsert = "RPM";
                                     break;
                                 }
@@ -11782,7 +12371,7 @@ namespace ChryslerScanner
 
                                     double APPSVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
 
-                                    ValueToInsert = Math.Round(APPSVolts, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(APPSVolts, 3).ToString("0.000");
                                     UnitToInsert = "V";
                                     break;
                                 }
@@ -11983,12 +12572,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(CruiseSetSpeedMPH, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(CruiseSetSpeedMPH, 3).ToString("0.000");
                                         UnitToInsert = "MPH";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(CruiseSetSpeedKMH, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(CruiseSetSpeedKMH, 3).ToString("0.000");
                                         UnitToInsert = "KM/H";
                                     }
                                     break;
@@ -12012,7 +12601,7 @@ namespace ChryslerScanner
 
                                     double CruiseSwitchVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
 
-                                    ValueToInsert = Math.Round(CruiseSwitchVolts, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(CruiseSwitchVolts, 3).ToString("0.000");
                                     UnitToInsert = "V";
                                     break;
                                 }
@@ -12053,7 +12642,7 @@ namespace ChryslerScanner
 
                                     double OutputShaftSpeed = ((payload[1] << 8) + payload[3]) * 0.125;
 
-                                    ValueToInsert = Math.Round(OutputShaftSpeed, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(OutputShaftSpeed, 3).ToString("0.000");
                                     UnitToInsert = "RPM";
                                     break;
                                 }
@@ -12099,7 +12688,7 @@ namespace ChryslerScanner
 
                                     double TransPWMDutyCycle = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                    ValueToInsert = Math.Round(TransPWMDutyCycle, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TransPWMDutyCycle, 1).ToString("0.0");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -12174,12 +12763,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(TargetGovPressurePSI, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(TargetGovPressurePSI, 3).ToString("0.000");
                                         UnitToInsert = "PSI";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(TargetGovPressureKPA, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(TargetGovPressureKPA, 3).ToString("0.000");
                                         UnitToInsert = "KPA";
                                     }
                                     break;
@@ -12203,7 +12792,7 @@ namespace ChryslerScanner
 
                                     double PPS1SensorPercent = ((payload[1] << 8) + payload[3]) * 0.25;
 
-                                    ValueToInsert = Math.Round(PPS1SensorPercent, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(PPS1SensorPercent, 3).ToString("0.000");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -12226,7 +12815,7 @@ namespace ChryslerScanner
 
                                     double PPS1SensorVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
 
-                                    ValueToInsert = Math.Round(PPS1SensorVolts, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(PPS1SensorVolts, 3).ToString("0.000");
                                     UnitToInsert = "V";
                                     break;
                                 }
@@ -12249,7 +12838,7 @@ namespace ChryslerScanner
 
                                     double PPS2SensorPercent = ((payload[1] << 8) + payload[3]) * 0.25;
 
-                                    ValueToInsert = Math.Round(PPS2SensorPercent, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(PPS2SensorPercent, 3).ToString("0.000");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -12272,7 +12861,7 @@ namespace ChryslerScanner
 
                                     double PPS2SensorVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
 
-                                    ValueToInsert = Math.Round(PPS2SensorVolts, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(PPS2SensorVolts, 3).ToString("0.000");
                                     UnitToInsert = "V";
                                     break;
                                 }
@@ -12295,7 +12884,7 @@ namespace ChryslerScanner
 
                                     double BSPPercentage = payload[1] * 0.25;
 
-                                    ValueToInsert = Math.Round(BSPPercentage, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(BSPPercentage, 3).ToString("0.000");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -12584,7 +13173,7 @@ namespace ChryslerScanner
 
                                     double WasteGateDutyCycle = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                    ValueToInsert = Math.Round(WasteGateDutyCycle, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(WasteGateDutyCycle, 3).ToString("0.000");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -12607,7 +13196,7 @@ namespace ChryslerScanner
 
                                     double BoostVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
 
-                                    ValueToInsert = Math.Round(BoostVolts, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(BoostVolts, 3).ToString("0.000");
                                     UnitToInsert = "V";
                                     break;
                                 }
@@ -12630,7 +13219,7 @@ namespace ChryslerScanner
 
                                     double WIFVoltsB = ((payload[1] << 8) + payload[3]) * 0.0049;
 
-                                    ValueToInsert = Math.Round(WIFVoltsB, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(WIFVoltsB, 3).ToString("0.000");
                                     UnitToInsert = "V";
                                     break;
                                 }
@@ -12653,7 +13242,7 @@ namespace ChryslerScanner
 
                                     double EngineLoadA = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                    ValueToInsert = Math.Round(EngineLoadA, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(EngineLoadA, 1).ToString("0.0");
                                     UnitToInsert = "PERCENT";
                                     break;
                                 }
@@ -12679,12 +13268,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(BatteryTempteratureF, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(BatteryTempteratureF, 1).ToString("0.0");
                                         UnitToInsert = "°F";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(BatteryTemperatureC, 1).ToString("0.0").Replace(",", ".");
+                                        ValueToInsert = Math.Round(BatteryTemperatureC, 1).ToString("0.0");
                                         UnitToInsert = "°C";
                                     }
                                     break;
@@ -12731,7 +13320,7 @@ namespace ChryslerScanner
 
                                     double EngineSpeedCKD = ((payload[1] << 8) + payload[3]) * 0.125;
 
-                                    ValueToInsert = Math.Round(EngineSpeedCKD, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(EngineSpeedCKD, 3).ToString("0.000");
                                     UnitToInsert = "RPM";
                                     break;
                                 }
@@ -12754,7 +13343,7 @@ namespace ChryslerScanner
 
                                     double EngineSpeedCMP = ((payload[1] << 8) + payload[3]) * 0.125;
 
-                                    ValueToInsert = Math.Round(EngineSpeedCMP, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(EngineSpeedCMP, 3).ToString("0.000");
                                     UnitToInsert = "RPM";
                                     break;
                                 }
@@ -12807,7 +13396,7 @@ namespace ChryslerScanner
 
                                     double APPSVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
 
-                                    ValueToInsert = Math.Round(APPSVolts, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(APPSVolts, 3).ToString("0.000");
                                     UnitToInsert = "V";
                                     break;
                                 }
@@ -13008,12 +13597,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(CruiseSetSpeedMPH, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(CruiseSetSpeedMPH, 3).ToString("0.000");
                                         UnitToInsert = "MPH";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(CruiseSetSpeedKMH, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(CruiseSetSpeedKMH, 3).ToString("0.000");
                                         UnitToInsert = "KM/H";
                                     }
                                     break;
@@ -13037,7 +13626,7 @@ namespace ChryslerScanner
 
                                     double CruiseSwitchVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
 
-                                    ValueToInsert = Math.Round(CruiseSwitchVolts, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(CruiseSwitchVolts, 3).ToString("0.000");
                                     UnitToInsert = "V";
                                     break;
                                 }
@@ -13063,12 +13652,12 @@ namespace ChryslerScanner
 
                                     if (Properties.Settings.Default.Units == "imperial")
                                     {
-                                        ValueToInsert = Math.Round(InjDisVehicleSpeedMPH, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(InjDisVehicleSpeedMPH, 3).ToString("0.000");
                                         UnitToInsert = "MPH";
                                     }
                                     else if (Properties.Settings.Default.Units == "metric")
                                     {
-                                        ValueToInsert = Math.Round(InjDisVehicleSpeedKMH, 3).ToString("0.000").Replace(",", ".");
+                                        ValueToInsert = Math.Round(InjDisVehicleSpeedKMH, 3).ToString("0.000");
                                         UnitToInsert = "KM/H";
                                     }
                                     break;
@@ -13137,12 +13726,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(TotalFuelUsedG, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TotalFuelUsedG, 1).ToString("0.0");
                                     UnitToInsert = "GALLON";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(TotalFuelUsedL, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TotalFuelUsedL, 1).ToString("0.0");
                                     UnitToInsert = "LITER";
                                 }
                                 break;
@@ -13171,12 +13760,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(TripFuelUsedG, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TripFuelUsedG, 1).ToString("0.0");
                                     UnitToInsert = "GALLON";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(TripFuelUsedL, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TripFuelUsedL, 1).ToString("0.0");
                                     UnitToInsert = "LITER";
                                 }
                                 break;
@@ -13259,12 +13848,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(TotalIdleFuelG, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TotalIdleFuelG, 1).ToString("0.0");
                                     UnitToInsert = "GALLON";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(TotalIdleFuelL, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TotalIdleFuelL, 1).ToString("0.0");
                                     UnitToInsert = "LITER";
                                 }
                                 break;
@@ -13293,12 +13882,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(TripIdleFuelG, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TripIdleFuelG, 1).ToString("0.0");
                                     UnitToInsert = "GALLON";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(TripIdleFuelL, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TripIdleFuelL, 1).ToString("0.0");
                                     UnitToInsert = "LITER";
                                 }
                                 break;
@@ -13381,12 +13970,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(TotalDistanceMi, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TotalDistanceMi, 3).ToString("0.000");
                                     UnitToInsert = "MILE";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(TotalDistanceKm, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TotalDistanceKm, 3).ToString("0.000");
                                     UnitToInsert = "KILOMETER";
                                 }
                                 break;
@@ -13415,12 +14004,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(TripDistanceMi, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TripDistanceMi, 3).ToString("0.000");
                                     UnitToInsert = "MILE";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(TripDistanceKm, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TripDistanceKm, 3).ToString("0.000");
                                     UnitToInsert = "KILOMETER";
                                 }
                                 break;
@@ -13449,12 +14038,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(TripAverageFuelMPG, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TripAverageFuelMPG, 3).ToString("0.000");
                                     UnitToInsert = "MPG";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(TripAverageFuelLP100KM, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(TripAverageFuelLP100KM, 3).ToString("0.000");
                                     UnitToInsert = "L/100KM";
                                 }
                                 break;
@@ -13553,7 +14142,7 @@ namespace ChryslerScanner
 
                                 double FuelPressureRegOutput = ((payload[1] << 8) + payload[3]) * 0.025;
 
-                                ValueToInsert = Math.Round(FuelPressureRegOutput, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(FuelPressureRegOutput, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -13579,12 +14168,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(FuelPressurePSI, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(FuelPressurePSI, 3).ToString("0.000");
                                     UnitToInsert = "PSI";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(FuelPressureKPA, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(FuelPressureKPA, 3).ToString("0.000");
                                     UnitToInsert = "KPA";
                                 }
                                 break;
@@ -13611,12 +14200,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(FuelPressureSetpointPSI, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(FuelPressureSetpointPSI, 3).ToString("0.000");
                                     UnitToInsert = "PSI";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(FuelPressureSetpointKPA, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(FuelPressureSetpointKPA, 3).ToString("0.000");
                                     UnitToInsert = "KPA";
                                 }
                                 break;
@@ -13640,7 +14229,7 @@ namespace ChryslerScanner
 
                                 double FuelPressureSensorVolts = ((payload[1] << 8) + payload[3]) * 0.0012;
 
-                                ValueToInsert = Math.Round(FuelPressureSensorVolts, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(FuelPressureSensorVolts, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -13663,7 +14252,7 @@ namespace ChryslerScanner
 
                                 double CVNVolts = (uint)(payload[1] << 24 | payload[3] << 16 | payload[5] << 8 | payload[7]) * 0.0049;
 
-                                ValueToInsert = Math.Round(CVNVolts, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(CVNVolts, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -13688,7 +14277,7 @@ namespace ChryslerScanner
 
                                 double RadiatorFanSpeed = ((payload[1] << 8) + payload[3]) * 0.125;
 
-                                ValueToInsert = Math.Round(RadiatorFanSpeed, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(RadiatorFanSpeed, 3).ToString("0.000");
                                 UnitToInsert = "RPM";
                                 break;
                             }
@@ -13711,7 +14300,7 @@ namespace ChryslerScanner
 
                                 double DesRadFanPWM = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                ValueToInsert = Math.Round(DesRadFanPWM, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(DesRadFanPWM, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -13734,7 +14323,7 @@ namespace ChryslerScanner
 
                                 double TimeAt10Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                ValueToInsert = Math.Round(TimeAt10Load, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TimeAt10Load, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -13757,7 +14346,7 @@ namespace ChryslerScanner
 
                                 double TimeAt20Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                ValueToInsert = Math.Round(TimeAt20Load, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TimeAt20Load, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -13780,7 +14369,7 @@ namespace ChryslerScanner
 
                                 double TimeAt30Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                ValueToInsert = Math.Round(TimeAt30Load, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TimeAt30Load, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -13803,7 +14392,7 @@ namespace ChryslerScanner
 
                                 double TimeAt40Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                ValueToInsert = Math.Round(TimeAt40Load, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TimeAt40Load, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -13826,7 +14415,7 @@ namespace ChryslerScanner
 
                                 double TimeAt50Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                ValueToInsert = Math.Round(TimeAt50Load, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TimeAt50Load, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -13849,7 +14438,7 @@ namespace ChryslerScanner
 
                                 double TimeAt60Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                ValueToInsert = Math.Round(TimeAt60Load, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TimeAt60Load, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -13872,7 +14461,7 @@ namespace ChryslerScanner
 
                                 double TimeAt70Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                ValueToInsert = Math.Round(TimeAt70Load, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TimeAt70Load, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -13895,7 +14484,7 @@ namespace ChryslerScanner
 
                                 double TimeAt80Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                ValueToInsert = Math.Round(TimeAt80Load, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TimeAt80Load, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -13918,7 +14507,7 @@ namespace ChryslerScanner
 
                                 double TimeAt90Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                ValueToInsert = Math.Round(TimeAt90Load, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TimeAt90Load, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -13941,7 +14530,7 @@ namespace ChryslerScanner
 
                                 double TimeAt100Load = ((payload[1] << 8) + payload[3]) * 0.00390625;
 
-                                ValueToInsert = Math.Round(TimeAt100Load, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(TimeAt100Load, 3).ToString("0.000");
                                 UnitToInsert = "PERCENT";
                                 break;
                             }
@@ -13967,12 +14556,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(BarometricPressurePSI, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(BarometricPressurePSI, 3).ToString("0.000");
                                     UnitToInsert = "PSI";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(BarometricPressureKPA, 3).ToString("0.000").Replace(",", ".");
+                                    ValueToInsert = Math.Round(BarometricPressureKPA, 3).ToString("0.000");
                                     UnitToInsert = "KPA";
                                 }
                                 break;
@@ -13999,12 +14588,12 @@ namespace ChryslerScanner
 
                                 if (Properties.Settings.Default.Units == "imperial")
                                 {
-                                    ValueToInsert = Math.Round(AmbientAirTempF, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(AmbientAirTempF, 1).ToString("0.0");
                                     UnitToInsert = "°F";
                                 }
                                 else if (Properties.Settings.Default.Units == "metric")
                                 {
-                                    ValueToInsert = Math.Round(AmbientAirTempC, 1).ToString("0.0").Replace(",", ".");
+                                    ValueToInsert = Math.Round(AmbientAirTempC, 1).ToString("0.0");
                                     UnitToInsert = "°C";
                                 }
                                 break;
@@ -14028,7 +14617,7 @@ namespace ChryslerScanner
 
                                 double AmbientTempSensorVolts = ((payload[1] << 8) + payload[3]) * 0.0049;
 
-                                ValueToInsert = Math.Round(AmbientTempSensorVolts, 3).ToString("0.000").Replace(",", ".");
+                                ValueToInsert = Math.Round(AmbientTempSensorVolts, 3).ToString("0.000");
                                 UnitToInsert = "V";
                                 break;
                             }
@@ -14239,7 +14828,7 @@ namespace ChryslerScanner
 
             ushort modifiedID;
 
-            if ((ID == 0x14) || (ID == 0x16) || (ID == 0x22) || (ID == 0x25) || (ID == 0x2A) || ((ID >= 0xF0) && (ID < 0xFE)))
+            if ((ID == 0x14) || (ID == 0x16) || (ID == 0x22) || (ID == 0x25) || (ID == 0x2A) || (ID == 0x2D) || ((ID >= 0xF0) && (ID < 0xFE)))
             {
                 if (payload.Length > 0) modifiedID = (ushort)(((ID << 8) & 0xFF00) + payload[0]);
                 else modifiedID = (ushort)((ID << 8) & 0xFF00);

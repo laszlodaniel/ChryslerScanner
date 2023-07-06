@@ -68,6 +68,27 @@ namespace ChryslerScanner.Services
             return success;
         }
 
+        public bool Disconnect()
+        {
+            bool success = false;
+
+            CTSource.Cancel();
+
+            if (SP.IsOpen)
+            {
+                SP.Close();
+            }
+
+            Task[] tasks = { TxPump, RxPump };
+            Task.WaitAll(tasks, 100);
+
+            success = true;
+
+            Debug.WriteLine($"{DateTime.UtcNow:O} SerialPort disconnected");
+
+            return success;
+        }
+
         public void WritePacket(Packet packet)
         {
             if (packet == null)
@@ -88,27 +109,6 @@ namespace ChryslerScanner.Services
 
                 TxQueue.Enqueue(packet);
             }
-        }
-
-        public bool Disconnect()
-        {
-            bool success = false; 
-
-            CTSource.Cancel();
-
-            if (SP.IsOpen)
-            {
-                SP.Close();
-            }
-
-            Task[] tasks = { TxPump, RxPump };
-            Task.WaitAll(tasks, 100);
-
-            success = true;
-
-            Debug.WriteLine($"{DateTime.UtcNow:O} SerialPort disconnected");
-
-            return success;
         }
 
         private async Task RxTask(CancellationToken CT)
@@ -143,6 +143,13 @@ namespace ChryslerScanner.Services
 
                     int PacketLength = (buffer[1] << 8) + buffer[2];
 
+                    if (PacketLength > (PacketHelper.MaxPacketSize - 4)) // -4 -> SYNC byte, LENGTH word, CHECKSUM byte
+                    {
+                        await SP.BaseStream.FlushAsync(); // discard foreign data
+                        index = 0;
+                        continue;
+                    }
+
                     if (index < (PacketLength + 4))
                         continue; // wait until all packet bytes are received
 
@@ -153,26 +160,14 @@ namespace ChryslerScanner.Services
                     if (packet == null)
                         continue;
 
-                    PacketReceived?.Invoke(this, packet);
-
-                    //RxQueue.Enqueue(packet);
-
-                    //while (!RxQueue.IsEmpty)
-                    //{
-                    //    if (RxQueue.TryDequeue(out byte[] qpacket))
-                    //    {
-                    //        PacketReceived?.Invoke(this, PacketHelper.ParsePacket(qpacket));
-                    //    }
-
-                    //    await Task.Delay(1);
-                    //}
+                    PacketReceived?.Invoke(this, packet); // notify subscribers, if any (?.)
                 }
 
                 Debug.WriteLine($"{DateTime.UtcNow:O} RxTask finished");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"{DateTime.UtcNow:O} RxTask: Exception {ex}");
+                Debug.WriteLine($"{DateTime.UtcNow:O} RxTask exception: {ex}");
             }
         }
 
@@ -206,7 +201,7 @@ namespace ChryslerScanner.Services
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"{DateTime.UtcNow:O} TxTask: Exception {ex}");
+                Debug.WriteLine($"{DateTime.UtcNow:O} TxTask exception: {ex}");
             }
         }
     }

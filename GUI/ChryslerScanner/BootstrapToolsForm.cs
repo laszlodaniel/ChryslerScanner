@@ -998,7 +998,7 @@ namespace ChryslerScanner
 
                         UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Flash file is loaded.");
                         UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Name: " + Path.GetFileName(OpenFlashFileDialog.FileName));
-                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Size: " + FlashFileBuffer.Length + " bytes = " + ((double)FlashFileBuffer.Length / 1024.0).ToString("0.00").Replace(",",".") + " kilobytes.");
+                        UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Size: " + FlashFileBuffer.Length + " bytes = " + ((double)FlashFileBuffer.Length / 1024.0).ToString("0.00") + " kilobytes.");
 
                         if (FlashChipComboBox.SelectedIndex == 0) return;
                             
@@ -1489,9 +1489,9 @@ namespace ChryslerScanner
                                         double BatteryVoltage = ((packet.Payload[0] << 8) + packet.Payload[1]) / 1000.00;
                                         double BootstrapVoltage = ((packet.Payload[2] << 8) + packet.Payload[3]) / 1000.00;
                                         double ProgrammingVoltage = ((packet.Payload[4] << 8) + packet.Payload[5]) / 1000.00;
-                                        string BatteryVoltageString = BatteryVoltage.ToString("0.000").Replace(",", ".") + " V";
-                                        string BootstrapVoltageString = BootstrapVoltage.ToString("0.000").Replace(",", ".") + " V";
-                                        string ProgrammingVoltageString = ProgrammingVoltage.ToString("0.000").Replace(",", ".") + " V";
+                                        string BatteryVoltageString = BatteryVoltage.ToString("0.000") + " V";
+                                        string BootstrapVoltageString = BootstrapVoltage.ToString("0.000") + " V";
+                                        string ProgrammingVoltageString = ProgrammingVoltage.ToString("0.000") + " V";
 
                                         UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + Environment.NewLine + "Battery voltage: " + BatteryVoltageString + Environment.NewLine + "Bootstrap voltage: " + BootstrapVoltageString + Environment.NewLine + "Programming voltage: " + ProgrammingVoltageString);
 
@@ -1550,15 +1550,15 @@ namespace ChryslerScanner
                                         {
                                             if (BatteryVoltage < MinBattVolts)
                                             {
-                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Battery voltage must be above " + MinBattVolts.ToString("0.0").Replace(",", ".") + "V.");
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Battery voltage must be above " + MinBattVolts.ToString("0.0") + "V.");
                                             }
                                             if (BootstrapVoltage < MinBootVolts)
                                             {
-                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap voltage must be above " + MinBootVolts.ToString("0.0").Replace(",", ".") + "V.");
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Bootstrap voltage must be above " + MinBootVolts.ToString("0.0") + "V.");
                                             }
                                             if (ProgrammingVoltage < MinProgVolts)
                                             {
-                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Programming voltage must be above " + MinProgVolts.ToString("0.0").Replace(",", ".") + "V.");
+                                                UpdateTextBox(SCIBusBootstrapInfoTextBox, Environment.NewLine + "Programming voltage must be above " + MinProgVolts.ToString("0.0") + "V.");
                                             }
 
                                             if (SCIBusBootstrapWorker.IsBusy)

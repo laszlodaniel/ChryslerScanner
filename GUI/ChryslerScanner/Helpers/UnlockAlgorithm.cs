@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace ChryslerScanner.Helpers
@@ -21,24 +23,13 @@ namespace ChryslerScanner.Helpers
 
         public static byte[] GetSecurityKey(Controllers controller, SecurityLevels level, byte[] seed)
         {
-            ushort seedword = (ushort)((seed[0] << 8) + seed[1]);
-
-            //ushort seedword = 0;
-
-            //if (BitConverter.IsLittleEndian)
-            //{
-            //    byte[] reverse = seed;
-            //    Array.Reverse(reverse);
-            //    seedword = BitConverter.ToUInt16(reverse, 0);
-            //}
-            //else
-            //{
-            //    seedword = BitConverter.ToUInt16(seed, 0);
-            //}
-
-            if (seedword == 0)
+            if (seed.Length != 2)
                 return null;
 
+            if (seed.All(s => s == 0)) // if all bytes are zero
+                return null;
+
+            ushort seedword = (ushort)((seed[0] << 8) + seed[1]);
             ushort keyword = 0;
 
             switch (controller)
@@ -71,15 +62,8 @@ namespace ChryslerScanner.Helpers
                         case SecurityLevels.Level3: // Bootstrap flash write
                         {
                             keyword = (ushort)((seedword + 0x247C) | 5); // add magic word and set minimum number of bit rotations
-                            byte i = (byte)(keyword & 0x0F); // determine number of bit rotations
-
-                            while (i > 0) // rotate bits to the right
-                            {
-                                i--;
-                                if ((keyword & 1) == 1) keyword = ((ushort)((keyword >> 1) | 0x8000)); // rightmost bit is transferred to the leftmost position
-                                else keyword >>= 1;
-                            }
-
+                            byte tmp = (byte)(keyword & 0x0F); // determine number of bit rotations
+                            keyword = (ushort)((keyword >> tmp) | (keyword << (16 - tmp))); // rotate bits to the right
                             keyword |= 0x247C; // apply same magic word again
                             break;
                         }
@@ -90,6 +74,9 @@ namespace ChryslerScanner.Helpers
 
             byte[] key = BitConverter.GetBytes(keyword);
 
+            if (key.Length != 2)
+                return null;
+
             if (BitConverter.IsLittleEndian)
                 Array.Reverse(key);
 
@@ -98,9 +85,15 @@ namespace ChryslerScanner.Helpers
 
         public static byte[] GetSKIMUnlockKey(byte[] seed, string VIN)
         {
-            byte[] key = new byte[3];
+            if (VIN.Length != 17)
+                return null;
 
-            switch (seed.Length)
+            if (seed.All(s => s == 0)) // if all bytes are zero
+                return null;
+
+            byte[] key = new byte[3]; // key length is always 3 bytes
+
+            switch (seed.Length) // seed length may be 2 or 4 bytes
             {
                 case 2: // CCD
                 {
@@ -116,43 +109,25 @@ namespace ChryslerScanner.Helpers
                     key[2] = seed[3];
                     break;
                 }
-                default:
+                default: // invalid seed length
                 {
                     return null;
                 }
             }
 
-            byte temp = Encoding.ASCII.GetBytes(VIN)[16]; // start with 17th VIN character
+            byte[] VINChars = Encoding.ASCII.GetBytes(VIN);
+            List<byte> cycles = new List<byte>() { 16, 15, 13, 8 }; // VIN characters to use
 
-            key[2] += temp;
-            key[2] ^= temp;
-            key[1] += key[2];
-            key[0] += key[1];
-            key[0] ^= temp;
+            foreach (byte index in cycles)
+            {
+                byte tmp = VINChars[index];
 
-            temp = Encoding.ASCII.GetBytes(VIN)[15]; // continue with 16th VIN character
-
-            key[2] += temp;
-            key[2] ^= temp;
-            key[1] += key[2];
-            key[0] += key[1];
-            key[0] ^= temp;
-
-            temp = Encoding.ASCII.GetBytes(VIN)[13]; // continue with 14th VIN character
-
-            key[2] += temp;
-            key[2] ^= temp;
-            key[1] += key[2];
-            key[0] += key[1];
-            key[0] ^= temp;
-
-            temp = Encoding.ASCII.GetBytes(VIN)[8]; // finish with 9th VIN character (also known as security field)
-
-            key[2] += temp;
-            key[2] ^= temp;
-            key[1] += key[2];
-            key[0] += key[1];
-            key[0] ^= temp;
+                key[2] += tmp;
+                key[2] ^= tmp;
+                key[1] += key[2];
+                key[0] += key[1];
+                key[0] ^= tmp;
+            }
 
             return key;
         }

@@ -4300,7 +4300,7 @@
     <value>CCDBusDiagnosticsListBox</value>
   </data>
   <data name="&gt;&gt;CCDBusDiagnosticsListBox.Type" xml:space="preserve">
-    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.16.0, Culture=neutral, PublicKeyToken=null</value>
+    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.14.1.0, Culture=neutral, PublicKeyToken=null</value>
   </data>
   <data name="&gt;&gt;CCDBusDiagnosticsListBox.Parent" xml:space="preserve">
     <value>CCDBusDiagnosticsTabPage</value>
@@ -4363,7 +4363,7 @@
     <value>PCIBusDiagnosticsListBox</value>
   </data>
   <data name="&gt;&gt;PCIBusDiagnosticsListBox.Type" xml:space="preserve">
-    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.16.0, Culture=neutral, PublicKeyToken=null</value>
+    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.14.1.0, Culture=neutral, PublicKeyToken=null</value>
   </data>
   <data name="&gt;&gt;PCIBusDiagnosticsListBox.Parent" xml:space="preserve">
     <value>PCIBusDiagnosticsTabPage</value>
@@ -4423,7 +4423,7 @@
     <value>SCIBusPCMDiagnosticsListBox</value>
   </data>
   <data name="&gt;&gt;SCIBusPCMDiagnosticsListBox.Type" xml:space="preserve">
-    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.16.0, Culture=neutral, PublicKeyToken=null</value>
+    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.14.1.0, Culture=neutral, PublicKeyToken=null</value>
   </data>
   <data name="&gt;&gt;SCIBusPCMDiagnosticsListBox.Parent" xml:space="preserve">
     <value>SCIBusPCMDiagnosticsTabPage</value>
@@ -4486,7 +4486,7 @@
     <value>SCIBusTCMDiagnosticsListBox</value>
   </data>
   <data name="&gt;&gt;SCIBusTCMDiagnosticsListBox.Type" xml:space="preserve">
-    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.13.16.0, Culture=neutral, PublicKeyToken=null</value>
+    <value>ChryslerScanner.FlickerFreeListBox, ChryslerScanner, Version=0.14.1.0, Culture=neutral, PublicKeyToken=null</value>
   </data>
   <data name="&gt;&gt;SCIBusTCMDiagnosticsListBox.Parent" xml:space="preserve">
     <value>SCIBusTCMDiagnosticsTabPage</value>
@@ -4583,6 +4583,9 @@
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
+  </metadata>
+  <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>62</value>
   </metadata>
   <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
     <value>120, 120</value>
