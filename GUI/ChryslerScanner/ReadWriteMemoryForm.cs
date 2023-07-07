@@ -549,7 +549,7 @@ namespace ChryslerScanner
                 return;
             }
 
-            if (SCIBusPCMReadMemoryWorker.IsBusy || !SCIBusPCMWriteMemoryWorker.IsBusy || (SCIBusPCMWriteMemoryVINTextBox.Text.Length != VINLength))
+            if (SCIBusPCMReadMemoryWorker.IsBusy || SCIBusPCMWriteMemoryWorker.IsBusy || (SCIBusPCMWriteMemoryVINTextBox.Text.Length != VINLength))
             {
                 return;
             }
@@ -2356,23 +2356,23 @@ namespace ChryslerScanner
                             UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Check PCM status: locked.");
                             UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + "Attempting to unlock PCM.");
 
-                            //byte[] key = UnlockAlgorithm.GetSecurityKey(UnlockAlgorithm.Controllers.SBEC,
-                            //                                        UnlockAlgorithm.SecurityLevels.Level1,
-                            //                                        SCIBusPCMResponseBytes.Skip(1).Take(2).ToArray());
+                            byte[] key = UnlockAlgorithm.GetSecurityKey(UnlockAlgorithm.Controllers.SBEC,
+                                                                        UnlockAlgorithm.SecurityLevels.Level1,
+                                                                        SCIBusPCMResponseBytes.Skip(1).Take(2).ToArray());
 
-                            //if (key == null) break;
+                            if (key == null) break;
 
-                            //byte[] UnlockRequest = { (byte)SCI_ID.SendSecurityKey, key[0], key[1], (byte)(SCI_ID.SendSecurityKey + key[0] + key[1]) };
+                            byte[] UnlockRequest = { (byte)SCI_ID_OBD2.SendSecurityKey, key[0], key[1], (byte)(SCI_ID_OBD2.SendSecurityKey + key[0] + key[1]) };
 
-                            //Packet PacketTx = new Packet();
+                            Packet PacketTx = new Packet();
 
-                            //PacketTx.Bus = (byte)PacketHelper.Bus.PCM;
-                            //PacketTx.Command = (byte)PacketHelper.Command.MsgTx;
-                            //PacketTx.Mode = (byte)PacketHelper.MsgTxMode.Single;
-                            //PacketTx.Payload = UnlockRequest;
+                            PacketTx.Bus = (byte)PacketHelper.Bus.PCM;
+                            PacketTx.Command = (byte)PacketHelper.Command.MsgTx;
+                            PacketTx.Mode = (byte)PacketHelper.MsgTxMode.Single;
+                            PacketTx.Payload = UnlockRequest;
 
-                            //OriginalForm.TransmitUSBPacket("[<-TX] Send a SCI-bus (PCM) message once:", PacketTx);
-                            //SerialService.WritePacket(PacketTx);
+                            OriginalForm.TransmitUSBPacket("[<-TX] Send a SCI-bus (PCM) message once:", PacketTx);
+                            SerialService.WritePacket(PacketTx);
                             break;
                         }
                         case (byte)SCI_ID_OBD2.SendSecurityKey:
