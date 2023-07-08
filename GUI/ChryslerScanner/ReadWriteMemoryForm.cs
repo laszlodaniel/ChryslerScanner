@@ -1058,6 +1058,7 @@ namespace ChryslerScanner
                             SerialService.WritePacket(packet);
 
                             UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Restore EEPROM. In progress.");
+                            CurrentTask = Task.RestoreEEPROM; // handled by the scanner completely
                         }
                         else
                         {
@@ -2018,6 +2019,8 @@ namespace ChryslerScanner
                                             break;
                                         }
                                     }
+
+                                    CurrentTask = Task.None; // clear task
                                     break;
                                 }
                             }
@@ -2355,6 +2358,9 @@ namespace ChryslerScanner
                             PCMUnlocked = false;
                             UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + Environment.NewLine + "Check PCM status: locked.");
                             UpdateTextBox(SCIBusPCMWriteMemoryInfoTextBox, Environment.NewLine + "Attempting to unlock PCM.");
+
+                            if (CurrentTask == Task.RestoreEEPROM)
+                                return; // security unlock is done by the scanner
 
                             byte[] key = UnlockAlgorithm.GetSecurityKey(UnlockAlgorithm.Controllers.SBEC,
                                                                         UnlockAlgorithm.SecurityLevels.Level1,
