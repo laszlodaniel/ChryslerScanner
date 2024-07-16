@@ -38,15 +38,15 @@
 // Firmware version (hexadecimal format):
 // 00: major
 // 09: minor
-// 10: patch
+// 0B: patch
 // (00: revision)
-// = v0.9.10(.0)
-#define FW_VERSION 0x00090A00
+// = v0.9.11(.0)
+#define FW_VERSION 0x00090B00
 
 // Firmware date/time of compilation in 32-bit UNIX time:
 // https://www.epochconverter.com/hex
 // Upper 32 bits contain the firmware version.
-#define FW_DATE 0x00090A0064807C76
+#define FW_DATE 0x00090B00669664AE
 
 // Set (1), clear (0) and invert (1->0; 0->1) bit in a register or variable easily
 //#define sbi(variable, bit) (variable) |=  (1 << (bit))
@@ -1678,7 +1678,7 @@ void print_display_layout_1_metric(void)
         lcd.setCursor(0, 2);
         lcd.print(F(" 0.0/ 0.0V          ")); // 3rd line
         lcd.setCursor(0, 3);
-        lcd.print(F("     0.000km        ")); // 4th line
+        lcd.print(F("     0.000km    0kPa")); // 4th line
         lcd.setCursor(7, 1);
         lcd.write((uint8_t)5); // print degree symbol
     }
@@ -1716,7 +1716,7 @@ void print_display_layout_1_imperial(void)
         lcd.setCursor(0, 2);
         lcd.print(F(" 0.0/ 0.0V          ")); // 3rd line
         lcd.setCursor(0, 3);
-        lcd.print(F("     0.000mi        ")); // 4th line
+        lcd.print(F("     0.000mi    0psi")); // 4th line
         lcd.setCursor(7, 1);
         lcd.write((uint8_t)5); // print degree symbol
     }
@@ -1978,9 +1978,50 @@ void handle_lcd(uint8_t bus, uint8_t *data, uint8_t index, uint8_t datalength)
                                 }
                                 break;
                             }
-                            case 0x0C: // ENGINE COOLANT TEMPERATURE | INTAKE AIR TEMPERATURE + BATTERY VOLTAGE (+ OIL PRESSURE)
+                            case 0x0C: // ENGINE COOLANT TEMPERATURE | INTAKE AIR TEMPERATURE + BATTERY VOLTAGE + OIL PRESSURE
                             {
-                                // TODO
+                                if (message_length > 3)
+                                {
+                                    uint16_t oil_pressure;
+
+                                    if (lcd_units == 0) // imperial
+                                    {
+                                        oil_pressure = round(message[2] * 0.5);
+                                    }
+                                    else if (lcd_units == 1) // metric
+                                    {
+                                        oil_pressure = round(message[2] * 6.894757 * 0.5);
+                                    }
+
+                                    if ((lcd_char_width == 20) && (lcd_char_height == 4)) // 20x4 LCD
+                                    {
+                                        if (oil_pressure < 10)
+                                        {
+                                            lcd.setCursor(14, 3);
+                                            lcd.print("  ");
+                                            lcd.print(oil_pressure);
+                                        }
+                                        else if ((oil_pressure >= 10) && (oil_pressure < 100))
+                                        {
+                                            lcd.setCursor(14, 3);
+                                            lcd.print(" ");
+                                            lcd.print(oil_pressure);
+                                        }
+                                        else if (oil_pressure >= 100)
+                                        {
+                                            lcd.setCursor(14, 3);
+                                            lcd.print(oil_pressure);
+                                        }
+                                    }
+                                    else if ((lcd_char_width == 16) && (lcd_char_height == 2)) // 16x2 LCD
+                                    {
+                                        
+                                    }
+                                    else
+                                    {
+                                        
+                                    }
+                                }
                                 break;
                             }
                             case 0xCE: // VEHICLE DISTANCE / ODOMETER VALUE
