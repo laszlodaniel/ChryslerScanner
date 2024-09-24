@@ -1,3 +1,3 @@
-ApplicationVersion=0.2.0
+ApplicationVersion=0.3.0
 FirmwareVersion=0.7.3
 HardwareVersion=2.2.0
