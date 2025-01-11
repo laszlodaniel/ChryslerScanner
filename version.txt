@@ -1,3 +1,3 @@
-ApplicationVersion=0.4.1;https://mega.nz/file/Fb1BnKiT#pKDilzWDv4ak_ReXU7DU5xx5nOAxVBuJzqGk9uwIs68
+ApplicationVersion=0.4.2;https://mega.nz/file/4DkzUKZY#H-Sh-cDRuAtwO9I22a05O_HOQ-989DMUOXWEe21nLDc
 FirmwareVersion=0.7.5
 HardwareVersion=2.2.0
