@@ -1,3 +1,3 @@
-ApplicationVersion=0.4.7;https://mega.nz/file/ADEWQSDC#8_qEYVBxp9tdmzGSB6JhQY08taB3OC7R0VBbKtrzjwQ
+ApplicationVersion=0.4.8;https://mega.nz/file/tDczyIiI#yNxmgPYz8Rfo1TJa0x9-jgGrAfxXd30uXRTpqJvIUp4
 FirmwareVersion=0.8.1;https://raw.githubusercontent.com/laszlodaniel/ChryslerScanner/master/PlatformIO/ChryslerScanner/src/firmware.bin;56f143e027b6e38e47b155d3496fae0e3479d86f3784cf2b0bbcb576486037b8
 HardwareVersion=2.3.0
