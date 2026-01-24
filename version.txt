@@ -1,3 +1,3 @@
 ApplicationVersion=0.5.0;https://mega.nz/file/5W8m1CLD#0VhKC4Ow5L7ncQ_l4necg6EjNFhFlyCs4Oh60WPHUHQ
-FirmwareVersion=0.8.3;https://raw.githubusercontent.com/laszlodaniel/ChryslerScanner/master/PlatformIO/ChryslerScanner/build;5c80eab781dde7d526184e65362e5f94494ef5b76eac3bf9630249d60b27c10b;5c80eab781dde7d526184e65362e5f94494ef5b76eac3bf9630249d60b27c10b
+FirmwareVersion=0.8.3;https://raw.githubusercontent.com/laszlodaniel/ChryslerScanner/master/PlatformIO/ChryslerScanner/build;4e28e9d8d190b22ac9939c6d4f7008bc196ceb77760b847de0ac31693a0a31f9;0a438b34edc11af69c1cbac100a3bb5e3c11b9bd1b5a5e8c728693e822fb50fb
 HardwareVersion=2.3.0
